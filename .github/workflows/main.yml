@@ -47,17 +47,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Step 2: Deploy your app (example runs npm start on the runner)
+      # Step 2: Install dependencies (again to make sure everything is up to date)
+      - name: Install dependencies
+        run: |
+          npm install
+
+      # Step 3: Start the application
       - name: Start application
         run: |
-          # Navigate to the app directory (if necessary)
-          cd /path/to/your/app
+          # Navigate to the root directory of the repository (after checking out the repo)
+          # This should be the default working directory for GitHub Actions
+          echo "Current directory: $(pwd)"
 
-          # Install any new dependencies (in case something changed in package.json)
+          # Install any new dependencies (if something changed in package.json)
           npm install
 
           # Start the application
           npm start
-          
-          # You can also use pm2 or another process manager if needed
+
+          # If using pm2 to manage the app, use the following:
           # pm2 start app.js --name "your-app-name"
