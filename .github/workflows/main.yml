@@ -67,17 +67,4 @@ jobs:
       - name: Start application
         run: |
           # Start the application in the background
-          npm start &
-
-      # Step 6: Expose the local server to the public via ngrok (port 8000)
-      - name: Expose HTTP server to the public via ngrok
-        run: |
-          # Run ngrok to expose port 8000
-          nohup ngrok http 8000 &
-          sleep 10  # Wait for ngrok to start
-
-      # Step 7: Get ngrok public URL for port 8000
-      - name: Get ngrok public URL
-        run: |
-          # Query ngrok API to get the public URL
-          curl --silent --show-error http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url'
+          npm start 
