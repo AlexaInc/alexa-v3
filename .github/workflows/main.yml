@@ -25,18 +25,13 @@ jobs:
         run: |
           npm install
 
-      # Step 4: Install system-level dependencies (e.g., ffmpeg, speedtest-cli)
+      # Step 4: Install system-level dependencies (e.g., ffmpeg, speedtest-cli, ngrok)
       - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y software-properties-common speedtest-cli ffmpeg
           sudo apt clean
           sudo rm -rf /var/lib/apt/lists/*
-
-      # Step 5: Run tests (optional, if you have tests)
-      # Uncomment the following if you want to run tests
-      # - name: Run tests
-      #   run: npm test
 
   deploy:
     runs-on: ubuntu-latest
@@ -47,23 +42,42 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Step 2: Install dependencies (again to make sure everything is up to date)
+      # Step 2: Install system dependencies (ngrok included here)
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y software-properties-common speedtest-cli ffmpeg
+          sudo apt clean
+          sudo rm -rf /var/lib/apt/lists/*
+          
+      # Step 3: Install ngrok (for public URL)
+      - name: Install ngrok
+        run: |
+          sudo apt-get install -y unzip
+          wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip
+          unzip ngrok-stable-linux-amd64.zip
+          sudo mv ngrok /usr/local/bin
+
+      # Step 4: Install dependencies (again to make sure everything is up to date)
       - name: Install dependencies
         run: |
           npm install
 
-      # Step 3: Start the application
+      # Step 5: Start the application
       - name: Start application
         run: |
-          # Navigate to the root directory of the repository (after checking out the repo)
-          # This should be the default working directory for GitHub Actions
-          echo "Current directory: $(pwd)"
+          # Start the application in the background
+          npm start &
 
-          # Install any new dependencies (if something changed in package.json)
-          npm install
+      # Step 6: Expose the local server to the public via ngrok (port 8000)
+      - name: Expose HTTP server to the public via ngrok
+        run: |
+          # Run ngrok to expose port 8000
+          nohup ngrok http 8000 &
+          sleep 10  # Wait for ngrok to start
 
-          # Start the application
-          npm start
-
-          # If using pm2 to manage the app, use the following:
-          # pm2 start app.js --name "your-app-name"
+      # Step 7: Get ngrok public URL for port 8000
+      - name: Get ngrok public URL
+        run: |
+          # Query ngrok API to get the public URL
+          curl --silent --show-error http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url'
