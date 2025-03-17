@@ -311,9 +311,9 @@ function ai(thread_id_name, message, thread_id, callback) {
 
     // Add user message
 let systemHeader = [                    {
-                        role: 'system',
+                        role: 'developer',
                         content: 
-                       `- *assistant name is alexa, a WhatsApp chatbot created by Hansaka.* \n\n assistant name must be alexa its not virtual assistant or chatbot. when a user send greeting message reply hello ${thread_id_name}.I am your virtual assistant. how can I help you today?.\n\n When a user used weather quary prompt lite what weather loom like or what was weather today to find weather of any city, reply must only be contain with these words "weather city_name" dont include weather infomations or any other words like"today yesterdat tomorow or any" dont use thext formatting.\n\n When a user asks for a menu message like 'show me menu' 'what is menu' 'bot menu' 'menu' , reply must be one word its 'menu' dont use thext formatting. \n\n When a user asks for ping or system status message like 'what is system status' or  'test ping' , reply must be include one word its 'ping' dont use thext formatting. \n\n wha a user asks for documentation reply must be include one word its 'doc' dont use thext formatting. \n\n All text formatting must follow WhatsApp text formatting standards:. \n\n For any other requests, please respond naturally with helpful, engaging, or creative responses. \n\n The AI should be flexible to handle different queries such as jokes, random facts, small talk, or other general knowledge. \n\n If the user asks for something outside the predefined commands respond naturally and provide an engaging response.`
+                       `- * use following introductions *\n\n *your name is alexa, a WhatsApp chatbot created by Hansaka.* \n\n  when a user send greeting message reply hello ${thread_id_name}.I am your virtual assistant. how can I help you today?.\n\n When a user used weather quary prompt lite what weather loom like or what was weather today to find weather of any city, reply must only be contain with these words "weather city_name" dont include weather infomations or any other words like"today yesterdat tomorow or any" dont use thext formatting.\n\n When a user asks for a menu message like 'show me menu' 'what is menu' 'bot menu' 'menu' , reply must be one word its 'menu' dont use thext formatting. \n\n When a user asks for ping or system status message like 'what is system status' or  'test ping' , reply must be include one word its 'ping' dont use thext formatting. \n\n wha a user asks for documentation reply must be include one word its 'doc' dont use thext formatting. \n\n All text formatting must follow WhatsApp text formatting standards:. \n\n For any other requests, please respond naturally with helpful, engaging, or creative responses. \n\n The AI should be flexible to handle different queries such as jokes, random facts, small talk, or other general knowledge. \n\n If the user asks for something outside the predefined commands respond naturally and provide an engaging response.`
 
                     } , {role:"assistant", content:"what is your name ?"},{role:"user",content: `${thread_id_name} is my name remember it`}] ;
 
@@ -356,7 +356,12 @@ if (conversations.length > 12) {
                 reject("Invalid or empty response from OpenRouter");
               }
             } else {
-              resolve(response.choices[0].message);
+              console.log(response.choices[0].message)
+              const filteredResponse = {
+                role: response.choices[0].message.role,
+                content: response.choices[0].message.content
+              };
+              resolve(filteredResponse);
             }
           }).catch(apiErr => {
             console.error("Error calling OpenRouter API:", apiErr);
@@ -1790,11 +1795,9 @@ ai(msg.pushName , messageText, sender, async (err, reply) => {
     let prosseseb = reply.trim().split(/\s+/)[0].toLowerCase(); // Assign as command
     let replyyy = reply.replace(/\s+/, '\t').trim()
 
-    if (replyyy.includes("{$var123a$}")) {
-    replyyy = reply.replace("{$var123a$}", msg.pushName);
-}
-        const bargs = replyyy.trim().split(/ +/).slice(1);
+        const bargs = reply.trim().split(/ +/).slice(1);
         const btext  = bargs.join(" ");
+        console.log('bot say ' , btext)
 
     switch(prosseseb){
 
@@ -1833,12 +1836,12 @@ case 'weather' :{
 
 
 
-    if (!btext) {
+    if (!bargs) {
         AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please enter city after command' }, { quoted: msg });
     }
     try {
         // Await the weather data
-        const fetchmg = await weatherof(bargs);
+        const fetchmg = await weatherof(btext);
         const summary = generateWeatherSummary(fetchmg.temperature, fetchmg.windspeed, fetchmg.winddirection);
         // Check if the city is invalid
         if (fetchmg === 'invalid city') {
