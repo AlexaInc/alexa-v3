@@ -576,7 +576,7 @@ const isOwner = (process.env['Owner_nb'] + '@s.whatsapp.net') === senderabfff;
 
 
 function formatUptime(uptime) {
-  const seconds = uptime % 60;
+  const seconds = Math.floor(uptime % 60);
   const minutes = Math.floor(uptime / 60) % 60;
   const hours = Math.floor(uptime / 3600) % 24;
   const days = Math.floor(uptime / 86400);
