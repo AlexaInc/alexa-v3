@@ -26,7 +26,7 @@ const TEMP_DIR = path.join(__dirname, 'temp');
 const { OpenAI } = require("openai");
 require('dotenv').config();
 const mysql = require("mysql2");
-const token = process.env["OPENROUTER_TOKEN"];
+
 const { mediafireDl } = require('./res/mediafire.js')
 
 const DB_HOST = process.env["DB_HOST"];
@@ -234,10 +234,6 @@ function generateRandomToken(length = 15,sender,pushName) {
     return token;
 }
 
-const client = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: token
-});
 const util = require('util');
 
 
@@ -339,6 +335,23 @@ if (conversations.length > 12) {
     function callAPIWithRetry(retries = 5) {
       return new Promise((resolve, reject) => {
         function attempt(remainingRetries) {
+
+          const tokensenv = [
+            "OPENROUTER_TOKEN1", "OPENROUTER_TOKEN2", "OPENROUTER_TOKEN3", 
+            "OPENROUTER_TOKEN4", "OPENROUTER_TOKEN5", "OPENROUTER_TOKEN6", 
+            "OPENROUTER_TOKEN7", "OPENROUTER_TOKEN8", "OPENROUTER_TOKEN9", 
+            "OPENROUTER_TOKEN10", "OPENROUTER_TOKEN11"
+          ];
+          const envIndex = Math.floor(Math.random() * tokensenv.length);
+          const randomToken = tokensenv[envIndex];
+          
+          // Accessing the environment variable value
+          const token = process.env[randomToken];
+          const client = new OpenAI({
+            baseURL: "https://openrouter.ai/api/v1",
+            apiKey: token
+          });
+
           client.chat.completions.create({
             messages: aipostmg ,
             model: process.env.CHAT_MODEL,
@@ -367,6 +380,7 @@ if (conversations.length > 12) {
             console.error("Error calling OpenRouter API:", apiErr);
             if (remainingRetries > 0) {
               console.log(`Retrying... (${remainingRetries} attempts left)`);
+
               setTimeout(() => attempt(remainingRetries - 1), 2000);
             } else {
               reject("Error calling OpenRouter API");
@@ -594,7 +608,7 @@ let menu = `╭━━━━━━━━━━━━━━━━━━━━━�
 ┃
 ┃🖥️ : ${cpuData}
 ┃💾 𝐑𝐚𝐦 : ${memUsed} GB of ${memTotal}
-┃💻 *𝚄𝚙 𝚃𝚒𝚖𝚎* ${uptimepc}
+┃💻 𝐔𝐩 𝐓𝐢𝐦𝐞 : ${uptimepc}
 ┃
 ┃  𝗛𝗲𝗹𝗹𝗼, *${msg.pushName}* ${getGreeting()} 🌙
 ┃
