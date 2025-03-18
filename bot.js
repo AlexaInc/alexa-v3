@@ -574,6 +574,16 @@ if (sender.endsWith('@g.us') || sender.endsWith('@broadcast')) {
 addXP(senderabfff);
 const isOwner = (process.env['Owner_nb'] + '@s.whatsapp.net') === senderabfff;
 
+
+function formatUptime(uptime) {
+  const seconds = uptime % 60;
+  const minutes = Math.floor(uptime / 60) % 60;
+  const hours = Math.floor(uptime / 3600) % 24;
+  const days = Math.floor(uptime / 86400);
+  return `${days} d, ${hours} h, ${minutes} m, ${seconds} s`;
+};
+
+const uptimepc = await formatUptime(si.uptime());
 const cpuData = await si.cpus()[0].model;
 const memTotal = Math.round(await si.totalmem()/1e+9) +' GB' ;
 const memUsed = Math.round(((await si.totalmem()- await si.freemem())/1e+9)*100)/100; 
@@ -584,6 +594,7 @@ let menu = `╭━━━━━━━━━━━━━━━━━━━━━�
 ┃
 ┃🖥️ : ${cpuData}
 ┃💾 𝐑𝐚𝐦 : ${memUsed} GB of ${memTotal}
+┃💻 *𝚄𝚙 𝚃𝚒𝚖𝚎* ${uptimepc}
 ┃
 ┃  𝗛𝗲𝗹𝗹𝗼, *${msg.pushName}* ${getGreeting()} 🌙
 ┃
