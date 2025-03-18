@@ -43,7 +43,7 @@ function startApp(scriptName, onExit) {
                 child.on('exit', () => {
         startApp('index.js', onExit);  // Restart index.js after the process ends
       });
-      }, 5000); // 10-second delay
+      }, 20000); // 10-second delay
     }
   }
 
