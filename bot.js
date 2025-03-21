@@ -100,7 +100,24 @@ function getLeaderboard(hangmanData) {
 
   return leaderboardText;
 }
-
+const getBuffer = async (url, options) => {
+    try {
+        options ? options : {}
+        const res = await axios({
+            method: "get",
+            url,
+            headers: {
+                'DNT': 1,
+                'Upgrade-Insecure-Request': 1
+            },
+            ...options,
+            responseType: 'arraybuffer'
+        })
+        return res.data
+    } catch (err) {
+        return err
+    }
+}
 
 function loadUsers() {
   try {
@@ -242,6 +259,7 @@ const util = require('util');
 const moment = require('moment-timezone');
 const { response } = require('express');
 const { ConsoleMessage } = require('puppeteer');
+const { url } = require('inspector');
 
 
 function getGreeting() {
@@ -563,6 +581,7 @@ async function handleMessage(AlexaInc, { messages, type }) {
       
     if (type === 'notify') {
       const msg = messages[0];
+      console.log(msg)
 const isGroup = msg.key.remoteJid.endsWith('@g.us');
 const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : ''
 const participants = isGroup ? await groupMetadata.participants : ''
@@ -1149,50 +1168,55 @@ async function handleDownload(url) {
 
 case 'anal': case 'ass': case 'boobs': case 'gonewild': case 'hanal': case 'hass': case 'hboobs': case 'hentai': case 'hkitsune': case 'hmidriff': case 'hneko': case 'hthigh': case 'neko': case 'paizuri': case 'pgif': case 'pussy': case 'tentacle': case 'thigh': case 'yaoi':
 {
-
   axios.get(`https://api.night-api.com/images/nsfw/${command}`, {
     headers: {
-        authorization: process.env.NIGHTAPI_AUTH
-    }
-})
-.then(function (response) {
+      authorization: process.env.NIGHTAPI_AUTH,
+    },
+  })
+  .then(async (response) => {
     const imageUrl = response.data.content.url;
-    const imagesavepath = `./temp/${response.data.content.id}`;
-    const writer = fs.createWriteStream(path.join(__dirname, imagesavepath));
+    //imageUrl = 'https://cdn.night-api.com/api/images/nsfw/hanal/93e6401d57012c85ca0074af97526.gif'; // For testing, you can set this as the image URL.
+    console.log(imageUrl);
+    const contentType = response.data.content.mimeType; // Get MIME type from the API response
 
-    axios({
-        url: imageUrl,
-        method: 'GET',
-        responseType: 'stream'
-    }).then((imageResponse) => {
-        imageResponse.data.pipe(writer);
-        writer.on('finish', () => {
+    const buffer = await getBuffer(imageUrl); // Get the buffer directly
 
-          AlexaInc.sendMessage(msg.key.remoteJid,    { 
-            image: {
-                url: imagesavepath
-            },
-            viewOnce: true,
-            caption: `🤤`
-        },{quoted:msg});
+    if (buffer) {
+      // Check if it's a GIF
+      if (imageUrl.toLowerCase().endsWith('.gif') || contentType.startsWith('image/gif')) {
+        // Send as document
+        const mediaMessage = {
+          document: buffer,
+          caption: '🤤',
+          mimetype: 'image/gif',  // Set MIME type as image/gif
+        };
 
-        fs.remove(imagesavepath)
-        .then(() => {
-            console.log('Image deleted successfully');
-        })
-        .catch(err => {
-            console.log('Error deleting the image:', err);
-        });
+        // Send the document (GIF)
+        await AlexaInc.sendMessage(msg.key.remoteJid, mediaMessage, { quoted: msg });
+      } else if (contentType.startsWith('image/')) {
+        // Send as image (JPG or PNG)
+        await AlexaInc.sendMessage(msg.key.remoteJid, { 
+          image: { 
+            buffer: buffer 
+          },
+          viewOnce: true,
+          caption: `🤤`
+        }, { quoted: msg });
+      } else {
+        AlexaInc.sendMessage(msg.key.remoteJid, { text: 'The file is not a supported image or video.' }, { quoted: msg });
+      }
+    } else {
+      AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Error downloading the file.' }, { quoted: msg });
+    }
+  })
+  .catch(function (error) {
+    console.log(error);
+    AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Can\'t send now, I will send later' }, { quoted: msg });
+  });
 
-        } );
-    }).catch(err => {console.log('Error downloading the image:', err)});
-})
-.catch(function (error) {
-    AlexaInc.sendMessage(msg.key.remoteJid,{text:'Cant send now i will send later'},{quoted:msg});
-}  );
-
-  break
+  break;
 }
+
 
 case 'coffee': case 'food': case 'holo': case 'kanna':
   {
@@ -1793,6 +1817,27 @@ updateTaskStatus(senderabfff, text, 'Pending').then((results) => {
 
 });
   break;
+}
+case 'tes':{
+  buffer = await getBuffer('https://photos.xgroovy.com/contents/albums/sources/708000/708916/790870.jpg')
+   AlexaInc.sendMessage(
+    msg.key.remoteJid,
+    {orderMessage: {
+      itemCount: 9999999,
+      status: 200,
+      thumbnail:buffer.data ,
+      surface: 200,
+      message: 'wcmsg',  // Use the welcome message
+      orderTitle: 'alexaaa',
+      sellerJid: '0@s.whatsapp.net'
+  }},
+    {
+        quoted:msg
+    }
+).then(console.log) ;
+
+
+  break
 }
 
 default :{
