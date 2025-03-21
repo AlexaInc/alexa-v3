@@ -581,7 +581,7 @@ async function handleMessage(AlexaInc, { messages, type }) {
       
     if (type === 'notify') {
       const msg = messages[0];
-      console.log(msg)
+      // console.log(msg)
 const isGroup = msg.key.remoteJid.endsWith('@g.us');
 const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : ''
 const participants = isGroup ? await groupMetadata.participants : ''
@@ -1185,9 +1185,9 @@ case 'anal': case 'ass': case 'boobs': case 'gonewild': case 'hanal': case 'hass
       if (imageUrl.toLowerCase().endsWith('.gif')) {
         // Send as GIF (as video)
         const mediaMessage = {
-          video: buffer,  // Send the buffer directly
+          document: buffer,  
           caption: 'Here is a GIF!',
-          gifPlayback: true, // Set gifPlayback to true for gifs
+          mimetype: 'image/gif', 
         };
 
         // Send the GIF (as video)
