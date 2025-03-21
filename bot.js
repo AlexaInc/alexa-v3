@@ -601,7 +601,7 @@ const uptimepc = await formatUptime(si.uptime());
 const cpuData = await si.cpus()[0].model;
 const memTotal = Math.round(await si.totalmem()/1e+9) +' GB' ;
 const memUsed = Math.round(((await si.totalmem()- await si.freemem())/1e+9)*100)/100; 
-const roleuser = (process.env['Owner_nb'] + '@s.whatsapp.net') === sender ? 'Owner' : 'User';
+const roleuser = (process.env['Owner_nb'] + '@s.whatsapp.net') === senderabfff ? 'Owner' : 'User';
 let menu = `╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
 ┃                        🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                          ┃
 ┃━━━━━━━━━━━━━━━━━━━━━━━━━━━━┃
