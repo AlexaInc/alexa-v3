@@ -1175,33 +1175,33 @@ case 'anal': case 'ass': case 'boobs': case 'gonewild': case 'hanal': case 'hass
   })
   .then(async (response) => {
     const imageUrl = response.data.content.url;
-    //imageUrl = 'https://cdn.night-api.com/api/images/nsfw/hanal/93e6401d57012c85ca0074af97526.gif'; // For testing, you can set this as the image URL.
     console.log(imageUrl);
     const contentType = response.data.content.mimeType; // Get MIME type from the API response
 
     const buffer = await getBuffer(imageUrl); // Get the buffer directly
 
     if (buffer) {
-      // Check if it's a GIF
-      if (imageUrl.toLowerCase().endsWith('.gif') || contentType.startsWith('image/gif')) {
-        // Send as document
+      // Check if it's a GIF by checking the file extension
+      if (imageUrl.toLowerCase().endsWith('.gif')) {
+        // Send as GIF (as video)
         const mediaMessage = {
-          document: buffer,
-          caption: '🤤',
-          mimetype: 'image/gif',  // Set MIME type as image/gif
+          video: buffer,  // Send the buffer directly
+          caption: 'Here is a GIF!',
+          gifPlayback: true, // Set gifPlayback to true for gifs
         };
 
-        // Send the document (GIF)
+        // Send the GIF (as video)
         await AlexaInc.sendMessage(msg.key.remoteJid, mediaMessage, { quoted: msg });
-      } else if (contentType.startsWith('image/')) {
+      } else if (imageUrl.toLowerCase().endsWith('.jpg') || imageUrl.toLowerCase().endsWith('.png')) {
         // Send as image (JPG or PNG)
-        await AlexaInc.sendMessage(msg.key.remoteJid, { 
-          image: { 
-            buffer: buffer 
-          },
+        const mediaMessage = {
+          image: buffer, // Send the buffer directly
           viewOnce: true,
-          caption: `🤤`
-        }, { quoted: msg });
+          caption: 'Here is an image!',
+        };
+
+        // Send the image
+        await AlexaInc.sendMessage(msg.key.remoteJid, mediaMessage, { quoted: msg });
       } else {
         AlexaInc.sendMessage(msg.key.remoteJid, { text: 'The file is not a supported image or video.' }, { quoted: msg });
       }
@@ -1216,6 +1216,7 @@ case 'anal': case 'ass': case 'boobs': case 'gonewild': case 'hanal': case 'hass
 
   break;
 }
+
 
 
 case 'coffee': case 'food': case 'holo': case 'kanna':
