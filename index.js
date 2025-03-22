@@ -321,7 +321,7 @@ if (connection === 'open') {
 
                 if (isNewLogin) {
             console.log("🔄 Restarting connection after QR scan...");
-            setTimeout(startWhatsAppConnection, 20000); // Restart after 2 sec
+            setTimeout(startWhatsAppConnection, 5000); // Restart after 2 sec
         } else                 if (connection === 'close') {
             const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
  console.log(reason);
