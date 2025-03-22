@@ -1819,27 +1819,7 @@ updateTaskStatus(senderabfff, text, 'Pending').then((results) => {
 });
   break;
 }
-case 'tes':{
-  buffer = await getBuffer('https://photos.xgroovy.com/contents/albums/sources/708000/708916/790870.jpg')
-   AlexaInc.sendMessage(
-    msg.key.remoteJid,
-    {orderMessage: {
-      itemCount: 9999999,
-      status: 200,
-      thumbnail:buffer.data ,
-      surface: 200,
-      message: 'wcmsg',  // Use the welcome message
-      orderTitle: 'alexaaa',
-      sellerJid: '0@s.whatsapp.net'
-  }},
-    {
-        quoted:msg
-    }
-).then(console.log) ;
 
-
-  break
-}
 
 default :{
   const rep = `
@@ -1857,8 +1837,33 @@ default :{
 
 }else {
 
+
+  let mesafesfb;
+    
+
+  if (!msg.message?.imageMessage) {
+    mesafesfb = messageText;
+  }else{
+      // Download the image as a buffer
+  const buffer = await downloadMediaMessage(msg, "buffer", {}, {});
+
+  // Convert buffer to Base64
+  const base64Image = buffer.toString("base64");
+  mesafesfb =     [        { type: "text", text: messageText },
+  {
+    type: "image_url",
+    image_url: `data:image/jpeg;base64,${base64Image}`,
+  }]
+  }
+
+
+
+
+
+
+
 /*****************   ai function for  language process  *****************/
-ai(msg.pushName , messageText, sender, async (err, reply) => {
+ai(msg.pushName , mesafesfb, sender, async (err, reply) => {
   AlexaInc.sendMessage(msg.key.remoteJid,{react: {text: '🔄', key: msg.key}});
   if (err) {
     console.error("Error:", err);
