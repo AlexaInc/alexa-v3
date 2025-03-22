@@ -34,7 +34,6 @@ function startApp(scriptName, onExit) {
         startApp('index.js', onExit);  // Restart index.js after the process ends
       });
     } else {
-      console.log(`Detected status code 515. Not restarting index.js.`);
       console.log(`Detected status code 515. Restarting index.js in 10 seconds...`);
 
       setTimeout(() => {
@@ -43,7 +42,7 @@ function startApp(scriptName, onExit) {
                 child.on('exit', () => {
         startApp('index.js', onExit);  // Restart index.js after the process ends
       });
-      }, 20000); // 10-second delay
+      }, 45000); // 10-second delay
     }
   }
 
