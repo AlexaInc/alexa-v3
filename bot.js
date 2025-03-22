@@ -333,13 +333,13 @@ let systemHeader = [                    {
 
 
     //conversations.push(systemHeader);
-     conversations.push({ role: "user", content: message });
+     conversations.push({role:"developer", content:"The above is some history of past conversations, they may help you in some situations."},{ role: "user", content: message });
 
 // If the length of the conversations array is greater than 16, slice to the last 15
 let conversations123;
 
-if (conversations.length > 12) {
-  conversations123 = conversations.slice(conversations.length - 11); // Keep only the last 14 messages from history
+if (conversations.length > 13) {
+  conversations123 = conversations.slice(conversations.length - 12); // Keep only the last 14 messages from history
 } else {
   conversations123 = [...conversations]; // Use all conversations if length is <= 16
 }
