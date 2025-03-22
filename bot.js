@@ -333,7 +333,7 @@ let systemHeader = [                    {
 
 
     //conversations.push(systemHeader);
-     conversations.push({role:"developer", content:"The above is some history of past conversations, they may help you in some situations."},{ role: "user", content: message });
+     conversations.push({role:"developer", content:"The above messeges are some history of past conversations."},{ role: "user", content: message });
 
 // If the length of the conversations array is greater than 16, slice to the last 15
 let conversations123;
