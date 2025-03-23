@@ -362,6 +362,9 @@ if (conversations.length > 13) {
             "OPENROUTER_TOKEN13","OPENROUTER_TOKEN14","OPENROUTER_TOKEN15",
             "OPENROUTER_TOKEN16","OPENROUTER_TOKEN17","OPENROUTER_TOKEN18",
             "OPENROUTER_TOKEN19","OPENROUTER_TOKEN20","OPENROUTER_TOKEN21",
+            "OPENROUTER_TOKEN22","OPENROUTER_TOKEN23","OPENROUTER_TOKEN24",
+            "OPENROUTER_TOKEN25","OPENROUTER_TOKEN26","OPENROUTER_TOKEN27",
+            "OPENROUTER_TOKEN28","OPENROUTER_TOKEN29",
           ];
           const envIndex = Math.floor(Math.random() * tokensenv.length);
           const randomToken = tokensenv[envIndex];
