@@ -333,7 +333,7 @@ let systemHeader = [                    {
 
 
     //conversations.push(systemHeader);
-     conversations.push({role:"developer", content:"The above messeges are some history of past conversations."},{ role: "user", content: message });
+     conversations.push({role:"developer", content:"The above is some history of past conversations, they may help you in some situations."},{ role: "user", content: message });
 
 // If the length of the conversations array is greater than 16, slice to the last 15
 let conversations123;
@@ -358,7 +358,10 @@ if (conversations.length > 13) {
             "OPENROUTER_TOKEN1", "OPENROUTER_TOKEN2", "OPENROUTER_TOKEN3", 
             "OPENROUTER_TOKEN4", "OPENROUTER_TOKEN5", "OPENROUTER_TOKEN6", 
             "OPENROUTER_TOKEN7", "OPENROUTER_TOKEN8", "OPENROUTER_TOKEN9", 
-            "OPENROUTER_TOKEN10", "OPENROUTER_TOKEN11"
+            "OPENROUTER_TOKEN10", "OPENROUTER_TOKEN11","OPENROUTER_TOKEN12",
+            "OPENROUTER_TOKEN13","OPENROUTER_TOKEN14","OPENROUTER_TOKEN15",
+            "OPENROUTER_TOKEN16","OPENROUTER_TOKEN17","OPENROUTER_TOKEN18",
+            "OPENROUTER_TOKEN19","OPENROUTER_TOKEN20","OPENROUTER_TOKEN21",
           ];
           const envIndex = Math.floor(Math.random() * tokensenv.length);
           const randomToken = tokensenv[envIndex];
@@ -1819,6 +1822,7 @@ updateTaskStatus(senderabfff, text, 'Pending').then((results) => {
 });
   break;
 }
+
 
 
 default :{
