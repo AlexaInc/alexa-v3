@@ -333,7 +333,7 @@ let systemHeader = [                    {
 
 
     //conversations.push(systemHeader);
-     conversations.push({role:"developer", content:"The above is some history of past conversations, they may help you in some situations."},{ role: "user", content: message });
+     conversations.push({role:"developer", content:"The above is some history of past conversations, they may help you in some situations. don't always talk about images if user didn't ask about about images from last message you must it please. its bib bug for my app"},{ role: "user", content: message });
 
 // If the length of the conversations array is greater than 16, slice to the last 15
 let conversations123;
@@ -354,23 +354,27 @@ if (conversations.length > 13) {
       return new Promise((resolve, reject) => {
         function attempt(remainingRetries) {
 
-          const tokensenv = [
-            "OPENROUTER_TOKEN1", "OPENROUTER_TOKEN2", "OPENROUTER_TOKEN3", 
-            "OPENROUTER_TOKEN4", "OPENROUTER_TOKEN5", "OPENROUTER_TOKEN6", 
-            "OPENROUTER_TOKEN7", "OPENROUTER_TOKEN8", "OPENROUTER_TOKEN9", 
-            "OPENROUTER_TOKEN10", "OPENROUTER_TOKEN11","OPENROUTER_TOKEN12",
-            "OPENROUTER_TOKEN13","OPENROUTER_TOKEN14","OPENROUTER_TOKEN15",
-            "OPENROUTER_TOKEN16","OPENROUTER_TOKEN17","OPENROUTER_TOKEN18",
-            "OPENROUTER_TOKEN19","OPENROUTER_TOKEN20","OPENROUTER_TOKEN21",
-            "OPENROUTER_TOKEN22","OPENROUTER_TOKEN23","OPENROUTER_TOKEN24",
-            "OPENROUTER_TOKEN25","OPENROUTER_TOKEN26","OPENROUTER_TOKEN27",
-            "OPENROUTER_TOKEN28","OPENROUTER_TOKEN29",
-          ];
-          const envIndex = Math.floor(Math.random() * tokensenv.length);
-          const randomToken = tokensenv[envIndex];
-          
-          // Accessing the environment variable value
-          const token = process.env[randomToken];
+// Find all environment variables that start with "OPENROUTER_TOKEN"
+const tokensenv = Object.keys(process.env)
+  .filter(key => key.startsWith("OPENROUTER_TOKEN")) // Get all matching keys
+  .sort((a, b) => { // Sort numerically (TOKEN1, TOKEN2, ...)
+    return parseInt(a.replace("OPENROUTER_TOKEN", ""), 10) - parseInt(b.replace("OPENROUTER_TOKEN", ""), 10);
+  });
+
+if (tokensenv.length === 0) {
+  console.error("❌ No OpenRouter API tokens found in environment variables!");
+  process.exit(1);
+}
+
+// Select a random token
+const envIndex = Math.floor(Math.random() * tokensenv.length);
+const randomToken = tokensenv[envIndex];
+
+// Get the token value
+const token = process.env[randomToken];
+
+console.log(`🔑 Using API Key: ${envIndex}`,);
+
           const client = new OpenAI({
             baseURL: "https://openrouter.ai/api/v1",
             apiKey: token
