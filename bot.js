@@ -385,7 +385,6 @@ console.log(`🔑 Using API Key: ${envIndex}`,);
             model: process.env.CHAT_MODEL,
             user: thread_id,
             temperature: 1.0,
-            max_tokens: 1500, // Reduced max tokens to avoid overloading
             top_p: 1
           }).then(response => {
             if (!response || !response.choices || response.choices.length === 0) {
@@ -397,7 +396,7 @@ console.log(`🔑 Using API Key: ${envIndex}`,);
                 reject("Invalid or empty response from OpenRouter");
               }
             } else {
-              console.log(response.choices[0].message)
+              //console.log(response.choices[0].message)
               const filteredResponse = {
                 role: response.choices[0].message.role,
                 content: response.choices[0].message.content
@@ -1884,7 +1883,7 @@ ai(msg.pushName , mesafesfb, sender, async (err, reply) => {
 
         const bargs = reply.trim().split(/ +/).slice(1);
         const btext  = bargs.join(" ");
-        console.log('bot say ' , btext)
+        //console.log('bot say ' , btext)
 
     switch(prosseseb){
 
