@@ -384,6 +384,7 @@ console.log(`🔑 Using API Key: ${envIndex}`,);
             messages: aipostmg ,
             model: process.env.CHAT_MODEL,
             user: thread_id,
+            max_tokens: 2250,
             temperature: 1.0,
             top_p: 1
           }).then(response => {
