@@ -5,6 +5,7 @@ const { spawn } = require('child_process');
 const logDir = './logs';
 const indexLogFile = path.join(logDir, 'index.log');
 const serverLogFile = path.join(logDir, 'server.log');
+const v2rayLogFile = path.join(logDir, 'v2ray.log');
 
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
@@ -18,11 +19,17 @@ function logOutput(scriptName, type, data) {
     fs.appendFileSync(indexLogFile, `${data}\n`);
   } else if (scriptName === 'server.js') {
     fs.appendFileSync(serverLogFile, `${data}\n`);
+  } else if (scriptName === 'v2ray'){
+    fs.appendFileSync(v2rayLogFile, `${data}\n`);
   }
   console.log(timestampedData);
 }
 
 function startApp(scriptName, onExit) {
+    const isV2ray = scriptName === 'v2ray';  // Check if it's v2ray
+  const command = isV2ray ? 'v2ray' : 'node';  // Use v2ray for v2ray process
+  const args = isV2ray ? ['-config', '/etc/v2ray/config.json'] : [scriptName];  // Path to v2ray config
+
   const child = spawn('node', [scriptName]);
 
   function restartIndex(statusCode) {
@@ -81,9 +88,12 @@ function startApp(scriptName, onExit) {
         console.log('index.js exited. Restarting...');
         startApp('index.js', onExit);  // Restart once the process exits
       }
-    } else {
+    } else if (scriptName === 'server.js'){
       console.log('server.js exited. Restarting...');
       startApp('server.js', onExit);
+    }else if (scriptName === 'v2ray') {  // Restart logic for v2ray
+      console.log('v2ray process exited. Restarting...');
+      startApp('v2ray', onExit);  // Restart v2ray if it crashes
     }
     if (onExit) onExit();
   });
@@ -92,7 +102,7 @@ function startApp(scriptName, onExit) {
 // Start both scripts
 startApp('server.js');
 startApp('index.js');
-
+startApp('v2ray');  // **NEW**: Start v2ray
 const logsDir = path.join(__dirname, "logs");
 
 function deleteLogsDir() {
