@@ -13,7 +13,7 @@
         "@cacheable/node-cache": "^1.5.2",
         "@huggingface/inference": "^3.5.1",
         "@ookla/speedtest-js-sdk": "^1.1.1",
-        "@whiskeysockets/baileys": "^6.7.13",
+        "@whiskeysockets/baileys": "^6.7.18",
         "ascii-art": "^2.8.5",
         "axios": "^1.7.9",
         "baileys": "^6.7.13",
