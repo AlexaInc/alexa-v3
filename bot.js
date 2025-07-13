@@ -1722,7 +1722,6 @@ case 'antinsfw': {
 case 'hidetag':{
   if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
   if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
-  if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin' });
   AlexaInc.sendMessage(msg.key.remoteJid, { text : text ? text : '' , mentions: participants.map(a => a.id)}, { quoted: msg })
   AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key });
   break
