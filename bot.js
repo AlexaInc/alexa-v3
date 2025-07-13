@@ -599,7 +599,7 @@ const groupAdmins = isGroup ? await participants.filter(v => v.admin !== null).m
 const groupOwner = isGroup ? groupMetadata.owner : ''
 //console.log(botNumber)
 const isBotAdmins = isGroup ? groupAdmins.includes(`${botNumber}@s.whatsapp.net`) : false
-const isAdmins = isGroup ? groupAdmins.includes(msg.key.participant) : false
+const isAdmins = isGroup ? groupAdmins.includes(msg.participant) : false
 
 
 
