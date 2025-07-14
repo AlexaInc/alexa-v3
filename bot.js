@@ -260,6 +260,7 @@ const moment = require('moment-timezone');
 const { response } = require('express');
 const { ConsoleMessage } = require('puppeteer');
 const { url } = require('inspector');
+const { json } = require('stream/consumers');
 
 
 function getGreeting() {
@@ -745,8 +746,9 @@ let menu = `╭━━━━━━━━━━━━━━━━━━━━━�
 
 
 
-         // console.log(msg);
 
+//
+// console.log(JSON.stringify(msg, null, 2))
 
 
         if (!msg.key.fromMe) {
@@ -759,6 +761,8 @@ messageText = msg.message?.conversation ||
               msg.message?.extendedTextMessage?.text ||
               // Check for media message captions (image, video, document)
               msg.message?.imageMessage?.caption ||
+              JSON.parse(msg.message?.interactiveResponseMessage?.nativeFlowResponseMessage.paramsJson).id ||
+              msg.message?.buttonsResponseMessage?.selectedButtonId ||
               msg.message?.videoMessage?.caption ||
               msg.message?.documentMessage?.caption ||
               // Handle cases where there are no captions (sticker, audio, etc.)
@@ -1089,33 +1093,64 @@ async function searchYouTubeMusic(query) {
     const results = await yts(query);  // Search YouTube for the query
     const videos = results.videos;
 
-    AlexaInc.sendMessage(msg.key.remoteJid, {text:`Found ${videos.length} results for "${query}" Here is some results:\n`},{quoted:msg})
+    //AlexaInc.sendMessage(msg.key.remoteJid, {text:`Found ${videos.length} results for "${query}" Here is some results:\n`},{quoted:msg})
 //AlexaInc.sendMessage(msg.key.remoteJid,{text:videoresult},{quoted:msg})
 
     let preparemsttt = " ";
     //console.log(`Found ${videos.length} results for "${query}":\n`);
     AlexaInc.sendMessage(msg.key.remoteJid,{react: {text: '✅', key: msg.key}})
     // Display the top 5 results
-    videos.slice(0, 4).forEach((video,index) => {
-const line = '_'.repeat(54)
-const videoresult = `${index+1}. Title: ${video.title}
-   URL: ${video.url}
-   Duration: ${video.timestamp}
-${line}\n\n
+const interactiveButtons = [
+  {
+    name: "single_select",
+    buttonParamsJson: JSON.stringify({
+      title: "Select a video to download",
+      sections: [
+        {
+          title: "Top 4 Videos",
+          highlight_label: "Select",
+          rows: videos.slice(0, 4).map((video, index) => ({
+            header: video.title,
+            title: `${index + 1}`,
+            description: "",
+            id: `.ytdl ${video.url}`
+          }))
+        }
+      ]
+    })
+  }
+];
+
+const interactiveMessage = {
+  text: `Found ${videos.length}  results for ${query} Choose a video to download as audio:`,
+  title: `Hello ${msg.pushName}`,
+  footer: "Powered by HANSAKA",
+  interactiveButtons
+};
 
 
-`
-preparemsttt += videoresult
+await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg })
+
+//     videos.slice(0, 4).forEach((video,index) => {
+// const line = '_'.repeat(54)
+// const videoresult = `${index+1}. Title: ${video.title}
+//    URL: ${video.url}
+//    Duration: ${video.timestamp}
+// ${line}\n\n
 
 
-    });
+// `
+// preparemsttt += videoresult
 
-    AlexaInc.sendMessage(msg.key.remoteJid,{text:`${preparemsttt}\n
-    if you seach about song\nyou can download it
-.ytdl link/of/song
-command like this 
-you can coppy link from above
-Hansaka@AlexxaInc © All Right Reserved`},{quoted:msg})
+
+//     });
+
+//     AlexaInc.sendMessage(msg.key.remoteJid,{text:`${preparemsttt}\n
+//     if you seach about song\nyou can download it
+// .ytdl link/of/song
+// command like this 
+// you can coppy link from above
+// Hansaka@AlexxaInc © All Right Reserved`},{quoted:msg})
   } catch (error) {
     return('Error searching YouTube :', error);
   }
@@ -1154,7 +1189,7 @@ async function handleDownload(url) {
 
         if (result[0].downloaded) {
             const { caption, videoPath } = result[0];
-            
+            //console.log(caption)
             // Ensure the file path is correct
             const videoFilePath = `./temp/${videoId}.mp3`;
 
@@ -1171,7 +1206,8 @@ async function handleDownload(url) {
             // Prepare the media object using bailey's API format
             const mediaMessage = {
                 document: {url:`./temp/${videoId}.mp3`},
-                caption: `${caption}\nRes:${text}\n\nThis is just a audio file\n\n~~~Hansaka@AlexxaInc © Reserved~~~`,
+                fileName:`${caption.Title}.mp3`,
+                caption: `\nRes:${text}\n\n\n\n~~~Hansaka@AlexxaInc © Reserved~~~`,
                 mimetype:'audio/mpeg'
                 //gifPlayback: false
             };
