@@ -598,7 +598,7 @@ const participants = isGroup ? await groupMetadata.participants : ''
 const groupAdmins = isGroup ? await participants.filter(v => v.admin !== null).map(v => v.id) : ''
 const groupOwner = isGroup ? groupMetadata.owner : ''
 //console.log(botNumber)
-const isBotAdmins = isGroup ? groupAdmins.includes(`${botNumber}@s.whatsapp.net`) : false
+const isBotAdmins = isGroup ? groupAdmins.includes(`279967795560628@lid`) : false
 const isAdmins = isGroup ? groupAdmins.includes(msg.participant) : false
 
 
@@ -611,11 +611,14 @@ let senderabfff = msg.key.remoteJid;
 const senderdef = msg.key.remoteJid;
 // Check if the message is from a group or a broadcast list
 if (sender.endsWith('@g.us') || sender.endsWith('@broadcast')) {
-    senderabfff = msg.key.participant;
-    sender = `${msg.key.participant}@${senderdef}`; // Assign participant ID instead
+    senderabfff = msg.participant;
+    sender = `${msg.participant}@${senderdef}`; // Assign participant ID instead
 }
 addXP(senderabfff);
-const isOwner = (process.env['Owner_nb'] + '@s.whatsapp.net') === senderabfff;
+const isOwner = (
+  senderabfff === (process.env['Owner_nb'] + '@s.whatsapp.net') ||
+  senderabfff === '194300461756480@lid'
+);
 
 
 function formatUptime(uptime) {
@@ -1722,10 +1725,17 @@ case 'antinsfw': {
 case 'hidetag':{
   if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
   if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
+  if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin' });
   AlexaInc.sendMessage(msg.key.remoteJid, { text : text ? text : '' , mentions: participants.map(a => a.id)}, { quoted: msg })
   AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key });
   break
 }
+
+case 'ca':{
+console.log (participants)
+console.log (groupAdmins)
+console.log(msg)
+} break
 
 case 'join':{
 
