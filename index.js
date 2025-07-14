@@ -200,6 +200,8 @@ const CustomBrowsersMap = {
     
             // If action is 'add' (someone joined the group)
             if (anu.action == 'add') {
+                console.log(anu)
+                console.log(num)
                 const query = `
                     SELECT * FROM \`groups\` WHERE group_id = ? AND is_welcome = TRUE
                 `;
@@ -213,7 +215,7 @@ const CustomBrowsersMap = {
                     
                     let wcmsg;
                     let isWelcome = false;
-    
+                    
                     // Check if result is found and set wcmsg
                     if (result.length > 0) {
                         wcmsg = result[0].wc_m + '\n' + groupMetadata.desc;  // Set welcome message from DB
@@ -237,18 +239,18 @@ const CustomBrowsersMap = {
                         const fglink = {
                             key: {
                                 fromMe: false,
-                                "participant": "0@s.whatsapp.net",
+                                "participant": num,
                                 "remoteJid": anu.id
                             },
                             message: {
                                 orderMessage: {
-                                    itemCount: 9999999,
+                                    itemCount: 1,
                                     status: 200,
                                     thumbnail: buffer.data,
                                     surface: 200,
                                     message: wcmsg,  // Use the welcome message
                                     orderTitle: 'alexaaa',
-                                    sellerJid: '0@s.whatsapp.net'
+                                    sellerJid: num,
                                 }
                             },
                             contextInfo: {
@@ -259,8 +261,8 @@ const CustomBrowsersMap = {
                         };
     
                         // Send the image message with the welcome message
-                        he = `Welcome to ${groupMetadata.subject} @${num.split("@")[0]}\n\n ${wcmsg}`
-                        await AlexaInc.sendMessage(anu.id, { image: {url:'./res/img/alexa.jpeg'}, caption:he }, { quoted: fglink });
+                        he = `Welcome to ${groupMetadata.subject} \n\n ${wcmsg}`
+                        await AlexaInc.sendMessage(anu.id, { image: buffer, caption:he }, { quoted: fglink });
                     }
                 });
             }
