@@ -789,7 +789,7 @@ messageText = msg.message?.conversation ||
 
 const nsfwWords = [
   // Pornography-related terms
-  'porn', 'porno', 'pornhub', 'xvideos','sex', 'xnxx', 'xhamster', 'redtube', 'camgirl', 'camwhore',
+  'porn', 'porno', 'pornhub', 'xvideos', 'xnxx', 'xhamster', 'redtube', 'camgirl', 'camwhore',
   'onlyfans', 'nudes', 'sex tape', 'sex video', 'amateur porn', 'hardcore', 'softcore', 'hentai',
   'ecchi', 'doujin', 'nsfw', 'lewd',
 
@@ -898,9 +898,9 @@ if (await checkAntiLink(msg, messageText)) {
   if (isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are an admin. Lucky You' });
   if (isOwner) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are the Owner. Lucky You' });
   AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 Links are not allowed in this group!' });
-  //AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
+  AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
   AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key }).then(response=>{
-    //AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
+    AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
   });
   return;
 }
@@ -1686,7 +1686,7 @@ case 'welcomeoff': {
   break;
 }
 
-case 'antilink': {
+case 'chatbot': {
   if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
   if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
   if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin' });
