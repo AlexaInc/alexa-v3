@@ -683,7 +683,8 @@ let menu = `╭━━━━━━━━━━━━━━━━━━━━━�
 ┃ ➥ \`.antilink\` - .antilink on/off  
 ┃ ➥ \`.hidetag\` - .hidetag msg 
 ┃        this will mention all member of group    
-┃ ➥ \`.antinsfw\` - Similer to antilink  
+┃ ➥ \`.antinsfw\` - Similer to antilink     
+┃ ➥ \`.chatbot\` - Similer to antilink  
 ┃ ➥ \`.welcomeon\` - to turn on wc msg 
 ┃ ➥ \`.welcomeoff\` - to turn off wc msg
 ┃
@@ -1664,6 +1665,36 @@ case 'welcomeoff': {
 
   break;
 }
+
+case 'antilink': {
+  if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
+  if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
+  if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin' });
+  if (!args[0] || (args[0] !== 'on' && args[0] !== 'off')) 
+      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please send .antilink on/off' });
+
+  const value1 = args[0] === 'on';
+  
+  // Corrected SQL query
+  const query = `
+    INSERT INTO \`groups\` (group_id, chatbot)
+    VALUES (?, ?)
+    ON DUPLICATE KEY UPDATE chatbot = ?;
+  `;
+
+  // Run the query using MySQL2
+  db.query(query, [msg.key.remoteJid, value1, value1], (err, result) => {
+    if (err) {
+      console.error('Error updating chatbot:', err);
+      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to ' + args[0] + ' chatbot' });
+    }
+
+    AlexaInc.sendMessage(msg.key.remoteJid, { text: 'chatbot ' + args[0] + ' successfully!' });
+  });
+
+  break;
+}
+
 case 'antilink': {
   if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
   if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
