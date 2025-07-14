@@ -200,8 +200,6 @@ const CustomBrowsersMap = {
     
             // If action is 'add' (someone joined the group)
             if (anu.action == 'add') {
-                console.log(anu)
-                console.log(num)
                 const query = `
                     SELECT * FROM \`groups\` WHERE group_id = ? AND is_welcome = TRUE
                 `;
@@ -261,7 +259,7 @@ const CustomBrowsersMap = {
                         };
     
                         // Send the image message with the welcome message
-                        he = `Welcome to ${groupMetadata.subject} \n\n ${wcmsg}`
+                        he = `Welcome to ${groupMetadata.subject} @${num.split("@")[0]}\n\n ${wcmsg}`
                         await AlexaInc.sendMessage(anu.id, { image: buffer, caption:he }, { quoted: fglink });
                     }
                 });
