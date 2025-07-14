@@ -30,7 +30,7 @@ async function downloadVideo(vidid) {
 
         // Create the caption string for the response
         const playTime = formatDuration(duration); // Format duration into "MM:SS"
-        const caption = `\nTitle: ${title}\nPlaytime: ${playTime}`;
+        const caption = {Title: `${title}`,Playtime: `${playTime}`};
 
         // Add the result to the result array
         resultArr.push({
