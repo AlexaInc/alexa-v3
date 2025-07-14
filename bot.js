@@ -620,7 +620,7 @@ const groupAdmins = isGroup ? await participants.filter(v => v.admin !== null).m
 const groupOwner = isGroup ? groupMetadata.owner : ''
 //console.log(botNumber)
 const ottffsse = msg.participant || msg.key.participant 
-const isBotAdmins = isGroup ? groupAdmins.includes(process.env['Owner_nb'] + '@s.whatsapp.net') : false
+const isBotAdmins = isGroup ? groupAdmins.includes(`279967795560628@lid`) : false
 const isAdmins = isGroup ? groupAdmins.includes(senderabfff) : false
 
 function formatUptime(uptime) {
@@ -747,7 +747,8 @@ let menu = `╭━━━━━━━━━━━━━━━━━━━━━�
 
 
 
-//console.log(msg)
+//
+ console.log(msg)
 
 
         if (!msg.key.fromMe) {
