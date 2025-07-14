@@ -788,15 +788,35 @@ messageText = msg.message?.conversation ||
 //// antilink and antinsfw
 
 const nsfwWords = [
-  'porn', 'sex', 'fuck', 'shit', 'ass', 'bitch', 'bastard', 'whore', 'slut',
-  'dick', 'pussy', 'cum', 'fag', 'queer', 'nude', 'nudity', 'sexy', 'masturbate',
-  'tits', 'boobs', 'orgy', 'rape', 'incest', 'bestiality', 'hooker', 'prostitute',
-  'suck', 'blowjob', 'cocksucker', 'dildo', 'vibrator', 'fuckface', 'cock',
-  'clit', 'banging', 'bang', 'bukkake', 'fisting', 'cunnilingus', 'buttplug',
-  'sexually', 'masturbation', 'streaking', 'orgasm', 'sexist', 'dominatrix',
-  'kinky', 'fetish', 'hardcore', 'slutty', 'horny', 'blowjob', 'cuckold', 'pissing',
-  'perversion', 'hardcore', 'strapon', 'twerking', 'gangbang', 'bimbo'
+  // Pornography-related terms
+  'porn', 'porno', 'pornhub', 'xvideos', 'xnxx', 'xhamster', 'redtube', 'camgirl', 'camwhore',
+  'onlyfans', 'nudes', 'sex tape', 'sex video', 'amateur porn', 'hardcore', 'softcore', 'hentai',
+  'ecchi', 'doujin', 'nsfw', 'lewd',
+
+  // Explicit sexual acts
+  'masturbate', 'masturbation', 'blowjob', 'handjob', 'deepthroat', 'anal', 'rimjob',
+  'fisting', 'cunnilingus', 'fellatio', 'creampie', 'bukkake', 'gangbang', 'threesome', 'orgy',
+  '69', 'suck', 'spitroast', 'double penetration', 'dp', 'pegging', 'strapon', 'cumshot',
+
+  // Explicit body parts (sexual use)
+  'pussy', 'dick', 'cock', 'penis', 'vagina', 'clit', 'boobs', 'tits', 'nipples',
+  'asshole', 'buttplug', 'anus', 'balls', 'scrotum',
+
+  // Objects and fetishes
+  'dildo', 'vibrator', 'sex toy', 'sex toys', 'anal beads', 'fleshlight', 'kink', 'fetish',
+
+  // Degrading terms & slurs used in porn
+  'slut', 'whore', 'hooker', 'prostitute', 'bimbo', 'cumdump', 'cumslut', 'fucktoy', 'cocksucker',
+
+  // Illegal or dark content
+  'rape', 'incest', 'molest', 'child porn', 'cp', 'loli', 'shota', 'pedo', 'pedophile',
+  'bestiality', 'zoophilia', 'necrophilia', 'snuff', 'goreporn', 'underage porn',
+
+  // Kinks & extreme content
+  'watersports', 'pissing', 'golden shower', 'scat', 'shitplay', 'vomit fetish', 'choking',
+  'bondage', 'bdsm', 'dominatrix', 'submissive', 'slave play', 'femdom', 'cuckold'
 ];
+
 
 
 async function checkBadWord(msg, messageText) {
