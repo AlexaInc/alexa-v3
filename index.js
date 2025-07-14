@@ -188,14 +188,14 @@ const CustomBrowsersMap = {
             try {
                 ppuser = await AlexaInc.profilePictureUrl(num, 'image');
             } catch {
-                ppuser = 'https://raw.githubusercontent.com/hansaka02/alexa-v3/refs/heads/main/res/img/alexa.jpeg'; // Fallback if no profile picture
+                ppuser = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; // Fallback if no profile picture
             }
     
             // Fetch group profile picture
             try {
                 ppgroup = await AlexaInc.profilePictureUrl(anu.id, 'image');
             } catch {
-                ppgroup = 'https://raw.githubusercontent.com/hansaka02/alexa-v3/refs/heads/main/res/img/alexa.jpeg'; // Fallback if no group picture
+                ppgroup = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; // Fallback if no group picture
             }
     
             // If action is 'add' (someone joined the group)
