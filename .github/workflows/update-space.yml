@@ -1,0 +1,24 @@
+name: Push Cookies to Hugging Face
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # every day at 3 AM UTC
+  workflow_dispatch:
+
+jobs:
+  push-to-spaces:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git config --global user.email "rasanjanahansaka8@gmail.com"
+          git config --global user.name "hansaka02"
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git remote add hf https://username:${HF_TOKEN}@huggingface.co/spaces/username/your-space-name
+          git push hf main --force
