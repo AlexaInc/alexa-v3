@@ -1,9 +1,54 @@
 {
     "users": {
         "94740970377@s.whatsapp.net": {
-            "level": 77,
-            "xp": 362199438978974564894654876548,
-            "xp_needed": 102756082
+            "level": 340,
+            "xp": 1.9080064418800636e+28,
+            "xp_needed": 6.862387491203476e+28
+        },
+        "94705327164@s.whatsapp.net": {
+            "level": 3,
+            "xp": 45,
+            "xp_needed": 144
+        },
+        "194300461756480@lid": {
+            "level": 4,
+            "xp": 1,
+            "xp_needed": 172
+        },
+        "null": {
+            "level": 2,
+            "xp": 35,
+            "xp_needed": 120
+        },
+        "undefined": {
+            "level": 5,
+            "xp": 19,
+            "xp_needed": 206
+        },
+        "279967795560628@lid": {
+            "level": 1,
+            "xp": 10,
+            "xp_needed": 100
+        },
+        "94771058234@s.whatsapp.net": {
+            "level": 2,
+            "xp": 45,
+            "xp_needed": 120
+        },
+        "162711111520497@lid": {
+            "level": 1,
+            "xp": 50,
+            "xp_needed": 100
+        },
+        "132891002597565@lid": {
+            "level": 2,
+            "xp": 10,
+            "xp_needed": 120
+        },
+        "94763545014@s.whatsapp.net": {
+            "level": 1,
+            "xp": 15,
+            "xp_needed": 100
         }
     }
 }
