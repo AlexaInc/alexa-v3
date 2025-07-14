@@ -593,15 +593,7 @@ async function handleMessage(AlexaInc, { messages, type }) {
     if (type === 'notify') {
       const msg = messages[0];
       // console.log(msg)
-const isGroup = msg.key.remoteJid.endsWith('@g.us');
-const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : ''
-const participants = isGroup ? await groupMetadata.participants : ''
-const groupAdmins = isGroup ? await participants.filter(v => v.admin !== null).map(v => v.id) : ''
-const groupOwner = isGroup ? groupMetadata.owner : ''
-//console.log(botNumber)
-const ottffsse = msg.participant || msg.key.participant 
-const isBotAdmins = isGroup ? groupAdmins.includes(`279967795560628@lid`) : false
-const isAdmins = isGroup ? groupAdmins.includes(ottffsse) : false
+
 
 
 
@@ -613,15 +605,23 @@ let senderabfff = msg.key.remoteJid;
 const senderdef = msg.key.remoteJid;
 // Check if the message is from a group or a broadcast list
 if (sender.endsWith('@g.us') || sender.endsWith('@broadcast')) {
-    senderabfff = msg.participant;
-    sender = `${msg.participant}@${senderdef}`; // Assign participant ID instead
+    senderabfff = msg.participant || msg.key.participant;
+    sender = `${msg.participant || msg.key.participant}@${senderdef}`; // Assign participant ID instead
 }
 addXP(senderabfff);
 const isOwner = (
   senderabfff === (process.env['Owner_nb'] + '@s.whatsapp.net') ||
   senderabfff === '194300461756480@lid'
 );
-
+const isGroup = msg.key.remoteJid.endsWith('@g.us');
+const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : ''
+const participants = isGroup ? await groupMetadata.participants : ''
+const groupAdmins = isGroup ? await participants.filter(v => v.admin !== null).map(v => v.id) : ''
+const groupOwner = isGroup ? groupMetadata.owner : ''
+//console.log(botNumber)
+const ottffsse = msg.participant || msg.key.participant 
+const isBotAdmins = isGroup ? groupAdmins.includes(process.env['Owner_nb'] + '@s.whatsapp.net') : false
+const isAdmins = isGroup ? groupAdmins.includes(senderabfff) : false
 
 function formatUptime(uptime) {
   const seconds = Math.floor(uptime % 60);
@@ -747,26 +747,28 @@ let menu = `╭━━━━━━━━━━━━━━━━━━━━━�
 
 
 
-//
-// console.log(JSON.stringify(msg, null, 2))
+//console.log(msg)
 
 
         if (!msg.key.fromMe) {
 
                 AlexaInc.readMessages([msg.key]);
-            let messageText = null;
+
 
 // Check for conversation or extendedTextMessage first (for text messages)
-messageText = msg.message?.conversation ||
-              msg.message?.extendedTextMessage?.text ||
-              // Check for media message captions (image, video, document)
-              msg.message?.imageMessage?.caption ||
-              JSON.parse(msg.message?.interactiveResponseMessage?.nativeFlowResponseMessage.paramsJson).id ||
-              msg.message?.buttonsResponseMessage?.selectedButtonId ||
-              msg.message?.videoMessage?.caption ||
-              msg.message?.documentMessage?.caption ||
-              // Handle cases where there are no captions (sticker, audio, etc.)
-              null;
+let messageText = null;
+
+  messageText = msg.message?.conversation ||
+                msg.message?.extendedTextMessage?.text ||
+                msg.message?.imageMessage?.caption ||
+                msg.message?.buttonsResponseMessage?.selectedButtonId ||
+                msg.message?.videoMessage?.caption ||
+                msg.message?.documentMessage?.caption ||
+                JSON.parse(
+                  msg.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson || '{}'
+                ).id ||
+                null;
+
   const messageonlyText = msg.message?.conversation ||
               msg.message?.extendedTextMessage?.text
 
@@ -1811,6 +1813,7 @@ case 'antinsfw': {
 
 
 case 'hidetag':{
+
   if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
   if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
   if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin' });
