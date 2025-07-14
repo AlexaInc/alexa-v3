@@ -229,7 +229,7 @@ const CustomBrowsersMap = {
                         buffer = await getBuffer(ppuser)
                     } catch (error) {
                         console.error('Error fetching profile picture:', error);
-                        buffer = null;
+                        buffer = fs.readFileSync('./res/alexa.jpg');
                     }
     
                     // Prepare the message to send
