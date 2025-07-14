@@ -598,8 +598,9 @@ const participants = isGroup ? await groupMetadata.participants : ''
 const groupAdmins = isGroup ? await participants.filter(v => v.admin !== null).map(v => v.id) : ''
 const groupOwner = isGroup ? groupMetadata.owner : ''
 //console.log(botNumber)
+const ottffsse = msg.participant || msg.key.participant 
 const isBotAdmins = isGroup ? groupAdmins.includes(`279967795560628@lid`) : false
-const isAdmins = isGroup ? groupAdmins.includes(msg.participant) : false
+const isAdmins = isGroup ? groupAdmins.includes(ottffsse) : false
 
 
 
