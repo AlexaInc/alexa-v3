@@ -1884,7 +1884,35 @@ default :{
 
 
 /*****************   ai function for  language process  *****************/
-ai(msg.pushName , mesafesfb, sender, async (err, reply) => {
+const groupId = msg.key.remoteJid;
+
+if (!isGroup) {
+    // ✅ Not a group → run AI
+    runAI();
+} else {
+    // ✅ Group → Check if chatbot is enabled in DB
+    const query = `
+        SELECT chatbot FROM \`groups\` 
+        WHERE group_id = ? AND chatbot = TRUE
+    `;
+
+    db.query(query, [groupId], async (err, results) => {
+        if (err) {
+            console.error('Error checking chatbot status:', err);
+            return;
+        }
+
+        if (results.length > 0) {
+            // ✅ Group + chatbot enabled → run AI
+            runAI();
+        } else {
+            // ❌ Group but chatbot disabled → skip
+            console.log('Chatbot is disabled for this group.');
+        }
+    });
+}
+function runAI() {
+  ai(msg.pushName , mesafesfb, sender, async (err, reply) => {
   AlexaInc.sendMessage(msg.key.remoteJid,{react: {text: '🔄', key: msg.key}});
   if (err) {
     console.error("Error:", err);
@@ -2005,7 +2033,12 @@ AlexaInc.sendMessage(msg.key.remoteJid, { text: `${replyyy}` }, { quoted: msg })
     //console.log('Chatbot Response:', reply);
 
   }
-});};
+}
+);
+
+}
+
+};
 
               //console.log(msg);
                
