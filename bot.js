@@ -804,7 +804,7 @@ const nsfwWords = [
   // Pornography-related terms
   'porn', 'porno', 'pornhub', 'xvideos', 'xnxx', 'xhamster', 'redtube', 'camgirl', 'camwhore',
   'onlyfans', 'nudes', 'sex tape', 'sex video', 'amateur porn', 'hardcore', 'softcore', 'hentai',
-  'ecchi', 'doujin', 'nsfw', 'lewd',
+  'ecchi', 'doujin', 'lewd',
 
   // Explicit sexual acts
   'masturbate', 'masturbation', 'blowjob', 'handjob', 'deepthroat', 'anal', 'rimjob',
