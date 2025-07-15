@@ -616,7 +616,8 @@ const isOwner = (
 const isGroup = msg.key.remoteJid.endsWith('@g.us');
 const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : ''
 const participants = isGroup ? await groupMetadata.participants : ''
-const groupAdmins = isGroup ? await participants.filter(v => v.admin !== null).map(v => v.id) : ''
+const groupAdmins = isGroup ? await participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin') : ''
+
 const groupOwner = isGroup ? groupMetadata.owner : ''
 //console.log(botNumber)
 const ottffsse = msg.participant || msg.key.participant 
