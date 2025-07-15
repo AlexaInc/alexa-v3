@@ -614,15 +614,21 @@ const isOwner = (
   senderabfff === '194300461756480@lid'
 );
 const isGroup = msg.key.remoteJid.endsWith('@g.us');
-const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : ''
-const participants = isGroup ? await groupMetadata.participants : ''
-const groupAdmins = isGroup ? await participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin') : ''
+const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : '';
+const participants = isGroup ? groupMetadata?.participants || [] : [];
+const groupAdmins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
 
+const isAdmins = isGroup
+    ? groupAdmins.some(admin => admin.jid === senderabfff || admin.lid === senderabfff)
+    : false;
 const groupOwner = isGroup ? groupMetadata.owner : ''
 //console.log(botNumber)
 const ottffsse = msg.participant || msg.key.participant 
-const isBotAdmins = isGroup ? groupAdmins.includes(`279967795560628@lid`) : false
-const isAdmins = isGroup ? groupAdmins.includes(senderabfff) : false
+const isBotAdmins = isGroup
+    ? groupAdmins.some(admin => admin.jid === (process.env['bot_nb'] + '@s.whatsapp.net') || admin.lid === '279967795560628@lid')
+    : false;
+
+
 
 function formatUptime(uptime) {
   const seconds = Math.floor(uptime % 60);
@@ -748,8 +754,7 @@ let menu = `╭━━━━━━━━━━━━━━━━━━━━━�
 
 
 
-//
- console.log(msg)
+
 
 
         if (!msg.key.fromMe) {
@@ -1701,7 +1706,12 @@ case 'welcomeon': {
 
   break;
 }
+  
 
+case 'cmtdt':{
+          await fs.writeJSON(`./metadata/${msg.key.remoteJid}3365.json`, groupAdmins, { spaces: 2 })
+  break
+}
 case 'welcomeoff': {
   if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
   if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
@@ -1824,11 +1834,7 @@ case 'hidetag':{
   break
 }
 
-case 'ca':{
-console.log (participants)
-console.log (groupAdmins)
-console.log(msg)
-} break
+
 
 case 'join':{
 
