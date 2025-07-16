@@ -36,6 +36,7 @@ async function downloadVideo(vidid) {
         resultArr.push({
             downloaded: true,
             caption: caption,
+            data: videoResponse.data,
             videoPath: videoFilePath,
         });
 
