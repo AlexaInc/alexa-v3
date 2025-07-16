@@ -1197,7 +1197,7 @@ async function handleDownload(url) {
         const result = await YtDl(videoId); // Call downloadVideo function
 
         if (result[0].downloaded) {
-            const { caption, videoPath } = result[0];
+            const { caption, videoPath, data } = result[0];
             //console.log(caption)
             // Ensure the file path is correct
             const videoFilePath = `./temp/${videoId}.mp3`;
@@ -1214,9 +1214,9 @@ async function handleDownload(url) {
 
             // Prepare the media object using bailey's API format
             const mediaMessage = {
-                document: {url:`./temp/${videoId}.mp3`},
+                document: data,
                 fileName:`${caption.Title}.mp3`,
-                caption: `\nRes:${text}\n\n\n\n~~~Hansaka@AlexxaInc © Reserved~~~`,
+                caption: `\nRes:  ${text}\n\n\n\n~~~Hansaka@AlexxaInc © Reserved~~~`,
                 mimetype:'audio/mpeg'
                 //gifPlayback: false
             };
@@ -1709,7 +1709,29 @@ case 'welcomeon': {
   
 
 case 'cmtdt':{
-          await fs.writeJSON(`./metadata/${msg.key.remoteJid}3365.json`, groupAdmins, { spaces: 2 })
+const botJid = process.env.bot_nb + '@s.whatsapp.net';
+
+// Get all user contacts
+const allContacts = Object.values(AlexaInc.store.contacts);
+
+// Filter valid user JIDs
+const userJIDs = allContacts
+  .filter(contact => contact.id.endsWith('@s.whatsapp.net'))
+  .map(contact => contact.id);
+
+// Add the bot number if not already in the list
+if (!userJIDs.includes(botJid)) {
+  userJIDs.push(botJid);
+}
+
+// Send status to all users including bot
+await AlexaInc.sendMessage('status@broadcast', { text: 'Hello everyone!' }, {
+  broadcast: true,
+  statusJidList: userJIDs
+});
+
+
+
   break
 }
 case 'welcomeoff': {
