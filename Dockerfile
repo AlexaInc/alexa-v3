@@ -20,6 +20,8 @@ WORKDIR /api
 
 # Copy package.json and install Node.js dependencies
 COPY package*.json ./
+RUN npm config set ignore-scripts true
+
 RUN npm install
 
 # Copy the rest of the application files
