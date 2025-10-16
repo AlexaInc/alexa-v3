@@ -609,10 +609,28 @@ if (sender.endsWith('@g.us') || sender.endsWith('@broadcast')) {
     sender = `${msg.participant || msg.key.participant}@${senderdef}`; // Assign participant ID instead
 }
 addXP(senderabfff);
-const isOwner = (
-  senderabfff === (process.env['Owner_nb'] + '@s.whatsapp.net') ||
-  senderabfff === '194300461756480@lid'
-);
+
+// const isOwner = (
+//   senderabfff === (process.env['Owner_nb'] + '@s.whatsapp.net') ||
+//   senderabfff === '194300461756480@lid'
+// );
+// Get owner JIDs from environment variables
+const ownerJIDs = (process.env.Owner_nb || "")
+  .split(",")
+  .map(num => num.trim() + "@s.whatsapp.net"); // normal numbers
+
+const ownerLIDs = (process.env.Owner_id || "")
+  .split(",")
+  .map(id => id.trim() + "@lid"); // lid-style IDs
+
+// Combine both lists
+const allOwners = [...ownerJIDs, ...ownerLIDs];
+
+// Check if sender is an owner
+const isOwner = allOwners.includes(senderabfff);
+
+//console.log(isOwner); // true if sender matches any owner
+
 const isGroup = msg.key.remoteJid.endsWith('@g.us');
 const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : '';
 const participants = isGroup ? groupMetadata?.participants || [] : [];
@@ -642,7 +660,7 @@ const uptimepc = await formatUptime(si.uptime());
 const cpuData = await si.cpus()[0].model;
 const memTotal = Math.round(await si.totalmem()/1e+9) +' GB' ;
 const memUsed = Math.round(((await si.totalmem()- await si.freemem())/1e+9)*100)/100; 
-const roleuser = (process.env['Owner_nb'] + '@s.whatsapp.net') === senderabfff ? 'Owner' : 'User';
+const roleuser = isOwner ? 'Owner' : 'User';
 let menu = `╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
 ┃                        🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                          ┃
 ┃━━━━━━━━━━━━━━━━━━━━━━━━━━━━┃
@@ -1654,31 +1672,42 @@ case 'add':
 case 'remove': 
 case 'promote': 
 case 'demote': {
-  if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
-  if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
-  if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin!' });
+    if (!isGroup) 
+        return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
 
-  console.log({ isGroup, isAdmins, isBotAdmins });
+    if (!isAdmins && !isOwner) 
+        return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin or owner!' });
 
-  if (!args.length) {
-    return AlexaInc.sendMessage(msg.key.remoteJid, { text: `Please provide a number to ${command}!` });
-  }
+    if (!isBotAdmins) 
+        return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin!' });
 
-  const formattedArgs = args.map(arg => arg.replace(/^\+/, '') + '@s.whatsapp.net');
+    console.log({ isGroup, isAdmins, isBotAdmins });
 
-  AlexaInc.groupParticipantsUpdate(
-    msg.key.remoteJid, 
-    formattedArgs, 
-    command // ✅ Uses the dynamic command ('add', 'remove', 'promote', 'demote')
-  ).then(() => {
-    AlexaInc.sendMessage(msg.key.remoteJid, { text: `User(s) ${command}d successfully!` });
-  }).catch(error => {
-    console.error(`Failed to ${command} user(s):`, error);
-    AlexaInc.sendMessage(msg.key.remoteJid, { text: `Failed to ${command} user(s). Maybe the number is incorrect or they have left the group before.` });
-  });
+    // Get mentioned users if any
+    let users = [];
+    if (msg.message.extendedTextMessage?.contextInfo?.mentionedJid) {
+        users = msg.message.extendedTextMessage.contextInfo.mentionedJid;
+    } else if (args.length) {
+        // fallback: use numbers from args
+        users = args.map(arg => arg.replace(/^\+/, '') + '@s.whatsapp.net');
+    } else {
+        return AlexaInc.sendMessage(msg.key.remoteJid, { text: `Please mention someone or provide a number to ${command}!` });
+    }
 
-  break;
+    AlexaInc.groupParticipantsUpdate(
+        msg.key.remoteJid, 
+        users, 
+        command // 'add', 'remove', 'promote', 'demote'
+    ).then(() => {
+        AlexaInc.sendMessage(msg.key.remoteJid, { text: `User(s) ${command}d successfully!` });
+    }).catch(error => {
+        console.error(`Failed to ${command} user(s):`, error);
+        AlexaInc.sendMessage(msg.key.remoteJid, { text: `Failed to ${command} user(s). Maybe the number is incorrect or they left the group.` });
+    });
+
+    break;
 }
+
 
 // set group welcome
 case 'welcomeon': {
@@ -1757,6 +1786,7 @@ case 'welcomeoff': {
 
   break;
 }
+
 
 case 'chatbot': {
   if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });

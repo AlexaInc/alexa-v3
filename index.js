@@ -304,9 +304,9 @@ if (connection === 'open') {
  }
             
 
-            const ownerNumber = process.env["Owner_nb"];
-            if (ownerNumber) {
-                AlexaInc.sendMessage(`${ownerNumber}@s.whatsapp.net`, {
+            const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
+            if (fownerNumber) {
+                AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {
                     text: 'Your bot Alexa is ready to use now'
                 })
                 AlexaInc.sendMessage('120363407628540320@g.us', {

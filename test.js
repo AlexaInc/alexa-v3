@@ -1,23 +1,28 @@
-import OpenAI from "openai"
+const { default: makeWASocket, useSingleFileAuthState } = require('@whiskeysockets/baileys');
+const { Boom } = require('@hapi/boom');
 
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: "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",
-
-})
+const groupJid = "120363407628540320@g.us"; // Replace with your group JID
 
 async function main() {
-  const completion = await openai.chat.completions.create({
-    model: "moonshotai/kimi-k2:free",
-    messages: [
-      {
-        role: "user",
-        content: "What is the meaning of life?"
-      }
-    ]
-  })
+    try {
+        // If you already have a socket, use it instead of creating a new one
+        const sock = AlexaInc; // your existing WhiskeySocket instance
 
-  console.log(completion.choices[0].message)
+        // Fetch group metadata
+        const metadata = await sock.groupMetadata(groupJid);
+
+        console.log("Group Metadata:");
+        console.log("Subject:", metadata.subject);
+        console.log("Owner:", metadata.owner);
+        console.log("Creation:", new Date(metadata.creation * 1000).toLocaleString());
+        console.log("Participants:");
+        metadata.participants.forEach(p => {
+            console.log(`- ${p.id} (${p.admin || "member"})`);
+        });
+
+    } catch (err) {
+        console.error("Error fetching group metadata:", err);
+    }
 }
 
-main()
+main();
