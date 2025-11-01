@@ -1011,7 +1011,7 @@ if (await checkAntiLink(msg, messageText)) {
 
 
 
-                AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/alexa.jpeg'},caption: menu},{ quoted: msg });
+                AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/alexa.png'},caption: menu},{ quoted: msg });
 
             break}
 
