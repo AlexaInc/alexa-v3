@@ -7,11 +7,13 @@ const{weatherof} = require('./res/js/weather.js')
 const hangmanFile = "./hangman.json";
 const questionsFile = './dailyQuestions.json';
 const QresponsesFile = './dailyqresp.json';
+const upadestatusstate = {};
 const path = require('path');
 const si = require('os');
 const axios = require('axios');
 const sharp = require('sharp');
-const { downloadMediaMessage, proto, prepareWAMessageMedia , getGroupMetadata , generateWAMessageFromContent} = require('@whiskeysockets/baileys');
+const { downloadMediaMessage, proto, prepareWAMessageMedia , getGroupMetadata , generateWAMessageFromContent  } = require('@whiskeysockets/baileys');
+const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 const { generateLinkPreview } = require("link-preview-js");
 //const {generateWAMessageFromContent} = require('@adiwajshing/baileys')
 //const { Button, ButtonMessage } = require('@whiskeysockets/baileys').WA_MESSAGE_TYPE;
@@ -19,7 +21,8 @@ const { fileutc } = require('./res/js/fu.js');
 const {runSpeedTest} = require('./res/js/speed_test.js')
 const FormData = require('form-data');
 const {websearch_query} = require('./res/web/web')
-
+const { updateUser, loadUserByNumber , readUsersFile } = require('./store/userscontact.js');
+const generatequote = require('./generatequote2.js')
 const chalk = require('kleur');
 const TEMP_DIR = path.join(__dirname, 'temp');
 //const {ai} = require('./ai')
@@ -261,6 +264,7 @@ const { response } = require('express');
 const { ConsoleMessage } = require('puppeteer');
 const { url } = require('inspector');
 const { json } = require('stream/consumers');
+const { image } = require('ascii-art');
 
 
 function getGreeting() {
@@ -480,6 +484,26 @@ async function getTasks(user_id) {
 }
 
 
+
+
+/////////////=======get pp url ========\\\\\\\\\\
+
+  async function getdpurl(AlexaInc,userid) {
+    
+    try {
+        // Fetch the URL for the user's profile picture
+        // Use 'image' for high-res, or 'preview' for a smaller thumbnail
+        const ppUrl = await AlexaInc.profilePictureUrl(userid, 'image');
+      return ppUrl;
+
+    } catch (e) {
+      console.log(e)
+      return null;
+    }
+
+  }
+
+
 // getTasks('94740970377@s.whatsapp.net').then(respo=>{
 //  if(!respo.length) return print('no tasks found')
 //  res1 = JSON.parse(respo[0].tasks)
@@ -585,14 +609,30 @@ try {
 
 
 
-async function handleMessage(AlexaInc, { messages, type }) {
+async function handleMessage(AlexaInc, { messages, type }, loadMessage ,saveMessage) {
 
         const botNumber = await AlexaInc.user.id.split(':')[0];
-                  
+
+    //     const savingmassage = {
+    //       "key" : {
+    //         "remoteJid" : 'a'
+    //       }
+    //     };
+
+    //                   // 💾 Save message to custom store
+    // try {
+    //   saveMessage(...messages.key.remoteJid, ...messages);
+    // } catch (err) {
+    //   console.error("❌ Failed to save message:", err);
+    // }
       
     if (type === 'notify') {
       const msg = messages[0];
-      // console.log(msg)
+
+
+      //console.log(msg)
+
+    //const jid = msg.key.remoteJid;
 
 
 
@@ -646,7 +686,7 @@ const isBotAdmins = isGroup
     ? groupAdmins.some(admin => admin.jid === (process.env['bot_nb'] + '@s.whatsapp.net') || admin.lid === '279967795560628@lid')
     : false;
 
-
+      updateUser(msg,participants);
 
 function formatUptime(uptime) {
   const seconds = Math.floor(uptime % 60);
@@ -690,7 +730,8 @@ let menu = `╭━━━━━━━━━━━━━━━━━━━━━�
 ┃ ➥ \`.owner\`  - Chat with Owner  
 ┃
 ┃ 🖼 *Sticker & Image Commands:*  
-┃ ➥ \`.sticker\` - Convert image to sticker  
+┃ ➥ \`.sticker\` - Convert image to a sticker  
+┃ ➥ \`.q\` - Convert message to a sticker  
 ┃
 ┃ 🌐 *Web & Search Commands:*  
 ┃ ➥ \`.web\` - Search on the web  
@@ -797,6 +838,9 @@ let messageText = null;
   const messageonlyText = msg.message?.conversation ||
               msg.message?.extendedTextMessage?.text
 
+
+    ///////check massage is a reply
+    const isReply = !!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
 
 
@@ -1004,6 +1048,171 @@ await AlexaInc.sendMessage(msg.key.remoteJid, { contacts: {
 
   break
 }
+
+
+
+/*
+ASSUMPTIONS:
+- You have 'const fs = require('fs');' at the top of your file.
+- 'AlexaInc', 'msg', 'isGroup', 'participants', 'loadUserByNumber', 
+  'getdpurl', 'getBuffer', 'loadMessage', and 'generatequote' are
+  all defined and available in this scope.
+- 'process.env.Owner_nb' is a COMMA-SEPARATED string of numbers.
+- Your 'loadMessage' function returns an object with a 'reply' property 
+  and 'grandfather.messageText' is a valid property from it.
+*/
+
+case "status":{
+  if(!isOwner) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'this command only for owner'},{quoted:msg})
+    upadestatusstate[msg.key.remoteJid] ={step:'awaiting_content'}
+  AlexaInc.sendMessage(msg.key.remoteJid,{text:'waiting for content you can send photo with captions.'})
+  break;
+}
+
+
+case "q": {
+
+    // Fix 1: Use optional chaining (?.). 
+    // This prevents a crash if 'contextInfo' is null.
+    const quotedid = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
+
+    if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid, {
+        text: 'please reply to a massage'
+    }, {
+        quoted: msg
+    });
+
+    let quotesendernumber, grandfather, isgftrfm, usercontact, quotesendername, gftsendername, gftsendercontact, gftsendernumber, gftmassage;
+
+    // This is safe because we already checked for quotedid, which implies contextInfo exists.
+    const stanzaaaaa = msg.message?.extendedTextMessage?.contextInfo.stanzaId
+    
+    const quotedSender = (await loadMessage(msg.key.remoteJid , stanzaaaaa)).sender
+//console.log(quotedSender)
+    // Fix 2: Make text fetching more robust.
+    // A quoted message's text can be in 'conversation' OR 'extendedTextMessage.text'.
+    // Use optional chaining and a fallback to an empty string.
+    const quotemessagetxt = msg.message?.extendedTextMessage?.contextInfo.quotedMessage?.conversation ||
+        msg.message?.extendedTextMessage?.contextInfo.quotedMessage?.extendedTextMessage?.text ||
+        ''; // Fallback to empty string
+
+    const islid = quotedSender.endsWith('@lid');
+
+    if (isGroup && islid) {
+        // Fix 3: Add optional chaining (?).
+        // This prevents a crash if 'participants.find' returns undefined.
+        quotesendernumber = (await participants.find(jsn => jsn.lid === quotedSender))?.id?.replace(/@.*/, "");
+    } else {
+        quotesendernumber = quotedSender === 'me' ? process.env.bot_nb : isGroup ? quotedSender.replace(/:.*/, "") : quotedSender.replace(/@.*/, "");
+    }
+
+    console.log(quotesendernumber);
+    usercontact = await loadUserByNumber(quotesendernumber);
+    quotesendername = usercontact ? usercontact.name : quotesendernumber;
+    const id2getpp = quotedSender === 'me' ? `${process.env.bot_nb}@s.whatsapp.net`  : quotedSender
+    const dpurl = await getdpurl(AlexaInc, id2getpp);
+    const dpbuffer = dpurl ? await getBuffer(dpurl) : null;
+    // Use writeFileSync for simple debugging, or await fs.promises.writeFile
+    // if (dpbuffer) fs.writeFileSync('./pp.jpg', dpbuffer);
+
+    const fullQuoted = await loadMessage(msg.key.remoteJid, quotedid);
+
+    // Fix 4: Major logic restructure for safety.
+    // We must check if 'grandfather' actually exists before using it.
+    if (fullQuoted.reply) {
+        grandfather = await loadMessage(msg.key.remoteJid, fullQuoted.reply?.messageId) || null;
+
+        if (grandfather) { // Only proceed if grandfather message was loaded
+            // Use optional chaining for safety
+            isgftrfm = grandfather?.sender === 'me';
+            
+            // This needs to check the grandfather's sender, not the quoted sender
+            const isgftrlid = grandfather?.sender?.endsWith('@lid');
+
+            // Fix 5: Logical error. Use 'isgftrlid' here, NOT 'islid'.
+            if (isGroup && isgftrlid && !isgftrfm) {
+                // Add optional chaining here too
+                gftsendernumber = (await participants.find(jsn => jsn.lid === grandfather.sender))?.id?.replace(/@.*/, "");
+            } else if (!isgftrfm) {
+                gftsendernumber = grandfather.sender ? grandfather.sender.replace(/@.*/, "") : null;
+            } else { // isgftrfm is true
+                gftsendernumber = process.env.bot_nb;
+            }
+
+            console.log(gftsendernumber);
+            gftsendercontact = await loadUserByNumber(gftsendernumber);
+            gftsendername = gftsendercontact ? gftsendercontact.name : gftsendernumber;
+            gftmassage = grandfather.messageText; // Assuming 'messageText' is a valid property
+
+        } else {
+            // Grandfather is null (e.g., deleted message)
+            isgftrfm = null;
+            gftsendername = null;
+            gftmassage = null;
+        }
+    } else {
+        // The quoted message was not a reply
+        grandfather = null;
+        isgftrfm = null;
+        gftsendername = null;
+        gftmassage = null;
+    }
+
+    // Fix 6: Prevent substring bug.
+    // If Owner_nb="12345" and quotesendernumber="123", .includes() would be true.
+    // Split into an array to check for an exact match.
+    const ownerNumbers = (process.env.Owner_nb || '').split(',');
+    const isquoteowner = ownerNumbers.includes(quotesendernumber);
+
+    // Fix 7: Fix typo "costom" -> "custom"
+    const customemojiid = isquoteowner ? '5267500801240092311' : null;
+
+    let firstNum = Math.floor(Math.random() * 10);
+    let secondNum;
+
+    do {
+        secondNum = Math.floor(Math.random() * 10);
+    } while (secondNum === firstNum);
+
+    const webpbuff = await generatequote(quotesendername || '', '', customemojiid, quotemessagetxt, firstNum, dpbuffer, gftsendername, gftmassage, secondNum);
+
+    // Fix 8: 'fs.writeFile' is async.
+    // For debugging, 'fs.writeFileSync' is easier.
+    // Or, use 'await fs.promises.writeFile(...)' if you imported 'fs.promises'.
+    fs.writeFileSync('./1234.webp', webpbuff);
+const highQualityBuffer = await sharp(webpbuff)
+        .resize(1024, 1024, {
+            fit: 'contain', // Puts your bubble in the middle of a 512x512 transparent box
+            background: { r: 0, g: 0, b: 0, alpha: 0 }, // Ensures background is transparent
+            kernel: sharp.kernel.lanczos3 // This is a high-quality resizing algorithm
+        })
+        .webp() // Convert it to webp
+        .toBuffer();
+
+    // 3. Create the sticker using the NEW high-quality buffer
+    const sticker = new Sticker(highQualityBuffer, { // <-- Use highQualityBuffer here
+        pack: 'My Bot',
+        author: 'Quotly',
+        type: StickerTypes.DEFAULT, // Type doesn't matter as much now
+        quality: 90 // Keep quality high
+    });
+
+    const stickerBuffer = await sticker.toBuffer();
+
+    // 4. Send the final sticker
+    await AlexaInc.sendMessage(msg.key.remoteJid, {
+        sticker: stickerBuffer
+    }, {
+        quoted: msg
+    });
+    //console.log(grandfather, isgftrfm);
+
+    break;
+}
+
+// case "gp":{
+//   console.log(participants)
+// }
 
 case"sticker":{
               AlexaInc.sendMessage(msg.key.remoteJid,{text:'preparing your sticker'}, {quoted:msg});
@@ -2011,12 +2220,25 @@ default :{
 
   let mesafesfb;
     
-
-  if (!msg.message?.imageMessage) {
+let lalala ;
+if (msg.message?.videoMessage) {
     mesafesfb = messageText;
+  const buffer = await downloadMediaMessage(msg, "buffer", {}, {});
+    lalala =    [{
+        video:buffer,
+        caption: messageText
+    }]
+}
+ else if (!msg.message?.imageMessage) {
+    mesafesfb = messageText;
+    lalala =     [{
+        text: messageText
+    }]
   }else{
       // Download the image as a buffer
   const buffer = await downloadMediaMessage(msg, "buffer", {}, {});
+
+
 
   // Convert buffer to Base64
   const base64Image = buffer.toString("base64");
@@ -2025,11 +2247,31 @@ default :{
     type: "image_url",
     image_url: `data:image/jpeg;base64,${base64Image}`,
   }]
+  lalala =    [{
+        image:buffer,
+        caption: messageText
+    }]
   }
 
 
+//console.log(upadestatusstate[msg.key.remoteJid].step)
 
+  if(upadestatusstate[msg.key.remoteJid]?.step === 'awaiting_content'){
+    const allcontactss = readUsersFile();
+    const allNumbers = allcontactss.map(v => `${v.number}@s.whatsapp.net`);
+    await AlexaInc.sendMessage(
+    'status@broadcast',lalala[0],
+    {
 
+        statusJidList: allNumbers,
+        broadcast: true
+    }
+)
+    upadestatusstate[msg.key.remoteJid] = { step: '' };
+
+    // ✅ Stop further processing (AI etc.) for this message
+    return;
+  }
 
 
 
@@ -2082,7 +2324,7 @@ case 'menu' : case 'menu.' :{
 
 
 
-                AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/alexa.jpeg'},caption: menu},{ quoted: msg });
+                AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/alexa.png'},caption: menu},{ quoted: msg });
 
   break
 }

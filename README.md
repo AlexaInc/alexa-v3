@@ -1,6 +1,6 @@
 # Alexa V3 WhatsApp Bot
 
-<p align="center"><img src="./res/img/alexa.jpeg" alt="Alexa V3" width="300" ></p>
+<p align="center"><img src="./res/img/alexa.png" alt="Alexa V3" width="300" ></p>
 
 Alexa V3 is a feature-rich WhatsApp bot developed by Hansaka Rasanjana with ❤️ for the WhatsApp community. This bot provides utilities, search functionalities, YouTube downloads, group management, NSFW content, SFW content, and even fun games!
 

@@ -1,9 +1,33 @@
 # Ignore node modules
 node_modules/
 
+auth5a/
 # Ignore environment variables
 .env
 
 # (Optional) Ignore logs, system files, etc.
 *.log
 .DS_Store
+
+# --- ADD THESE NEW LINES ---
+
+# Baileys session files (NEVER COMMIT THIS)
+baileys_auth_info/
+
+# Bot data stores and cache
+store/
+store_ev/
+emoji_status/
+msgstore.json
+
+# Specific temporary files to ignore
+111.webp
+1234.webp
+pp.jpg
+sticker.png
+res/img/alexaold\ .jpeg
+
+# Specific source files to ignore
+123.js
+aaa.md
+reply.js

@@ -15,11 +15,13 @@ const {
     makeCacheableSignalKeyStore,
     makeInMemoryStore,
     proto,
+    
     useMultiFileAuthState,
     WAMessageContent,
     WAMessageKey
 } = require('@whiskeysockets/baileys');
 require('dotenv').config()
+const pino = require("pino");
 //const art = require('ascii-art');
 let isNewLogin = null;
 //const app = require('./server');
@@ -67,7 +69,8 @@ const NodeCache = require('node-cache');
 const session = require('express-session');
 const fs = require('fs');
 const path = require('path');
-
+const STORE_DIR = "./store";
+if (!fs.existsSync(STORE_DIR)) fs.mkdirSync(STORE_DIR);
 const msgRetryCounterCache = new NodeCache();
 const PORT = process.env.PORT || 8000;
 const dataFile = path.join(__dirname, 'sharedData.json');
@@ -78,6 +81,142 @@ const logger = P({
     timestamp: () => `,"time":"${new Date().toJSON()}"`
 }, P.destination('./wa-logs.txt'));
 logger.level = 'debug';
+
+function saveMessage(jid, msg) {
+  if (!jid || !msg?.message) return;
+
+  const isGroup = jid.endsWith("@g.us");
+  const filePath = path.join(STORE_DIR, `${jid}.json`);
+  let chatData = [];
+
+  // Load existing messages
+  if (fs.existsSync(filePath)) {
+    try {
+      chatData = JSON.parse(fs.readFileSync(filePath));
+    } catch {
+      chatData = [];
+    }
+  }
+
+  // Get message text (simple text only)
+  let messageText = "";
+  const msgType = Object.keys(msg.message)[0];
+
+  if (msgType === "conversation") {
+    messageText = msg.message.conversation;
+  } else if (msgType === "extendedTextMessage") {
+    messageText = msg.message.extendedTextMessage.text;
+  }
+
+  // Check if it’s a reply
+  let replyInfo = null;
+  if (msg.message[msgType]?.contextInfo?.quotedMessage) {
+    const quoted = msg.message[msgType].contextInfo.quotedMessage;
+    const quotedType = Object.keys(quoted)[0];
+    const quotedText =
+      quotedType === "conversation"
+        ? quoted.conversation
+        : quoted.extendedTextMessage?.text || "";
+
+    replyInfo = {
+      sender: msg.message[msgType].contextInfo.participant,
+      messageId: msg.message[msgType].contextInfo.stanzaId,
+      messageText: quotedText,
+    };
+  }
+
+  // Custom formatted object
+  const formatted = {
+    sender: msg.key.fromMe ? "me" : isGroup ? msg.key.participant || msg.participant : msg.key.remoteJid ,
+    pushname: msg.pushname,
+    messageId: msg.key.id,
+    messageText,
+    reply: replyInfo, // null if not a reply
+  };
+
+  // Avoid duplicates
+  if (!chatData.find(m => m.messageId === formatted.messageId)) {
+    chatData.push(formatted);
+  }
+
+  // Optional: keep last 500 messages
+  if (chatData.length > 500) chatData = chatData.slice(-500);
+
+  fs.writeFileSync(filePath, JSON.stringify(chatData, null, 2));
+}
+
+
+function loadMessage(jid, messageId) {
+  if (!jid || !messageId) return null;
+
+  const filePath = path.join(STORE_DIR, `${jid}.json`);
+  if (!fs.existsSync(filePath)) return null;
+
+  try {
+    const chatData = JSON.parse(fs.readFileSync(filePath));
+    return chatData.find(m => m.messageId === messageId) || null;
+  } catch {
+    return null;
+  }
+}
+
+
+
+
+
+
+
+
+const STORE_DIR2 = path.join(__dirname, "store_ev");
+if (!fs.existsSync(STORE_DIR2)) fs.mkdirSync(STORE_DIR2);
+
+// Save any event
+function saveEvent(eventName, data) {
+  const filePath = path.join(STORE_DIR2, `${eventName}.json`);
+  let existing = [];
+
+  if (fs.existsSync(filePath)) {
+    try {
+      existing = JSON.parse(fs.readFileSync(filePath));
+    } catch {
+      existing = [];
+    }
+  }
+
+  existing.push({
+    timestamp: Date.now(),
+    data,
+  });
+
+  // Optional: keep last 500 events per type
+  if (existing.length > 500) existing = existing.slice(-500);
+
+  fs.writeFileSync(filePath, JSON.stringify(existing, null, 2));
+}
+
+// Load events of a certain type
+function loadEvents(eventName) {
+  const filePath = path.join(STORE_DIR2, `${eventName}.json`);
+  if (!fs.existsSync(filePath)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(filePath));
+  } catch {
+    return [];
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const db = mysql.createPool({
   host: DB_HOST,
@@ -165,6 +304,55 @@ const CustomBrowsersMap = {
         shouldIgnoreJid: jid => isJidBroadcast(jid),
         // implement to handle retries & poll updates
     });
+
+const eventsToStore = [
+  // Messages
+  'messages.upsert',      // new incoming messages
+  'messages.update',      // message status updates (read, deleted, etc.)
+  'messages.delete',      // message deletions
+
+  // Connections
+  'connection.update',    // connection status (open, close, reconnect)
+  'creds.update',         // credentials updated
+
+  // Groups
+  'group-participants.update', // someone joins/leaves/kicked
+  'group-update',             // group settings changed
+
+  // Chats & Contacts
+  'chats.upsert',        // new chat added
+  'chats.update',        // chat info updated
+  'contacts.upsert',     // contact info added
+  'contacts.update',     // contact info updated
+
+  // Presence / Typing
+  'presence.update',     // user presence (online/offline)
+  'user-presence.update',// typing/recording
+  'reaction',            // message reactions
+  'poll.update',         // poll updates
+
+  // Misc / Other
+  'call',                // call received
+  'call.reject',         // call rejected
+  'call.accept',         // call accepted
+  'blocklist.update',    // blocked contacts
+  'chats.delete',        // chat deleted
+  'messages.reaction',   // reactions to messages
+  'history.sync',        // history sync notifications
+  'message-receipt.update', // message read/delivery receipts
+];
+
+
+for (const evName of eventsToStore) {
+  AlexaInc.ev.on(evName, (data) => {
+    try {
+      saveEvent(evName, data); // your persistent store function
+    } catch (err) {
+      console.error(`❌ Failed to store event ${evName}:`, err);
+    }
+  });
+}
+
     AlexaInc.ev.on('qr',(qr)=>{
         console.log("\n📌 Scan this QR code with WhatsApp:\n");
         console.log(qr);
@@ -269,9 +457,14 @@ const CustomBrowsersMap = {
     
 
     AlexaInc.ev.on('messages.upsert', (m) => {
+          const { messages } = m;
+  if (!messages?.length) return;
 
+  const msg = messages[0];
+  const jid = msg.key.remoteJid;
 
-    handleMessage(AlexaInc, m)
+  saveMessage(jid, msg);
+        handleMessage(AlexaInc, m , loadMessage, saveMessage)
     }); // Call bot.js function
 
     let isConnected = false;
