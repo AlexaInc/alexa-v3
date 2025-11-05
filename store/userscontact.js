@@ -42,7 +42,7 @@ function saveUsersjsonnn(users) {
 
 // === Add or update user (only in private chat) ===
 async function updateUser(msg , participants) {
-  const from = msg.key.remoteJidAlt || msg.key.remoteJid ;
+  const from = msg.key.remoteJid ;
   //console.log(msg)
   let islid;
   if (!from.endsWith('@s.whatsapp.net')) {

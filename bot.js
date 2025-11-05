@@ -9,6 +9,7 @@ const questionsFile = './dailyQuestions.json';
 const QresponsesFile = './dailyqresp.json';
 const upadestatusstate = {};
 const path = require('path');
+const Filters = require('./res/js/filters.js');
 const si = require('os');
 const axios = require('axios');
 const sharp = require('sharp');
@@ -963,6 +964,35 @@ if (await checkAntiLink(msg, messageText)) {
 
 
 
+// Inside your 'messages.upsert' event, after command checks:
+
+// Check if the message text matches any filter trigger
+
+const matchedFilter = Filters.checkFilters(msg.key.remoteJid, messageText);
+
+// matchedFilter will be the filter object if found, or null if not.
+if (matchedFilter) {
+  
+  // A filter was triggered! Now, check its type to reply correctly.
+  
+  if (matchedFilter.type === 'text') {
+    AlexaInc.sendMessage(msg.key.remoteJid, { text: matchedFilter.reply },{ quoted: msg } );
+  
+  } else if (matchedFilter.type === 'sticker') {
+    const buffer = Buffer.from(matchedFilter.reply, 'base64');
+    AlexaInc.sendMessage(msg.key.remoteJid, { sticker: buffer, mimetype: matchedFilter.mimetype },{ quoted: msg });
+  
+  } else if (matchedFilter.type === 'image') {
+    const buffer = Buffer.from(matchedFilter.reply, 'base64');
+    AlexaInc.sendMessage(msg.key.remoteJid, { image: buffer, mimetype: matchedFilter.mimetype },{ quoted: msg });
+  
+  } else if (matchedFilter.type === 'video') {
+    const buffer = Buffer.from(matchedFilter.reply, 'base64');
+    AlexaInc.sendMessage(msg.key.remoteJid, { video: buffer, mimetype: matchedFilter.mimetype },{ quoted: msg });
+  }
+}
+
+
 
 
 
@@ -980,7 +1010,16 @@ if (await checkAntiLink(msg, messageText)) {
               if (msg.key.remoteJid == 'status@broadcast') {
 
     } else if (firstWord.startsWith(".") || firstWord.startsWith("/") || firstWord.startsWith("\\")) {
-        let command = firstWord.slice(1);; // Assign as command
+        
+      
+let command = firstWord.slice(1);; // Assign as command
+
+
+
+
+
+
+
 
 
 
@@ -1247,6 +1286,7 @@ case "status":{
 }
 
 
+
 case "q": {
 
     // Fix 1: Use optional chaining (?.). 
@@ -1391,6 +1431,81 @@ const highQualityBuffer = await sharp(webpbuff)
 //   console.log(participants)
 // }
 
+case'filter':{
+if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'this is only for groups baby!'})
+    const quotedid = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
+if (!text) return AlexaInc.saveMessage(msg.key.remoteJid,{text:'please send trigger word eg- /filter hi'},{quoted:msg})
+if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'please reply to a message baby!'},{quoted:msg})
+const loadedmsg = await loadMessage(msg.key.remoteJid , quotedid)
+
+const mimtypesmap = {
+  null: 'text',
+  'image/webp': 'sticker',
+  'image/jpeg': 'image',
+  'video/mp4': 'video'
+};
+const type = mimtypesmap[loadedmsg.mediaMimetype];
+let replyt;
+if (type === 'text') {
+  replyt = loadedmsg.messageText
+}else{
+                        const media = {
+    mediaUrl: loadedmsg.mediaUrl,
+    mediaMimetype: loadedmsg.mediaMimetype,
+    mediaKey: loadedmsg.mediaKey,
+    mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
+    mediaFileSha256: loadedmsg.mediaFileSha256
+  };
+  //console.log(media)
+
+replyt = await await getMediaBufferFromStored(AlexaInc, media);
+}
+
+const newfilter = {
+  trigger: text,
+  type: type,
+  reply: replyt, // The base64 data of the sticker
+  mimetype: loadedmsg.mediaMimetype       // The mimetype (e.g., 'image/webp')
+};
+
+const done = Filters.addFilter(msg.key.remoteJid, newfilter);
+  AlexaInc.sendMessage(msg.key.remoteJid,{text:`filter set ${text}`},{quoted:msg})
+
+break;
+}
+
+case "stop":{
+  if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'this is only for groups baby!'})
+if (!text) return AlexaInc.saveMessage(msg.key.remoteJid,{text:'please send trigger word eg- /stop hi'})
+const wasRemoved = Filters.removeFilter(msg.key.remoteJid, text);
+
+if (wasRemoved) {
+  AlexaInc.sendMessage(msg.key.remoteJid, { text: `✅ Filter removed: \`${text}\`` });
+} else {
+  AlexaInc.sendMessage(msg.key.remoteJid, { text: `❌ Filter not found: \`${text}\`` });
+}
+  break;
+}
+
+case "filters":{
+
+    if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'this is only for groups baby!'})
+      const allFilters = Filters.getFilters(msg.key.remoteJid);
+if (allFilters.length === 0) {
+  AlexaInc.sendMessage(msg.key.remoteJid, { text: 'There are no filters in this group.' });
+  return;
+}
+
+let filterList = '📋 *Filters in this group:*\n\n';
+allFilters.forEach(f => {
+  // Add each filter to the list
+  filterList += `• \`${f.trigger}\` (${f.type})\n`;
+});
+
+AlexaInc.sendMessage(msg.key.remoteJid, { text: filterList });
+break;
+}
+
 case"sticker":{
       const quotedid = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
 
@@ -1411,7 +1526,7 @@ let mediaBuffer = null;
     mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
     mediaFileSha256: loadedmsg.mediaFileSha256
   };
-  console.log(media)
+  //console.log(media)
 
 mediaBuffer = await await getMediaBufferFromStored(AlexaInc, media);
                     }else{
@@ -1456,6 +1571,10 @@ const stickerBuffer = await fs.readFileSync(stickerPath);
 
   break
 }
+
+
+
+
 
 
  case 'search': case 'browse':case 'web':{

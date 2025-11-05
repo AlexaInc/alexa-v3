@@ -16,6 +16,7 @@ baileys_auth_info/
 
 # Bot data stores and cache
 store/
+filters/
 store_ev/
 emoji_status/
 msgstore.json
