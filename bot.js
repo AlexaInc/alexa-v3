@@ -1152,6 +1152,9 @@ case "menu_games": {
 ┃ ➥ \`.antilink\` - .antilink on/off  
 ┃ ➥ \`.hidetag\` - .hidetag msg (mention all members)  
 ┃ ➥ \`.antinsfw\` - Similar to antilink  
+┃ ➥ \`.filter\` - /filter trigger to add filter 
+┃ ➥ \`.stop\` - /stop trigger to stop filter  
+┃ ➥ \`.filters\` - to get list of filters in group 
 ┃ ➥ \`.chatbot\` - Similar to antilink  
 ┃ ➥ \`.welcomeon\` - Turn on welcome message  
 ┃ ➥ \`.welcomeoff\` - Turn off welcome message`;
