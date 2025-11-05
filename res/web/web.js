@@ -1,84 +1,112 @@
+const { customsearch } = require('@googleapis/customsearch');
 const axios = require('axios');
+const cheerio = require('cheerio');
+require('dotenv').config();
 
-async function sendRequest(query) {
+// --- CONFIGURATION ---
+const API_KEY = process.env.GOOGLE_API_KEY;
+const SEARCH_ENGINE_ID = process.env.GOOGLESEARCH_ENGINE_ID;
+
+// --- Pre-flight check for environment variables ---
+if (!API_KEY || !SEARCH_ENGINE_ID) {
+  throw new Error('Missing GOOGLE_API_KEY or GOOGLESEARCH_ENGINE_ID from .env file. Please check your .env configuration.');
+}
+
+const googleSearch = customsearch({
+  version: 'v1',
+  auth: API_KEY,
+});
+
+/**
+ * Scrapes a single website using Axios and Cheerio.
+ * (This is a private helper function)
+ */
+async function scrapeSite(url) {
   try {
-    // Step 1: Send the POST request to get the event ID
-    const postResponse = await axios.post('https://hansaka1-google-search2.hf.space/gradio_api/call/predict', {
-      data: [query]
-    }, {
+    const { data: html } = await axios.get(url, {
+      timeout: 7000,
       headers: {
-        'Content-Type': 'application/json'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
       }
     });
 
-    // Log the response to inspect the structure and check where the event ID is located
-    //console.log('POST Response:', postResponse.data);
+    const $ = cheerio.load(html);
+    let firstParagraph = '';
+    $('p').each((_i, el) => {
+      const text = $(el).text().trim();
+      if (text.length > 75) {
+        firstParagraph = text;
+        return false; // Break loop
+      }
+    });
 
-    // Assuming the response has the event ID in a certain format, let's extract it
-    const eventId = postResponse.data?.event_id;  // Modify based on actual response
-
-    if (!eventId) {
-      console.error('Event ID not found in the POST response');
-      return;
+    if (!firstParagraph) {
+      firstParagraph = 'Could not find a suitable paragraph on this page.';
     }
 
-    // Step 2: Send a GET request with the extracted EVENT_ID
-    const getResponse = await axios.get(`https://hansaka1-google-search2.hf.space/gradio_api/call/predict/${eventId}`);
-
-    // Log the raw GET response
-    //console.log('Raw GET Response:', getResponse.data);
-
-    // Step 3: Clean up the response and extract only the 'data' part
-    const rawResponse = getResponse.data;  // Assuming this is a string or incorrectly formatted JSON
-
-    // If the response is in a raw format, we might need to manually clean it
-    const cleanedResponse = rawResponse.replace(/^event:\s*complete\s*data:\s*/, '');  // Remove 'event: complete data:'
-
-    // Now, we can safely parse the cleaned response as JSON
-    try {
-      const cleanData = JSON.parse(cleanedResponse);
-      return cleanData;
-      //console.log('Cleaned Data:', cleanData);
-    } catch (parseError) {
-      console.error('Error parsing cleaned response:', parseError.message);
-    }
+    return { url: url, paragraph: firstParagraph };
 
   } catch (error) {
-    console.error('Error:', error.response ? error.response.data : error.message);
+    // Return the error so it can be filtered out
+    return {
+      url: url,
+      paragraph: `Error: Could not access or scrape this site.`
+    };
   }
 }
 
-async function websearch_query(query) {
+/**
+ * Searches Google and scrapes for up to 5 good results.
+ * @param {string} searchQuery - The query to search for.
+ * @returns {Promise<Array<object>>} - A promise that resolves to an array of result objects.
+ */
+async function searchAndScrape(searchQuery) {
   try {
-    const searchResults = await sendRequest(query);
+    // 1. Search Google
+    const response = await googleSearch.cse.list({
+      cx: SEARCH_ENGINE_ID,
+      q: searchQuery,
+      num: 10,
+    });
 
-    // Check if searchResults is valid and inspect the first result
+    const searchResults = response.data.items;
     if (!searchResults || searchResults.length === 0) {
-      console.error('Error: searchResults is empty or invalid');
-      return [];
+      return []; // Return an empty array
     }
 
-    // Assuming searchResults[0] is a string or another format, handle accordingly
-    const cleanedResults = searchResults[0];
+    // 2. Filter out known bad sites
+    const candidateLinks = searchResults
+      .map(result => result.link)
+      .filter(link => !link.includes('reddit.com'));
+      
+    // 3. Loop and scrape until we have 5 good results
+    const finalResults = [];
+    for (const link of candidateLinks) {
+      const result = await scrapeSite(link);
 
-    // Check if cleanedResults is a string (you can adjust this if it's another type)
-    if (typeof cleanedResults !== 'string') {
-      console.error('Error: cleanedResults is not a string');
-      return [];
+      // Check if the result is valid (not an error)
+      const isError = result.paragraph.startsWith('Error: Could not access') ||
+                      result.paragraph.startsWith('Could not find a suitable');
+
+      if (!isError) {
+        finalResults.push(result);
+      }
+
+      // 4. Stop when we have 5 results
+      if (finalResults.length >= 5) {
+        break; // Exit the loop
+      }
     }
 
-    // Now clean and format the string (if it's a string, as expected)
-    console.log([cleanedResults.replace( /\s+/, ' ').trim()])
-    return [cleanedResults.replace(/\s+/, ' ').trim()];
+    // 5. Return the final data
+    return finalResults;
 
   } catch (error) {
-    console.error('Error:', error);
-    return [];
+    // If the API itself fails, throw the error
+    throw error;
   }
 }
 
+// Export the main function
+module.exports = searchAndScrape
 
-
- module.exports = {websearch_query}
-
-//sendRequest('srilanka').;

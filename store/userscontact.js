@@ -21,7 +21,7 @@ function readUsersFile() {
 }
 
 // === Save users helper ===
-function saveUsers(users) {
+function saveUsersjsonnn(users) {
   try {
     fs.writeFileSync(filePath, JSON.stringify(users, null, 2));
   } catch (err) {
@@ -42,7 +42,7 @@ function saveUsers(users) {
 
 // === Add or update user (only in private chat) ===
 async function updateUser(msg , participants) {
-  const from = msg.key.remoteJid;
+  const from = msg.key.remoteJidAlt || msg.key.remoteJid ;
   //console.log(msg)
   let islid;
   if (!from.endsWith('@s.whatsapp.net')) {
@@ -61,7 +61,7 @@ async function updateUser(msg , participants) {
   if (existingIndex === -1) {
     const name = rawName && rawName.trim() ? rawName : "Unknown";
     users.push({ number: islid, name });
-    saveUsers(users);
+    saveUsersjsonnn(users);
     console.log(`✅ Added new user: ${name} (${islid})`);
     return;
   }
@@ -69,7 +69,7 @@ async function updateUser(msg , participants) {
   // If user exists, only update if new name is valid and different
   if (rawName && rawName.trim() && users[existingIndex].name !== rawName.trim()) {
     users[existingIndex].name = rawName.trim();
-    saveUsers(users);
+    saveUsersjsonnn(users);
     console.log(`🔁 Updated user name: ${islid} → ${rawName.trim()}`);
   }
 }
@@ -77,5 +77,6 @@ async function updateUser(msg , participants) {
 module.exports = {
   updateUser,
   loadUserByNumber,
-  readUsersFile
+  readUsersFile,
+   saveUsersjsonnn
 };

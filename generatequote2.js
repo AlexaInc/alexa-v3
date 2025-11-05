@@ -9,7 +9,7 @@ const axios = require('axios');
 // const { text } = require('stream/consumers'); // <-- Removed, this was unused
 
 // --- CONFIGURATION ---
-const BOT_TOKEN = ''; // IMPORTANT: Replace with your token
+const BOT_TOKEN = '7961409784:AAH34SqtPohk5YydJVH9Fw9BfsxnSsAPIf8'; // IMPORTANT: Replace with your token
 
 // --- FONT DEFINITIONS ---
 const fontMap = {

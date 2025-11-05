@@ -3,7 +3,7 @@ const  YtDl  = require('./res/ytdl');  // Import downloadVideo from ytdl file
 const USER_DATA_FILE = './users.json';
 const fetchnews = require('./res/news');
 const yts = require('yt-search');
-const{weatherof} = require('./res/js/weather.js')
+const weatherof = require('./res/js/weather.js')
 const hangmanFile = "./hangman.json";
 const questionsFile = './dailyQuestions.json';
 const QresponsesFile = './dailyqresp.json';
@@ -20,8 +20,8 @@ const { generateLinkPreview } = require("link-preview-js");
 const { fileutc } = require('./res/js/fu.js');
 const {runSpeedTest} = require('./res/js/speed_test.js')
 const FormData = require('form-data');
-const {websearch_query} = require('./res/web/web')
-const { updateUser, loadUserByNumber , readUsersFile } = require('./store/userscontact.js');
+const websearch_query = require('./res/web/web.js')
+const { updateUser, loadUserByNumber , readUsersFile,saveUsersjsonnn } = require('./store/userscontact.js');
 const generatequote = require('./generatequote2.js')
 const chalk = require('kleur');
 const TEMP_DIR = path.join(__dirname, 'temp');
@@ -49,6 +49,42 @@ const hngmnwrds = [
 
 
 
+
+const crypto = require('crypto')
+
+/**
+ * Rebuilds a fake WhatsApp message and uses Baileys to decrypt it.
+ * Returns the media buffer only.
+ * 
+ * @param {object} sock - your Baileys socket instance (e.g. AlexaInc)
+ * @param {object} mediaData - stored media fields
+ * @returns {Promise<Buffer>} - decrypted media buffer
+ */
+async function getMediaBufferFromStored(sock, mediaData) {
+  // Build fake message structure that Baileys expects
+  const fakeMsg = {
+    message: {
+      imageMessage: { // or videoMessage, documentMessage, etc.
+        url: mediaData.mediaUrl,
+        mimetype: mediaData.mediaMimetype,
+        mediaKey: Buffer.from(mediaData.mediaKey.split(',').map(x => parseInt(x))),
+        fileEncSha256: mediaData.mediaFileEncSha256
+          ? Buffer.from(mediaData.mediaFileEncSha256.split(',').map(x => parseInt(x)))
+          : undefined,
+        fileSha256: mediaData.mediaFileSha256
+          ? Buffer.from(mediaData.mediaFileSha256.split(',').map(x => parseInt(x)))
+          : undefined,
+      }
+    },
+    key: { remoteJid: 'status@broadcast' } // dummy JID
+  };
+
+  // Baileys handles the rest (download + decrypt)
+  const buffer = await downloadMediaMessage(fakeMsg, 'buffer', {}, { reuploadRequest: sock.updateMediaMessage });
+  return buffer;
+}
+
+// Example usage:
 
 
 
@@ -265,6 +301,8 @@ const { ConsoleMessage } = require('puppeteer');
 const { url } = require('inspector');
 const { json } = require('stream/consumers');
 const { image } = require('ascii-art');
+const { error } = require('console');
+const { title } = require('process');
 
 
 function getGreeting() {
@@ -648,7 +686,8 @@ if (sender.endsWith('@g.us') || sender.endsWith('@broadcast')) {
     senderabfff = msg.participant || msg.key.participant;
     sender = `${msg.participant || msg.key.participant}@${senderdef}`; // Assign participant ID instead
 }
-addXP(senderabfff);
+
+
 
 // const isOwner = (
 //   senderabfff === (process.env['Owner_nb'] + '@s.whatsapp.net') ||
@@ -675,10 +714,11 @@ const isGroup = msg.key.remoteJid.endsWith('@g.us');
 const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : '';
 const participants = isGroup ? groupMetadata?.participants || [] : [];
 const groupAdmins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
-
+//console.log(isOwner)
 const isAdmins = isGroup
-    ? groupAdmins.some(admin => admin.jid === senderabfff || admin.lid === senderabfff)
+    ? isOwner || groupAdmins.some(admin => admin.jid === senderabfff || admin.lid === senderabfff)
     : false;
+//console.log('a',isAdmins)
 const groupOwner = isGroup ? groupMetadata.owner : ''
 //console.log(botNumber)
 const ottffsse = msg.participant || msg.key.participant 
@@ -696,103 +736,42 @@ function formatUptime(uptime) {
   return `${days} d, ${hours} h, ${minutes} m, ${seconds} s`;
 };
 
+
+const iduser = isGroup
+  ? (participants.find(jsn => jsn.lid === msg.key.participant)?.id || msg.key.participant)
+  : senderabfff;
+
+addXP(iduser);
+
+
+
 const uptimepc = await formatUptime(si.uptime());
 const cpuData = await si.cpus()[0].model;
 const memTotal = Math.round(await si.totalmem()/1e+9) +' GB' ;
 const memUsed = Math.round(((await si.totalmem()- await si.freemem())/1e+9)*100)/100; 
 const roleuser = isOwner ? 'Owner' : 'User';
-let menu = `╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
-┃                        🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                          ┃
-┃━━━━━━━━━━━━━━━━━━━━━━━━━━━━┃
+let menu = `╭━━━━━━━━━━━━━━━━━━━━━━━╮
+┃                     🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                       ┃
+┃━━━━━━━━━━━━━━━━━━━━━━━┃
 ┃
 ┃🖥️ : ${cpuData}
 ┃💾 𝐑𝐚𝐦 : ${memUsed} GB of ${memTotal}
 ┃💻 𝐔𝐩 𝐓𝐢𝐦𝐞 : ${uptimepc}
 ┃
-┃  𝗛𝗲𝗹𝗹𝗼, *${msg.pushName}* ${getGreeting()} 🌙
+┃ 𝗛𝗲𝗹𝗹𝗼, *${msg.pushName}* ${getGreeting()} 🌙
 ┃
 ┃ ✧ ʟɪᴍɪᴛ: *no limit enjoy* 
 ┃ ✧ ʀᴏʟᴇ: *${roleuser}*  
-┃ ✧ ʟᴇᴠᴇʟ: *${getLevel(senderabfff)}*
+┃ ✧ ʟᴇᴠᴇʟ: *${getLevel(iduser)}*
 ┃ ✧ ᴅᴀʏ: *${moment.tz('Asia/Colombo').format('dddd')}*,  
 ┃ ✧ ᴅᴀᴛᴇ: *${moment.tz('Asia/Colombo').format('MMMM Do YYYY')}*  
 ┃ ✧ ᴛɪᴍᴇ: *${moment.tz('Asia/Colombo').format('HH:mm:ss')}*
 ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃                     📜  𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 𝗟𝗜𝗦𝗧                       ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃
-┃ 🛠 *Utility Commands:*  
-┃ ➥ \`.menu\` - Get this menu  
-┃ ➥ \`.ping\` - Check bot status  
-┃ ➥ \`.weather\` <city> - Get weather info  
-┃ ➥ \`.news\` - Get last news info  
-┃ ➥ \`.owner\`  - Chat with Owner  
-┃
-┃ 🖼 *Sticker & Image Commands:*  
-┃ ➥ \`.sticker\` - Convert image to a sticker  
-┃ ➥ \`.q\` - Convert message to a sticker  
-┃
-┃ 🌐 *Web & Search Commands:*  
-┃ ➥ \`.web\` - Search on the web  
-┃ ➥ \`.browse\` - Search on the web  
-┃ ➥ \`.search\` - Search on the web  
-┃
-┃ 🎥 *YouTube Commands:*  
-┃ ➥ .yts - Search YouTube  
-┃ ➥ .ytdl - Download MP3 from YouTube   
-┃
-┃ 👥 *Groups Commands:*   
-┃ ➥ \`.add\` - .add 94702368937 97897847134 
-┃ ➥ \`.remove\` - .remove also like add  
-┃ ➥ \`.promote\` - also like add 
-┃ ➥ \`.demote\` - also like add  
-┃ ➥ \`.antilink\` - .antilink on/off  
-┃ ➥ \`.hidetag\` - .hidetag msg 
-┃        this will mention all member of group    
-┃ ➥ \`.antinsfw\` - Similer to antilink     
-┃ ➥ \`.chatbot\` - Similer to antilink  
-┃ ➥ \`.welcomeon\` - to turn on wc msg 
-┃ ➥ \`.welcomeoff\` - to turn off wc msg
-┃
-┃ 🔞 *NSFW Commands:*  
-┃ ➥ \`.anal\`                ➥ \`.ass\`  
-┃ ➥ \`.boobs\`            ➥ \`.gonewild\`  
-┃ ➥ \`.hanal\`              ➥ \`.hass\`  
-┃ ➥ \`.hboobs\`          ➥ \`.hentai\`  
-┃ ➥ \`.hkitsune\`        ➥ \`.hmidriff\`  
-┃ ➥ \`.hneko\`             ➥ \`.hthigh\`  
-┃ ➥ \`.neko\`               ➥ \`.paizuri\`  
-┃ ➥ \`.pgif\`                 ➥ \`.pussy\`  
-┃ ➥ \`.tentacle\`          ➥ \`.thigh\`  
-┃ ➥ \`.yaoi\`  
-┃
-┃ 🌸 *SFW Commands:*  
-┃ ➥ \`.coffee\`  
-┃ ➥ \`.food\`  
-┃ ➥ \`.holo\`  
-┃ ➥ \`.kanna\`  
-┃ 
-┃ 🪀 *Games*     
-┃
-┃             _*Hangman*_
-┃
-┃        ➥ \`.hangman\` - to start hangman
-┃        ➥ \`.guess\` - to guess letter
-┃        ➥ \`.endhangman\` - to end game
-┃        ➥ \`.hangmanlb\` - get hangman leaderboard   
-┃
-┃             _*DailyGiveaway*_
-┃
-┃        ➥ \`.dailyqa\` - to start Q&A
-┃        ➥ \`.answer\` - send answer number
-┃
-┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃                         🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                         ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃                © 2025 Hansaka @ AlexaInc                   ┃
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+┣━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                       🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                     ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━┫
+┃             © 2025 Hansaka @ AlexaInc                ┃
+╰━━━━━━━━━━━━━━━━━━━━━━━╯
 `;
 
 
@@ -958,8 +937,9 @@ async function checkAntiLink(msg,messageText) {
 
 
 if (await checkBadWord(msg, messageText)) {
+    if (isOwner) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are the Owner. Lucky You' });
   if (isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are an admin. Lucky You' });
-  if (isOwner) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are the Owner. Lucky You' });
+
   AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 NSFW content is not allowed in this group!' });
 
   AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key }).then(response=>{
@@ -1006,14 +986,211 @@ if (await checkAntiLink(msg, messageText)) {
 
             // command handle
             switch (command){
+
+
             case"menu":{
+const interactiveButtons = [
+  {
+    name: "single_select",
+    buttonParamsJson: JSON.stringify({
+      title: "Select a menu to open",
+      sections: [
+        {
+          title: "select a Menu",
+          rows: [
+    {
+        header:' ',
+        title: 'Main', 
+        id: '.menu_util'
+    },
+    {
+        header:' ',
+        title: 'Stickers', 
+        id: '.menu_sticker'
+    },
+    {
+        header:' ',
+        title: 'Websearch', 
+        id: '.menu_web'
+    },
+    {
+        header:' ',
+        title: 'Youtube', 
+        id: '.menu_yt'
+    },
+    {
+        header:' ',
+        title: 'Groups manage', 
+        id: '.menu_groups'
+    },
+    {
+        header:' ',
+        title: 'NSFW', 
+        id: '.menu_nsfw'
+    },
+    {
+        header:' ',
+        title: 'SFW', 
+        id: '.menu_sfw'
+    },
+    {
+        header:' ',
+        title: 'Games', 
+        id: '.menu_games'
+    }
+]
+        }
+      ]
+    })
+  }
+];
+
+const interactiveMessage = {
+  image: {url: './res/img/alexa.png'},
+  caption: menu,
+  footer: "Powered by HANSAKA",
+  interactiveButtons
+};
+
+
+await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg })
+              break;
+            }
+
+
+
+case "menu_util":
+case "menu_sticker":
+case "menu_web":
+case "menu_yt":
+case "menu_groups":
+case "menu_nsfw":
+case "menu_sfw":
+case "menu_games": {
+  const respomm = command.split('_')[1];
+  let menus;
+
+  if (respomm === 'util') {
+    menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃               🛠 *Utility Commands:*                
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`.menu\` - Get this menu  
+┃ ➥ \`.ping\` - Check bot status  
+┃ ➥ \`.weather\` <city> - Get weather info  
+┃ ➥ \`.news\` - Get latest news  
+┃ ➥ \`.owner\` - Chat with Owner`;
+  } 
+  else if (respomm === 'sticker') {
+    menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃            🖼 *Sticker & Image Commands:*           
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`.sticker\` - Convert image to sticker  
+┃ ➥ \`.q\` - Convert message to sticker`;
+  } 
+  else if (respomm === 'web') {
+    menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃           🌐 *Web & Search Commands:*              
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`.web\` - Search on the web  
+┃ ➥ \`.browse\` - Search on the web  
+┃ ➥ \`.search\` - Search on the web`;
+  } 
+  else if (respomm === 'yt') {
+    menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃              🎥 *YouTube Commands:*                
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`.yts\` - Search YouTube  
+┃ ➥ \`.ytdl\` - Download MP3 from YouTube`;
+  } 
+  else if (respomm === 'groups') {
+    menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                👥 *Groups Commands:*                
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`.add\` - .add 94702368937 97897847134  
+┃ ➥ \`.remove\` - .remove also like add  
+┃ ➥ \`.promote\` - also like add  
+┃ ➥ \`.demote\` - also like add  
+┃ ➥ \`.antilink\` - .antilink on/off  
+┃ ➥ \`.hidetag\` - .hidetag msg (mention all members)  
+┃ ➥ \`.antinsfw\` - Similar to antilink  
+┃ ➥ \`.chatbot\` - Similar to antilink  
+┃ ➥ \`.welcomeon\` - Turn on welcome message  
+┃ ➥ \`.welcomeoff\` - Turn off welcome message`;
+  } 
+  else if (respomm === 'nsfw') {
+    menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                🔞 *NSFW Commands:*                
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`.anal\`                ➥ \`.ass\`  
+┃ ➥ \`.boobs\`              ➥ \`.gonewild\`  
+┃ ➥ \`.hanal\`              ➥ \`.hass\`  
+┃ ➥ \`.hboobs\`             ➥ \`.hentai\`  
+┃ ➥ \`.hkitsune\`           ➥ \`.hmidriff\`  
+┃ ➥ \`.hneko\`              ➥ \`.hthigh\`  
+┃ ➥ \`.neko\`               ➥ \`.paizuri\`  
+┃ ➥ \`.pgif\`               ➥ \`.pussy\`  
+┃ ➥ \`.tentacle\`           ➥ \`.thigh\`  
+┃ ➥ \`.yaoi\``;
+  } 
+  else if (respomm === 'sfw') {
+    menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                 🌸 *SFW Commands:*                 
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`.coffee\`  
+┃ ➥ \`.food\`  
+┃ ➥ \`.holo\`  
+┃ ➥ \`.kanna\``;
+  } 
+  else if (respomm === 'games') {
+    menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                   🪀 *Games Menu:*                 
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ _*Hangman*_  
+┃ ➥ \`.hangman\` - Start hangman  
+┃ ➥ \`.guess\` - Guess a letter  
+┃ ➥ \`.endhangman\` - End game  
+┃ ➥ \`.hangmanlb\` - Get leaderboard  
+
+┃ _*DailyGiveaway*_  
+┃ ➥ \`.dailyqa\` - Start Q&A  
+┃ ➥ \`.answer\` - Send answer number`;
+  }
+
+  const fmenu = `╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+┃                        🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                          ┃
+┃━━━━━━━━━━━━━━━━━━━━━━━━━━━━┃
+┃
+┃🖥️ : ${cpuData}
+┃💾 𝐑𝐚𝐦 : ${memUsed} GB of ${memTotal}
+┃💻 𝐔𝐩 𝐓𝐢𝐦𝐞 : ${uptimepc}
+┃
+┃  𝗛𝗲𝗹𝗹𝗼, *${msg.pushName}* ${getGreeting()} 🌙
+┃
+┃ ✧ ʟɪᴍɪᴛ: *no limit enjoy* 
+┃ ✧ ʀᴏʟᴇ: *${roleuser}*  
+┃ ✧ ʟᴇᴠᴇʟ: *${getLevel(iduser)}*
+┃ ✧ ᴅᴀʏ: *${moment.tz('Asia/Colombo').format('dddd')}*,  
+┃ ✧ ᴅᴀᴛᴇ: *${moment.tz('Asia/Colombo').format('MMMM Do YYYY')}*  
+┃ ✧ ᴛɪᴍᴇ: *${moment.tz('Asia/Colombo').format('HH:mm:ss')}*
+┃
+${menus}
+┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                         🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                         ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃                © 2025 Hansaka @ AlexaInc                   ┃
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+`;
+
+  // send or return menu
+AlexaInc.sendMessage(msg.key.remoteJid, {image: {url: './res/img/alexa.png'},caption:fmenu},{quoted:msg})
+
+  break;
+}
 
 
 
 
-                AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/alexa.png'},caption: menu},{ quoted: msg });
-
-            break}
 
 
 
@@ -1215,15 +1392,34 @@ const highQualityBuffer = await sharp(webpbuff)
 // }
 
 case"sticker":{
+      const quotedid = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
+
               AlexaInc.sendMessage(msg.key.remoteJid,{text:'preparing your sticker'}, {quoted:msg});
               AlexaInc.sendMessage(msg.key.remoteJid,{react: {text: '🔄', key: msg.key}})
                 try {
                     const messageType = Object.keys(msg.message)[0]; // "imageMessage", "videoMessage", etc.
                     const fileType = messageType.replace("Message", ""); // "image", "video", "document"
                     
-                    const mediaBuffer = await downloadMediaMessage(msg, "buffer", {});
+let mediaBuffer = null;
+
+                    if (quotedid) {
+                      const loadedmsg = await loadMessage(msg.key.remoteJid , quotedid)
+                        const media = {
+    mediaUrl: loadedmsg.mediaUrl,
+    mediaMimetype: loadedmsg.mediaMimetype,
+    mediaKey: loadedmsg.mediaKey,
+    mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
+    mediaFileSha256: loadedmsg.mediaFileSha256
+  };
+  console.log(media)
+
+mediaBuffer = await await getMediaBufferFromStored(AlexaInc, media);
+                    }else{
+                     mediaBuffer = await downloadMediaMessage(msg, "buffer", {});
+                    }
+
                     if (!mediaBuffer || mediaBuffer.length === 0) {
-                        throw new Error("Media buffer is empty");
+                        throw new Error("Media buffer is empty , please reply to image or send /sticker command with image");
                     }
 
                     // Generate a unique filename
@@ -1245,7 +1441,7 @@ const stickerBuffer = await fs.readFileSync(stickerPath);
             url: stickerPath,
         },
     };
-    await AlexaInc.sendMessage(msg.key.remoteJid, stickermessage);
+    await AlexaInc.sendMessage(msg.key.remoteJid, stickermessage , {quoted:msg});
     AlexaInc.sendMessage(msg.key.remoteJid,{react: {text: '✅', key: msg.key}})
                     // Delete the file after upload
                     await fs.unlink(imagePath);
@@ -1253,7 +1449,7 @@ const stickerBuffer = await fs.readFileSync(stickerPath);
                     //console.log(`Temporary file deleted: ${filePath}`);
 
                 } catch (error) {
-                  AlexaInc.sendMessage(msg.key.remoteJid, {text:'sorry sticker image fail'});
+                  AlexaInc.sendMessage(msg.key.remoteJid, {text:error.message});
     AlexaInc.sendMessage(msg.key.remoteJid,{react: {text: '☹️', key: msg.key}})
                     console.error("Error processing media:", error);
                 }
@@ -1264,48 +1460,61 @@ const stickerBuffer = await fs.readFileSync(stickerPath);
 
  case 'search': case 'browse':case 'web':{
 
-websearch_query(text).then(async (response) =>{
-    //console.log(response)
-    const resultweb = await response.join('\n\n\n\t\t');
-  AlexaInc.sendMessage(msg.key.remoteJid , {text:resultweb,  },{quoted:msg})
-})
+    try {
+    console.log("Starting search..."); // You control logging here
+    
+
+    const results = await websearch_query(text);
+    let replymsg='';
+    for (let index = 0; index < results.length; index++) {
+      const para = results[index].paragraph;
+      const url = results[index].url
+      replymsg = replymsg + `\n
+result - ${para}
+source - ${url}
+      `
+
+    }
+      AlexaInc.sendMessage(msg.key.remoteJid , {text:replymsg,  },{quoted:msg})
+// console.log(replymsg)
+  } catch (error) {
+    // This will catch API key errors or Google API failures
+    console.error("A critical error occurred:", error.message);
+          AlexaInc.sendMessage(msg.key.remoteJid , {text:'A critical error occurred:',  },{quoted:msg})
+  }
+  
+
   break
- }
+ } 
 
 case 'weather': {
     if (!text) {
         AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please enter city after command' }, { quoted: msg });
     }
-    try {
-        // Await the weather data
-        const fetchmg = await weatherof(args);
-        const summary = generateWeatherSummary(fetchmg.temperature, fetchmg.windspeed, fetchmg.winddirection);
-        // Check if the city is invalid
-        if (fetchmg === 'invalid city') {
-            // If the city is invalid, send a message back saying "invalid city"
-            AlexaInc.sendMessage(msg.key.remoteJid, { 
-                text: 'Invalid city name. Please recheck the city name and try again.' 
-            }, { quoted: msg });
-        } else {
-            // If the city is valid, send the weather information
-            const repmsg = `
-*City* *-* *${args}*
-*Time* *-* *${moment.tz('Asia/Colombo').format('HH:mm')}* *UTC* *+5.30*
-${summary}
-  `;
-        
-            // Send the weather information to the user
+
+
+    try{
+
+      const weatherjson = await weatherof(text)
+      const repmasga = `
+*City*        *-* *${weatherjson.city}/${weatherjson.country}*
+*Time*        *-* *${moment.tz('Asia/Colombo').format('HH:mm')}* *UTC* *+5.30*
+*Tempurature* *-* *${weatherjson.temperature}*
+*Wind-speed*  *-* *${weatherjson.wind_speed}*
+*Description* *-* *${weatherjson.description}*
+      `
             AlexaInc.sendMessage(msg.key.remoteJid, {
                 image: { url: './res/img/unnamed.jpeg' },
-                caption: repmsg
+                caption: repmasga
             }, { quoted: msg });
-        }
-    } catch (error) {
-        // Handle errors
-        console.error(error);  // Log the error for debugging
+    } catch (error){
+      console.log(error)
         AlexaInc.sendMessage(msg.key.remoteJid, { react: { text: '☹️', key: msg.key } });
         AlexaInc.sendMessage(msg.key.remoteJid, { text: error.message || error }, { quoted: msg });
     }
+
+
+
     break;
 }
 
@@ -1997,12 +2206,68 @@ case 'welcomeoff': {
 }
 
 
+case "getcontacts": {
+  // 1. Check permissions first
+  if (!isOwner) {
+    AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This command is for the owner only.' }, { quoted: msg });
+    break;
+  }
+  if (!isGroup) {
+    AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This command only works in groups.' }, { quoted: msg });
+    break;
+  }
+
+  // 2. Send a "processing" message
+  AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Syncing group members, please wait...' }, { quoted: msg });
+
+  try {
+    // 3. Get group info
+    const groupId = msg.key.remoteJid;
+    const metadata = await AlexaInc.groupMetadata(groupId);
+    const participants = metadata.participants;
+
+    // 4. Load existing users and create a Set for checking
+    let users = readUsersFile();
+    const existingNumbers = new Set(users.map(u => u.number));
+    let newUsersAdded = 0;
+
+    // 5. Loop and add only new users
+    for (const p of participants) {
+      const number = p.id.split('@')[0];
+      
+      // This check prevents duplicates
+      if (number && !existingNumbers.has(number)) {
+        users.push({ number: number, name: "Unknown" });
+        existingNumbers.add(number); // Add to set for this session
+        newUsersAdded++;
+      }
+    }
+
+    // 6. Save and send final report
+    if (newUsersAdded > 0) {
+       saveUsersjsonnn(users);
+      AlexaInc.sendMessage(groupId, { 
+        text: `✅ Success!\nAdded ${newUsersAdded} new contacts to the database.` 
+      }, { quoted: msg });
+    } else {
+      AlexaInc.sendMessage(groupId, { 
+        text: 'All group members are already in the database. No new contacts added.' 
+      }, { quoted: msg });
+    }
+
+  } catch (err) {
+    console.error("Error in /getcontacts:", err);
+    AlexaInc.sendMessage(msg.key.remoteJid, { text: 'An error occurred while syncing contacts.' }, { quoted: msg });
+  }
+  break;
+}
+
 case 'chatbot': {
   if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
   if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
   if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin' });
   if (!args[0] || (args[0] !== 'on' && args[0] !== 'off')) 
-      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please send .antilink on/off' });
+      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please send .chatbot on/off' });
 
   const value1 = args[0] === 'on';
   
@@ -2060,7 +2325,7 @@ case 'antinsfw': {
   if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
   if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin' });
   if (!args[0] || (args[0] !== 'on' && args[0] !== 'off')) 
-      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please send .antilink on/off' });
+      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please send .antinsfw on/off' });
 
   const value1 = args[0] === 'on';
   
@@ -2319,15 +2584,85 @@ function runAI() {
     switch(prosseseb){
 
 case 'menu' : case 'menu.' :{
+const interactiveButtons = [
+  {
+    name: "single_select",
+    buttonParamsJson: JSON.stringify({
+      title: "Select a menu to open",
+      sections: [
+        {
+          title: "Top 4 Videos",
+          highlight_label: "Select",
+          rows: [
+    {
+        header:' ',
+        title: 'Main', 
+        id: '.menu_util', 
+        description: 'get Main menu'
+    },
+    {
+        header:' ',
+        title: 'Stickers', 
+        id: '.menu_sticker', 
+        description: 'get stickers menu'
+    },
+    {
+        header:' ',
+        title: 'Websearch', 
+        id: '.menu_web', 
+        description: 'get websearch menu'
+    },
+    {
+        header:' ',
+        title: 'Youtube', 
+        id: '.menu_yt', 
+        description: 'get youtube menu'
+    },
+    {
+        header:' ',
+        title: 'Groups manage', 
+        id: '.menu_groups', 
+        description: 'get Groups menu'
+    },
+    {
+        header:' ',
+        title: 'NSFW', 
+        id: '.menu_nsfw', 
+        description: 'get NSFW menu'
+    },
+    {
+        header:' ',
+        title: 'SFW', 
+        id: '.menu_sfw', 
+        description: 'get SFW menu'
+    },
+    {
+        header:' ',
+        title: 'Games', 
+        id: '.menu_games', 
+        description: 'get Games menu'
+    }
+]
+        }
+      ]
+    })
+  }
+];
+
+const interactiveMessage = {
+  image: {url: './res/img/alexa.png'},
+  caption: menu,
+  footer: "Powered by HANSAKA",
+  interactiveButtons
+};
+
+
+await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg })
+              break;
+            }
 
 
 
-
-
-                AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/alexa.png'},caption: menu},{ quoted: msg });
-
-  break
-}
 
 case 'ping':case 'ping.':{
 

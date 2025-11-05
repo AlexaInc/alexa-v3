@@ -82,6 +82,18 @@ const logger = P({
 }, P.destination('./wa-logs.txt'));
 logger.level = 'debug';
 
+/**
+ * Saves a message to a JSON file, now including media URL and mimetype.
+ * Assumes 'fs', 'path', and 'STORE_DIR' are defined globally.
+ */
+/**
+ * Saves a message, including media decryption keys (mediaKey, iv, etc.).
+ * Converts Buffers to base64 for JSON storage.
+ */
+/**
+ * Saves a message, including media decryption keys (mediaKey, iv, etc.).
+ * Converts Buffers to base64 for JSON storage.
+ */
 function saveMessage(jid, msg) {
   if (!jid || !msg?.message) return;
 
@@ -98,40 +110,93 @@ function saveMessage(jid, msg) {
     }
   }
 
-  // Get message text (simple text only)
+  // --- Start: Media Logic ---
   let messageText = "";
+  let mediaUrl = null;
+  let mediaMimetype = null;
+  // --- Fields for decryption ---
+  let mediaKey = null;
+  let mediaIv = null;
+  let mediaFileEncSha256 = null;
+  let mediaFileSha256 = null;
+
   const msgType = Object.keys(msg.message)[0];
+  const messageContent = msg.message[msgType];
 
-  if (msgType === "conversation") {
-    messageText = msg.message.conversation;
-  } else if (msgType === "extendedTextMessage") {
-    messageText = msg.message.extendedTextMessage.text;
+  switch (msgType) {
+    case "conversation":
+      messageText = messageContent;
+      break;
+    case "extendedTextMessage":
+      messageText = messageContent.text;
+      break;
+    case "imageMessage":
+    case "videoMessage":
+    case "documentMessage":
+    case "stickerMessage":
+    case "audioMessage":
+      messageText = messageContent.caption || "";
+      mediaUrl = messageContent.url;
+      mediaMimetype = messageContent.mimetype;
+
+      // --- Store decryption keys as base64 strings ---
+      mediaKey = messageContent.mediaKey?.toString('base64') || null;
+      mediaIv = messageContent.iv?.toString('base64') || null;
+      mediaFileEncSha256 = messageContent.fileEncSha256?.toString('base64') || null;
+      mediaFileSha256 = messageContent.fileSha256?.toString('base64') || null;
+      break;
+    default:
+      // Other message types (reaction, poll, etc.)
+      break;
   }
+  // --- End: Media Logic ---
 
-  // Check if it’s a reply
+  // Handle replies
   let replyInfo = null;
-  if (msg.message[msgType]?.contextInfo?.quotedMessage) {
-    const quoted = msg.message[msgType].contextInfo.quotedMessage;
+  const contextInfo = messageContent?.contextInfo;
+
+  if (contextInfo?.quotedMessage) {
+    const quoted = contextInfo.quotedMessage;
     const quotedType = Object.keys(quoted)[0];
-    const quotedText =
-      quotedType === "conversation"
-        ? quoted.conversation
-        : quoted.extendedTextMessage?.text || "";
+    const quotedContent = quoted[quotedType];
+    let quotedText = "";
+
+    switch (quotedType) {
+      case "conversation":
+        quotedText = quotedContent;
+        break;
+      case "extendedTextMessage":
+        quotedText = quotedContent.text || "";
+        break;
+      case "imageMessage":
+      case "videoMessage":
+      case "documentMessage":
+        quotedText = quotedContent.caption || "";
+        break;
+    }
 
     replyInfo = {
-      sender: msg.message[msgType].contextInfo.participant,
-      messageId: msg.message[msgType].contextInfo.stanzaId,
+      sender: contextInfo.participant,
+      messageId: contextInfo.stanzaId,
       messageText: quotedText,
     };
   }
 
-  // Custom formatted object
+  // --- Formatted Object ---
   const formatted = {
-    sender: msg.key.fromMe ? "me" : isGroup ? msg.key.participant || msg.participant : msg.key.remoteJid ,
+    sender: msg.key.fromMe ? "me" : isGroup ? msg.key.participant || msg.participant : msg.key.remoteJid,
     pushname: msg.pushname,
     messageId: msg.key.id,
-    messageText,
-    reply: replyInfo, // null if not a reply
+    messageText: messageText,
+    mediaUrl: mediaUrl,
+    mediaMimetype: mediaMimetype,
+    // --- New fields added (as base64 strings) ---
+    mediaKey: mediaKey,
+    mediaIv: mediaIv,
+    mediaFileEncSha256: mediaFileEncSha256,
+    mediaFileSha256: mediaFileSha256,
+    //
+    reply: replyInfo,
   };
 
   // Avoid duplicates
