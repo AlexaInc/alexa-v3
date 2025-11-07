@@ -42,13 +42,22 @@ function saveUsersjsonnn(users) {
 
 // === Add or update user (only in private chat) ===
 async function updateUser(msg , participants) {
-  const from = msg.key.remoteJid ;
+  const keyalt = msg.key.remoteJidAlt?.endsWith('@lid')
+  ? msg.key.remoteJid
+  : (msg.key.remoteJidAlt || msg.key.remoteJid);
+
+  const from = keyalt ;
   //console.log(msg)
   let islid;
   if (!from.endsWith('@s.whatsapp.net')) {
     const isparticipantlid = msg.key.participant.endsWith('@lid')
     //console.log(isparticipantlid , participants)
-    islid = isparticipantlid ? (await participants.find(jsn => jsn.lid === msg.key.participant))?.id?.replace(/@.*/, "") : msg.participant.replace(/@.*/, "") ;
+islid = isparticipantlid
+  ? participants.find(jsn => jsn.lid === msg.key.participant)?.id?.replace(/@.*/, "")
+  : msg.participant?.replace(/@.*/, "");
+
+if (!islid) return console.warn("⚠️ islid undefined, skipping process...");
+
   }else{  islid = from.replace(/:.*/, "").replace('@s.whatsapp.net', '');}
 
   const rawName = msg.pushName || null ;

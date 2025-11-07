@@ -3,5 +3,36 @@
     "name": "Hansaka",
     "maxIncorrect": 6,
     "wins": 2
+  },
+  "194300461756480@lid@120363407628540320@g.us": {
+    "word": "sandwich",
+    "name": "HZK GFX...",
+    "guessed": [
+      "h",
+      "l",
+      "a",
+      "q"
+    ],
+    "incorrect": 2,
+    "maxIncorrect": 6,
+    "wins": 0
+  },
+  "191908366262512@lid@120363396194242744@g.us": {
+    "name": "z",
+    "maxIncorrect": 6,
+    "wins": 2
+  },
+  "194300461756480@lid@120363396194242744@g.us": {
+    "word": "phone",
+    "name": "HZK GFX...",
+    "guessed": [],
+    "incorrect": 0,
+    "maxIncorrect": 6,
+    "wins": 0
+  },
+  "56986280452239@lid@120363423664726917@g.us": {
+    "name": "sαղzօ zíɾ",
+    "maxIncorrect": 6,
+    "wins": 0
   }
 }

@@ -4,11 +4,20 @@ const USER_DATA_FILE = './users.json';
 const fetchnews = require('./res/news');
 const yts = require('yt-search');
 const weatherof = require('./res/js/weather.js')
+const fsp = require('fs').promises;
 const hangmanFile = "./hangman.json";
+const { v4: uuidv4 } = require('uuid');
+const QUIZ_STORAGE_DIR = './quizzes';
+
+// Ensure the directory exists when the bot starts
+if (!fs.existsSync(QUIZ_STORAGE_DIR)) {
+    fs.mkdirSync(QUIZ_STORAGE_DIR);
+}
 const questionsFile = './dailyQuestions.json';
 const QresponsesFile = './dailyqresp.json';
 const upadestatusstate = {};
 const path = require('path');
+const quizManager = require('./res/js/quizManager.js');
 const Filters = require('./res/js/filters.js');
 const si = require('os');
 const axios = require('axios');
@@ -26,13 +35,28 @@ const { updateUser, loadUserByNumber , readUsersFile,saveUsersjsonnn } = require
 const generatequote = require('./generatequote2.js')
 const chalk = require('kleur');
 const TEMP_DIR = path.join(__dirname, 'temp');
+const {
+  getVideoInfo,
+  getFormats,
+  getBestFormats,
+  getDownloadStream,
+  downloadBestMergedToFile,
+  downloadSingleFormatToFile, 
+  downloadAudioAsMp3,       
+  findVideoFormat,
+  downloadAudioAsOgg,
+  downloadSingleFormatToBuffer,
+  downloadAudioAsMp3ToBuffer,
+  
+  downloadQualityToBuffer, // <-- NEW FUNCTION ADDED
+} = require('./res/js/ytHelper.js')
 //const {ai} = require('./ai')
 const { OpenAI } = require("openai");
 require('dotenv').config();
 const mysql = require("mysql2");
 
-const { mediafireDl } = require('./res/mediafire.js')
 
+const { mediafireDl } = require('./res/mediafire.js')
 const DB_HOST = process.env["DB_HOST"];
 const DB_UNAME = process.env["DB_UNAME"];
 const DB_NAME = process.env["DB_NAME"];
@@ -47,42 +71,143 @@ const hngmnwrds = [
   "universe", "planet", "sun", "moon", "star", "television", "sandwich"
 ];
 
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}m ${secs}s`;
+}
 
+async function startCustomQuiz(AlexaInc, jid, quizId) {
+    const filePath = `${QUIZ_STORAGE_DIR}/${quizId}.json`;
+    
+    if (!fs.existsSync(filePath)) {
+        return AlexaInc.sendMessage(jid, { text: `❌ Quiz ID *${quizId}* not found.` });
+    }
 
+    try {
+        const customQuestions = await fs.readJson(filePath);
 
+        if (!isValidQuizFormat(customQuestions)) {
+             return AlexaInc.sendMessage(jid, { text: `❌ Quiz ID *${quizId}* is corrupt or invalid. Please check the file.` });
+        }
+        
+        // 🚨 IMPORTANT: Temporarily overwrite the quizManager's question set
+        quizManager.setQuestions(customQuestions); 
+
+        // Start the quiz with the custom set
+        await quizManager.startQuiz(AlexaInc, jid);
+
+        // Reset to default questions after the quiz starts (or after a delay if needed)
+        // For simplicity, we assume you might want to load a default set later.
+        // For now, let's keep the custom quiz set until the next /setquiz or restart.
+
+    } catch (e) {
+        console.error(`Error loading custom quiz ${quizId}:`, e.message);
+        return AlexaInc.sendMessage(jid, { text: `❌ An error occurred while loading Quiz ID *${quizId}*.` });
+    }
+}
+
+const statusFile = path.join(__dirname, 'botstatus.json');
+
+/**
+ * Load the current bot status
+ * @returns {Object} { underMaintenance: boolean, message: string }
+ */
+function loadBotStatus() {
+  try {
+    const data = fs.readFileSync(statusFile, 'utf-8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error('Error loading bot status:', err);
+    return { underMaintenance: false, message: 'Bot is running smoothly.' };
+  }
+}
+
+/**
+ * Update bot status
+ * @param {boolean} maintenance - true = under maintenance, false = active
+ * @param {string} message - custom message to show users
+ */
+function updateBotStatus(maintenance, message) {
+  const newStatus = {
+    underMaintenance: maintenance,
+    message: message || (maintenance ? 'Bot under maintenance.' : 'Bot is active.')
+  };
+
+  fs.writeFileSync(statusFile, JSON.stringify(newStatus, null, 2));
+  console.log('✅ Bot status updated:', newStatus);
+}
 
 const crypto = require('crypto')
 
-/**
- * Rebuilds a fake WhatsApp message and uses Baileys to decrypt it.
- * Returns the media buffer only.
- * 
- * @param {object} sock - your Baileys socket instance (e.g. AlexaInc)
- * @param {object} mediaData - stored media fields
- * @returns {Promise<Buffer>} - decrypted media buffer
- */
-async function getMediaBufferFromStored(sock, mediaData) {
-  // Build fake message structure that Baileys expects
-  const fakeMsg = {
-    message: {
-      imageMessage: { // or videoMessage, documentMessage, etc.
-        url: mediaData.mediaUrl,
-        mimetype: mediaData.mediaMimetype,
-        mediaKey: Buffer.from(mediaData.mediaKey.split(',').map(x => parseInt(x))),
-        fileEncSha256: mediaData.mediaFileEncSha256
-          ? Buffer.from(mediaData.mediaFileEncSha256.split(',').map(x => parseInt(x)))
-          : undefined,
-        fileSha256: mediaData.mediaFileSha256
-          ? Buffer.from(mediaData.mediaFileSha256.split(',').map(x => parseInt(x)))
-          : undefined,
-      }
-    },
-    key: { remoteJid: 'status@broadcast' } // dummy JID
-  };
+function parseToBuffer(value) {
+    if (!value) return null;
+    if (typeof value === 'string') {
+        // check if it's base64 or numeric list
+        if (value.includes(',')) {
+            const arr = value.split(',').map(v => parseInt(v.trim(), 10));
+            return Buffer.from(arr);
+        } else {
+            // assume base64
+            return Buffer.from(value, 'base64');
+        }
+    } else if (Array.isArray(value)) {
+        return Buffer.from(value);
+    } else {
+        return Buffer.isBuffer(value) ? value : null;
+    }
+}
 
-  // Baileys handles the rest (download + decrypt)
-  const buffer = await downloadMediaMessage(fakeMsg, 'buffer', {}, { reuploadRequest: sock.updateMediaMessage });
-  return buffer;
+/**
+ * Get decrypted media buffer from stored WhatsApp message data
+ * @param {object} client - your Baileys socket instance
+ * @param {object} data - stored media message object
+ * @returns {Promise<Buffer>} - decrypted buffer
+ */
+async function getMediaBufferFromStored(client, data) {
+    const {
+        mediaUrl,
+        mediaMimetype,
+        mediaKey,
+        mediaIv,
+        mediaFileEncSha256,
+        mediaFileSha256
+    } = data;
+
+    // Download encrypted media file
+    const encrypted = await axios.get(mediaUrl, { responseType: 'arraybuffer' });
+
+    // Prepare fake Baileys message structure
+    const fakeMsg = {
+        message: {},
+        key: { remoteJid: 'status@broadcast', fromMe: true, id: data.messageId },
+    };
+
+    // Normalize key and sha values
+    const mediaKeyBuf = parseToBuffer(mediaKey);
+    const encSha256Buf = parseToBuffer(mediaFileEncSha256);
+    const sha256Buf = parseToBuffer(mediaFileSha256);
+    const ivBuf = parseToBuffer(mediaIv) || Buffer.alloc(16, 0);
+
+    fakeMsg.message.imageMessage = {
+        mimetype: mediaMimetype,
+        url: mediaUrl,
+        mediaKey: mediaKeyBuf,
+        fileEncSha256: encSha256Buf,
+        fileSha256: sha256Buf,
+        directPath: '',
+        fileLength: encrypted.data.length.toString(),
+        mediaKeyTimestamp: '0',
+        iv: ivBuf
+    };
+
+    // Use Baileys’ default decryptor
+    const buffer = await downloadMediaMessage(fakeMsg, 'buffer', {}, {
+        logger: client?.logger,
+        reuploadRequest: client?.updateMediaMessage
+    });
+
+    return buffer;
 }
 
 // Example usage:
@@ -214,6 +339,18 @@ function addXP(userId) {
 
 
 
+const userWaitingForQuizJSON = new Map(); // Key: JID, Value: true
+
+// Helper function for JSON validation
+function isValidQuizFormat(data) {
+    if (!Array.isArray(data) || data.length === 0) return false;
+    for (const q of data) {
+        if (!q.question || !Array.isArray(q.options) || q.options.length === 0 || typeof q.answer !== 'number') {
+            return false;
+        }
+    }
+    return true;
+}
 
 
 
@@ -650,6 +787,14 @@ try {
 
 async function handleMessage(AlexaInc, { messages, type }, loadMessage ,saveMessage) {
 
+
+
+
+
+
+
+
+
         const botNumber = await AlexaInc.user.id.split(':')[0];
 
     //     const savingmassage = {
@@ -667,6 +812,27 @@ async function handleMessage(AlexaInc, { messages, type }, loadMessage ,saveMess
       
     if (type === 'notify') {
       const msg = messages[0];
+
+
+
+
+
+
+
+
+
+
+
+const mess = {
+  owner: async () => await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not the owner baby' }, { quoted: msg }),
+  admin: async () => await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not a admin baby' }, { quoted: msg }),
+  "admin&owner": async () => await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not admin or owner baby' }, { quoted: msg }),
+  group: async () => await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is private chat baby thin command only for groups' }, { quoted: msg }),
+  botadmin: async () => await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please make me admin baby' }, { quoted: msg }),
+  private: async () => await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'lets talk about it privately baby' }, { quoted: msg }),
+};
+
+
 
 
       //console.log(msg)
@@ -936,8 +1102,18 @@ async function checkAntiLink(msg,messageText) {
 
 // Usage:
 
+const allowedCommands = [
+  '.ytdl_select',
+  '.dl360p',
+  '.dl480p',
+  '.dlmp3',
+  '.dlvoice',
+  '.quiz',
+  '/quiz'
+];
+const isYtCommand = allowedCommands.some(cmd => messageText.startsWith(cmd));
 
-if (await checkBadWord(msg, messageText)) {
+if (await checkBadWord(msg, messageText) && !isYtCommand) {
     if (isOwner) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are the Owner. Lucky You' });
   if (isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are an admin. Lucky You' });
 
@@ -949,8 +1125,13 @@ if (await checkBadWord(msg, messageText)) {
   return;
 }
 
-// Check for any link (http or https)
-if (await checkAntiLink(msg, messageText)) {
+// Define your allowed commands
+
+
+// Check if the message is one of your commands
+
+// Now, only run antilink if it's NOT a command
+if (await checkAntiLink(msg, messageText) && !isYtCommand) {
   if (isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are an admin. Lucky You' });
   if (isOwner) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are the Owner. Lucky You' });
   AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 Links are not allowed in this group!' });
@@ -960,6 +1141,19 @@ if (await checkAntiLink(msg, messageText)) {
   });
   return;
 }
+
+
+
+if (!isGroup) {
+        // This message is a DM. We check if it's an encrypted quiz answer.
+        if (messageText.startsWith(quizManager.QUIZ_MAGIC_PREFIX)) {
+            quizManager.handleDMAnswer(AlexaInc, msg.key.remoteJid, messageText);
+            return; // STOP: We have processed the private quiz answer.
+        }
+        // If it's any other DM, let your normal command handler deal with it (if applicable).
+        
+    }
+
 
 
 
@@ -1013,10 +1207,12 @@ if (matchedFilter) {
         
       
 let command = firstWord.slice(1);; // Assign as command
+const botStatus = loadBotStatus();
 
-
-
-
+// Check before executing commands
+if (botStatus.underMaintenance && !isOwner) {
+  return AlexaInc.sendMessage(msg.key.remoteJid, { text: botStatus.message }, { quoted: msg });
+}
 
 
 
@@ -1027,7 +1223,8 @@ let command = firstWord.slice(1);; // Assign as command
             switch (command){
 
 
-            case"menu":{
+            case"menu":case"alive":{
+                
 const interactiveButtons = [
   {
     name: "single_select",
@@ -1081,7 +1278,13 @@ const interactiveButtons = [
         }
       ]
     })
-  }
+  },{
+            name: 'cta_url',
+            buttonParamsJson: JSON.stringify({
+               display_text: `Contact Owner`,
+               url: `https://wa.me/94740970377?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
+            })
+        }
 ];
 
 const interactiveMessage = {
@@ -1107,6 +1310,7 @@ case "menu_nsfw":
 case "menu_sfw":
 case "menu_games": {
   const respomm = command.split('_')[1];
+  AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key })
   let menus;
 
   if (respomm === 'util') {
@@ -1156,7 +1360,8 @@ case "menu_games": {
 ┃ ➥ \`.stop\` - /stop trigger to stop filter  
 ┃ ➥ \`.filters\` - to get list of filters in group 
 ┃ ➥ \`.chatbot\` - Similar to antilink  
-┃ ➥ \`.welcomeon\` - Turn on welcome message  
+┃ ➥ \`.welcomeon\` - Turn on welcome message you can set costom welcome message(optanal)
+┃                            .welcomeon welcome to group
 ┃ ➥ \`.welcomeoff\` - Turn off welcome message`;
   } 
   else if (respomm === 'nsfw') {
@@ -1234,8 +1439,6 @@ AlexaInc.sendMessage(msg.key.remoteJid, {image: {url: './res/img/alexa.png'},cap
 
 
 
-
-
 case"ping":{
 
 AlexaInc.sendMessage(msg.key.remoteJid,{text:'testing ping.......'},{ quoted: msg })
@@ -1282,7 +1485,9 @@ ASSUMPTIONS:
 */
 
 case "status":{
-  if(!isOwner) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'this command only for owner'},{quoted:msg})
+  if(!isOwner) return mess.owner();
+
+
     upadestatusstate[msg.key.remoteJid] ={step:'awaiting_content'}
   AlexaInc.sendMessage(msg.key.remoteJid,{text:'waiting for content you can send photo with captions.'})
   break;
@@ -1435,7 +1640,7 @@ const highQualityBuffer = await sharp(webpbuff)
 // }
 
 case'filter':{
-if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'this is only for groups baby!'})
+if (!isGroup) return mess.group();
     const quotedid = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
 if (!text) return AlexaInc.saveMessage(msg.key.remoteJid,{text:'please send trigger word eg- /filter hi'},{quoted:msg})
 if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'please reply to a message baby!'},{quoted:msg})
@@ -1463,9 +1668,10 @@ if (type === 'text') {
 
 replyt = await await getMediaBufferFromStored(AlexaInc, media);
 }
-
+const result = text.split(/[\s,]+/).filter(Boolean);
+const unique = [...new Set(result)];
 const newfilter = {
-  trigger: text,
+  triggers: unique,
   type: type,
   reply: replyt, // The base64 data of the sticker
   mimetype: loadedmsg.mediaMimetype       // The mimetype (e.g., 'image/webp')
@@ -1478,7 +1684,7 @@ break;
 }
 
 case "stop":{
-  if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'this is only for groups baby!'})
+  if (!isGroup) return mess.group();
 if (!text) return AlexaInc.saveMessage(msg.key.remoteJid,{text:'please send trigger word eg- /stop hi'})
 const wasRemoved = Filters.removeFilter(msg.key.remoteJid, text);
 
@@ -1492,21 +1698,43 @@ if (wasRemoved) {
 
 case "filters":{
 
-    if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'this is only for groups baby!'})
+    if (!isGroup) return mess.group();
       const allFilters = Filters.getFilters(msg.key.remoteJid);
-if (allFilters.length === 0) {
+    const filterCount = allFilters.length;
+if (filterCount === 0) {
   AlexaInc.sendMessage(msg.key.remoteJid, { text: 'There are no filters in this group.' });
   return;
 }
 
-let filterList = '📋 *Filters in this group:*\n\n';
-allFilters.forEach(f => {
-  // Add each filter to the list
-  filterList += `• \`${f.trigger}\` (${f.type})\n`;
-});
+let filterList = `📋 *Filters in this group: ${filterCount}*\n\n`;
+allFilters.forEach(filter => {
+    // 'filter' is an object like: { triggers: ['hi', 'hello'], type: 'text', ... }
+    
+    // Join all triggers with commas
+    const triggersText = filter.triggers.map(t => `\`${t}\``).join(', ');
+    
+    filterList += `• *Triggers:* ${triggersText}\n  *Type:* ${filter.type}\n\n`;
+  });
 
 AlexaInc.sendMessage(msg.key.remoteJid, { text: filterList });
 break;
+}
+
+case"quiz":{
+if (!isGroup) return mess.group();
+if(!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'send with uiz id to starts' },{quoted:msg});
+await startCustomQuiz(AlexaInc, msg.key.remoteJid,text);
+  break;
+}
+
+case"setquiz":{
+  if(isGroup) return mess.private();
+            userWaitingForQuizJSON.set(msg.key.remoteJid, true);
+             AlexaInc.sendMessage(msg.key.remoteJid, { 
+                text: "Send the full quiz data in JSON format now. It must be an array of questions." 
+            });
+
+  break;
 }
 
 case"sticker":{
@@ -1526,6 +1754,7 @@ let mediaBuffer = null;
     mediaUrl: loadedmsg.mediaUrl,
     mediaMimetype: loadedmsg.mediaMimetype,
     mediaKey: loadedmsg.mediaKey,
+    mediaIv: loadedmsg.mediaIv,
     mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
     mediaFileSha256: loadedmsg.mediaFileSha256
   };
@@ -1577,7 +1806,27 @@ const stickerBuffer = await fs.readFileSync(stickerPath);
 
 
 
+case"cabout":{
 
+if(!isOwner) return mess.owner();
+if (!text) return await AlexaInc.sendMessage(msg.key.remoteJid,{text:'please send a text for set about baby'});
+
+try {
+  const response = await AlexaInc.updateProfileStatus(text);
+  console.log(response);
+
+  await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'profile status updated baby' });
+} catch (err) {
+  console.error('Error updating profile status:', err);
+
+  await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to update profile status baby 😢' });
+}
+
+
+
+
+  break
+}
 
 
  case 'search': case 'browse':case 'web':{
@@ -1680,7 +1929,7 @@ const interactiveButtons = [
             header: video.title,
             title: `${index + 1}`,
             description: "",
-            id: `.ytdl ${video.url}`
+            id: `.ytdl_select ${video.url}`
           }))
         }
       ]
@@ -1726,83 +1975,184 @@ await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg 
 break
 }
 
-case 'ytdl': case 'dlyt':{
+////this is button handler of yts
+case "ytdl_select":{
+try {
+  // 1. Call the function from your module
+  const info = await getVideoInfo(text);
 
-if (!text) { AlexaInc.sendMessage(msg.key.remoteJid,{text:'url not provided here is ex:- .ytdl https://www.youtube.com/watch?v=abc4jso0A3k '},{quoted:msg})} else {handleDownload(text)}
+  // 2. Extract the exact details you wanted
+  const details = {
+    name: info.title,
+    uploader: info.uploader,
+    durationInSeconds: info.duration,
+    thumbnailUrl: info.thumbnail
+  };
 
-function extractVideoId(url) {
-    // Improved regex to capture video ID from YouTube URLs
-    const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/[^\n\s]+\/|(?:[^\/\n\s]+\/|(?:v|e(?:mbed)?)\/|(?:watch\?v=|(?:e(?:mbed)?\/)?)|(?:\?v%3D|v%3D))([a-zA-Z0-9_-]{11}))|(?:youtu\.be\/([a-zA-Z0-9_-]{11})))/;
+  // --- NEW LOGIC STARTS HERE ---
 
-    const match = url.match(regex);
+  // Define the duration threshold (8 minutes * 60 seconds)
+  const maxVideoDuration = 480;
+  
+  // Define all possible button rows
+  const row360p = {
+    header: ' ',
+    title: '360p Video',
+    id: `.dl360p ${text}`
+  };
+  const row480p = {
+    header: ' ',
+    title: '480p Video',
+    id: `.dl480p ${text}`
+  };
+  const rowMp3 = {
+    header: ' ',
+    title: 'Audio mp3',
+    id: `.dlmp3 ${text}`
+  };
+    const rowvoice = {
+    header: ' ',
+    title: 'Voice massage',
+    id: `.dlvoice ${text}`
+  };
 
-    if (match && (match[1] || match[2])) {
-        return match[1] || match[2]; // Return the video ID
-    } else {
-       //console.error('Invalid YouTube URL');
-        return null; // Invalid URL
+  let buttonRows = []; // This will be our dynamic list of rows
+
+  if (details.durationInSeconds > maxVideoDuration) {
+    // Video is longer than 8 minutes, only add MP3
+    buttonRows.push(rowMp3);
+    buttonRows.push(rowvoice);
+  } else {
+    // Video is 8 minutes or less, add all options
+    buttonRows.push(row360p);
+    buttonRows.push(row480p);
+    buttonRows.push(rowMp3);
+    buttonRows.push(rowvoice);
+  }
+
+  // --- NEW LOGIC ENDS HERE ---
+
+  const interactiveButtons = [
+    {
+      name: "single_select",
+      buttonParamsJson: JSON.stringify({
+        title: "Check avalable qualities",
+        sections: [
+          {
+            title: "select a format",
+            // Use the dynamically created buttonRows array
+            rows: buttonRows 
+          }
+        ]
+      })
     }
+  ];
+
+  const vidinfo = `
+Name : ${details.name}
+Uploader : ${details.uploader}
+Duration : ${formatTime(details.durationInSeconds)}
+`;
+
+  const interactiveMessage = {
+    image: { url: details.thumbnailUrl },
+    caption: vidinfo,
+    footer: "Powered by HANSAKA",
+    interactiveButtons
+  };
+
+  await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg });
+
+} catch (error) {
+  console.error('Failed to get video info:', error.stderr || error.message);
 }
-async function handleDownload(url) {
-    const videoId = extractVideoId(url); // Extract the video ID from the URL
+  break;
+}
+
+case 'dl360p': case 'dl480p': case 'dlmp3': case'dlvoice':{
+
+
+
+
+// Inside your main message handler function...
+// Make sure fsp is imported at the top of your file
+// const fsp = require('fs').promises;
+
+let filePath = null; // <-- DECLARE THE VARIABLE HERE (outside try)
+
+try {
+  // DO NOT declare filePath here
+  
+  const qulitimap = {
+    'dl360p': '360',
+    'dl480p': '480',
+    'dlmp3': 'mp3',
+    'dlvoice': 'ogg'
+  };
+
+  const dlquality = qulitimap[command];
+
+  if (dlquality === 'ogg') {
+    // 1. Download file and get the path
+    filePath = await downloadAudioAsOgg(text); // Assign to the outer variable
+     const devsound = fs.readFileSync(filePath)
+    // 2. Send the file FROM THE PATH
+    await AlexaInc.sendMessage(msg.key.remoteJid,  { audio: devsound, mimetype: 'audio/mp4', ptt: true }, { quoted: msg });
+
+  } else if(dlquality === 'mp3'){
+    filePath = await downloadAudioAsMp3(text); // Assign to the outer variable
+     const devsound = fs.readFileSync(filePath)
+    // 2. Send the file FROM THE PATH
+    await AlexaInc.sendMessage(msg.key.remoteJid,  { audio: devsound, mimetype: 'audio/mp4' }, { quoted: msg });
+
+
+  } else {
+    // 1. Find the video format
+    const formatId = await findVideoFormat(text, dlquality);
+    if (!formatId) {
+      throw new Error(`Could not find a ${dlquality}p MP4 format with audio.`);
+    }
+
+    // 2. Download file and get the path
+    filePath = await downloadSingleFormatToFile(text, formatId); // Assign to the outer variable
     
-    if (!videoId) {
-        AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Invalid URL Provided. Here is an example: https://www.youtube.com/watch?v=abc4jso0A3k' }, { quoted: msg });
-        return;
-    }
-
+    // 3. Send the file FROM THE PATH
+    await AlexaInc.sendMessage(msg.key.remoteJid, {
+      video: { url: filePath }, 
+      mimeType: 'video/mp4'
+    }, { quoted: msg });
+  }
+} catch (error) {
+  console.log(error);
+  AlexaInc.sendMessage(msg.key.remoteJid, { text: `Error: ${error.message}` }, { quoted: msg });
+} finally {
+  // 4. DELETE THE FILE
+  // This can now see the 'filePath' variable
+  if (filePath) { 
     try {
-        const result = await YtDl(videoId); // Call downloadVideo function
-
-        if (result[0].downloaded) {
-            const { caption, videoPath, data } = result[0];
-            //console.log(caption)
-            // Ensure the file path is correct
-            const videoFilePath = `./temp/${videoId}.mp3`;
-
-            // Check if the file exists using fs-extra
-            const fileExists = await fs.pathExists(videoFilePath);
-            if (!fileExists) {
-                AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Downloaded video file not found.' }, { quoted: msg });
-                return;
-            }
-
-            // Read the file as a Buffer using fs-extra
-            const videoBuffer = await fs.readFile(videoFilePath);
-
-            // Prepare the media object using bailey's API format
-            const mediaMessage = {
-                document: data,
-                fileName:`${caption.Title}.mp3`,
-                caption: `\nRes:  ${text}\n\n\n\n~~~Hansaka@AlexxaInc © Reserved~~~`,
-                mimetype:'audio/mpeg'
-                //gifPlayback: false
-            };
-
-            // Send the video using sendMessage
-            AlexaInc.sendMessage(msg.key.remoteJid, mediaMessage, { quoted: msg });
-            //console.log('Video sent:', videoPath);
-
-            //await fs.remove(videoFilePath);  // Deletes the file
-            //console.log('Video file deleted:', videoFilePath);
-
-        } else {
-            AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to download video. Check if the URL is correct.' }, { quoted: msg });
-            console.error('Failed to download video');
-        }
-    } catch (error) {
-        console.error('Error downloading video:', error);
-        AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Error downloading video. Please try again later.' }, { quoted: msg });
-    }finally {
-        // Delete the file regardless of success or failure
-        const videoFilePath = `./temp/${videoId}.mp3`;
-        await fs.remove(videoFilePath);
-        //console.log('Video file deleted:', videoFilePath);
+      await fsp.unlink(filePath); // Delete the file
+      console.log('Successfully deleted temp file:', filePath);
+    } catch (deleteError) {
+      console.error('Failed to delete temp file:', deleteError);
     }
+  }
 }
 
-  break
+
+
+
+  break;
 }
+
+
+// case 'ytdl': case 'dlyt':{
+
+// if (!text) { AlexaInc.sendMessage(msg.key.remoteJid,{text:'url not provided here is ex:- .ytdl https://www.youtube.com/watch?v=abc4jso0A3k '},{quoted:msg})} else {handleDownload(text)}
+
+
+
+//   break
+// }
 
 case 'anal': case 'ass': case 'boobs': case 'gonewild': case 'hanal': case 'hass': case 'hboobs': case 'hentai': case 'hkitsune': case 'hmidriff': case 'hneko': case 'hthigh': case 'neko': case 'paizuri': case 'pgif': case 'pussy': case 'tentacle': case 'thigh': case 'yaoi':
 {
@@ -2017,6 +2367,40 @@ case 'answer':{
     break;
 }
 
+case 'maintain': {
+  if (!isOwner) return mess.owner();
+  if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'send on or off' }, { quoted: msg });
+
+  const mode = args[0]?.toLowerCase();
+
+  if (!mode || (mode !== 'on' && mode !== 'off')) {
+    return AlexaInc.sendMessage(msg.key.remoteJid, { text: '⚙️ Usage:\n.maintain on – enable maintenance mode\n.maintain off – disable maintenance mode' }, { quoted: msg });
+  }
+
+  const isOn = mode === 'on';
+  updateBotStatus(isOn, isOn ? '🚧 Bot under maintenance.' : '✅ Bot is active.');
+
+  return AlexaInc.sendMessage(msg.key.remoteJid, { text: `🔧 Maintenance mode ${isOn ? 'enabled' : 'disabled'}.` }, { quoted: msg });
+break;
+}
+
+
+case 'botst': {
+
+  const status = loadBotStatus();
+
+  const statusMsg = `🤖 *Bot Status:*\n\n` +
+    `🟢 Mode: ${status.underMaintenance ? '🟥 Under Maintenance' : '🟩 Active'}\n` +
+    `💬 Message: ${status.message}`;
+
+  return AlexaInc.sendMessage(msg.key.remoteJid, { text: statusMsg }, { quoted: msg });
+break;
+}
+
+
+
+
+
 case "guess": {
     // Check if the user has an active game
     if (!hangmanData[sender].word) {
@@ -2212,27 +2596,41 @@ case 'add':
 case 'remove': 
 case 'promote': 
 case 'demote': {
-    if (!isGroup) 
-        return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
+    if (!isGroup) return mess.group();
 
-    if (!isAdmins && !isOwner) 
-        return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin or owner!' });
+    if (!isAdmins && !isOwner) return mess['admin&owner']() ;
 
     if (!isBotAdmins) 
-        return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin!' });
+        return mess.botadmin();
 
     console.log({ isGroup, isAdmins, isBotAdmins });
 
     // Get mentioned users if any
-    let users = [];
-    if (msg.message.extendedTextMessage?.contextInfo?.mentionedJid) {
+let users = [];
+
+    // 1. Check for mentions
+    if (msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
         users = msg.message.extendedTextMessage.contextInfo.mentionedJid;
-    } else if (args.length) {
-        // fallback: use numbers from args
-        users = args.map(arg => arg.replace(/^\+/, '') + '@s.whatsapp.net');
+    
+    // 2. Fallback: check for numbers in args
+    } else if (args.length > 0) {
+    users = args
+        .map(arg => arg.replace(/^\+/, '')) // remove leading +
+        .filter(arg => /^\d{5,15}$/.test(arg)) // keep only valid numbers (5–15 digits)
+        .map(num => num + '@s.whatsapp.net');
+      console.log(users.length)
+    if (users.length === 0) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'enter valid number'},{quoted:msg}) ; // if no valid numbers, stop
+}else if (msg.message.extendedTextMessage?.contextInfo?.participant) {
+        // Put the single participant JID into an array for consistency
+        users = [msg.message.extendedTextMessage.contextInfo.participant];
+    
+    // 4. If nothing is found, send error
     } else {
-        return AlexaInc.sendMessage(msg.key.remoteJid, { text: `Please mention someone or provide a number to ${command}!` });
+        return AlexaInc.sendMessage(msg.key.remoteJid, { text: `Please mention someone, reply to a user, or provide a number to ${command}!` });
     }
+
+    // This will now log the replied-to user's JID in an array
+    console.log(users);
 
     AlexaInc.groupParticipantsUpdate(
         msg.key.remoteJid, 
@@ -2251,9 +2649,9 @@ case 'demote': {
 
 // set group welcome
 case 'welcomeon': {
-  if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
-  if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
-  if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Welcome message description is not defined! please send a message' });
+  if (!isGroup) return mess.group();
+  if (!isAdmins) return mess.admin();
+  //if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Welcome message description is not defined! please send a message' });
   
 
   // Query to update the group settings in the database
@@ -2264,7 +2662,7 @@ case 'welcomeon': {
   `;
   
   // Run the query using MySQL2
-  db.query(query, [msg.key.remoteJid, text, text], (err, result) => {
+  db.query(query, [msg.key.remoteJid, text||'default', text||'default'], (err, result) => {
     if (err) {
       console.error('Error updating welcome message:', err);
       return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to set welcome message.' });
@@ -2304,8 +2702,8 @@ await AlexaInc.sendMessage('status@broadcast', { text: 'Hello everyone!' }, {
   break
 }
 case 'welcomeoff': {
-  if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
-  if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
+  if (!isGroup) return mess.group();
+  if (!isAdmins) return mess.admin();
 
   // Query to update the group settings in the database
   const query = `
@@ -2330,14 +2728,8 @@ case 'welcomeoff': {
 
 case "getcontacts": {
   // 1. Check permissions first
-  if (!isOwner) {
-    AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This command is for the owner only.' }, { quoted: msg });
-    break;
-  }
-  if (!isGroup) {
-    AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This command only works in groups.' }, { quoted: msg });
-    break;
-  }
+  if (!isOwner) mess.owner();
+  if (!isGroup) mess.group();
 
   // 2. Send a "processing" message
   AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Syncing group members, please wait...' }, { quoted: msg });
@@ -2385,9 +2777,9 @@ case "getcontacts": {
 }
 
 case 'chatbot': {
-  if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
-  if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
-  if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin' });
+  if (!isGroup) return mess.group();
+  if (!isAdmins) return mess.admin();
+  if (!isBotAdmins) return mess.botadmin();
   if (!args[0] || (args[0] !== 'on' && args[0] !== 'off')) 
       return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please send .chatbot on/off' });
 
@@ -2414,9 +2806,9 @@ case 'chatbot': {
 }
 
 case 'antilink': {
-  if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
-  if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
-  if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin' });
+  if (!isGroup) return mess.group();
+  if (!isAdmins) return mess.admin();
+  if (!isBotAdmins) return mess.botadmin();
   if (!args[0] || (args[0] !== 'on' && args[0] !== 'off')) 
       return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please send .antilink on/off' });
 
@@ -2443,9 +2835,9 @@ case 'antilink': {
 }
 
 case 'antinsfw': {
-  if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
-  if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
-  if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin' });
+  if (!isGroup) return mess.group();
+  if (!isAdmins) return mess.admin();
+  if (!isBotAdmins) return mess.botadmin();
   if (!args[0] || (args[0] !== 'on' && args[0] !== 'off')) 
       return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please send .antinsfw on/off' });
 
@@ -2474,9 +2866,9 @@ case 'antinsfw': {
 
 case 'hidetag':{
 
-  if (!isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'This is not a group!' });
-  if (!isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are not an admin!' });
-  if (!isBotAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'I am not an admin' });
+  if (!isGroup) return mess.group();
+  if (!isAdmins) return mess.admin();
+  if (!isBotAdmins) return mess.botadmin();
   AlexaInc.sendMessage(msg.key.remoteJid, { text : text ? text : '' , mentions: participants.map(a => a.id)}, { quoted: msg })
   AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key });
   break
@@ -2486,8 +2878,8 @@ case 'hidetag':{
 
 case 'join':{
 
-  if (!isOwner) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'this command for owner only' });
-  if (isGroup) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'this cmd cannot be use in Group' });
+  if (!isOwner) return mess.owner();
+  if (isGroup) return mess.group();
 
 
   if (args.length < 1) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please provide a WhatsApp invite link.' });
@@ -2522,8 +2914,8 @@ await AlexaInc.groupAcceptInvite(inviteCode).then(response=>{
 }
 
 case 'leave':{
-  if (!isGroup) return await AlexaInc.sendMessage(msg.key.remoteJid,{ text:'this command only gor groups'});
-  if(!isOwner) return await AlexaInc.sendMessage(msg.key.remoteJid,{text:'this command for owner only'});
+  if (!isGroup) return mess.group();
+  if(!isOwner) return mess.owner();
   await AlexaInc.groupLeave(msg.key.remoteJid).then(response=>{
      AlexaInc.sendMessage(msg.key.participant,{text:'group leave sucsessfuly'})
   }).catch(err=>{console.error(err)})
@@ -2661,6 +3053,45 @@ if (msg.message?.videoMessage) {
   }
 
 
+        if (userWaitingForQuizJSON.has(msg.key.remoteJid)) {
+            userWaitingForQuizJSON.delete(msg.key.remoteJid); // Stop waiting
+            
+            try {
+                // Try to parse the message text as JSON
+                const quizData = JSON.parse(messageText.trim());
+                
+                if (!isValidQuizFormat(quizData)) {
+                    return AlexaInc.sendMessage(msg.key.remoteJid, { text: "❌ Quiz setup failed: Invalid JSON format. Ensure it is an array of questions with 'question', 'options', and 'answer' fields." });
+                }
+
+                // Generate ID and save
+                const quizId = uuidv4();
+                const filePath = `${QUIZ_STORAGE_DIR}/${quizId}.json`;
+                await fs.writeJson(filePath, quizData);
+                
+                // Construct the copyable command for the user
+                const quizCommand = `/quiz ${quizId}`;
+                
+                // Send success message with cta_copy button
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: `✅ Quiz saved successfully! ID: *${quizId}*`,
+                    footer: 'Tap to copy the command and start the quiz in a group.',
+                    interactiveButtons: [{
+                        name: 'cta_copy',
+                        buttonParamsJson: JSON.stringify({
+                            display_text: 'Copy Start Command',
+                            copy_code: quizCommand
+                        })
+                    }]
+                });
+
+            } catch (e) {
+                // JSON parsing failed
+                return AlexaInc.sendMessage(msg.key.remoteJid, { text: "❌ Quiz setup failed: The message was not valid JSON." });
+            }
+        }
+  
+
 
 /*****************   ai function for  language process  *****************/
 const groupId = msg.key.remoteJid;
@@ -2682,6 +3113,12 @@ if (!isGroup) {
         }
 
         if (results.length > 0) {
+          const botStatus = loadBotStatus();
+
+// Check before executing commands
+if (botStatus.underMaintenance && !isOwner) {
+  return AlexaInc.sendMessage(msg.key.remoteJid, { text: botStatus.message }, { quoted: msg });
+}
             // ✅ Group + chatbot enabled → run AI
             runAI();
         } else {

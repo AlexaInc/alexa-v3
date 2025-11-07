@@ -11,6 +11,7 @@
     "license": "ISC",
     "dependencies": {
         "@cacheable/node-cache": "^1.5.2",
+        "@distube/ytdl-core": "^4.16.12",
         "@googleapis/customsearch": "^6.0.0",
         "@huggingface/inference": "^3.5.1",
         "@ookla/speedtest-js-sdk": "^1.1.1",
@@ -21,6 +22,7 @@
         "chalk": "^5.4.1",
         "cheerio": "^1.1.2",
         "child_process": "^1.0.2",
+        "chrome-cookies-secure": "^3.0.0",
         "chromedriver": "^133.0.2",
         "cloudinary": "^2.5.1",
         "cors": "^2.8.5",
@@ -58,6 +60,7 @@
         "util": "^0.12.5",
         "wa-sticker-formatter": "^4.4.4",
         "ws": "^8.18.1",
+        "youtube-dl-exec": "^3.0.26",
         "yt-search": "^2.12.1"
     }
 }

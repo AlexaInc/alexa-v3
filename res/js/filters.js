@@ -2,102 +2,129 @@
 const fs = require('fs');
 const path = require('path');
 
-// 1. Create the directory path
-const dbDirectory = path.join(__dirname, 'filters');
-
-// 2. Set the full path to the file
-const dbPath = path.join(dbDirectory, 'filters.json');
+// 1. Create the *base* directory path
+// This goes up two levels (out of 'src', out of 'bot'), then into 'filters'
+const dbDirectory = path.join(__dirname, '..', '..', 'filters');
 
 /**
- * Ensures the database directory and file exist
+ * Gets the specific JSON file path for a group
+ * @param {string} groupId 
+ * @returns {string}
  */
-function initializeDB() {
+function getDBPath(groupId) {
+  // Sanitize groupId to be a safe filename (e.g., replace @ and . with _)
+  const safeFileName = groupId.replace(/[@.]/g, '_') + '.filters.json';
+  return path.join(dbDirectory, safeFileName);
+}
+
+/**
+ * Ensures the database *directory* exists
+ */
+function initializeDBDirectory() {
   try {
-    // Create the directory if it doesn't exist
+    // Create the base directory if it doesn't exist
     if (!fs.existsSync(dbDirectory)) {
-      fs.mkdirSync(dbDirectory);
-      console.log('Created filters directory.');
-    }
-    
-    // Create the file if it doesn't exist
-    if (!fs.existsSync(dbPath)) {
-      fs.writeFileSync(dbPath, '{}', 'utf8');
-      console.log('Created filters.json file.');
+      // recursive: true ensures all parent dirs are created
+      fs.mkdirSync(dbDirectory, { recursive: true });
+      console.log('Created base filters directory.');
     }
   } catch (err) {
-    console.error('Error initializing database:', err);
+    console.error('Error initializing database directory:', err);
   }
 }
 
 /**
- * Loads the filters database from filters.json
- * @returns {object} The filters object
+ * Loads the filters for a specific group from its file
+ * @param {string} groupId
+ * @returns {Array} Array of filter objects
  */
-function loadFilters() {
-  initializeDB(); // Ensure file exists before reading
+function loadGroupFilters(groupId) {
+  initializeDBDirectory(); // Ensure base dir exists
+  const dbPath = getDBPath(groupId);
+  
   try {
+    // If the file doesn't exist, return an empty array
+    if (!fs.existsSync(dbPath)) {
+      return [];
+    }
     const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
+    return JSON.parse(data); // The file contains an array of filters
   } catch (err) {
-    console.error('Error reading filters.json:', err);
-    return {}; // Return empty object on error
+    console.error(`Error reading ${dbPath}:`, err);
+    return []; // Return empty array on error
   }
 }
 
 /**
- * Saves the filters database to filters.json
- * @param {object} filters The filters object to save
+ * Saves the filters for a specific group to its file
+ * @param {string} groupId
+ * @param {Array} filters Array of filter objects
  */
-function saveFilters(filters) {
-  initializeDB(); // Ensure directory exists before writing
+function saveGroupFilters(groupId, filters) {
+  initializeDBDirectory(); // Ensure base dir exists
+  const dbPath = getDBPath(groupId);
+  
   try {
     const data = JSON.stringify(filters, null, 2); // Pretty-print JSON
     fs.writeFileSync(dbPath, data, 'utf8');
   } catch (err) {
-    console.error('Error writing to filters.json:', err);
+    console.error(`Error writing to ${dbPath}:`, err);
   }
 }
 
 /**
  * Adds a new filter for a specific group
  * @param {string} groupId The JID of the group
- * @param {object} filter The filter object to add (e.g., {trigger, type, reply, mimetype})
+ * @param {object} filter The filter object to add (e.g., {triggers: ['hi', 'hello'], type, reply})
  */
 function addFilter(groupId, filter) {
-  const filters = loadFilters();
+  let groupFilters = loadGroupFilters(groupId); // Loads the array for this group
   
-  if (!filters[groupId]) {
-    filters[groupId] = [];
-  }
-  
-  // Check if trigger already exists and remove it to avoid duplicates
-  filters[groupId] = filters[groupId].filter(f => f.trigger.toLowerCase() !== filter.trigger.toLowerCase());
+  // Get new triggers, lowercased
+  const newTriggers = filter.triggers.map(t => t.toLowerCase());
+
+  // Remove any *old* filter that uses *any* of the new triggers
+  // This ensures the new triggers are "claimed" by the new filter
+  groupFilters = groupFilters.filter(oldFilter => {
+    const oldTriggers = oldFilter.triggers.map(t => t.toLowerCase());
+    // Check for any overlap
+    const hasOverlap = oldTriggers.some(t => newTriggers.includes(t));
+    return !hasOverlap; // Keep only if there is NO overlap
+  });
   
   // Add the new filter
-  filters[groupId].push(filter);
-  saveFilters(filters);
-  console.log(`[Filter] Added filter for ${groupId}: ${filter.trigger}`);
+  groupFilters.push(filter);
+  saveGroupFilters(groupId, groupFilters); // Saves the array for this group
+  
+  console.log(`[Filter] Added filter for ${groupId}: ${filter.triggers.join(', ')}`);
 }
 
 /**
- * Removes a filter for a specific group
+ * Removes a filter for a specific group based on a single trigger
  * @param {string} groupId The JID of the group
  * @param {string} trigger The trigger keyword to remove
  * @returns {boolean} True if a filter was removed, false otherwise
  */
 function removeFilter(groupId, trigger) {
-  const filters = loadFilters();
-  
-  if (!filters[groupId] || filters[groupId].length === 0) {
-    return false; // No filters for this group
+  let groupFilters = loadGroupFilters(groupId);
+  if (groupFilters.length === 0) {
+    return false;
   }
   
-  const initialLength = filters[groupId].length;
-  filters[groupId] = filters[groupId].filter(f => f.trigger.toLowerCase() !== trigger.toLowerCase());
-  
-  if (filters[groupId].length < initialLength) {
-    saveFilters(filters);
-    console.log(`[Filter] Removed filter for ${groupId}: ${trigger}`);
+  const initialLength = groupFilters.length;
+  const triggerLower = trigger.toLowerCase();
+
+  // Keep filters that *do not* contain the trigger
+  groupFilters = groupFilters.filter(f => {
+    // Get all triggers for this filter, lowercased
+    const triggers = f.triggers.map(t => t.toLowerCase());
+    // Keep the filter if its triggers array does NOT include the one we want to remove
+    return !triggers.includes(triggerLower);
+  });
+
+  if (groupFilters.length < initialLength) {
+    saveGroupFilters(groupId, groupFilters); // Save the modified array
+    console.log(`[Filter] Removed filter associated with trigger for ${groupId}: ${trigger}`);
     return true; // Filter was removed
   }
   
@@ -110,8 +137,8 @@ function removeFilter(groupId, trigger) {
  * @returns {Array} An array of filter objects or an empty array
  */
 function getFilters(groupId) {
-  const filters = loadFilters();
-  return filters[groupId] || [];
+  // This function now just loads the specific group file
+  return loadGroupFilters(groupId);
 }
 
 /**
@@ -126,9 +153,20 @@ function checkFilters(groupId, text) {
     return null;
   }
 
-  // Find the first filter that matches the text exactly
-  // Use toLowerCase() for case-insensitive matching
-  const matchedFilter = groupFilters.find(f => f.trigger.toLowerCase() === text.toLowerCase());
+  // Find the first filter that has a matching trigger
+  const matchedFilter = groupFilters.find(f => {
+    // Check *every* trigger in this filter's 'triggers' array
+    return f.triggers.some(trigger => {
+      // 1. Escape any special regex characters in the trigger
+      const escapedTrigger = trigger.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      
+      // 2. Create a regular expression to find the trigger as a whole word
+      const regex = new RegExp(`\\b${escapedTrigger}\\b`, 'i'); // 'i' = case-insensitive
+      
+      // 3. Test the regex against the message text
+      return regex.test(text);
+    });
+  });
   
   return matchedFilter || null;
 }

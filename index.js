@@ -21,6 +21,7 @@ const {
     WAMessageKey
 } = require('@whiskeysockets/baileys');
 require('dotenv').config()
+
 const pino = require("pino");
 //const art = require('ascii-art');
 let isNewLogin = null;
@@ -314,6 +315,10 @@ fs.readFile('./res/ascii.txt', 'utf8', (err, data) => {
   console.log(data);
 });
 
+    
+    // 2. SECOND: Connect your bot
+    // (This is just an example, use your bot's connect logic)
+    console.log('Cookies fetched. Starting bot...');
 
 
     const {
@@ -452,71 +457,158 @@ for (const evName of eventsToStore) {
             }
     
             // If action is 'add' (someone joined the group)
-            if (anu.action == 'add') {
-                const query = `
-                    SELECT * FROM \`groups\` WHERE group_id = ? AND is_welcome = TRUE
-                `;
+if (anu.action == 'add') {
+    const query = `
+        SELECT * FROM \`groups\` WHERE group_id = ? AND is_welcome = TRUE
+    `;
+
+    db.query(query, [anu.id], async (err, result) => {
+        if (err) {
+            console.error('Error fetching welcome message:', err);
+            return;
+        }
+
+        if (result.length === 0) return; // welcome off
+
+        const groupDesc = groupMetadata.desc || ' ';
+        
+        // 🟢 Handle creative long default welcome message
+        let wcmsg;
+        if (!result[0].wc_m || result[0].wc_m.toLowerCase() === 'default') {
+            const creativeWelcome = [
+                `🎉 Hey @user! Welcome to *GROUPNAME*! We’re super excited to have you join our little world of fun, laughter, and good energy! 💫\n\n📘 *Group Description:* ${groupDesc}\n\nSo jump right in, say hi, and let’s make great memories together! 🌟`,
                 
-                // Run SQL query to check if welcome message is enabled
-                db.query(query, [anu.id], async (err, result) => {
-                    if (err) {
-                        console.error('Error fetching welcome message:', err);
-                        return;
+                `👋 A warm welcome to you, @user! You’ve just joined *GROUPNAME* — a space filled with friendship, creativity, and cool vibes. 😎\n\n📜 *About this group:* ${groupDesc}\n\nMake yourself at home and don’t hesitate to share your thoughts! 💬✨`,
+
+                `🌈 Hello @user! Welcome aboard to *GROUPNAME*! 🚀 We’re thrilled you’re here. Whether you’re here to learn, laugh, or just hang out — you’re in the right place!\n\n💡 *Here’s what this group is about:* ${groupDesc}\n\nLet’s have a great time together! 🎊`,
+
+                `🔥 Welcome, @user, to *GROUPNAME*! You’ve officially joined one of the coolest communities around. 💥\n\n📝 *Group Description:* ${groupDesc}\n\nWe can’t wait to see what you’ll bring to the table — enjoy your stay! ❤️`,
+
+                `💖 Hey there, @user! Big welcome to *GROUPNAME*! 🎉\n\nHere’s what this awesome group is about:\n${groupDesc}\n\nGrab your spot, say hello, and let the conversations begin! 🌟`
+            ];
+            wcmsg = creativeWelcome[Math.floor(Math.random() * creativeWelcome.length)];
+        } else {
+            wcmsg = result[0].wc_m +`\ndescription:`+groupDesc;
+        }
+
+        const finalMsg = wcmsg
+            .replace(/@user/g, `@${num.split("@")[0]}`)
+            .replace(/GROUPNAME/g, groupMetadata.subject);
+
+        let buffer;
+        try {
+            buffer = await getBuffer(ppuser);
+        } catch {
+            buffer = fs.readFileSync('./res/alexa.jpg');
+        }
+
+        if (buffer) {
+            const fglink = {
+                key: {
+                    fromMe: false,
+                    participant: num,
+                    remoteJid: anu.id
+                },
+                message: {
+                    orderMessage: {
+                        itemCount: 1,
+                        status: 200,
+                        thumbnail: buffer.data,
+                        surface: 200,
+                        message: finalMsg,
+                        orderTitle: 'Alexa',
+                        sellerJid: num
                     }
-                    
-                    let wcmsg;
-                    let isWelcome = false;
-                    
-                    // Check if result is found and set wcmsg
-                    if (result.length > 0) {
-                        wcmsg = result[0].wc_m + '\n' + groupMetadata.desc;  // Set welcome message from DB
-                        //console.log(groupMetadata)
-                        isWelcome = true;  // Set welcome flag to true
-                    } else {
-                        wcmsg = groupMetadata.desc; // Fallback to group description
+                },
+                contextInfo: {
+                    forwardingScore: 999,
+                    isForwarded: true
+                },
+                sendEphemeral: true
+            };
+
+            await AlexaInc.sendMessage(anu.id, { image: buffer, caption: finalMsg, mentions: [num] }, { quoted: fglink });
+        }
+    });
+}
+
+// 🔽 Goodbye message handler
+else if (anu.action == 'remove') {
+    const query = `
+        SELECT * FROM \`groups\` WHERE group_id = ? AND is_welcome = TRUE
+    `;
+
+    db.query(query, [anu.id], async (err, result) => {
+        if (err) {
+            console.error('Error fetching goodbye message:', err);
+            return;
+        }
+
+        if (result.length === 0) return; // goodbye off if welcome off
+
+        // 🟣 Handle creative long default goodbye message
+        let byemsg;
+        if (!result[0].bye_m || result[0].bye_m.toLowerCase() === 'default') {
+            const creativeGoodbye = [
+                `😢 @user just left *GROUPNAME*. We’ll truly miss having you around! Your presence added laughter, energy, and warmth to our chats. Wherever you’re headed next, we hope you stay happy and successful. Farewell, friend! 💫`,
+
+                `👋 @user has left *GROUPNAME*. It’s never easy saying goodbye to a familiar name. We’ll remember your moments here — your jokes, your kindness, and the way you kept things alive. Take care and keep shining! 🌻`,
+
+                `💭 @user decided to move on from *GROUPNAME*. Thank you for being part of our little family. Every conversation leaves a memory, and yours will stay with us. Wishing you nothing but good vibes ahead! ✨`,
+
+                `🚪 @user walked out of *GROUPNAME*. As one chapter ends, another begins — may yours be filled with happiness, peace, and new adventures. Farewell from all of us, and don’t forget to visit sometimes! 🌸`,
+
+                `🥀 @user has exited *GROUPNAME*. Though you’re leaving our group, you’ll always be part of its story. Take care out there, friend, and may your next stop be as wonderful as you are. 💌`
+            ];
+            byemsg = creativeGoodbye[Math.floor(Math.random() * creativeGoodbye.length)];
+        } else {
+            byemsg = result[0].bye_m;
+        }
+
+        const finalMsg = byemsg
+            .replace(/@user/g, `@${num.split("@")[0]}`)
+            .replace(/GROUPNAME/g, groupMetadata.subject);
+
+        let buffer;
+        try {
+            buffer = await getBuffer(ppuser);
+        } catch {
+            buffer = fs.readFileSync('./res/alexa.jpg');
+        }
+
+        if (buffer) {
+            const fglink = {
+                key: {
+                    fromMe: false,
+                    participant: num,
+                    remoteJid: anu.id
+                },
+                message: {
+                    orderMessage: {
+                        itemCount: 1,
+                        status: 200,
+                        thumbnail: buffer.data,
+                        surface: 200,
+                        message: finalMsg,
+                        orderTitle: 'Alexa',
+                        sellerJid: num
                     }
-                    
-                    // Fetch the user profile picture as a buffer
-                    let buffer;
-                    try {
-                        buffer = await getBuffer(ppuser)
-                    } catch (error) {
-                        console.error('Error fetching profile picture:', error);
-                        buffer = fs.readFileSync('./res/alexa.jpg');
-                    }
-    
-                    // Prepare the message to send
-                    if (buffer && isWelcome) {
-                        const fglink = {
-                            key: {
-                                fromMe: false,
-                                "participant": num,
-                                "remoteJid": anu.id
-                            },
-                            message: {
-                                orderMessage: {
-                                    itemCount: 1,
-                                    status: 200,
-                                    thumbnail: buffer.data,
-                                    surface: 200,
-                                    message: wcmsg,  // Use the welcome message
-                                    orderTitle: 'alexaaa',
-                                    sellerJid: num,
-                                }
-                            },
-                            contextInfo: {
-                                "forwardingScore": 999,
-                                "isForwarded": true
-                            },
-                            sendEphemeral: true
-                        };
-    
-                        // Send the image message with the welcome message
-                        he = `Welcome to ${groupMetadata.subject} @${num.split("@")[0]}\n\n ${wcmsg}`
-                        await AlexaInc.sendMessage(anu.id, { image: buffer, caption:he }, { quoted: fglink });
-                    }
-                });
-            }
+                },
+                contextInfo: {
+                    forwardingScore: 999,
+                    isForwarded: true
+                },
+                sendEphemeral: true
+            };
+
+            await AlexaInc.sendMessage(anu.id, { image: buffer, caption: finalMsg, mentions: [num] }, { quoted: fglink });
+        }
+    });
+}
+
+
+
+            
         }
     });
     
