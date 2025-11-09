@@ -22,7 +22,7 @@ WORKDIR /api
 COPY package*.json ./
 RUN npm config set ignore-scripts true
 
-RUN npm install
+RUN npm install --platform=linux --arch=x64 sharp && npm install
 
 # Copy the rest of the application files
 COPY . .
