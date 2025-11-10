@@ -8,7 +8,10 @@ const fsp = require('fs').promises;
 const hangmanFile = "./hangman.json";
 const { v4: uuidv4 } = require('uuid');
 const QUIZ_STORAGE_DIR = './quizzes';
+const { promisify } = require('util');
 
+const { exec } = require('child_process');
+const execAsync = promisify(exec);
 // Ensure the directory exists when the bot starts
 if (!fs.existsSync(QUIZ_STORAGE_DIR)) {
     fs.mkdirSync(QUIZ_STORAGE_DIR);
@@ -159,57 +162,90 @@ function parseToBuffer(value) {
 }
 
 /**
- * Get decrypted media buffer from stored WhatsApp message data
- * @param {object} client - your Baileys socket instance
- * @param {object} data - stored media message object
- * @returns {Promise<Buffer>} - decrypted buffer
+ * Convert base64 or comma-separated numeric string to Buffer
  */
-async function getMediaBufferFromStored(client, data) {
-    const {
-        mediaUrl,
-        mediaMimetype,
-        mediaKey,
-        mediaIv,
-        mediaFileEncSha256,
-        mediaFileSha256
-    } = data;
-
-    // Download encrypted media file
-    const encrypted = await axios.get(mediaUrl, { responseType: 'arraybuffer' });
-
-    // Prepare fake Baileys message structure
-    const fakeMsg = {
-        message: {},
-        key: { remoteJid: 'status@broadcast', fromMe: true, id: data.messageId },
-    };
-
-    // Normalize key and sha values
-    const mediaKeyBuf = parseToBuffer(mediaKey);
-    const encSha256Buf = parseToBuffer(mediaFileEncSha256);
-    const sha256Buf = parseToBuffer(mediaFileSha256);
-    const ivBuf = parseToBuffer(mediaIv) || Buffer.alloc(16, 0);
-
-    fakeMsg.message.imageMessage = {
-        mimetype: mediaMimetype,
-        url: mediaUrl,
-        mediaKey: mediaKeyBuf,
-        fileEncSha256: encSha256Buf,
-        fileSha256: sha256Buf,
-        directPath: '',
-        fileLength: encrypted.data.length.toString(),
-        mediaKeyTimestamp: '0',
-        iv: ivBuf
-    };
-
-    // Use Baileys’ default decryptor
-    const buffer = await downloadMediaMessage(fakeMsg, 'buffer', {}, {
-        logger: client?.logger,
-        reuploadRequest: client?.updateMediaMessage
-    });
-
-    return buffer;
+function parseToBuffer(value) {
+    if (!value) return null;
+    if (typeof value === 'string') {
+        if (value.includes(',')) {
+            return Buffer.from(value.split(',').map(n => parseInt(n.trim(), 10)));
+        }
+        return Buffer.from(value, 'base64');
+    }
+    if (Array.isArray(value)) return Buffer.from(value);
+    if (Buffer.isBuffer(value)) return value;
+    return null;
 }
 
+/**
+ * Automatically determines correct message type from MIME
+ */
+function getMessageType(mimetype) {
+    if (!mimetype) return 'documentMessage';
+    if (mimetype.startsWith('image/')) return 'imageMessage';
+    if (mimetype.startsWith('video/')) return 'videoMessage';
+    if (mimetype.startsWith('audio/')) return 'audioMessage';
+    if (mimetype.startsWith('application/')) return 'documentMessage';
+    return 'documentMessage';
+}
+
+/**
+ * Decrypt WhatsApp media using stored metadata
+ * Supports both base64 & numeric-key formats
+ */
+async function getDecryptedMediaBuffer(client, data) {
+    try {
+        const {
+            mediaUrl,
+            mediaMimetype,
+            mediaKey,
+            mediaIv,
+            mediaFileEncSha256,
+            mediaFileSha256,
+            messageId
+        } = data;
+
+        // download encrypted bytes
+        const encRes = await axios.get(mediaUrl, { responseType: 'arraybuffer' });
+
+        const type = getMessageType(mediaMimetype);
+        const fakeMsg = {
+            key: {
+                remoteJid: 'status@broadcast',
+                fromMe: true,
+                id: messageId
+            },
+            message: {}
+        };
+
+        fakeMsg.message[type] = {
+            mimetype: mediaMimetype,
+            url: mediaUrl,
+            mediaKey: parseToBuffer(mediaKey),
+            fileEncSha256: parseToBuffer(mediaFileEncSha256),
+            fileSha256: parseToBuffer(mediaFileSha256),
+            fileLength: encRes.data.length.toString(),
+            mediaKeyTimestamp: '0',
+            directPath: '',
+            iv: parseToBuffer(mediaIv) || Buffer.alloc(16, 0)
+        };
+
+        const decrypted = await downloadMediaMessage(
+            fakeMsg,
+            'buffer',
+            {},
+            {
+                logger: client?.logger,
+                reuploadRequest: client?.updateMediaMessage
+            }
+        );
+
+        return decrypted;
+    } catch (err) {
+        console.error('❌ Media decrypt failed:', err.message);
+        throw err;
+    }
+}
 // Example usage:
 
 
@@ -1098,6 +1134,34 @@ async function checkAntiLink(msg,messageText) {
 }
 
 
+// Inside your 'messages.upsert' event, after command checks:
+
+// Check if the message text matches any filter trigger
+
+const matchedFilter = Filters.checkFilters(msg.key.remoteJid, messageText);
+
+// matchedFilter will be the filter object if found, or null if not.
+if (matchedFilter) {
+  
+  // A filter was triggered! Now, check its type to reply correctly.
+  
+  if (matchedFilter.type === 'text') {
+    AlexaInc.sendMessage(msg.key.remoteJid, { text: matchedFilter.reply },{ quoted: msg } );
+  
+  } else if (matchedFilter.type === 'sticker') {
+    const buffer = Buffer.from(matchedFilter.reply, 'base64');
+    AlexaInc.sendMessage(msg.key.remoteJid, { sticker: buffer, mimetype: matchedFilter.mimetype },{ quoted: msg });
+  
+  } else if (matchedFilter.type === 'image') {
+    const buffer = Buffer.from(matchedFilter.reply, 'base64');
+    AlexaInc.sendMessage(msg.key.remoteJid, { image: buffer, mimetype: matchedFilter.mimetype },{ quoted: msg });
+  
+  } else if (matchedFilter.type === 'video') {
+    const buffer = Buffer.from(matchedFilter.reply, 'base64');
+    AlexaInc.sendMessage(msg.key.remoteJid, { video: buffer, mimetype: matchedFilter.mimetype,gifPlayback: true },{ quoted: msg });
+  }
+}
+
 
 
 // Usage:
@@ -1158,33 +1222,6 @@ if (!isGroup) {
 
 
 
-// Inside your 'messages.upsert' event, after command checks:
-
-// Check if the message text matches any filter trigger
-
-const matchedFilter = Filters.checkFilters(msg.key.remoteJid, messageText);
-
-// matchedFilter will be the filter object if found, or null if not.
-if (matchedFilter) {
-  
-  // A filter was triggered! Now, check its type to reply correctly.
-  
-  if (matchedFilter.type === 'text') {
-    AlexaInc.sendMessage(msg.key.remoteJid, { text: matchedFilter.reply },{ quoted: msg } );
-  
-  } else if (matchedFilter.type === 'sticker') {
-    const buffer = Buffer.from(matchedFilter.reply, 'base64');
-    AlexaInc.sendMessage(msg.key.remoteJid, { sticker: buffer, mimetype: matchedFilter.mimetype },{ quoted: msg });
-  
-  } else if (matchedFilter.type === 'image') {
-    const buffer = Buffer.from(matchedFilter.reply, 'base64');
-    AlexaInc.sendMessage(msg.key.remoteJid, { image: buffer, mimetype: matchedFilter.mimetype },{ quoted: msg });
-  
-  } else if (matchedFilter.type === 'video') {
-    const buffer = Buffer.from(matchedFilter.reply, 'base64');
-    AlexaInc.sendMessage(msg.key.remoteJid, { video: buffer, mimetype: matchedFilter.mimetype },{ quoted: msg });
-  }
-}
 
 
 
@@ -1652,22 +1689,57 @@ const mimtypesmap = {
   'image/jpeg': 'image',
   'video/mp4': 'video'
 };
+
 const type = mimtypesmap[loadedmsg.mediaMimetype];
 let replyt;
+
 if (type === 'text') {
-  replyt = loadedmsg.messageText
-}else{
-                        const media = {
+  replyt = loadedmsg.messageText;
+} else {
+  const media = {
     mediaUrl: loadedmsg.mediaUrl,
     mediaMimetype: loadedmsg.mediaMimetype,
     mediaKey: loadedmsg.mediaKey,
     mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
-    mediaFileSha256: loadedmsg.mediaFileSha256
+    mediaFileSha256: loadedmsg.mediaFileSha256,
+    messageId: loadedmsg.messageId
   };
-  //console.log(media)
 
-replyt = await await getMediaBufferFromStored(AlexaInc, media);
+  // --- Decrypt media first ---
+  const mediaBuffer = await getDecryptedMediaBuffer(AlexaInc, media);
+
+  // --- If it's a video, check duration ---
+  if (type === 'video') {
+    const tempFile = path.join('/tmp', `${media.messageId}.mp4`);
+    fs.writeFileSync(tempFile, mediaBuffer);
+
+    try {
+      const { stdout } = await execAsync(
+        `ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "${tempFile}"`
+      );
+
+      const duration = parseFloat(stdout.trim());
+      fs.unlinkSync(tempFile);
+
+      if (duration > 10) {
+        console.log(`⏹️ Skipping video longer than 10 seconds (${duration}s)`);
+                  AlexaInc.sendMessage(msg.key.remoteJid,{text:'⏹️ Skipped video longer than 10 seconds'},{quoted:msg});
+
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking video duration:', err.message);
+            AlexaInc.sendMessage(msg.key.remoteJid,{text:'Error checking video duration:'},{quoted:msg});
+      fs.unlinkSync(tempFile);
+      return;
+    }
+  }
+
+  replyt = mediaBuffer;
 }
+
+
+
 const result = text.split(/[\s,]+/).filter(Boolean);
 const unique = [...new Set(result)];
 const newfilter = {
@@ -1756,11 +1828,12 @@ let mediaBuffer = null;
     mediaKey: loadedmsg.mediaKey,
     mediaIv: loadedmsg.mediaIv,
     mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
-    mediaFileSha256: loadedmsg.mediaFileSha256
+    mediaFileSha256: loadedmsg.mediaFileSha256,
+    messageId: loadedmsg.messageId
   };
   //console.log(media)
 
-mediaBuffer = await await getMediaBufferFromStored(AlexaInc, media);
+mediaBuffer = await await getDecryptedMediaBuffer(AlexaInc, media);
                     }else{
                      mediaBuffer = await downloadMediaMessage(msg, "buffer", {});
                     }
@@ -2728,8 +2801,8 @@ case 'welcomeoff': {
 
 case "getcontacts": {
   // 1. Check permissions first
-  if (!isOwner) mess.owner();
-  if (!isGroup) mess.group();
+  if (!isOwner) return mess.owner();
+  if (!isGroup) return mess.group();
 
   // 2. Send a "processing" message
   AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Syncing group members, please wait...' }, { quoted: msg });

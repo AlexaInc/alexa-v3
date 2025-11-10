@@ -12,12 +12,12 @@
         },
         "94760141770@s.whatsapp.net": {
             "level": 18,
-            "xp": 203,
+            "xp": 378,
             "xp_needed": 2191
         },
         "94728230232@s.whatsapp.net": {
             "level": 9,
-            "xp": 190,
+            "xp": 200,
             "xp_needed": 426
         },
         "94723939455@s.whatsapp.net": {
@@ -41,9 +41,9 @@
             "xp_needed": 426
         },
         "94771058234@s.whatsapp.net": {
-            "level": 7,
-            "xp": 281,
-            "xp_needed": 296
+            "level": 9,
+            "xp": 200,
+            "xp_needed": 426
         },
         "94777890331@s.whatsapp.net": {
             "level": 1,
@@ -51,9 +51,9 @@
             "xp_needed": 100
         },
         "94741106042@s.whatsapp.net": {
-            "level": 12,
-            "xp": 280,
-            "xp_needed": 735
+            "level": 13,
+            "xp": 305,
+            "xp_needed": 882
         },
         "94705327164@s.whatsapp.net": {
             "level": 1,
@@ -72,7 +72,7 @@
         },
         "94782874035@s.whatsapp.net": {
             "level": 11,
-            "xp": 298,
+            "xp": 573,
             "xp_needed": 613
         },
         "94705839122@s.whatsapp.net": {
@@ -92,7 +92,7 @@
         },
         "94703812053@s.whatsapp.net": {
             "level": 8,
-            "xp": 165,
+            "xp": 210,
             "xp_needed": 355
         },
         "94761143433@s.whatsapp.net": {
@@ -106,9 +106,9 @@
             "xp_needed": 100
         },
         "94752890899@s.whatsapp.net": {
-            "level": 2,
-            "xp": 115,
-            "xp_needed": 120
+            "level": 3,
+            "xp": 10,
+            "xp_needed": 144
         },
         "265906206806171@lid": {
             "level": 2,
@@ -146,9 +146,9 @@
             "xp_needed": 100
         },
         "94762635290@s.whatsapp.net": {
-            "level": 6,
-            "xp": 138,
-            "xp_needed": 247
+            "level": 7,
+            "xp": 61,
+            "xp_needed": 296
         },
         "94773859719@s.whatsapp.net": {
             "level": 1,
@@ -157,7 +157,7 @@
         },
         "94768588152@s.whatsapp.net": {
             "level": 2,
-            "xp": 20,
+            "xp": 40,
             "xp_needed": 120
         },
         "94779634837@s.whatsapp.net": {
@@ -197,7 +197,7 @@
         },
         "94726441566@s.whatsapp.net": {
             "level": 10,
-            "xp": 429,
+            "xp": 449,
             "xp_needed": 511
         },
         "94715946631@s.whatsapp.net": {
@@ -397,7 +397,7 @@
         },
         "94753586693@s.whatsapp.net": {
             "level": 3,
-            "xp": 15,
+            "xp": 130,
             "xp_needed": 144
         },
         "94740731204@s.whatsapp.net": {
@@ -517,7 +517,7 @@
         },
         "94764891332@s.whatsapp.net": {
             "level": 2,
-            "xp": 5,
+            "xp": 10,
             "xp_needed": 120
         },
         "2349018656863@s.whatsapp.net": {
@@ -622,7 +622,7 @@
         },
         "53537354563833@lid": {
             "level": 1,
-            "xp": 20,
+            "xp": 25,
             "xp_needed": 100
         },
         "86398283546796@lid": {
@@ -817,7 +817,7 @@
         },
         "94750406357@s.whatsapp.net": {
             "level": 1,
-            "xp": 5,
+            "xp": 10,
             "xp_needed": 100
         },
         "94759354625@s.whatsapp.net": {
@@ -851,9 +851,9 @@
             "xp_needed": 100
         },
         "94783616259@s.whatsapp.net": {
-            "level": 3,
-            "xp": 65,
-            "xp_needed": 144
+            "level": 4,
+            "xp": 51,
+            "xp_needed": 172
         },
         "94719150743@s.whatsapp.net": {
             "level": 1,
@@ -1387,7 +1387,7 @@
         },
         "94765716430@s.whatsapp.net": {
             "level": 1,
-            "xp": 80,
+            "xp": 95,
             "xp_needed": 100
         },
         "94721683062@s.whatsapp.net": {
@@ -1448,6 +1448,31 @@
         "94741925490@s.whatsapp.net": {
             "level": 1,
             "xp": 20,
+            "xp_needed": 100
+        },
+        "94764261009@s.whatsapp.net": {
+            "level": 2,
+            "xp": 25,
+            "xp_needed": 120
+        },
+        "94768547288@s.whatsapp.net": {
+            "level": 2,
+            "xp": 115,
+            "xp_needed": 120
+        },
+        "94773821938@s.whatsapp.net": {
+            "level": 1,
+            "xp": 5,
+            "xp_needed": 100
+        },
+        "94778476100@s.whatsapp.net": {
+            "level": 1,
+            "xp": 20,
+            "xp_needed": 100
+        },
+        "94756606602@s.whatsapp.net": {
+            "level": 1,
+            "xp": 5,
             "xp_needed": 100
         }
     }

@@ -15,7 +15,7 @@
         "@googleapis/customsearch": "^6.0.0",
         "@huggingface/inference": "^3.5.1",
         "@ookla/speedtest-js-sdk": "^1.1.1",
-        "@whiskeysockets/baileys": "github:Itsukichann/Baileys",
+        "@whiskeysockets/baileys": "github:hansaka02/Baileys",
         "ascii-art": "^2.8.5",
          "uuid": "^9.0.1" ,
         "axios": "^1.13.1",
