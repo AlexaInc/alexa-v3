@@ -116,7 +116,7 @@ function parseMessage(msg) {
     const text = messageContent.text || messageContent.caption || "";
 
     // 2. Get the quoted message ID
-    const quotedid = contextInfo?.stanzaId;
+    const quotedid = contextInfo?.stanzaId || msg.message?.extendedTextMessage?.contextInfo.stanzaId;
 
     // 3. Get mentioned JIDs
     const mentionedJids = contextInfo?.mentionedJid;

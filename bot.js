@@ -1541,7 +1541,7 @@ case "q": {
 
     // Fix 1: Use optional chaining (?.). 
     // This prevents a crash if 'contextInfo' is null.
-    const quotedid = p.quotedid;
+    const quotedid = msg.message?.extendedTextMessage?.contextInfo.stanzaId;
 
     if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid, {
         text: 'please reply to a massage'
@@ -1687,7 +1687,7 @@ case 'filter': {
 
     // --- 💡 END: THIS IS THE CORRECT FIX ---
 
-    const quotedid = p.quotedid; // Now this will work
+    const quotedid = p.quotedid || msg.message?.extendedTextMessage?.contextInfo.stanzaId; // Now this will work
 // console.log(p)
     if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'please send trigger word eg- /filter hi' }, { quoted: msg });
     if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'please reply to a message baby!' }, { quoted: msg });
@@ -1752,33 +1752,42 @@ case 'filter': {
     // Let's assume 'msg' is your message object
     // and 'participants' is your array from group metadata
 
-    let resultNumber = null;
+const mentionedJids = p.mentionedJids; 
+    let resultNumbers = []; // Initialize as an array
 
-    // --- 💡 Use the same contextInfo variable ---
-    const mentionedJids = p.mentionedJids; // Now this will also work
-// console.log(mentionedJids)
     if (mentionedJids && mentionedJids.length > 0) {
-        const rid = mentionedJids[0];
-        if (rid.endsWith('@lid')) {
-          // console.log('hi')
-            resultNumber = (participants.find(jsn => jsn.lid === rid))
-                ?.id?.replace(/@.*/, "");
-
-        } else if (rid.endsWith('@s.whatsapp.net')) {
-                    // console.log('hui')
-            resultNumber = (participants.find(jsn => jsn.id === rid))
-                ?.lid?.replace(/@.*/, "");
-        }
+        // 1. Map over ALL mentionedJids
+        resultNumbers = mentionedJids.map(rid => {
+            if (rid.endsWith('@lid')) {
+                // Find the ID and strip the server part
+                return (participants.find(jsn => jsn.lid === rid))
+                    ?.id?.replace(/@.*/, "");
+            } else if (rid.endsWith('@s.whatsapp.net')) {
+                // Find the LID and strip the server part
+                return (participants.find(jsn => jsn.id === rid))
+                    ?.lid?.replace(/@.*/, "");
+            }
+            return null; // Return null if the JID format isn't recognized
+        })
+        // 2. Filter out any null/undefined results (where a match wasn't found)
+        .filter(Boolean); // 'Boolean' removes falsy values (null, undefined, "")
     }
 
-    // console.log(resultNumber);
+    // console.log(resultNumbers); // This is now an array of all found numbers, e.g., ['12345', '67890']
+    
     const result = text.split(/[\s,]+/).filter(Boolean);
-const unique = [
-  ...new Set(
-    result.concat(resultNumber ? `@${resultNumber}` : [])
-  )
-];
+    
+    // 3. Format all found numbers with an '@' prefix
+    const mentionsAsTags = resultNumbers.map(num => `@${num}`);
 
+    const unique = [
+        ...new Set(
+            // 4. Concat the original text parts with the new array of mention tags
+            result.concat(mentionsAsTags)
+        )
+    ];
+    
+    console.log(unique);
     const newfilter = {
         triggers: unique,
         type: type,
@@ -1787,7 +1796,7 @@ const unique = [
     };
 
     const done = Filters.addFilter(msg.key.remoteJid, newfilter);
-    AlexaInc.sendMessage(msg.key.remoteJid, { text: `filter set ${text + resultNumber ? resultNumber :''}` }, { quoted: msg });
+    AlexaInc.sendMessage(msg.key.remoteJid, { text: `filter set ${unique.join(' , ')}` }, { quoted: msg });
 
     break;
 }
