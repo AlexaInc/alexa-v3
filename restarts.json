@@ -938,5 +938,20 @@
     "id": 188,
     "reason": "index.js: /home/hansaka/alexa-v3/index.js:26\nAi.initialize()\n^\nReferenceError: Ai is not defined\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:26:1)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)\nat node:internal/main/run_main_module:28:49\n",
     "timestamp": "2025-11-10T03:25:38.571Z"
+  },
+  {
+    "id": 189,
+    "reason": "index.js: ❌ Uncaught Exception: TypeError: AlexaInc.saveMessage is not a function\nat handleMessage (/home/hansaka/alexa-v3/bot.js:1688:28)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n",
+    "timestamp": "2025-11-10T09:59:57.984Z"
+  },
+  {
+    "id": 190,
+    "reason": "index.js: ❌ Uncaught Exception: TypeError: Cannot read properties of null (reading 'mediaMimetype')\nat handleMessage (/home/hansaka/alexa-v3/bot.js:1698:36)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n",
+    "timestamp": "2025-11-10T10:07:05.881Z"
+  },
+  {
+    "id": 191,
+    "reason": "index.js: ❌ Uncaught Exception: TypeError: Cannot read properties of null (reading 'mediaMimetype')\nat handleMessage (/home/hansaka/alexa-v3/bot.js:1698:36)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n",
+    "timestamp": "2025-11-10T10:11:45.794Z"
   }
 ]

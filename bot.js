@@ -21,7 +21,7 @@ const QresponsesFile = './dailyqresp.json';
 const upadestatusstate = {};
 const path = require('path');
 const quizManager = require('./res/js/quizManager.js');
-const Filters = require('./res/js/filters.js');
+const FilterManager = require('filtermatics'); 
 const si = require('os');
 const axios = require('axios');
 const sharp = require('sharp');
@@ -57,6 +57,11 @@ const {
 const { OpenAI } = require("openai");
 require('dotenv').config();
 const mysql = require("mysql2");
+
+const Filters = new FilterManager({
+  dbPath: './filters' 
+});
+
 
 
 const { mediafireDl } = require('./res/mediafire.js')
@@ -821,7 +826,7 @@ try {
 
 
 
-async function handleMessage(AlexaInc, { messages, type }, loadMessage ,saveMessage) {
+async function handleMessage(AlexaInc, { messages, type }, loadMessage ,saveMessage,p) {
 
 
 
@@ -1536,7 +1541,7 @@ case "q": {
 
     // Fix 1: Use optional chaining (?.). 
     // This prevents a crash if 'contextInfo' is null.
-    const quotedid = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
+    const quotedid = p.quotedid;
 
     if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid, {
         text: 'please reply to a massage'
@@ -1676,83 +1681,115 @@ const highQualityBuffer = await sharp(webpbuff)
 //   console.log(participants)
 // }
 
-case'filter':{
-if (!isGroup) return mess.group();
-    const quotedid = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
-if (!text) return AlexaInc.saveMessage(msg.key.remoteJid,{text:'please send trigger word eg- /filter hi'},{quoted:msg})
-if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'please reply to a message baby!'},{quoted:msg})
-const loadedmsg = await loadMessage(msg.key.remoteJid , quotedid)
+case 'filter': {
+    if (!isGroup) return mess.group();
+    // console.log(msg);
 
-const mimtypesmap = {
-  null: 'text',
-  'image/webp': 'sticker',
-  'image/jpeg': 'image',
-  'video/mp4': 'video'
-};
+    // --- 💡 END: THIS IS THE CORRECT FIX ---
 
-const type = mimtypesmap[loadedmsg.mediaMimetype];
-let replyt;
+    const quotedid = p.quotedid; // Now this will work
+// console.log(p)
+    if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'please send trigger word eg- /filter hi' }, { quoted: msg });
+    if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'please reply to a message baby!' }, { quoted: msg });
+    
+    const loadedmsg = await loadMessage(msg.key.remoteJid, quotedid);
 
-if (type === 'text') {
-  replyt = loadedmsg.messageText;
-} else {
-  const media = {
-    mediaUrl: loadedmsg.mediaUrl,
-    mediaMimetype: loadedmsg.mediaMimetype,
-    mediaKey: loadedmsg.mediaKey,
-    mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
-    mediaFileSha256: loadedmsg.mediaFileSha256,
-    messageId: loadedmsg.messageId
-  };
+    const mimtypesmap = {
+        null: 'text',
+        'image/webp': 'sticker',
+        'image/jpeg': 'image',
+        'video/mp4': 'video'
+    };
 
-  // --- Decrypt media first ---
-  const mediaBuffer = await getDecryptedMediaBuffer(AlexaInc, media);
+    const type = mimtypesmap[loadedmsg.mediaMimetype];
+    let replyt;
 
-  // --- If it's a video, check duration ---
-  if (type === 'video') {
-    const tempFile = path.join('/tmp', `${media.messageId}.mp4`);
-    fs.writeFileSync(tempFile, mediaBuffer);
+    if (type === 'text') {
+        replyt = loadedmsg.messageText;
+    } else {
+        const media = {
+            mediaUrl: loadedmsg.mediaUrl,
+            mediaMimetype: loadedmsg.mediaMimetype,
+            mediaKey: loadedmsg.mediaKey,
+            mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
+            mediaFileSha256: loadedmsg.mediaFileSha256,
+            messageId: loadedmsg.messageId
+        };
 
-    try {
-      const { stdout } = await execAsync(
-        `ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "${tempFile}"`
-      );
+        // --- Decrypt media first ---
+        const mediaBuffer = await getDecryptedMediaBuffer(AlexaInc, media);
 
-      const duration = parseFloat(stdout.trim());
-      fs.unlinkSync(tempFile);
+        // --- If it's a video, check duration ---
+        if (type === 'video') {
+            const tempFile = path.join('/tmp', `${media.messageId}.mp4`);
+            fs.writeFileSync(tempFile, mediaBuffer);
 
-      if (duration > 10) {
-        console.log(`⏹️ Skipping video longer than 10 seconds (${duration}s)`);
-                  AlexaInc.sendMessage(msg.key.remoteJid,{text:'⏹️ Skipped video longer than 10 seconds'},{quoted:msg});
+            try {
+                const { stdout } = await execAsync(
+                    `ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "${tempFile}"`
+                );
 
-        return;
-      }
-    } catch (err) {
-      console.error('Error checking video duration:', err.message);
-            AlexaInc.sendMessage(msg.key.remoteJid,{text:'Error checking video duration:'},{quoted:msg});
-      fs.unlinkSync(tempFile);
-      return;
+                const duration = parseFloat(stdout.trim());
+                fs.unlinkSync(tempFile);
+
+                if (duration > 10) {
+                    console.log(`⏹️ Skipping video longer than 10 seconds (${duration}s)`);
+                    AlexaInc.sendMessage(msg.key.remoteJid, { text: '⏹️ Skipped video longer than 10 seconds' }, { quoted: msg });
+                    return;
+                }
+            } catch (err) {
+                console.error('Error checking video duration:', err.message);
+                AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Error checking video duration:' }, { quoted: msg });
+                if (fs.existsSync(tempFile)) { // Ensure file is deleted even on error
+                    fs.unlinkSync(tempFile);
+                }
+                return;
+            }
+        }
+        replyt = mediaBuffer;
     }
-  }
 
-  replyt = mediaBuffer;
-}
+    // Let's assume 'msg' is your message object
+    // and 'participants' is your array from group metadata
 
+    let resultNumber = null;
 
+    // --- 💡 Use the same contextInfo variable ---
+    const mentionedJids = p.mentionedJids; // Now this will also work
+// console.log(mentionedJids)
+    if (mentionedJids && mentionedJids.length > 0) {
+        const rid = mentionedJids[0];
+        if (rid.endsWith('@lid')) {
+          // console.log('hi')
+            resultNumber = (participants.find(jsn => jsn.lid === rid))
+                ?.id?.replace(/@.*/, "");
 
-const result = text.split(/[\s,]+/).filter(Boolean);
-const unique = [...new Set(result)];
-const newfilter = {
-  triggers: unique,
-  type: type,
-  reply: replyt, // The base64 data of the sticker
-  mimetype: loadedmsg.mediaMimetype       // The mimetype (e.g., 'image/webp')
-};
+        } else if (rid.endsWith('@s.whatsapp.net')) {
+                    // console.log('hui')
+            resultNumber = (participants.find(jsn => jsn.id === rid))
+                ?.lid?.replace(/@.*/, "");
+        }
+    }
 
-const done = Filters.addFilter(msg.key.remoteJid, newfilter);
-  AlexaInc.sendMessage(msg.key.remoteJid,{text:`filter set ${text}`},{quoted:msg})
+    // console.log(resultNumber);
+    const result = text.split(/[\s,]+/).filter(Boolean);
+const unique = [
+  ...new Set(
+    result.concat(resultNumber ? `@${resultNumber}` : [])
+  )
+];
 
-break;
+    const newfilter = {
+        triggers: unique,
+        type: type,
+        reply: replyt,
+        mimetype: loadedmsg.mediaMimetype
+    };
+
+    const done = Filters.addFilter(msg.key.remoteJid, newfilter);
+    AlexaInc.sendMessage(msg.key.remoteJid, { text: `filter set ${text + resultNumber ? resultNumber :''}` }, { quoted: msg });
+
+    break;
 }
 
 case "stop":{

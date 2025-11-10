@@ -95,6 +95,73 @@ let restartHistory = JSON.parse(fs.readFileSync('./restarts.json', 'utf8'));
  * Saves a message, including media decryption keys (mediaKey, iv, etc.).
  * Converts Buffers to base64 for JSON storage.
  */
+
+/**
+ * Parses the raw message object into a simple, usable format.
+ * @param {object} msg The raw Baileys message object
+ * @returns {object} A simplified message object
+ */
+function parseMessage(msg) {
+    if (!msg || !msg.message) return {};
+
+    const m = msg.message;
+    const msgType = Object.keys(m)[0];
+    const messageContent = m[msgType];
+
+    if (!messageContent) return {};
+
+    const contextInfo = messageContent.contextInfo;
+
+    // 1. Get the full text (from caption or text)
+    const text = messageContent.text || messageContent.caption || "";
+
+    // 2. Get the quoted message ID
+    const quotedid = contextInfo?.stanzaId;
+
+    // 3. Get mentioned JIDs
+    const mentionedJids = contextInfo?.mentionedJid;
+
+    // 4. Get sender info
+    const isGroup = msg.key.remoteJid.endsWith("@g.us");
+    const sender = msg.key.fromMe ? "me" : (isGroup ? msg.key.participant : msg.key.remoteJid);
+
+    // 5. Get the command and the text *after* the command
+    // (I am guessing your prefix is '/' or '.')
+    const prefix = /^[./!]/; // Assumes prefix is /, ., or !
+    const body = text.trim().split(/ +/);
+    const commandWithPrefix = body.shift().toLowerCase();
+    
+    let command = null;
+    let commandText = text; // Default to full text if no command
+
+    if (prefix.test(commandWithPrefix)) {
+        command = commandWithPrefix.slice(1); // "filter"
+        commandText = body.join(' '); // "hi"
+    }
+
+    // --- Return a clean, simple object ---
+    return {
+        msg, // The original message, just in case
+        msgType,
+        messageContent,
+        contextInfo,
+        
+        text: text,               // The full, original text/caption
+        command: command,         // The command (e.g., "filter")
+        commandText: commandText, // The text after the command (e.g., "hi")
+        
+        quotedid: quotedid,       // The ID of the replied-to message
+        mentionedJids: mentionedJids, // List of mentions
+        
+        sender: sender,
+        isGroup: isGroup,
+        fromMe: msg.key.fromMe,
+        jid: msg.key.remoteJid
+    };
+}
+
+
+
 /**
  * Saves a message, including media decryption keys (mediaKey, iv, etc.).
  * Converts Buffers to base64 for JSON storage.
@@ -740,9 +807,9 @@ else if (anu.action == 'leave') {
 
   const msg = messages[0];
   const jid = msg.key.remoteJid;
-
+const p = parseMessage(msg);
   saveMessage(jid, msg);
-        handleMessage(AlexaInc, m , loadMessage, saveMessage,loadMessagesBetween)
+        handleMessage(AlexaInc, m , loadMessage, saveMessage, p)
     }); // Call bot.js function
 
     let isConnected = false;
