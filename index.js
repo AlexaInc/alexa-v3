@@ -599,85 +599,83 @@ for (const evName of eventsToStore) {
     
             // If action is 'add' (someone joined the group)
 if (anu.action == 'add') {
-    const query = `
-        SELECT * FROM \`groups\` WHERE group_id = ? AND is_welcome = TRUE
-    `;
+    const query = "SELECT * FROM `groups` WHERE group_id = ? AND is_welcome = TRUE";
 
-    db.query(query, [anu.id], async (err, result) => {
-        if (err) {
-            console.error('Error fetching welcome message:', err);
-            return;
-        }
+    db.query(query, [anu.id], async (err, result) => {
+        if (err) {
+            console.error('Error fetching welcome message:', err);
+            return;
+        }
 
-        if (result.length === 0) return; // welcome off
+        if (result.length === 0) return; // welcome off
 
-        const groupDesc = groupMetadata.desc || ' ';
-        
-        // 🟢 Handle creative long default welcome message
-        let wcmsg;
-        if (!result[0].wc_m || result[0].wc_m.toLowerCase() === 'default') {
-            const creativeWelcome = [
-                `🎉 Hey @user! Welcome to *GROUPNAME*! We’re super excited to have you join our little world of fun, laughter, and good energy! 💫\n\n📘 *Group Description:* ${groupDesc}\n\nSo jump right in, say hi, and let’s make great memories together! 🌟`,
-                
-                `👋 A warm welcome to you, @user! You’ve just joined *GROUPNAME* — a space filled with friendship, creativity, and cool vibes. 😎\n\n📜 *About this group:* ${groupDesc}\n\nMake yourself at home and don’t hesitate to share your thoughts! 💬✨`,
+        const groupDesc = groupMetadata?.desc || ' ';
+        
+        // 🟢 Handle creative long default welcome message
+        let wcmsg;
+        if (!result[0].wc_m || result[0].wc_m.toLowerCase() === 'default') {
+            const creativeWelcome = [
+                `🎉 Hey @user! Welcome to *GROUPNAME*! We’re super excited to have you join our little world of fun, laughter, and good energy! 💫\n\n📘 *Group Description:* ${groupDesc}\n\nSo jump right in, say hi, and let’s make great memories together! 🌟`,
+                `👋 A warm welcome to you, @user! You’ve just joined *GROUPNAME* — a space filled with friendship, creativity, and cool vibes. 😎\n\n📜 *About this group:* ${groupDesc}\n\nMake yourself at home and don’t hesitate to share your thoughts! 💬✨`,
+                `🌈 Hello @user! Welcome aboard to *GROUPNAME*! 🚀 We’re thrilled you’re here. Whether you’re here to learn, laugh, or just hang out — you’re in the right place!\n\n💡 *Here’s what this group is about:* ${groupDesc}\n\nLet’s have a great time together! 🎊`,
+                `🔥 Welcome, @user, to *GROUPNAME*! You’ve officially joined one of the coolest communities around. 💥\n\n📝 *Group Description:* ${groupDesc}\n\nWe can’t wait to see what you’ll bring to the table — enjoy your stay! ❤️`,
+                `💖 Hey there, @user! Big welcome to *GROUPNAME*! 🎉\n\nHere’s what this awesome group is about:\n${groupDesc}\n\nGrab your spot, say hello, and let the conversations begin! 🌟`
+            ];
+            wcmsg = creativeWelcome[Math.floor(Math.random() * creativeWelcome.length)];
+        } else {
+            wcmsg = `${result[0].wc_m}\ndescription: ${groupDesc}`;
+        }
 
-                `🌈 Hello @user! Welcome aboard to *GROUPNAME*! 🚀 We’re thrilled you’re here. Whether you’re here to learn, laugh, or just hang out — you’re in the right place!\n\n💡 *Here’s what this group is about:* ${groupDesc}\n\nLet’s have a great time together! 🎊`,
+        const finalMsg = wcmsg
+            .replace(/@user/g, `@${num.split("@")[0]}`)
+            .replace(/GROUPNAME/g, groupMetadata.subject);
 
-                `🔥 Welcome, @user, to *GROUPNAME*! You’ve officially joined one of the coolest communities around. 💥\n\n📝 *Group Description:* ${groupDesc}\n\nWe can’t wait to see what you’ll bring to the table — enjoy your stay! ❤️`,
+        let buffer;
+        try {
+            buffer = await getBuffer(ppuser);
+        } catch {
+            buffer = fs.readFileSync('./res/alexa.jpg');
+        }
 
-                `💖 Hey there, @user! Big welcome to *GROUPNAME*! 🎉\n\nHere’s what this awesome group is about:\n${groupDesc}\n\nGrab your spot, say hello, and let the conversations begin! 🌟`
-            ];
-            wcmsg = creativeWelcome[Math.floor(Math.random() * creativeWelcome.length)];
-        } else {
-            wcmsg = result[0].wc_m +`\ndescription:`+groupDesc;
-        }
+        if (buffer) {
+            const fglink = {
+                key: {
+                    fromMe: false,
+                    participant: num,
+                    remoteJid: anu.id
+                },
+                message: {
+                    orderMessage: {
+                        itemCount: 1,
+                        status: 200,
+                        thumbnail: buffer.data,
+                        surface: 200,
+                        message: finalMsg,
+                        orderTitle: 'Alexa',
+                        sellerJid: num
+                    }
+                },
+                contextInfo: {
+                    forwardingScore: 999,
+                    isForwarded: true
+                },
+                sendEphemeral: true
+            };
 
-        const finalMsg = wcmsg
-            .replace(/@user/g, `@${num.split("@")[0]}`)
-            .replace(/GROUPNAME/g, groupMetadata.subject);
-
-        let buffer;
-        try {
-            buffer = await getBuffer(ppuser);
-        } catch {
-            buffer = fs.readFileSync('./res/alexa.jpg');
-        }
-
-        if (buffer) {
-            const fglink = {
-                key: {
-                    fromMe: false,
-                    participant: num,
-                    remoteJid: anu.id
-                },
-                message: {
-                    orderMessage: {
-                        itemCount: 1,
-                        status: 200,
-                        thumbnail: buffer.data,
-                        surface: 200,
-                        message: finalMsg,
-                        orderTitle: 'Alexa',
-                        sellerJid: num
-                    }
-                },
-                contextInfo: {
-                    forwardingScore: 999,
-                    isForwarded: true
-                },
-                sendEphemeral: true
-            };
-
-            await AlexaInc.sendMessage(anu.id, { image: buffer, caption: finalMsg, mentions: [num] }, { quoted: fglink });
-        }
-    });
+            await AlexaInc.sendMessage(
+                anu.id,
+                { image: buffer, caption: finalMsg, mentions: [num] },
+                { quoted: fglink }
+            );
+        }
+    });
 }
+
 
 // 🔽 Goodbye message handler
 else if (anu.action == 'leave') {
-    const query = `
-        SELECT * FROM \`groups\` WHERE group_id = ? AND is_welcome = TRUE
-    `;
+    const query = "SELECT * FROM `groups` WHERE group_id = ? AND is_welcome = TRUE";
+
 
     db.query(query, [anu.id], async (err, result) => {
         if (err) {
