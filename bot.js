@@ -2805,7 +2805,7 @@ case "getcontacts": {
   if (!isGroup) return mess.group();
 
   // 2. Send a "processing" message
-  AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Syncing group members, please wait...' }, { quoted: msg });
+  await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Syncing group members, please wait...' }, { quoted: msg });
 
   try {
     // 3. Get group info
