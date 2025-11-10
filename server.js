@@ -15,8 +15,8 @@ app.use(express.urlencoded({ extended: true }));
 const dataFile = path.join(__dirname, 'sharedData.json');
 
 const cors = require("cors");  
-
-app.use(cors({ origin: "https://hansaka02.github.io" })); 
+const allowdorigins =["https://hansaka02.github.io","http://alexainc.github.io"]
+app.use(cors({ origin: "https://alexainc.github.io" })); 
 // Setup session middleware
 app.use(session({
     secret: process.env.SESSION_SECRET,
