@@ -326,6 +326,7 @@ const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET; // The secret you put in GitH
 app.use(express.json());
 
 // This is your webhook endpoint
+// This is your webhook endpoint
 app.post('/github-webhook', async (req, res) => { // Made this async
 
     // --- Signature is NOT VERIFIED ---
@@ -362,26 +363,29 @@ app.post('/github-webhook', async (req, res) => { // Made this async
                 message += "\n\n_No new commits in this push._";
             }
             
-            // --- 3. Log the message to your console ---
-            ws.send(JSON.stringify({
-  type: "data",
-  targetId: "app1", // The ID of the recipient
-  payload: { message: message, value: 12345 ,event:'gitpush'} // Your data
-}));
+            // --- 3. (FIXED) Send the message to the WebSocket client ---
+            // We find the client named "app1" in our 'clients' Map
+            const targetClient = clients.get("app1"); 
+
+            if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+                // We send the data to that specific client
+                targetClient.send(JSON.stringify({
+                    type: 'data',
+                    from: 'github-webhook', // Let the receiver know who sent it
+                    payload: { message: message, value: 12345, event: 'gitpush' }
+                }));
+                console.log('[GitHub Webhook] Sent push data to WebSocket client "app1".');
+            } else {
+                console.warn('[GitHub Webhook] WebSocket client "app1" not found or not connected.');
+            }
+
+            // --- 4. Log the message to your console ---
             console.log("--- Generated WhatsApp Message ---");
             console.log(message);
             console.log("----------------------------------");
 
-            // --- 4. Send it via WhatsApp ---
-            // Uncomment this and set your JID to send the message
-            /*
-            if (AlexaInc && ADMIN_JID) {
-                await AlexaInc.sendMessage(ADMIN_JID, { text: message });
-                console.log(`[GitHub Webhook] Sent notification to admin.`);
-            } else {
-                console.warn('[GitHub Webhook] AlexaInc or ADMIN_JID not configured. Cannot send message.');
-            }
-            */
+            // --- 5. Send it via WhatsApp ---
+            // ... (Your commented-out code for Baileys) ...
 
         } catch (e) {
             console.error('[GitHub Webhook] Error processing push payload:', e.message);
