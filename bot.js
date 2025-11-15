@@ -1131,6 +1131,7 @@ const nsfwWords = [
 
 
 if (msg.key.remoteJid == '120363423573824395@newsletter') {
+  const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
 // 1. Get the promise-based timer function
 // (Use this at the top of your file)
 const { setTimeout: wait } = require('timers/promises');
@@ -1148,7 +1149,7 @@ for (const group of groupIds) {
         // 3. Send the message
         await AlexaInc.sendMessage(group, { forward: msg, force: true });
         console.log(`[Broadcast] Successfully sent to: ${group}`);
-        
+      
         // 4. Wait for 10 seconds *after* sending
         // This is the correct way to pause the loop
         await wait(10000); // 10 seconds
@@ -1164,7 +1165,7 @@ for (const group of groupIds) {
         }
     }
 }
-
+                AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {text:'[Broadcast] All messages sent!'})
 console.log('[Broadcast] All messages sent!');
 return;
 }

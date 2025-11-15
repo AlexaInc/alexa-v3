@@ -838,7 +838,7 @@ await AlexaInc.sendMessage(removedId, { image: buffer, caption: feedbackMsg, men
         }
     });
     
-alexasocket.onmessage = (event) => {
+alexasocket.onmessage = async (event) => {
   const data = JSON.parse(event.data);
 
   if (data.type === 'data') {
@@ -867,6 +867,33 @@ const interactiveMessage = {
   interactiveButtons
 };
         AlexaInc.sendMessage(process.env.ocid,interactiveMessage)
+
+          const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
+
+const { setTimeout: wait } = require('timers/promises');
+
+const groups = await AlexaInc.groupFetchAllParticipating();
+const groupIds = Object.keys(groups);
+
+console.log(`[Broadcast] Starting to send to ${groupIds.length} groups...`);
+
+for (const group of groupIds) {
+    try {
+        await AlexaInc.sendMessage(group, interactiveMessage);
+        // console.log(`[Broadcast] Successfully sent to: ${group}`);
+        await wait(10000);
+
+    } catch (error) {
+        console.error(`[Broadcast] Failed to send to ${group}:`, error.message);
+        if (error.data === 429) {
+            console.log("Rate limit hit. Waiting 30 seconds before retrying next group...");
+            await wait(30000); // Wait 30 seconds
+        }
+    }
+}
+                AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {text:'[Broadcast] All messages sent!'})
+// console.log('[Broadcast] All messages sent!');
+
     }
     console.log(`Received message from: ${data.from}`); // "app1"
     console.log(`Payload:`, data.payload); // { message: "Hello App2!", value: 12345 }
