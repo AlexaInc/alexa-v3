@@ -10683,5 +10683,20 @@
     "id": 2137,
     "reason": "index.js: Detected status code 428",
     "timestamp": "2025-11-15T02:33:24.729Z"
+  },
+  {
+    "id": 2138,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: messageContent is not defined\nat handleMessage (/home/hansaka/alexa-v3/bot.js:2657:21)\n",
+    "timestamp": "2025-11-15T11:38:48.114Z"
+  },
+  {
+    "id": 2139,
+    "reason": "index.js: ❌ Uncaught Exception: Error: Invalid media type\nat prepareWAMessageMedia (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Utils/messages.js:88:15)\nat generateWAMessageContent (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Utils/messages.js:891:28)\nat Object.generateWAMessage (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Utils/messages.js:1366:52)\nat Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/messages-send.js:1669:47)\nat handleMessage (/home/hansaka/alexa-v3/bot.js:2653:33) {\ndata: null,\nisBoom: true,\nisServer: false,\noutput: {\nstatusCode: 400,\npayload: {\nstatusCode: 400,\nerror: 'Bad Request',\nmessage: 'Invalid media type'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-11-15T11:51:21.931Z"
+  },
+  {
+    "id": 2140,
+    "reason": "index.js: ❌ Uncaught Exception: TypeError: Cannot read properties of undefined (reading 'endsWith')\nat updateUser (/home/hansaka/alexa-v3/store/userscontact.js:53:50)\nat handleMessage (/home/hansaka/alexa-v3/bot.js:985:7)\n",
+    "timestamp": "2025-11-15T11:56:17.293Z"
   }
 ]

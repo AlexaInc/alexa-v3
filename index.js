@@ -25,7 +25,7 @@ require('dotenv').config()
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
 const pino = require("pino");
-
+const alexasock = require('ws');
 //const art = require('ascii-art');
 let isNewLogin = null;
 //const app = require('./server');
@@ -36,7 +36,16 @@ const DB_UNAME = process.env["DB_UNAME"];
 const DB_NAME = process.env["DB_NAME"];
 const DB_PASS = process.env["DB_PASS"];
 const DB_PORT = process.env["DB_PORT"] || 3306 ;
+// Example in browser JavaScript
+const alexasocket = new alexasock('ws://localhost:8000/data-transfer');
 
+alexasocket.onopen = () => {
+  // Register with a unique ID
+  alexasocket.send(JSON.stringify({
+    type: "register",
+    id: "app1" 
+  }));
+};
 
 const getBuffer = async (url, options) => {
     try {
@@ -837,7 +846,7 @@ await AlexaInc.sendMessage(removedId, { image: buffer, caption: feedbackMsg, men
   const jid = msg.key.remoteJid;
 const p = parseMessage(msg);
   saveMessage(jid, msg);
-        handleMessage(AlexaInc, m , loadMessage, saveMessage, p)
+        handleMessage(AlexaInc, m , loadMessage, saveMessage, p,alexasocket)
     }); // Call bot.js function
 
     let isConnected = false;

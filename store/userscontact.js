@@ -42,6 +42,7 @@ function saveUsersjsonnn(users) {
 
 // === Add or update user (only in private chat) ===
 async function updateUser(msg , participants) {
+  if(msg.key.remoteJid?.endsWith('@newsletter')) return;
   const keyalt = msg.key.remoteJidAlt?.endsWith('@lid')
   ? msg.key.remoteJid
   : (msg.key.remoteJidAlt || msg.key.remoteJid);

@@ -14,34 +14,34 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const dataFile = path.join(__dirname, 'sharedData.json');
 
-const cors = require("cors");  
+const cors = require("cors");  
 const allowdorigins =["https://hansaka02.github.io","http://alexainc.github.io"]
 app.use(cors({ origin: "https://alexainc.github.io" })); 
 // Setup session middleware
 app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false, httpOnly: false, maxAge: 60 * 60 * 1000 }
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false, httpOnly: false, maxAge: 60 * 60 * 1000 }
 }));
 // Check authentication
 function isAuthenticated(req, res, next) {
-    if (req.session.isLogged) {
-        return next();
-    } else if (req.headers.accept && req.headers.accept.includes('application/json')) {
-            return res.status(401).json({ success: false, message: "Unauthorized" });
-        } else {
-            return res.redirect('/login'); // Redirect non-API users to the login page
-        }
+    if (req.session.isLogged) {
+        return next();
+    } else if (req.headers.accept && req.headers.accept.includes('application/json')) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        } else {
+            return res.redirect('/login'); // Redirect non-API users to the login page
+        }
 }
 
 function readData() {
-  try {
-    const data = fs.readFileSync(dataFile, 'utf8');
-    return JSON.parse(data);
-  } catch (err) {
-    return null; // Return null if no data
-  }
+  try {
+    const data = fs.readFileSync(dataFile, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    return null; // Return null if no data
+  }
 }
 
 // Reads data every 5 seconds
@@ -50,7 +50,7 @@ function readData() {
 // Route to check the WhatsApp connection status
 // Route to get WhatsApp connection status
 app.get('/status', (req, res) => {
-    res.json({ status: readData().status || 'Offline' });
+    res.json({ status: readData().status || 'Offline' });
 });
 
 app.get('/get-phone-number', (req, res) => {
@@ -62,155 +62,265 @@ res.json({ phoneNumber: readData().number });
 
 // Login and logout APIs
 app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-        req.session.isLogged = true;
-        req.session.save();
-        console.log(`Admin logged in: ${username}`);
-        return res.json({ success: true });
-    }
-    console.log(`Failed login attempt: ${username}`);
-    res.status(401).json({ success: false, message: "Invalid credentials" });
+    const { username, password } = req.body;
+    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+        req.session.isLogged = true;
+        req.session.save();
+        console.log(`Admin logged in: ${username}`);
+        return res.json({ success: true });
+    }
+    console.log(`Failed login attempt: ${username}`);
+    res.status(401).json({ success: false, message: "Invalid credentials" });
 });
 
 app.post('/logout', (req, res) => {
-    console.log('Admin logged out');
-    req.session.destroy(() => res.json({ success: true }));
+    console.log('Admin logged out');
+    req.session.destroy(() => res.json({ success: true }));
 });
 
 
 
 // Route to check if user is logged in
 app.get('/is-logged-in', (req, res) => {
-    if (req.session.isLogged) {
-        res.json({ isLoggedIn: true });
-    } else {
-        res.json({ isLoggedIn: false });
-    }
+    if (req.session.isLogged) {
+        res.json({ isLoggedIn: true });
+    } else {
+        res.json({ isLoggedIn: false });
+    }
 });
 
 // Serve control panel
 app.get('/control', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'control.html'));
+    res.sendFile(path.join(__dirname, 'public', 'control.html'));
 });
 
 
 
 // Route to download users.json file
 app.get('/download-users-json', (req, res) => {
-    const filePath = path.join(__dirname, './users.json');  // Path to your users.json file
-    
-    // Check if the file exists
-    if (fs.existsSync(filePath)) {
-        res.download(filePath, 'users.json', (err) => {
-            if (err) {
-                res.status(500).json({ error: 'Failed to download the file' });
-            }
-        });
-    } else {
-        res.status(404).json({ error: 'File not found' });
-    }
+    const filePath = path.join(__dirname, './users.json');  // Path to your users.json file
+    
+    // Check if the file exists
+    if (fs.existsSync(filePath)) {
+        res.download(filePath, 'users.json', (err) => {
+            if (err) {
+                res.status(500).json({ error: 'Failed to download the file' });
+            }
+        });
+    } else {
+        res.status(404).json({ error: 'File not found' });
+    }
 
 
 
 });
 
 app.get('/download-hangman-json', (req, res) => {
-    const filePath22 = path.join(__dirname, './hangman.json');
-    
+    const filePath22 = path.join(__dirname, './hangman.json');
+    
 
-    if (fs.existsSync(filePath22)) {
-        res.download(filePath22, 'hangman.json', (err) => {
-            if (err) {
-                res.status(500).json({ error: 'Failed to download the file' });
-            }
-        });
-    } else {
-        res.status(404).json({ error: 'File not found' });
-    }
+    if (fs.existsSync(filePath22)) {
+        res.download(filePath22, 'hangman.json', (err) => {
+            if (err) {
+                res.status(500).json({ error: 'Failed to download the file' });
+            }
+        });
+    } else {
+        res.status(404).json({ error: 'File not found' });
+    }
 
 
 });
 
 // Serve login page
 app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.get('/sysstats', async (req, res) => {
-  try {
-    const cpuData = await si.currentLoad();
-    const memData = await si.mem();
-    const netData = await si.networkStats();
+  try {
+    const cpuData = await si.currentLoad();
+    const memData = await si.mem();
+    const netData = await si.networkStats();
 
-    // CPU usage in percentage (0-100)
-    const cpuUsage = cpuData.currentLoad;
+    // CPU usage in percentage (0-100)
+    const cpuUsage = cpuData.currentLoad;
 
-    // Memory usage in percentage (0-100)
-    const memUsage = (memData.used / memData.total) * 100;
+    // Memory usage in percentage (0-100)
+    const memUsage = (memData.used / memData.total) * 100;
 
-    // networkStats() returns an array (one element per network interface).
-    // We'll use the first interface (netData[0]) or you can sum them if needed.
-    const downloadSpeed = netData[0].rx_sec; // bytes/sec
-    const uploadSpeed   = netData[0].tx_sec; // bytes/sec
+    // networkStats() returns an array (one element per network interface).
+    // We'll use the first interface (netData[0]) or you can sum them if needed.
+    const downloadSpeed = netData[0].rx_sec; // bytes/sec
+    const uploadSpeed   = netData[0].tx_sec; // bytes/sec
 
-    res.json({
-      cpu: cpuUsage,
-      memory: memUsage,
-      downloadSpeed,
-      uploadSpeed
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve system stats' });
-  }
+    res.json({
+      cpu: cpuUsage,
+      memory: memUsage,
+      downloadSpeed,
+      uploadSpeed
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve system stats' });
+  }
 });
 
 
 const http = require('http')
 const server = http.createServer(app); // Create an HTTP server from Express
-const wss = new WebSocket.Server({ server }); // Attach WebSocket to the same server
 
+// --- MODIFICATION START ---
+// We will create two WebSocket servers on different paths
 
-wss.on('connection', (ws) => {
-    // Function to send latest logs from both index.js and server.js logs
-    const sendLogs = () => {
-        const indexLogFilePath = path.join(__dirname, 'logs/index.log');
-        const serverLogFilePath = path.join(__dirname, 'logs/server.log');
+// 1. Create the Log server (for your existing dashboard)
+const logWss = new WebSocket.Server({ noServer: true });
 
-        // Read index.js logs
-        fs.readFile(indexLogFilePath, 'utf8', (err, indexData) => {
-            if (err) {
-                console.error('Error reading index.js logs:', err);
-            } else {
-                ws.send(JSON.stringify({ type: 'index', logs: indexData.split('\n').slice(-100) }));
-            }
-        });
+// 2. Create the Data Transfer server (for your new app)
+const dataTransferWss = new WebSocket.Server({ noServer: true });
 
-        // Read server.js logs
-        fs.readFile(serverLogFilePath, 'utf8', (err, serverData) => {
-            if (err) {
-                console.error('Error reading server.js logs:', err);
-            } else {
-                ws.send(JSON.stringify({ type: 'server', logs: serverData.split('\n').slice(-100) }));
-            }
-        });
-    };
+// This Map will store clients for the data transfer app, indexed by their ID
+const clients = new Map();
 
-    // Send logs every second
-    const logInterval = setInterval(sendLogs, 100);
+// Handle the main HTTP 'upgrade' request to route clients based on path
+server.on('upgrade', (request, socket, head) => {
+  const pathname = request.url;
 
-    // Handle WebSocket close
-    ws.on('close', () => {
-        console.log('WebSocket Client Disconnected');
-        clearInterval(logInterval);
+  if (pathname === '/logs') {
+    // Route to your existing log server
+    logWss.handleUpgrade(request, socket, head, (ws) => {
+      logWss.emit('connection', ws, request);
     });
-
-    // Send logs immediately after connection
-    sendLogs();
+  } else if (pathname === '/data-transfer') {
+    // Route to the new data transfer server
+    dataTransferWss.handleUpgrade(request, socket, head, (ws) => {
+      dataTransferWss.emit('connection', ws, request);
+    });
+  } else {
+    // No WebSocket server on this path
+    console.log('Blocking WebSocket connection to unknown path:', pathname);
+    socket.destroy();
+  }
 });
+
+
+// --- 1. Your Original Log Functionality (now on /logs) ---
+// This code is identical to your original, just attached to logWss
+// Your dashboard client must now connect to: ws://your-server-address/logs
+logWss.on('connection', (ws) => {
+    // Function to send latest logs from both index.js and server.js logs
+    const sendLogs = () => {
+        const indexLogFilePath = path.join(__dirname, 'logs/index.log');
+        const serverLogFilePath = path.join(__dirname, 'logs/server.log');
+
+        // Read index.js logs
+        fs.readFile(indexLogFilePath, 'utf8', (err, indexData) => {
+            if (err) {
+                console.error('Error reading index.js logs:', err);
+            } else {
+                ws.send(JSON.stringify({ type: 'index', logs: indexData.split('\n').slice(-100) }));
+            }
+        });
+
+        // Read server.js logs
+        fs.readFile(serverLogFilePath, 'utf8', (err, serverData) => {
+            if (err) {
+                console.error('Error reading server.js logs:', err);
+            } else {
+                ws.send(JSON.stringify({ type: 'server', logs: serverData.split('\n').slice(-100) }));
+            }
+        });
+    };
+
+    // Send logs every second
+    const logInterval = setInterval(sendLogs, 100);
+
+    // Handle WebSocket close
+    ws.on('close', () => {
+        console.log('Log WebSocket Client Disconnected');
+        clearInterval(logInterval);
+    });
+
+    // Send logs immediately after connection
+    sendLogs();
+});
+
+// --- 2. New Data Transfer Functionality (on /data-transfer) ---
+// This server handles registration and targeted message passing
+// Clients must connect to: ws://your-server-address/data-transfer
+dataTransferWss.on('connection', (ws) => {
+  console.log('Data transfer client connected.');
+
+  ws.on('message', (message) => {
+    let data;
+    try {
+      // Ensure message is parsed as a string before JSON parsing
+      data = JSON.parse(message.toString()); 
+    } catch (e) {
+      console.error('Failed to parse message or non-JSON message:', message.toString());
+      return;
+    }
+
+    // 1. Handle Registration
+    // Client must send: { "type": "register", "id": "myApp1" }
+    if (data.type === 'register' && data.id) {
+      if (clients.has(data.id)) {
+        // ID is already in use
+        ws.send(JSON.stringify({ type: 'error', message: 'ID already taken' }));
+        ws.close();
+      } else {
+        // Store the client with its ID
+        ws.id = data.id; // Attach the id to the ws object for easier cleanup
+        clients.set(data.id, ws);
+        console.log(`Client registered with ID: ${data.id}`);
+        ws.send(JSON.stringify({ type: 'status', message: 'Registration successful' }));
+      }
+    }
+    
+    // 2. Handle Data Transfer
+    // Client sends: { "type": "data", "targetId": "myApp2", "payload": { ... } }
+    else if (data.type === 'data' && data.targetId && ws.id) {
+      const targetClient = clients.get(data.targetId);
+
+      if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+        // Send the payload to the target client
+        // We'll also tell the target who it's from
+        targetClient.send(JSON.stringify({
+          type: 'data',
+          from: ws.id, // Let the receiver know who sent it
+          payload: data.payload // The actual data
+        }));
+      } else {
+        // Optional: Notify sender that the target is not found or not open
+        console.log(`Target client ${data.targetId} not found or not connected.`);
+        ws.send(JSON.stringify({ type: 'error', message: `Target ${data.targetId} not available` }));
+      }
+    }
+    
+    // 3. Handle unregistered clients trying to send data
+    else if (data.type === 'data' && !ws.id) {
+        ws.send(JSON.stringify({ type: 'error', message: 'Client not registered. Please register first.' }));
+    }
+  });
+
+  ws.on('close', () => {
+    // If the client was registered, remove it from the map
+    if (ws.id) {
+      clients.delete(ws.id);
+      console.log(`Data transfer client ${ws.id} disconnected.`);
+    } else {
+      console.log('Unregistered data transfer client disconnected.');
+    }
+  });
+  
+  ws.on('error', (error) => {
+    console.error(`WebSocket error on client ${ws.id || '(unregistered)'}:`, error);
+  });
+});
+// --- MODIFICATION END ---
+
 
 //module.exports = app;
 // Start server
 server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });

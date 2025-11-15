@@ -874,7 +874,7 @@ try {
 
 
 
-async function handleMessage(AlexaInc, { messages, type }, loadMessage ,saveMessage,p) {
+async function handleMessage(AlexaInc, { messages, type }, loadMessage ,saveMessage,p,alexasocket) {
 
 
 
@@ -1216,7 +1216,7 @@ async function checkAntiLink(msg, messageText, isYtCommand) {
   try {
     // 8. Updated Query: Select 'link_a' as well.
     const query = `SELECT antilink, link_a FROM \`groups\` WHERE group_id = ? AND antilink = TRUE`;
-    const [results] = await db.promise().query(query, [msg.key.remoteJd]);
+    const [results] = await db.promise().query(query, [msg.key.remoteJid]);
 
     // 9. Check if antilink is enabled (results.length > 0)
     if (results.length > 0) {
@@ -2648,6 +2648,30 @@ case 'dailyqa':{
   break
 }
 
+case"totg":{
+if(!isOwner) return mess.owner() 
+if(!p.quotedid) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'please reply to message baby'});
+// if(!text) return 
+// Run this on App1's client
+const loasdedmdd= loadMessage(msg.key.remoteJid,p.quotedid)
+const mgtosend = {
+      messageText : loasdedmdd.messageText,
+      mediaUrl : loasdedmdd.mediaUrl,
+      mediaMimetype : loasdedmdd.mediaMimetype,
+      mediaKey : loasdedmdd.mediaKey || null,
+      mediaIv : loasdedmdd.mediaIv || null,
+      mediaFileEncSha256 : loasdedmdd.mediaFileEncSha256 || null,
+      mediaFileSha256 : loasdedmdd.mediaFileSha256 || null
+}
+alexasocket.send(JSON.stringify({
+  type: "data",
+  targetId: "app2", // The ID of the recipient
+  payload: { message: mgtosend, value: 12345 } // Your data
+}));
+
+
+  break;
+}
 case 'answer':{
 
   if (!QanAdata[sender]){ AlexaInc.sendMessage(msg.key.remoteJid,{ text: "Q&A session curently not activated use `.dailyqa` to active"},{ quoted: msg });}
