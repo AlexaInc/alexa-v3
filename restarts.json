@@ -10763,5 +10763,10 @@
     "id": 2153,
     "reason": "index.js: [Broadcast] Failed to send to 120363309790686158@g.us: Timed Out\n[Broadcast] Failed to send to 120363250115713647@g.us: Timed Out\n❌ Uncaught Exception: Error: rate-overlimit\nat Object.assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:80:24)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.groupMetadata (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/groups.js:25:24)\nat async EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:616:29) {\ndata: 429,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
     "timestamp": "2025-11-15T14:31:04.268Z"
+  },
+  {
+    "id": 2154,
+    "reason": "index.js: ❌ Uncaught Exception: TypeError: Cannot destructure property 'user' of 'WABinary_1.jidDecode(...)' as it is undefined.\nat relayMessage (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/messages-send.js:721:17)\nat Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/messages-send.js:1728:23)\nat async EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:826:1)\n",
+    "timestamp": "2025-11-15T15:51:52.967Z"
   }
 ]

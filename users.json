@@ -12,7 +12,7 @@
         },
         "94760141770@s.whatsapp.net": {
             "level": 20,
-            "xp": 2163,
+            "xp": 2318,
             "xp_needed": 3154
         },
         "94728230232@s.whatsapp.net": {
@@ -37,7 +37,7 @@
         },
         "971551505090@s.whatsapp.net": {
             "level": 17,
-            "xp": 1469,
+            "xp": 1509,
             "xp_needed": 1826
         },
         "94771058234@s.whatsapp.net": {
@@ -52,7 +52,7 @@
         },
         "94741106042@s.whatsapp.net": {
             "level": 21,
-            "xp": 719,
+            "xp": 809,
             "xp_needed": 3784
         },
         "94705327164@s.whatsapp.net": {
@@ -72,7 +72,7 @@
         },
         "94782874035@s.whatsapp.net": {
             "level": 16,
-            "xp": 206,
+            "xp": 271,
             "xp_needed": 1522
         },
         "94705839122@s.whatsapp.net": {
@@ -397,7 +397,7 @@
         },
         "94753586693@s.whatsapp.net": {
             "level": 9,
-            "xp": 170,
+            "xp": 175,
             "xp_needed": 426
         },
         "94740731204@s.whatsapp.net": {
@@ -1617,7 +1617,7 @@
         },
         "94766675191@s.whatsapp.net": {
             "level": 13,
-            "xp": 140,
+            "xp": 145,
             "xp_needed": 882
         },
         "94713092912@s.whatsapp.net": {
@@ -1657,7 +1657,7 @@
         },
         "94752453089@s.whatsapp.net": {
             "level": 10,
-            "xp": 314,
+            "xp": 384,
             "xp_needed": 511
         },
         "94741654723@s.whatsapp.net": {
@@ -1717,7 +1717,7 @@
         },
         "94718878200@s.whatsapp.net": {
             "level": 13,
-            "xp": 140,
+            "xp": 180,
             "xp_needed": 882
         },
         "94759843541@s.whatsapp.net": {
@@ -2063,6 +2063,11 @@
         "94720196437@s.whatsapp.net": {
             "level": 1,
             "xp": 10,
+            "xp_needed": 100
+        },
+        "94768706412@s.whatsapp.net": {
+            "level": 1,
+            "xp": 35,
             "xp_needed": 100
         }
     }

@@ -783,6 +783,18 @@ else if (anu.action == 'leave') {
         }
     });
 }else if (anu.action == 'remove') {
+        const query = "SELECT * FROM `groups` WHERE group_id = ? AND is_welcome = TRUE";
+
+
+    db.query(query, [anu.id], async (err, result) => {
+        if (err) {
+            console.error('Error fetching goodbye message:', err);
+            return;
+        }
+
+        if (result.length === 0) return; // goodbye off if welcome off
+
+
     // Send a feedback message immediately when someone is removed (no welcome check)
     const removedId = num; // same `num` you used in leave branch
     const removedShort = removedId.split('@')[0];
@@ -829,6 +841,8 @@ await AlexaInc.sendMessage(removedId, { image: buffer, caption: feedbackMsg, men
         // fallback to text-only if no buffer for some reason
         await AlexaInc.sendMessage(anu.id, { text: feedbackMsg, mentions: [removedId] });
     }
+
+})
 }
 
 
@@ -875,24 +889,24 @@ const { setTimeout: wait } = require('timers/promises');
 const groups = await AlexaInc.groupFetchAllParticipating();
 const groupIds = Object.keys(groups);
 
-console.log(`[Broadcast] Starting to send to ${groupIds.length} groups...`);
+// console.log(`[Broadcast] Starting to send to ${groupIds.length} groups...`);
 
-for (const group of groupIds) {
-    try {
-        await AlexaInc.sendMessage(group, interactiveMessage);
-        // console.log(`[Broadcast] Successfully sent to: ${group}`);
-        await wait(10000);
+// for (const group of groupIds) {
+//     try {
+//         await AlexaInc.sendMessage(group, interactiveMessage);
+//         // console.log(`[Broadcast] Successfully sent to: ${group}`);
+//         await wait(10000);
 
-    } catch (error) {
-        console.error(`[Broadcast] Failed to send to ${group}:`, error.message);
-        if (error.data === 429) {
-            console.log("Rate limit hit. Waiting 30 seconds before retrying next group...");
-            await wait(30000); // Wait 30 seconds
-        }
-    }
-}
-                AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {text:'[Broadcast] All messages sent!'})
-// console.log('[Broadcast] All messages sent!');
+//     } catch (error) {
+//         console.error(`[Broadcast] Failed to send to ${group}:`, error.message);
+//         if (error.data === 429) {
+//             console.log("Rate limit hit. Waiting 30 seconds before retrying next group...");
+//             await wait(30000); // Wait 30 seconds
+//         }
+//     }
+// }
+//                 AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {text:'[Broadcast] All messages sent!'})
+// // console.log('[Broadcast] All messages sent!');
 
     }
     console.log(`Received message from: ${data.from}`); // "app1"
