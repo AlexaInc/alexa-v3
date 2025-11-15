@@ -68,7 +68,7 @@ if (!islid) return console.warn("⚠️ islid undefined, skipping process...");
 
   // If user doesn't exist, add (even if name is missing)
   if (existingIndex === -1) {
-    const name = rawName && rawName.trim() ? rawName : "Unknown";
+    const name = rawName && rawName.trim() ? rawName : null;
     users.push({ number: islid, name });
     saveUsersjsonnn(users);
     console.log(`✅ Added new user: ${name} (${islid})`);

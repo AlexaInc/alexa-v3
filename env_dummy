@@ -1,0 +1,21 @@
+
+ADMIN_PASSWORD=you can set any
+ADMIN_USERNAME=you can set any
+CHAT_MODEL=get from openrouter
+DB_HOST=
+DB_NAME=
+DB_PASS=
+DB_PORT=
+DB_UNAME=
+NIGHTAPI_AUTH=get from nightapi
+OPENROUTER_TOKEN1=get from openrouter
+OPENROUTER_TOKEN2=get from openrouter
+OPENROUTER_TOKEN3=get from openrouter
+OPENROUTER_TOKEN4=get from openrouter
+Owner_nb=
+Owner_id=
+SESSION_SECRET=
+WEBSOCKET_URL=
+bot_nb=
+GOOGLE_API_KEY=
+GOOGLESEARCH_ENGINE_ID=

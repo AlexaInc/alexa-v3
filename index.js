@@ -81,6 +81,7 @@ const dataFile = path.join(__dirname, 'sharedData.json');
 const si = require('systeminformation');
 const WebSocket = require('ws');
 const { default: axios } = require('axios');
+const { json } = require('stream/consumers');
 const logger = P({
     timestamp: () => `,"time":"${new Date().toJSON()}"`
 }, P.destination('./wa-logs.txt'));
@@ -110,14 +111,43 @@ function parseMessage(msg) {
 
     if (!messageContent) return {};
 
+    // This is the ONLY contextInfo you need.
+    // It comes from imageMessage, extendedTextMessage, videoMessage, etc.
     const contextInfo = messageContent.contextInfo;
 
     // 1. Get the full text (from caption or text)
     const text = messageContent.text || messageContent.caption || "";
-
+    
     // 2. Get the quoted message ID
-    const quotedid = contextInfo?.stanzaId || msg.message?.extendedTextMessage?.contextInfo.stanzaId;
+    // We just use optional chaining on the 'contextInfo' variable.
+    const quotedid = contextInfo?.stanzaId;
+  let replyInfo = null;
+  if (contextInfo?.quotedMessage) {
+    const quoted = contextInfo.quotedMessage;
+    const quotedType = Object.keys(quoted)[0];
+    const quotedContent = quoted[quotedType];
+    let quotedText = "";
 
+    switch (quotedType) {
+      case "conversation":
+        quotedText = quotedContent;
+        break;
+      case "extendedTextMessage":
+        quotedText = quotedContent.text || "";
+        break;
+      case "imageMessage":
+      case "videoMessage":
+      case "documentMessage":
+        quotedText = quotedContent.caption || "";
+        break;
+    }
+
+    replyInfo = {
+      sender: contextInfo.participant,
+      messageId: contextInfo.stanzaId,
+      messageText: quotedText,
+    };
+  }
     // 3. Get mentioned JIDs
     const mentionedJids = contextInfo?.mentionedJid;
 
@@ -126,7 +156,6 @@ function parseMessage(msg) {
     const sender = msg.key.fromMe ? "me" : (isGroup ? msg.key.participant : msg.key.remoteJid);
 
     // 5. Get the command and the text *after* the command
-    // (I am guessing your prefix is '/' or '.')
     const prefix = /^[./!]/; // Assumes prefix is /, ., or !
     const body = text.trim().split(/ +/);
     const commandWithPrefix = body.shift().toLowerCase();
@@ -145,12 +174,12 @@ function parseMessage(msg) {
         msgType,
         messageContent,
         contextInfo,
-        
-        text: text,               // The full, original text/caption
-        command: command,         // The command (e.g., "filter")
+        replyInfo,
+        text: text,           // The full, original text/caption
+        command: command,       // The command (e.g., "filter")
         commandText: commandText, // The text after the command (e.g., "hi")
         
-        quotedid: quotedid,       // The ID of the replied-to message
+        quotedid: quotedid,     // The ID of the replied-to message
         mentionedJids: mentionedJids, // List of mentions
         
         sender: sender,
@@ -783,7 +812,8 @@ else if (anu.action == 'leave') {
             },
             sendEphemeral: true
         };
-//await AlexaInc.sendMessage(removedId, { image: buffer, caption: feedbackMsg, mentions: [removedId] }, { quoted: fglink });
+// await AlexaInc.sendMessage(anu.id, {text: JSON.stringify(anu) + 'num= '+removedId})
+await AlexaInc.sendMessage(removedId, { image: buffer, caption: feedbackMsg, mentions: [removedId] }, { quoted: fglink });
         await AlexaInc.sendMessage(anu.id, { image: buffer, caption: feedbackMsg, mentions: [removedId] }, { quoted: fglink });
     } else {
         // fallback to text-only if no buffer for some reason

@@ -684,7 +684,7 @@ async function createImage(firstName, lastName, customemojiid, message, nameColo
         .webp({ quality: 90 })
         .toBuffer();
         
-    return webpBuffer;
+    return scaledPngBuffer;
 }
 
 module.exports = createImage;

@@ -5,11 +5,12 @@ const fetchnews = require('./res/news');
 const yts = require('yt-search');
 const weatherof = require('./res/js/weather.js')
 const fsp = require('fs').promises;
+const fonts = require('./res/js/fonts.js')
 const hangmanFile = "./hangman.json";
 const { v4: uuidv4 } = require('uuid');
 const QUIZ_STORAGE_DIR = './quizzes';
 const { promisify } = require('util');
-
+const validator = require('validator');
 const { exec } = require('child_process');
 const execAsync = promisify(exec);
 // Ensure the directory exists when the bot starts
@@ -23,6 +24,7 @@ const path = require('path');
 const quizManager = require('./res/js/quizManager.js');
 const FilterManager = require('filtermatics'); 
 const si = require('os');
+
 const axios = require('axios');
 const sharp = require('sharp');
 const { downloadMediaMessage, proto, prepareWAMessageMedia , getGroupMetadata , generateWAMessageFromContent  } = require('@whiskeysockets/baileys');
@@ -62,7 +64,10 @@ const Filters = new FilterManager({
   dbPath: './filters' 
 });
 
+const badwordNext = require('bad-words-next');
+const enbad = require('bad-words-next/lib/en');
 
+const badwordceck = new badwordNext({data:enbad});
 
 const { mediafireDl } = require('./res/mediafire.js')
 const DB_HOST = process.env["DB_HOST"];
@@ -455,6 +460,49 @@ async function convertToSticker(imagePath, stickerPath) {
 }
 
 
+/**
+ * Auto box generator keeping your top & separator
+ * @param {string} text - content inside the box
+ * @param {number} width - width of box content (inside borders)
+ */
+function generateBox(text = '') {
+  text = String(text || '');
+  const width = 21; // default box width
+  const title = '🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀';
+  const defaultTitleWidth = 21;
+
+  // Top and separator
+  const top = '╭' + '━'.repeat(width + 2) + '╮';
+  const separator = '┃' + '━'.repeat(width + 2) + '┃';
+
+  // Center title in default width (21) and fill remaining space
+  const leftPadding = Math.floor((defaultTitleWidth - title.length) / 2);
+  const remainingWidth = width - defaultTitleWidth;
+  const titleLine = `┃                🎀 𝒜𝐿𝐸𝒳𝒜 - 𝓥3  🎀                 ┃`;
+
+  // Split text into wrapped lines
+  const lines = [];
+  text.split('\n').forEach(rawLine => {
+    const words = rawLine.split(' ');
+    let line = '';
+    for (const word of words) {
+      if ((line + word).length + 1 > width) {
+        lines.push(line.trim());
+        line = word + ' ';
+      } else {
+        line += word + ' ';
+      }
+    }
+    if (line.trim()) lines.push(line.trim());
+  });
+
+  // Start line only, no end padding
+  const contentLines = lines.map(l => `┃ ${l}`);
+
+  const bottom = '╰' + '━'.repeat(width + 2) + '╯';
+
+  return [top, titleLine, separator, ...contentLines, bottom].join('\n');
+}
 
 function generateRandomToken(length = 15,sender,pushName) {
     const characters = `${sender}img${pushName}`;
@@ -480,7 +528,7 @@ const { ConsoleMessage } = require('puppeteer');
 const { url } = require('inspector');
 const { json } = require('stream/consumers');
 const { image } = require('ascii-art');
-const { error } = require('console');
+const { error, Console } = require('console');
 const { title } = require('process');
 
 
@@ -1081,71 +1129,145 @@ const nsfwWords = [
 
 
 
-async function checkBadWord(msg, messageText) {
-  // Check if it's a group
+/**
+ * Checks for bad words in a message.
+ * Queries the database ONLY if a bad word is found.
+ */
+async function checkBadWord(msg, messageText, isYtCommand) {
+  // 1. Exit if it's a YouTube command (to allow song/video titles)
+  if (isYtCommand) return false;
+
+  // 2. Exit if it's not a group
   if (!isGroup) return false;
 
-  try {
-    const query = `SELECT * FROM \`groups\` WHERE group_id = ? AND antinsfw = TRUE`;
-    const [results] = await db.promise().query(query, [msg.key.remoteJid]);
-
-    // If the 'antinsfw' setting is enabled for the group
-    if (results.length > 0) {
-      const messageContent = messageText.toLowerCase(); // Ensure to use the message text for checking
-
-      // Check if any NSFW word exists in the message
-      for (let word of nsfwWords) {
-        if (messageContent.includes(word)) {
-          console.log('NSFW content detected!');
-          return true; // NSFW content detected
-        }
-      }
-
-      // No NSFW content detected
-      return false;
-    } else {
-      // 'antinsfw' setting is not enabled for this group
-      return false;
-    }
-  } catch (err) {
-    console.error('Error querying the database:', err);
-    return false; // Return false if there's an error
+  // 3. Perform the "cheap" check first (in-memory)
+  // If no bad word is found, stop right away.
+  if (!badwordceck.check(messageText)) {
+    return false;
   }
-}
-async function checkAntiLink(msg,messageText) {
-  if (!isGroup) return false;
 
+  // 4. A potential bad word WAS found.
+  // NOW, check the database to see if the setting is on.
   try {
-    const query = `SELECT * FROM \`groups\` WHERE group_id = ? AND antilink = TRUE`;
+    // 5. Updated Query: Select 'nsfw_a' as well.
+    const query = `SELECT antinsfw, nsfw_a FROM \`groups\` WHERE group_id = ? AND antinsfw = TRUE`;
     const [results] = await db.promise().query(query, [msg.key.remoteJid]);
 
+    // 6. Check if antinsfw is enabled (results.length > 0)
     if (results.length > 0) {
-      const messageContent = messageText.toLowerCase();
+      // 7. Get the action value from the first result
+      const action = results[0].nsfw_a;
 
-      // Improved regex for detecting real links/domains
-      const linkPattern = /\b((https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/[^\s]*)?)\b/gi;
-
-      // Check if message contains a valid link or domain
-      if (linkPattern.test(messageContent)) {
-        console.log('Link detected!');
-        return true;
-      }
+      // console.log('NSFW content detected and antinsfw is ON.');
+      
+      // 8. Log the specific action
+      // console.log('NSFW action to take:', action);
+      
+      return action; // Return true to indicate detection
     }
+    
+    // 9. Bad word was found, but antinsfw is OFF for this group
     return false;
+
   } catch (err) {
     console.error('Error querying the database:', err);
-    return false;
+    return false; // Always return false if there's a DB error
   }
 }
 
 
-// Inside your 'messages.upsert' event, after command checks:
 
-// Check if the message text matches any filter trigger
+/**
+ * Checks for links in a message.
+ * Queries the database ONLY if a valid link is found.
+ */
+async function checkAntiLink(msg, messageText, isYtCommand) {
+  // 1. Exit if it's a YouTube command (to allow song/video links)
+  if (isYtCommand) return false;
+
+  // 2. Exit if it's not a group
+  if (!isGroup) return false;
+
+  // 3. Perform the "cheap" regex check first
+  const urlRegex = /(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?/g;
+  const potentialUrls = messageText.match(urlRegex);
+
+  // 4. If regex finds nothing, stop immediately.
+  if (!potentialUrls) {
+    return false;
+  }
+
+  // 5. Regex found matches. Now validate them (still "cheap").
+  let foundValidLink = false;
+  for (const url of potentialUrls) {
+    if (validator.isURL(url, { require_protocol: false })) {
+      foundValidLink = true;
+      break; // Found one valid link, no need to check the others
+    }
+  }
+
+  // 6. If no *valid* links were found, stop.
+  if (!foundValidLink) {
+    return false;
+  }
+
+  // 7. A valid link WAS found.
+  // NOW, check the database to see if antilink is on.
+  try {
+    // 8. Updated Query: Select 'link_a' as well.
+    const query = `SELECT antilink, link_a FROM \`groups\` WHERE group_id = ? AND antilink = TRUE`;
+    const [results] = await db.promise().query(query, [msg.key.remoteJd]);
+
+    // 9. Check if antilink is enabled (results.length > 0)
+    if (results.length > 0) {
+      // 10. Get the action value from the first result
+      const action = results[0].link_a;
+
+     // console.log('Link detected and antilink is ON.');
+      
+      // 11. Log the specific action
+     // console.log('Anti-link action to take:', action);
+      
+      return action; // Return true to indicate detection
+    }
+
+    // 12. Link was found, but antilink is OFF for this group
+    return false;
+
+  } catch (err) {
+    console.error('Error querying the database:', err);
+    return false; // Always return false if a DB error occurs
+  }
+}
+
+
+
+
+const greetingRegex = /\b(hi|hello)\b/i;
+
+if (greetingRegex.test(messageText)) {
+
+  try {
+
+    const audioBuffer = fs.readFileSync('./res/audio/welcome.ogg');
+
+
+    await AlexaInc.sendMessage(msg.key.remoteJid, {
+      audio: audioBuffer,
+      mimetype: 'audio/mpeg', 
+      ptt: true           
+    }, { quoted: msg });
+
+  } catch (error) {
+
+    console.error("Error sending welcome audio:", error);
+  }
+}
+
 
 const matchedFilter = Filters.checkFilters(msg.key.remoteJid, messageText);
 
-// matchedFilter will be the filter object if found, or null if not.
+
 if (matchedFilter) {
   
   // A filter was triggered! Now, check its type to reply correctly.
@@ -1181,16 +1303,23 @@ const allowedCommands = [
   '/quiz'
 ];
 const isYtCommand = allowedCommands.some(cmd => messageText.startsWith(cmd));
-
-if (await checkBadWord(msg, messageText) && !isYtCommand) {
+const wwwwwww = await checkBadWord(msg,messageText, isYtCommand);
+if ( wwwwwww && !isYtCommand) {
     if (isOwner) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are the Owner. Lucky You' });
   if (isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are an admin. Lucky You' });
 
-  AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 NSFW content is not allowed in this group!' });
 
+if (wwwwwww == 'delete') {
+  await   AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 NSFW content is not allowed in this group! your msg will delete' });
+    AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key })
+}else{
+  await   AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 NSFW content is not allowed in this group! your msg will delete and you will remove' });
   AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key }).then(response=>{
     AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
   });
+}
+
+
   return;
 }
 
@@ -1198,16 +1327,22 @@ if (await checkBadWord(msg, messageText) && !isYtCommand) {
 
 
 // Check if the message is one of your commands
-
+const vvvvvvvv =await checkAntiLink(msg, messageText, isYtCommand);
 // Now, only run antilink if it's NOT a command
-if (await checkAntiLink(msg, messageText) && !isYtCommand) {
+if ( vvvvvvvv && !isYtCommand) {
   if (isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are an admin. Lucky You' });
   if (isOwner) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'You are the Owner. Lucky You' });
-  AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 Links are not allowed in this group!' });
-  AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
+  // AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 Links are not allowed in this group!' });
+if (vvvvvvvv == 'delete') {
+    await AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 Links are not allowed in this group! , your msg will delete' });
+    AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key })
+}else{
+  await AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 Links are not allowed in this group! , your msg will delete and you will remove' });
+   
   AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key }).then(response=>{
     AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
   });
+}
   return;
 }
 
@@ -1294,7 +1429,7 @@ const interactiveButtons = [
     {
         header:' ',
         title: 'Youtube', 
-        id: '.menu_yt'
+        id: '.menu_svm'
     },
     {
         header:' ',
@@ -1336,8 +1471,27 @@ const interactiveMessage = {
   interactiveButtons
 };
 
+try {
+  // 1. Read your audio file into a buffer
+  const audioBuffer = fs.readFileSync('./res/audio/menu.ogg');
 
-await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg })
+  // 2. Send the buffer directly in the 'audio' property
+  const res = await AlexaInc.sendMessage(msg.key.remoteJid, {
+    audio: audioBuffer, // <--- This is the fix
+    mimetype: 'audio/mpeg',
+    ptt: true // Send as a "push-to-talk" voice note
+  }, { quoted: msg });
+
+  // 3. Your follow-up interactive message
+ await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg });
+
+} catch (error) {
+  console.error("Error sending PTT audio:", error);
+  // Optional: Send an error message back to the user
+   await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg });
+
+}
+
               break;
             }
 
@@ -1346,7 +1500,7 @@ await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg 
 case "menu_util":
 case "menu_sticker":
 case "menu_web":
-case "menu_yt":
+case "menu_svm":
 case "menu_groups":
 case "menu_nsfw":
 case "menu_sfw":
@@ -1380,12 +1534,14 @@ case "menu_games": {
 ┃ ➥ \`.browse\` - Search on the web  
 ┃ ➥ \`.search\` - Search on the web`;
   } 
-  else if (respomm === 'yt') {
+  else if (respomm === 'svm') {
     menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃              🎥 *YouTube Commands:*                
+┃              🎥 *music/video Commands:*                
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ ➥ \`.yts\` - Search YouTube  
-┃ ➥ \`.ytdl\` - Download MP3 from YouTube`;
+┃ ➥ \`.ytdl\` - Download MP3 from YouTube
+┃ ➥ \`.song\` - Download a Song`;
+
   } 
   else if (respomm === 'groups') {
     menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
@@ -1395,7 +1551,7 @@ case "menu_games": {
 ┃ ➥ \`.remove\` - .remove also like add  
 ┃ ➥ \`.promote\` - also like add  
 ┃ ➥ \`.demote\` - also like add  
-┃ ➥ \`.antilink\` - .antilink on/off  
+┃ ➥ \`.antilink\` - .antilink on/off/remove  
 ┃ ➥ \`.hidetag\` - .hidetag msg (mention all members)  
 ┃ ➥ \`.antinsfw\` - Similar to antilink  
 ┃ ➥ \`.filter\` - /filter trigger to add filter 
@@ -1541,7 +1697,7 @@ case "q": {
 
     // Fix 1: Use optional chaining (?.). 
     // This prevents a crash if 'contextInfo' is null.
-    const quotedid = msg.message?.extendedTextMessage?.contextInfo.stanzaId;
+    const quotedid = p.replyInfo.messageId;
 
     if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid, {
         text: 'please reply to a massage'
@@ -1552,7 +1708,7 @@ case "q": {
     let quotesendernumber, grandfather, isgftrfm, usercontact, quotesendername, gftsendername, gftsendercontact, gftsendernumber, gftmassage;
 
     // This is safe because we already checked for quotedid, which implies contextInfo exists.
-    const stanzaaaaa = msg.message?.extendedTextMessage?.contextInfo.stanzaId
+    const stanzaaaaa =  p.replyInfo.messageId
     
     const quotedSender = (await loadMessage(msg.key.remoteJid , stanzaaaaa)).sender
 //console.log(quotedSender)
@@ -1575,7 +1731,7 @@ case "q": {
 
     console.log(quotesendernumber);
     usercontact = await loadUserByNumber(quotesendernumber);
-    quotesendername = usercontact ? usercontact.name : quotesendernumber;
+    quotesendername = usercontact.name ? usercontact.name : quotesendernumber;
     const id2getpp = quotedSender === 'me' ? `${process.env.bot_nb}@s.whatsapp.net`  : quotedSender
     const dpurl = await getdpurl(AlexaInc, id2getpp);
     const dpbuffer = dpurl ? await getBuffer(dpurl) : null;
@@ -1587,7 +1743,7 @@ case "q": {
     // Fix 4: Major logic restructure for safety.
     // We must check if 'grandfather' actually exists before using it.
     if (fullQuoted.reply) {
-        grandfather = await loadMessage(msg.key.remoteJid, fullQuoted.reply?.messageId) || null;
+        grandfather = fullQuoted.reply || null;
 
         if (grandfather) { // Only proceed if grandfather message was loaded
             // Use optional chaining for safety
@@ -1647,6 +1803,7 @@ case "q": {
     // For debugging, 'fs.writeFileSync' is easier.
     // Or, use 'await fs.promises.writeFile(...)' if you imported 'fs.promises'.
     fs.writeFileSync('./1234.webp', webpbuff);
+    
 const highQualityBuffer = await sharp(webpbuff)
         .resize(1024, 1024, {
             fit: 'contain', // Puts your bubble in the middle of a 512x512 transparent box
@@ -1668,7 +1825,8 @@ const highQualityBuffer = await sharp(webpbuff)
 
     // 4. Send the final sticker
     await AlexaInc.sendMessage(msg.key.remoteJid, {
-        sticker: stickerBuffer
+        image: webpbuff,
+        gifPlayback: true
     }, {
         quoted: msg
     });
@@ -1687,11 +1845,12 @@ case 'filter': {
 
     // --- 💡 END: THIS IS THE CORRECT FIX ---
 
-    const quotedid = p.quotedid || msg.message?.extendedTextMessage?.contextInfo.stanzaId; // Now this will work
+    const quotedid = p.quotedid; // Now this will work
+    console.log(quotedid)
 // console.log(p)
     if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'please send trigger word eg- /filter hi' }, { quoted: msg });
     if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'please reply to a message baby!' }, { quoted: msg });
-    
+
     const loadedmsg = await loadMessage(msg.key.remoteJid, quotedid);
 
     const mimtypesmap = {
@@ -1845,6 +2004,12 @@ await startCustomQuiz(AlexaInc, msg.key.remoteJid,text);
   break;
 }
 
+case"stopquiz":{
+await quizManager.stopQuiz(AlexaInc, msg.key.remoteJid);
+
+  break;
+}
+
 case"setquiz":{
   if(isGroup) return mess.private();
             userWaitingForQuizJSON.set(msg.key.remoteJid, true);
@@ -1888,30 +2053,53 @@ mediaBuffer = await await getDecryptedMediaBuffer(AlexaInc, media);
                         throw new Error("Media buffer is empty , please reply to image or send /sticker command with image");
                     }
 
-                    // Generate a unique filename
-                    const fileName = `${generateRandomToken(20,sender,msg.pushName)}`; 
-                    const filePath = path.join(TEMP_DIR, `${fileName}.jpeg`);
-                    console.log(`image saved${filePath}`)
-                    // Save media to the temp folder
-                    await fs.writeFile(filePath, mediaBuffer);
-                    //console.log(`Media saved at: ${filePath}`);
+// 3. Process the buffer and create sticker
+        let stickerBuffer;
+        const isVideo = messageType === "videoMessage";
+        const stickerMetadata = {
+            pack: 'My Bot',   // Your Sticker Pack Name
+            author: 'Quotly', // Your Sticker Author Name
+            quality: 90
+        };
 
-                    // Upload media
-    const imagePath = path.join(TEMP_DIR, `${fileName}.jpeg`); // Path to the image you want to send as a sticker
-    const stickerPath = path.join(TEMP_DIR, `${fileName}.webp`); // Path for the output sticker
-await convertToSticker(imagePath, stickerPath);
-const stickerBuffer = await fs.readFileSync(stickerPath);
+        if (isVideo) {
+            // --- Video Processing ---
+            // 'wa-sticker-formatter' handles video buffers directly
+            const sticker = new Sticker(mediaBuffer, {
+                ...stickerMetadata,
+                type: StickerTypes.DEFAULT, // or FULL, CROP
+            });
+            stickerBuffer = await sticker.toBuffer();
 
-    const stickermessage = {
-        sticker: {
-            url: stickerPath,
-        },
-    };
-    await AlexaInc.sendMessage(msg.key.remoteJid, stickermessage , {quoted:msg});
-    AlexaInc.sendMessage(msg.key.remoteJid,{react: {text: '✅', key: msg.key}})
-                    // Delete the file after upload
-                    await fs.unlink(imagePath);
-                    await fs.unlink(stickerPath);
+        } else {
+            // --- Image Processing (using your sharp logic) ---
+            
+            // 3a. Process with sharp
+            const highQualityBuffer = await sharp(mediaBuffer)
+                .resize(1024, 1024, { // Using the 1024x1024 from your example
+                    fit: 'contain', 
+                    background: { r: 0, g: 0, b: 0, alpha: 0 }, // Transparent background
+                    kernel: sharp.kernel.lanczos3 
+                })
+                .webp() // Convert it to webp
+                .toBuffer();
+
+            // 3b. Create sticker from the processed image buffer
+            const sticker = new Sticker(highQualityBuffer, {
+                ...stickerMetadata,
+                type: StickerTypes.DEFAULT, 
+            });
+            stickerBuffer = await sticker.toBuffer();
+        }
+
+        // 4. Send the sticker (as a buffer)
+        await AlexaInc.sendMessage(
+            msg.key.remoteJid, 
+            { sticker: stickerBuffer }, // Send the buffer directly
+            { quoted: msg }
+        );
+
+        AlexaInc.sendMessage(msg.key.remoteJid, { react: { text: '✅', key: msg.key } });
                     //console.log(`Temporary file deleted: ${filePath}`);
 
                 } catch (error) {
@@ -2096,6 +2284,7 @@ break
 
 ////this is button handler of yts
 case "ytdl_select":{
+  await AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key })
 try {
   // 1. Call the function from your module
   const info = await getVideoInfo(text);
@@ -2189,8 +2378,8 @@ Duration : ${formatTime(details.durationInSeconds)}
 }
 
 case 'dl360p': case 'dl480p': case 'dlmp3': case'dlvoice':{
-
-
+  await AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key })
+const smkey =( await AlexaInc.sendMessage(msg.key.remoteJid,{text:'⏳ wait your (Video/Audio) processing'},{quoted:msg})).key
 
 
 // Inside your main message handler function...
@@ -2233,7 +2422,7 @@ try {
     }
 
     // 2. Download file and get the path
-    filePath = await downloadSingleFormatToFile(text, formatId); // Assign to the outer variable
+   const filePath = await downloadSingleFormatToFile(text, formatId); // Assign to the outer variable
     
     // 3. Send the file FROM THE PATH
     await AlexaInc.sendMessage(msg.key.remoteJid, {
@@ -2241,6 +2430,8 @@ try {
       mimeType: 'video/mp4'
     }, { quoted: msg });
   }
+
+  AlexaInc.sendMessage(msg.key.remoteJid,{text:'download and sended compleated ✅', edit:smkey})
 } catch (error) {
   console.log(error);
   AlexaInc.sendMessage(msg.key.remoteJid, { text: `Error: ${error.message}` }, { quoted: msg });
@@ -2263,15 +2454,75 @@ try {
   break;
 }
 
+case'song':{
+  // generateBox('ihahfaafafifasfaik', 50)
+if (!text) return  AlexaInc.sendMessage(msg.key.remoteJid,{text:'url not provided here is ex:- .song song name'},{quoted:msg})
+try{
+    const results = await yts(text);  
+    const video = results.videos[0];
+    // console.log(video.author)
+    const filePath = await downloadAudioAsMp3(video.url); 
+     const devsound = fs.readFileSync(filePath)
+     const sonst4 =await fonts.convert(video.title,'font1')
+     const cons5 =video.duration.timestamp;
+     const con4=await fonts.convert(video.author.name,'font1')
 
-// case 'ytdl': case 'dlyt':{
+const textl = `
+ɴᴀᴍᴇ : ${sonst4}
+ᴅᴜʀᴀᴛɪᴏɴ : ${cons5}
+ᴀᴜᴛʜᴏʀ : ${con4}
+`;
 
-// if (!text) { AlexaInc.sendMessage(msg.key.remoteJid,{text:'url not provided here is ex:- .ytdl https://www.youtube.com/watch?v=abc4jso0A3k '},{quoted:msg})} else {handleDownload(text)}
+const cap = generateBox(textl, 21);
+// console.log(cap)
+    await AlexaInc.sendMessage(msg.key.remoteJid,      {
+        document: devsound,
+        fileName: `${text}.m4a`,
+       mimetype: 'audio/mp4', 
+       caption: cap, 
+       footer: 'Powerd by AlexaInc'
+      }, { quoted: msg });
 
 
 
-//   break
-// }
+}catch(error){
+AlexaInc.sendMessage(msg.key.remoteJid, { text: `Error: ${error.message}` }, { quoted: msg });
+console.log(error)
+
+}
+
+  break
+}
+
+case 'ytdl': case 'dlyt':{
+
+if (!text) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'url not provided here is ex:- .ytdl https://www.youtube.com/watch?v=abc4jso0A3k '},{quoted:msg})
+try{
+    filePath = await downloadAudioAsMp3(text); // Assign to the outer variable
+     const devsound = fs.readFileSync(filePath)
+    // 2. Send the file FROM THE PATH
+    await AlexaInc.sendMessage(msg.key.remoteJid,  { audio: devsound, mimetype: 'audio/mp4' }, { quoted: msg });
+
+}catch(error){
+console.log(error)
+AlexaInc.sendMessage(msg.key.remoteJid, { text: `Error: ${error.message}` }, { quoted: msg });
+} finally {
+  // 4. DELETE THE FILE
+  // This can now see the 'filePath' variable
+  if (filePath) { 
+    try {
+      await fsp.unlink(filePath); // Delete the file
+      console.log('Successfully deleted temp file:', filePath);
+    } catch (deleteError) {
+      console.error('Failed to delete temp file:', deleteError);
+    }
+  }
+};
+
+
+
+  break
+}
 
 case 'anal': case 'ass': case 'boobs': case 'gonewild': case 'hanal': case 'hass': case 'hboobs': case 'hentai': case 'hkitsune': case 'hmidriff': case 'hneko': case 'hthigh': case 'neko': case 'paizuri': case 'pgif': case 'pussy': case 'tentacle': case 'thigh': case 'yaoi':
 {
@@ -2755,7 +3006,9 @@ let users = [];
         msg.key.remoteJid, 
         users, 
         command // 'add', 'remove', 'promote', 'demote'
-    ).then(() => {
+    ).then((res) => {
+      if(res[0].status !== '200') return AlexaInc.sendMessage(msg.key.remoteJid, { text: `Failed to ${command} user(s). Maybe the number is incorrect or they left the group.` });
+      // console.log(res)
         AlexaInc.sendMessage(msg.key.remoteJid, { text: `User(s) ${command}d successfully!` });
     }).catch(error => {
         console.error(`Failed to ${command} user(s):`, error);
@@ -2928,26 +3181,69 @@ case 'antilink': {
   if (!isGroup) return mess.group();
   if (!isAdmins) return mess.admin();
   if (!isBotAdmins) return mess.botadmin();
-  if (!args[0] || (args[0] !== 'on' && args[0] !== 'off')) 
-      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please send .antilink on/off' });
 
-  const value1 = args[0] === 'on';
+  const action = args[0] ? args[0].toLowerCase() : '';
+
+  // 1. Updated usage check
+  if (action !== 'on' && action !== 'off' && action !== 'remove') {
+    const usageText = 'Usage: .antilink [on | off | remove]\n\n' +
+                      '- on: Delete messages with links.\n' +
+                      '- remove: Remove user who sends a link.\n' +
+                      '- off: Do nothing.';
+    return AlexaInc.sendMessage(msg.key.remoteJid, { text: usageText });
+  }
+
+  // 2. Define variables for DB
+  let antilinkValue;
+  let linkActionValue;
+  let replyMessage;
+
+  // 3. Set values based on the command
+  switch (action) {
+    case 'on':
+      antilinkValue = true;
+      linkActionValue = 'delete'; // Action is 'delete'
+      replyMessage = 'Antilink is now ON. I will *delete* links.';
+      break;
+    
+    case 'remove':
+      antilinkValue = true;
+      linkActionValue = 'remove'; // Action is 'remove'
+      replyMessage = 'Antilink is now ON. I will *remove* users who send links.';
+      break;
+
+    case 'off':
+      antilinkValue = false;
+      linkActionValue = 'false'; // Set action to 'false' (safer than null)
+      replyMessage = 'Antilink is now OFF.';
+      break;
+  }
   
-  // Corrected SQL query
+  // 4. Corrected SQL query
   const query = `
-    INSERT INTO \`groups\` (group_id, antilink)
-    VALUES (?, ?)
-    ON DUPLICATE KEY UPDATE antilink = ?;
+    INSERT INTO \`groups\` (group_id, antilink, link_a)
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE antilink = ?, link_a = ?;
   `;
 
-  // Run the query using MySQL2
-  db.query(query, [msg.key.remoteJid, value1, value1], (err, result) => {
+  // 5. Corrected query parameters
+  const queryParams = [
+    msg.key.remoteJid, // For INSERT: group_id
+    antilinkValue,     // For INSERT: antilink
+    linkActionValue,     // For INSERT: link_a
+                       
+    antilinkValue,     // For UPDATE: antilink = ?
+    linkActionValue      // For UPDATE: link_a = ?
+  ];
+
+  // 6. Run the query
+  db.query(query, queryParams, (err, result) => {
     if (err) {
       console.error('Error updating antilink:', err);
-      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to ' + args[0] + ' antilink' });
+      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to update settings.' });
     }
 
-    AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Antilink ' + args[0] + ' successfully!' });
+    AlexaInc.sendMessage(msg.key.remoteJid, { text: replyMessage });
   });
 
   break;
@@ -2957,26 +3253,69 @@ case 'antinsfw': {
   if (!isGroup) return mess.group();
   if (!isAdmins) return mess.admin();
   if (!isBotAdmins) return mess.botadmin();
-  if (!args[0] || (args[0] !== 'on' && args[0] !== 'off')) 
-      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please send .antinsfw on/off' });
 
-  const value1 = args[0] === 'on';
+  const action = args[0] ? args[0].toLowerCase() : '';
+
+  // 1. Updated usage check
+  if (action !== 'on' && action !== 'off' && action !== 'remove') {
+    const usageText = 'Usage: .antinsfw [on | off | remove]\n\n' +
+                      '- on: Delete NSFW messages.\n' +
+                      '- remove: Remove user who sends NSFW.\n' +
+                      '- off: Do nothing.';
+    return AlexaInc.sendMessage(msg.key.remoteJid, { text: usageText });
+  }
+
+  // 2. Define variables for DB
+  let antinsfwValue;
+  let nsfwActionValue;
+  let replyMessage;
+
+  // 3. Set values based on the command
+  switch (action) {
+    case 'on':
+      antinsfwValue = true;
+      nsfwActionValue = 'delete'; // Action is 'delete'
+      replyMessage = 'Antinsfw is now ON. I will *delete* NSFW messages.';
+      break;
+    
+    case 'remove':
+      antinsfwValue = true;
+      nsfwActionValue = 'remove'; // Action is 'remove'
+      replyMessage = 'Antinsfw is now ON. I will *remove* users who send NSFW.';
+      break;
+
+    case 'off':
+      antinsfwValue = false;
+      nsfwActionValue = 'false'; // Set action to 'false' (safer than null)
+      replyMessage = 'Antinsfw is now OFF.';
+      break;
+  }
   
-  // Corrected SQL query
+  // 4. Corrected SQL query
   const query = `
-    INSERT INTO \`groups\` (group_id, antinsfw)
-    VALUES (?, ?)
-    ON DUPLICATE KEY UPDATE antinsfw = ?;
+    INSERT INTO \`groups\` (group_id, antinsfw, nsfw_a)
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE antinsfw = ?, nsfw_a = ?;
   `;
 
-  // Run the query using MySQL2
-  db.query(query, [msg.key.remoteJid, value1, value1], (err, result) => {
+  // 5. Corrected query parameters
+  const queryParams = [
+    msg.key.remoteJid,
+    antinsfwValue,     // For INSERT: group_id
+    nsfwActionValue,     // For INSERT: antinsfw
+                       // For INSERT: nsfw_a
+    antinsfwValue,     // For UPDATE: antinsfw = ?
+    nsfwActionValue      // For UPDATE: nsfw_a = ?
+  ];
+
+  // 6. Run the query
+  db.query(query, queryParams, (err, result) => {
     if (err) {
       console.error('Error updating antinsfw:', err);
-      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to ' + args[0] + ' antinsfw' });
+      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to update settings.' });
     }
 
-    AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Antinsfw ' + args[0] + ' successfully!' });
+    AlexaInc.sendMessage(msg.key.remoteJid, { text: replyMessage });
   });
 
   break;
@@ -3292,8 +3631,8 @@ const interactiveButtons = [
     },
     {
         header:' ',
-        title: 'Youtube', 
-        id: '.menu_yt', 
+        title: 'Songs & Video', 
+        id: '.menu_svm', 
         description: 'get youtube menu'
     },
     {
@@ -3335,7 +3674,26 @@ const interactiveMessage = {
 };
 
 
-await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg })
+try {
+  // 1. Read your audio file into a buffer
+  const audioBuffer = fs.readFileSync('./res/audio/menu.ogg');
+
+  // 2. Send the buffer directly in the 'audio' property
+  const res = await AlexaInc.sendMessage(msg.key.remoteJid, {
+    audio: audioBuffer, // <--- This is the fix
+    mimetype: 'audio/mpeg',
+    ptt: true // Send as a "push-to-talk" voice note
+  }, { quoted: msg });
+
+  // 3. Your follow-up interactive message
+ await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg });
+
+} catch (error) {
+  console.error("Error sending PTT audio:", error);
+  // Optional: Send an error message back to the user
+   await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg });
+
+}
               break;
             }
 

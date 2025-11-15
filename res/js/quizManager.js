@@ -64,12 +64,18 @@ async function loadQuestions() {
 /**
  * Sends the current question to the group using the correct interactive button structure.
  */
+// quizManager.js
+
+// ... (Keep all preceding functions the same) ...
+
+/**
+ * Sends the current question to the group using the correct interactive button structure.
+ */
 async function sendNextQuestion(AlexaInc, jid) {
     if (activeQuiz && activeQuiz.timer) {
         clearTimeout(activeQuiz.timer);
     }
     
-    // --- Send Leaderboard if quiz is complete ---
     if (activeQuiz && activeQuiz.questionIndex >= quizQuestions.length) {
         await sendFinalLeaderboard(AlexaInc, jid);
         activeQuiz = null;
@@ -102,18 +108,19 @@ async function sendNextQuestion(AlexaInc, jid) {
         text: questionText,
         title: 'Quiz Time!', 
         footer: `Time: ${QUESTION_TIMEOUT_SECONDS}s | Tap a button to send your answer privately.`,
-        interactiveButtons: buttons,
+        interactiveButtons: buttons, 
     });
 
-    // 🚨 CRITICAL FIX: Store the options and explanation directly in the activeQuiz state
+    // 🚨 CRITICAL FIX APPLIED HERE 🚨
     activeQuiz = {
         questionIndex: qIndex,
         groupJid: jid,
         answers: new Map(), 
-        correctAnswerCode: String.fromCharCode(64 + questionData.answer),
+        // FIX: Changed 64 to 65. 'A' is ASCII 65. 65 + 0 = 'A'.
+        correctAnswerCode: String.fromCharCode(65 + questionData.answer), 
         question: questionData.question,
-        options: questionData.options,         // <-- FIX: ADDED
-        explanation: questionData.explanation, // <-- FIX: ADDED
+        options: questionData.options,         
+        explanation: questionData.explanation, 
         originalKey: sentMessage.key, 
         sessionId: sessionId,
         timer: null
@@ -128,8 +135,10 @@ async function sendNextQuestion(AlexaInc, jid) {
         });
     }, QUESTION_TIMEOUT_SECONDS * 1000);
 
-    console.log(`[QuizManager] Question ${qIndex + 1} started. Session ID: ${sessionId}`);
+    console.log(`[QuizManager] Question ${qIndex + 1} started. Session ID: ${sessionId}. Expected Answer: ${activeQuiz.correctAnswerCode}`);
 }
+
+// ... (Keep all subsequent functions the same) ...
 
 async function tallyAndSendResults(AlexaInc, jid) {
     if (!activeQuiz) return;
@@ -274,10 +283,85 @@ function setQuestions(newQuestions) {
 }
 
 
+// quizManager.js
+
+// ... (Your existing functions: loadQuestions, sendNextQuestion, tallyAndSendResults, etc.) ...
+
+/**
+ * Immediately stops the active quiz session, tallies the current question, 
+ * and displays the final leaderboard.
+ */
+async function stopQuiz(AlexaInc, jid) {
+    if (!activeQuiz) {
+        await AlexaInc.sendMessage(jid, { text: "⚠️ No quiz is currently running to stop." });
+        return;
+    }
+
+    const { question, answers, options, correctAnswerCode, explanation, originalKey, questionIndex } = activeQuiz;
+    const qIndex = questionIndex;
+
+    // 1. Stop the active timer
+    clearTimeout(activeQuiz.timer);
+
+    // 2. Delete the current question message (if possible)
+    try {
+        await AlexaInc.sendMessage(jid, { delete: originalKey });
+    } catch (e) {
+        console.warn(`[QuizManager] Could not delete message during stop: ${e.message}`);
+    }
+
+    // 3. Tally results for the question that was cut short (logic copied from tallyAndSendResults)
+    const answerCounts = options.reduce((acc, option, index) => {
+        const answerCode = String.fromCharCode(65 + index);
+        acc[answerCode] = { count: 0, option: option };
+        return acc;
+    }, {});
+    
+    let totalVotes = 0;
+    answers.forEach((submittedCode, userId) => {
+        if (answerCounts[submittedCode]) {
+            answerCounts[submittedCode].count++;
+            totalVotes++;
+            
+            // NOTE: Leaderboard is updated here for answers submitted before the stop
+            if (submittedCode === correctAnswerCode) {
+                const currentScore = globalLeaderboard.get(userId) || 0;
+                globalLeaderboard.set(userId, currentScore + 1);
+            }
+        }
+    });
+
+    // 4. Send results for the final question
+    let resultSummary = `*🚨 QUIZ STOPPED EARLY by Admin 🚨*\n\n`;
+    resultSummary += `*Question:* ${question}\n\n`;
+    resultSummary += `*Results for Question ${qIndex + 1} (Final Tally)*\n\n`;
+    resultSummary += `*Total Submissions:* ${totalVotes}\n`;
+    options.forEach((option, index) => {
+        const answerCode = String.fromCharCode(65 + index);
+        const count = answerCounts[answerCode].count;
+        const emoji = answerCode === correctAnswerCode ? '✅' : '❌';
+        resultSummary += `${emoji} ${answerCode}. ${option} - *${count}* votes\n`;
+    });
+    resultSummary += `\n*Correct Answer:* ${correctAnswerCode}. ${options[correctAnswerCode.charCodeAt(0) - 65]}\n`;
+    resultSummary += `\n*Explanation:* ${explanation}\n`;
+
+    await AlexaInc.sendMessage(jid, { text: resultSummary });
+
+    // 5. Send the overall final leaderboard
+    await sendFinalLeaderboard(AlexaInc, jid);
+
+    // 6. Reset state
+    activeQuiz = null;
+    console.log(`[QuizManager] Quiz stopped by admin after Q${qIndex + 1}.`);
+}
+
+// ... (End of quizManager.js file) ...
+
 module.exports = {
     startQuiz,
     handleDMAnswer,
     loadQuestions,
+    stopQuiz,
     setQuestions,
     QUIZ_MAGIC_PREFIX: QUIZ_MAGIC_PREFIX_EXPORT
 };
