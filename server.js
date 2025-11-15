@@ -6,6 +6,8 @@ require('dotenv').config();
 const PORT = process.env.PORT || 8000;
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const bodyParser = require('body-parser');
 const si = require('systeminformation');
 require('./whatsappState'); 
 //const { botPhoneNumber, connectionStatus } = require('./index');
@@ -318,6 +320,44 @@ dataTransferWss.on('connection', (ws) => {
 });
 // --- MODIFICATION END ---
 
+const WEBHOOK_SECRET = 'hannsjoiifahjh'; // The secret you put in GitHub
+
+// Use bodyParser to get the raw body for signature verification
+app.post('/github-webhook', bodyParser.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf; // Save raw body
+    }
+}), (req, res) => {
+
+    // 1. Get the signature from the header
+    const signature = req.headers['x-hub-signature-256'];
+    if (!signature) {
+        return res.status(401).send('No signature provided');
+    }
+
+    // 2. Create your own signature using the secret
+    const hmac = crypto.createHmac('sha256', WEBHOOK_SECRET);
+    hmac.update(req.rawBody);
+    const expectedSignature = `sha256=${hmac.digest('hex')}`;
+
+    // 3. Compare them
+    if (signature !== expectedSignature) {
+        console.warn('Invalid signature. Request rejected.');
+        return res.status(401).send('Invalid signature');
+    }
+
+    // If signature is valid, process the payload
+    console.log('Signature verified. Webhook received!');
+    const payload = req.body;
+    
+    if (req.headers['x-github-event'] === 'push') {
+        payload.commits.forEach(commit => {
+            console.log(`- Commit: ${commit.message}`);
+        });
+    }
+
+    res.status(200).send('OK');
+});
 
 //module.exports = app;
 // Start server

@@ -10698,5 +10698,70 @@
     "id": 2140,
     "reason": "index.js: ❌ Uncaught Exception: TypeError: Cannot read properties of undefined (reading 'endsWith')\nat updateUser (/home/hansaka/alexa-v3/store/userscontact.js:53:50)\nat handleMessage (/home/hansaka/alexa-v3/bot.js:985:7)\n",
     "timestamp": "2025-11-15T11:56:17.293Z"
+  },
+  {
+    "id": 2141,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: sock is not defined\nat handleMessage (/home/hansaka/alexa-v3/bot.js:1134:16)\n",
+    "timestamp": "2025-11-15T14:06:45.907Z"
+  },
+  {
+    "id": 2142,
+    "reason": "index.js: ❌ Uncaught Exception: Error: rate-overlimit\nat Object.assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:80:24)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/messages-send.js:1629:40)\nat async /home/hansaka/alexa-v3/bot.js:1139:3 {\ndata: 429,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-11-15T14:13:55.567Z"
+  },
+  {
+    "id": 2143,
+    "reason": "server.js: Exited with code null (restarting)",
+    "timestamp": "2025-11-15T14:15:26.291Z"
+  },
+  {
+    "id": 2144,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use :::8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat Server.listen (node:net:2067:7)\nat Object.<anonymous> (/home/hansaka/alexa-v3/server.js:324:8)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)\nat node:internal/main/run_main_module:28:49\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '::',\nport: 8000\n}\n",
+    "timestamp": "2025-11-15T14:15:27.079Z"
+  },
+  {
+    "id": 2145,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use :::8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat Server.listen (node:net:2067:7)\nat Object.<anonymous> (/home/hansaka/alexa-v3/server.js:324:8)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)\nat node:internal/main/run_main_module:28:49\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '::',\nport: 8000\n}\n",
+    "timestamp": "2025-11-15T14:15:27.423Z"
+  },
+  {
+    "id": 2146,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use :::8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat Server.listen (node:net:2067:7)\nat Object.<anonymous> (/home/hansaka/alexa-v3/server.js:324:8)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)\nat node:internal/main/run_main_module:28:49\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '::',\nport: 8000\n}\n",
+    "timestamp": "2025-11-15T14:15:27.835Z"
+  },
+  {
+    "id": 2147,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use :::8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat Server.listen (node:net:2067:7)\nat Object.<anonymous> (/home/hansaka/alexa-v3/server.js:324:8)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)\nat node:internal/main/run_main_module:28:49\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '::',\nport: 8000\n}\n",
+    "timestamp": "2025-11-15T14:15:28.217Z"
+  },
+  {
+    "id": 2148,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use :::8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat Server.listen (node:net:2067:7)\nat Object.<anonymous> (/home/hansaka/alexa-v3/server.js:324:8)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)\nat node:internal/main/run_main_module:28:49\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '::',\nport: 8000\n}\n",
+    "timestamp": "2025-11-15T14:15:28.570Z"
+  },
+  {
+    "id": 2149,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use :::8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat Server.listen (node:net:2067:7)\nat Object.<anonymous> (/home/hansaka/alexa-v3/server.js:324:8)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)\nat node:internal/main/run_main_module:28:49\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '::',\nport: 8000\n}\n",
+    "timestamp": "2025-11-15T14:15:28.903Z"
+  },
+  {
+    "id": 2150,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use :::8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat Server.listen (node:net:2067:7)\nat Object.<anonymous> (/home/hansaka/alexa-v3/server.js:324:8)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)\nat node:internal/main/run_main_module:28:49\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '::',\nport: 8000\n}\n",
+    "timestamp": "2025-11-15T14:15:29.235Z"
+  },
+  {
+    "id": 2151,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use :::8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat Server.listen (node:net:2067:7)\nat Object.<anonymous> (/home/hansaka/alexa-v3/server.js:324:8)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)\nat node:internal/main/run_main_module:28:49\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '::',\nport: 8000\n}\n",
+    "timestamp": "2025-11-15T14:15:29.545Z"
+  },
+  {
+    "id": 2152,
+    "reason": "index.js: ❌ Uncaught Exception: Error: rate-overlimit\nat Object.assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:80:24)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/messages-send.js:1629:40)\nat async /home/hansaka/alexa-v3/bot.js:1139:3 {\ndata: 429,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-11-15T14:15:37.662Z"
+  },
+  {
+    "id": 2153,
+    "reason": "index.js: [Broadcast] Failed to send to 120363309790686158@g.us: Timed Out\n[Broadcast] Failed to send to 120363250115713647@g.us: Timed Out\n❌ Uncaught Exception: Error: rate-overlimit\nat Object.assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:80:24)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.groupMetadata (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/groups.js:25:24)\nat async EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:616:29) {\ndata: 429,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-11-15T14:31:04.268Z"
   }
 ]
