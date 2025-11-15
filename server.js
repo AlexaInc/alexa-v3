@@ -326,26 +326,72 @@ const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET; // The secret you put in GitH
 app.use(express.json());
 
 // This is your webhook endpoint
-app.post('/github-webhook', (req, res) => {
-    console.log('Received a webhook event!');
+app.post('/github-webhook', async (req, res) => { // Made this async
 
-    // The 'push' event payload is in req.body
+    // --- Signature is NOT VERIFIED ---
+    const event = req.headers['x-github-event'];
     const payload = req.body;
-    
-    // Check if it's a push event
-    if (req.headers['x-github-event'] === 'push') {
-        console.log(`New push from: ${payload.pusher.name}`);
-        
-        // Loop through all the commits in this push
-        payload.commits.forEach(commit => {
-            console.log(`- Commit by: ${commit.author.name}`);
-            console.log(`  Message: ${commit.message}`);
-            console.log(`  URL: ${commit.url}`);
-        });
+
+    // Check if it's a 'push' event
+    if (event === 'push') {
+        try {
+            const repo = payload.repository.name;
+            const pusher = payload.pusher.name;
+            const branch = payload.ref.split('/').pop();
+            const commits = payload.commits;
+
+            // --- 1. Start building the message string ---
+            let message = `*📦 New Push to ${repo}*
+*Branch:* \`${branch}\`
+*By:* ${pusher}
+*Total Commits:* ${commits.length}
+-----------------------------------`;
+
+            // --- 2. Add each commit to the string ---
+            if (commits.length > 0) {
+                commits.forEach((commit, index) => {
+                    const commitId = commit.id.substring(0, 7);
+                    const commitMessage = commit.message.split('\n')[0]; // First line only
+                    const author = commit.author.name;
+
+                    message += `\n\n*Commit ${index + 1} [ \`${commitId}\` ]*
+*Author:* ${author}
+*Message:* _${commitMessage}_`;
+                });
+            } else {
+                message += "\n\n_No new commits in this push._";
+            }
+            
+            // --- 3. Log the message to your console ---
+            ws.send(JSON.stringify({
+  type: "data",
+  targetId: "app1", // The ID of the recipient
+  payload: { message: message, value: 12345 ,event:'gitpush'} // Your data
+}));
+            console.log("--- Generated WhatsApp Message ---");
+            console.log(message);
+            console.log("----------------------------------");
+
+            // --- 4. Send it via WhatsApp ---
+            // Uncomment this and set your JID to send the message
+            /*
+            if (AlexaInc && ADMIN_JID) {
+                await AlexaInc.sendMessage(ADMIN_JID, { text: message });
+                console.log(`[GitHub Webhook] Sent notification to admin.`);
+            } else {
+                console.warn('[GitHub Webhook] AlexaInc or ADMIN_JID not configured. Cannot send message.');
+            }
+            */
+
+        } catch (e) {
+            console.error('[GitHub Webhook] Error processing push payload:', e.message);
+        }
+    } else {
+        console.log(`[GitHub Webhook] Received unhandled event: ${event}`);
     }
 
-    // Always send a 200 OK response back to GitHub
-    res.status(200).send('OK');
+    // Send a 200 OK back to GitHub
+    res.status(200).send('Event received');
 });
 
 //module.exports = app;
