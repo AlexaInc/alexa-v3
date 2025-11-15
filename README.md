@@ -288,5 +288,3 @@ Copyright © Hansaka Rasanjana. All Rights Reserved.
 
 *Enjoy using Alexa V3 WhatsApp Bot\! 🚀*
 
-```
-```
