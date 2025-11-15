@@ -320,43 +320,78 @@ dataTransferWss.on('connection', (ws) => {
 });
 // --- MODIFICATION END ---
 
-const WEBHOOK_SECRET = 'hannsjoiifahjh'; // The secret you put in GitHub
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET; // The secret you put in GitHub
 
 // Use bodyParser to get the raw body for signature verification
 app.post('/github-webhook', bodyParser.json({
     verify: (req, res, buf) => {
-        req.rawBody = buf; // Save raw body
+        req.rawBody = buf; // Save the raw body
     }
 }), (req, res) => {
 
-    // 1. Get the signature from the header
-    const signature = req.headers['x-hub-signature-256'];
-    if (!signature) {
-        return res.status(401).send('No signature provided');
+    // 1. Get the signature from the GitHub request header
+    const githubSignature = req.headers['x-hub-signature-256'];
+    
+    if (!githubSignature) {
+        console.warn('[GitHub Webhook] No signature provided. Request rejected.');
+        return res.status(401).send('Signature required');
     }
 
-    // 2. Create your own signature using the secret
+    // 2. Create our own signature using our secret
     const hmac = crypto.createHmac('sha256', WEBHOOK_SECRET);
-    hmac.update(req.rawBody);
+    
+    // This is the line that was failing (server.js:340)
+    // It will now work because req.rawBody is no longer undefined.
+    hmac.update(req.rawBody); 
+    
     const expectedSignature = `sha256=${hmac.digest('hex')}`;
 
-    // 3. Compare them
-    if (signature !== expectedSignature) {
-        console.warn('Invalid signature. Request rejected.');
+    // 3. Securely compare the two signatures
+    let trusted = false;
+    try {
+        // Use crypto.timingSafeEqual to prevent timing attacks
+        trusted = crypto.timingSafeEqual(
+            Buffer.from(githubSignature), 
+            Buffer.from(expectedSignature)
+        );
+    } catch (e) {
+        // This catches errors if signatures are different lengths
+        console.warn('[GitHub Webhook] Error comparing signatures:', e.message);
+    }
+
+    if (!trusted) {
+        console.warn('[GitHub Webhook] Invalid signature. Request rejected.');
         return res.status(401).send('Invalid signature');
     }
 
-    // If signature is valid, process the payload
-    console.log('Signature verified. Webhook received!');
-    const payload = req.body;
+    // --- If we get here, the Signature is VALID ---
+    console.log('[GitHub Webhook] Signature verified. Processing event...');
     
-    if (req.headers['x-github-event'] === 'push') {
-        payload.commits.forEach(commit => {
-            console.log(`- Commit: ${commit.message}`);
-        });
+    const event = req.headers['x-github-event'];
+    const payload = req.body;
+
+    // Check if it's a 'push' event (which contains commits)
+    if (event === 'push') {
+        try {
+            console.log(`[GitHub] New push to repository: ${payload.repository.name}`);
+            console.log(`[GitHub] Pusher: ${payload.pusher.name}`);
+            
+            // Loop through and log each commit
+            payload.commits.forEach(commit => {
+                console.log('  --- New Commit ---');
+                console.log(`    by: ${commit.author.name} <${commit.author.email}>`);
+                console.log(`    message: ${commit.message}`);
+                console.log(`    url: ${commit.url}`);
+            });
+        } catch (e) {
+            console.error('[GitHub Webhook] Error processing push payload:', e.message);
+        }
+    } else {
+        console.log(`[GitHub Webhook] Received unhandled event: ${event}`);
     }
 
-    res.status(200).send('OK');
+    // Send a 200 OK back to GitHub to show we received it successfully
+    res.status(200).send('Event received');
 });
 
 //module.exports = app;
