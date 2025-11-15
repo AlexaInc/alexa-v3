@@ -342,10 +342,9 @@ app.post('/github-webhook', async (req, res) => { // Made this async
             const commits = payload.commits;
 
             // --- 1. Start building the message string ---
-            let message = `*📦 New Push to ${repo}*
+            let message = `*📦 New Update to ${repo}*
 *Branch:* \`${branch}\`
 *By:* ${pusher}
-*Total Commits:* ${commits.length}
 -----------------------------------`;
 
             // --- 2. Add each commit to the string ---
