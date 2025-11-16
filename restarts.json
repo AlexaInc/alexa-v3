@@ -10773,5 +10773,20 @@
     "id": 2155,
     "reason": "index.js: ❌ Uncaught Exception: TypeError: Cannot read properties of null (reading 'mediaMimetype')\nat handleMessage (/home/hansaka/alexa-v3/bot.js:1905:40)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n",
     "timestamp": "2025-11-15T16:39:22.030Z"
+  },
+  {
+    "id": 2156,
+    "reason": "index.js: ❌ Uncaught Exception: TypeError: AlexaInc.saveMessage is not a function\nat handleMessage (/home/hansaka/alexa-v3/bot.js:1997:28)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n",
+    "timestamp": "2025-11-16T07:34:57.321Z"
+  },
+  {
+    "id": 2157,
+    "reason": "index.js: ❌ Uncaught Exception: TypeError: Cannot read properties of undefined (reading 'owner')\nat handleMessage (/home/hansaka/alexa-v3/bot.js:978:44)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n",
+    "timestamp": "2025-11-16T07:49:11.393Z"
+  },
+  {
+    "id": 2158,
+    "reason": "index.js: ❌ Uncaught Exception: Error: rate-overlimit\nat Object.assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:80:24)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/messages-send.js:1629:40)\nat async Query.onResult (/home/hansaka/alexa-v3/index.js:704:13) {\ndata: 429,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-11-16T07:49:42.594Z"
   }
 ]

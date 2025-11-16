@@ -609,248 +609,335 @@ for (const evName of eventsToStore) {
     })
     AlexaInc.ev.on('creds.update', saveCreds);
 
-    AlexaInc.ev.on('group-participants.update', async (anu) => {
-       // console.log(anu);
-        const botNumber = AlexaInc.user.id.split(':')[0];
-        const frommmee = anu.participants.includes(`${botNumber}@s.whatsapp.net`);
-        if (frommmee) return;
-        let groupMetadata = await AlexaInc.groupMetadata(anu.id);
-        let participants = anu.participants;
-        //console.log(participants)
-        
-        for (let num of participants) {
-            let ppuser;
-            let ppgroup;
-            
-            // Fetch user profile picture
-            try {
-                ppuser = await AlexaInc.profilePictureUrl(num, 'image');
-            } catch {
-                ppuser = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; // Fallback if no profile picture
-            }
-    
-            // Fetch group profile picture
-            try {
-                ppgroup = await AlexaInc.profilePictureUrl(anu.id, 'image');
-            } catch {
-                ppgroup = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; // Fallback if no group picture
-            }
-    
-            // If action is 'add' (someone joined the group)
-if (anu.action == 'add') {
-    const query = "SELECT * FROM `groups` WHERE group_id = ? AND is_welcome = TRUE";
+AlexaInc.ev.on('group-participants.update', async (anu) => {
+    // console.log(anu);
 
-    db.query(query, [anu.id], async (err, result) => {
-        if (err) {
-            console.error('Error fetching welcome message:', err);
-            return;
-        }
+    // --- Common Setup (Once per event) ---
+    const botNumber = AlexaInc.user.id.split(':')[0];
+    const frommmee = anu.participants.includes(`${botNumber}@s.whatsapp.net`);
+    if (frommmee) return; // Stop if the bot itself is the one being added/removed
 
-        if (result.length === 0) return; // welcome off
+    let groupMetadata;
+    try {
+        groupMetadata = await AlexaInc.groupMetadata(anu.id);
+    } catch (e) {
+        console.error("Error fetching group metadata:", e);
+        return;
+    }
+    
+    let participants = anu.participants; // Array of users in this event
 
-        const groupDesc = groupMetadata?.desc || ' ';
-        
-        // 🟢 Handle creative long default welcome message
-        let wcmsg;
-        if (!result[0].wc_m || result[0].wc_m.toLowerCase() === 'default') {
-            const creativeWelcome = [
-                `🎉 Hey @user! Welcome to *GROUPNAME*! We’re super excited to have you join our little world of fun, laughter, and good energy! 💫\n\n📘 *Group Description:* ${groupDesc}\n\nSo jump right in, say hi, and let’s make great memories together! 🌟`,
-                `👋 A warm welcome to you, @user! You’ve just joined *GROUPNAME* — a space filled with friendship, creativity, and cool vibes. 😎\n\n📜 *About this group:* ${groupDesc}\n\nMake yourself at home and don’t hesitate to share your thoughts! 💬✨`,
-                `🌈 Hello @user! Welcome aboard to *GROUPNAME*! 🚀 We’re thrilled you’re here. Whether you’re here to learn, laugh, or just hang out — you’re in the right place!\n\n💡 *Here’s what this group is about:* ${groupDesc}\n\nLet’s have a great time together! 🎊`,
-                `🔥 Welcome, @user, to *GROUPNAME*! You’ve officially joined one of the coolest communities around. 💥\n\n📝 *Group Description:* ${groupDesc}\n\nWe can’t wait to see what you’ll bring to the table — enjoy your stay! ❤️`,
-                `💖 Hey there, @user! Big welcome to *GROUPNAME*! 🎉\n\nHere’s what this awesome group is about:\n${groupDesc}\n\nGrab your spot, say hello, and let the conversations begin! 🌟`
-            ];
-            wcmsg = creativeWelcome[Math.floor(Math.random() * creativeWelcome.length)];
-        } else {
-            wcmsg = `${result[0].wc_m}\ndescription: ${groupDesc}`;
-        }
+    // --- Action Handlers ---
 
-        const finalMsg = wcmsg
-            .replace(/@user/g, `@${num.split("@")[0]}`)
-            .replace(/GROUPNAME/g, groupMetadata.subject);
+    // 🟢 Handle 'add' (Welcome)
+    if (anu.action == 'add') {
+        const query = "SELECT * FROM `groups` WHERE group_id = ? AND is_welcome = TRUE";
 
-        let buffer;
-        try {
-            buffer = await getBuffer(ppuser);
-        } catch {
-            buffer = fs.readFileSync('./res/alexa.jpg');
-        }
+        db.query(query, [anu.id], async (err, result) => {
+            if (err) {
+                console.error('Error fetching welcome message:', err);
+                return;
+            }
+            if (result.length === 0) return; // welcome is off
 
-        if (buffer) {
+            const groupDesc = groupMetadata?.desc || ' ';
+
+            // 1. Prepare album, mentions, and mention string
+            const albumMedia = [];
+            const mentions = [];
+            const mentionString = participants.map(num => `@${num.split("@")[0]}`).join(', ');
+
+            let firstParticipant = participants[0]; // For quote
+            let firstBuffer; // For quote thumbnail
+
+            // 2. Loop to get all buffers and build album
+            for (let num of participants) {
+                mentions.push(num);
+                let ppuser;
+                try {
+                    ppuser = await AlexaInc.profilePictureUrl(num, 'image');
+                } catch {
+                    ppuser = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; // Fallback
+                }
+
+                let buffer;
+                try {
+                    buffer = await getBuffer(ppuser);
+                } catch {
+                    buffer = fs.readFileSync('./res/alexa.jpg'); // Local fallback
+                }
+
+                if (!firstBuffer) {
+                    firstBuffer = buffer; // Save first user's pfp for the quote thumbnail
+                }
+
+                albumMedia.push({ image: buffer });
+            }
+
+            if (albumMedia.length === 0) return; // No media to send
+
+            // 3. Create *one* caption for everyone
+            let wcmsg;
+            if (!result[0].wc_m || result[0].wc_m.toLowerCase() === 'default') {
+                const creativeWelcome = [
+                    `🎉 Hey @user! Welcome to *GROUPNAME*! We’re super excited to have you join our little world of fun, laughter, and good energy! 💫\n\n📘 *Group Description:* ${groupDesc}\n\nSo jump right in, say hi, and let’s make great memories together! 🌟`,
+                    `👋 A warm welcome to you, @user! You’ve just joined *GROUPNAME* — a space filled with friendship, creativity, and cool vibes. 😎\n\n📜 *About this group:* ${groupDesc}\n\nMake yourself at home and don’t hesitate to share your thoughts! 💬✨`,
+                    `🌈 Hello @user! Welcome aboard to *GROUPNAME*! 🚀 We’re thrilled you’re here. Whether you’re here to learn, laugh, or just hang out — you’re in the right place!\n\n💡 *Here’s what this group is about:* ${groupDesc}\n\nLet’s have a great time together! 🎊`,
+                ];
+                wcmsg = creativeWelcome[Math.floor(Math.random() * creativeWelcome.length)];
+            } else {
+                wcmsg = `${result[0].wc_m}\ndescription: ${groupDesc}`;
+            }
+
+            // 4. Replace placeholders with plural mentions
+            const finalMsg = wcmsg
+                .replace(/@user/g, mentionString) // Replaces @user with all new members
+                .replace(/GROUPNAME/g, groupMetadata.subject);
+
+            // 5. Build the quote object
             const fglink = {
                 key: {
                     fromMe: false,
-                    participant: num,
+                    participant: firstParticipant, // Use first participant for quote
                     remoteJid: anu.id
                 },
                 message: {
                     orderMessage: {
-                        itemCount: 1,
+                        itemCount: participants.length, // Show how many users joined
                         status: 200,
-                        thumbnail: buffer.data,
+                        thumbnail: firstBuffer, // Use first user's pfp as thumbnail
                         surface: 200,
                         message: finalMsg,
                         orderTitle: 'Alexa',
-                        sellerJid: num
+                        sellerJid: firstParticipant
                     }
                 },
-                contextInfo: {
-                    forwardingScore: 999,
-                    isForwarded: true
+                contextInfo: { forwardingScore: 999, isForwarded: true },
+                sendEphemeral: true
+            };
+            
+            // 6. ✨ **CORRECTED** Add caption to the first image
+            if (albumMedia.length > 0) {
+                albumMedia[0].caption = finalMsg;
+            }
+
+            // 7. Send the single album message
+            await AlexaInc.sendMessage(
+                anu.id,
+                {
+                    album: albumMedia,
+                    // caption: finalMsg, // <-- Removed from here
+                    mentions: mentions
                 },
+                { quoted: fglink }
+            );
+        });
+    }
+
+    // 🔽 Goodbye message handler
+    else if (anu.action == 'leave') {
+        const query = "SELECT * FROM `groups` WHERE group_id = ? AND is_welcome = TRUE";
+
+        db.query(query, [anu.id], async (err, result) => {
+            if (err) {
+                console.error('Error fetching goodbye message:', err);
+                return;
+            }
+            if (result.length === 0) return; // goodbye off
+
+            // 1. Prepare album, mentions, and mention string
+            const albumMedia = [];
+            const mentions = [];
+            const mentionString = participants.map(num => `@${num.split("@")[0]}`).join(', ');
+
+            let firstParticipant = participants[0];
+            let firstBuffer;
+
+            // 2. Loop to get all buffers
+            for (let num of participants) {
+                mentions.push(num);
+                let ppuser;
+                try {
+                    ppuser = await AlexaInc.profilePictureUrl(num, 'image');
+                } catch {
+                    ppuser = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png';
+                }
+
+                let buffer;
+                try {
+                    buffer = await getBuffer(ppuser);
+                } catch {
+                    buffer = fs.readFileSync('./res/alexa.jpg');
+                }
+
+                if (!firstBuffer) {
+                    firstBuffer = buffer;
+                }
+                
+                albumMedia.push({ image: buffer });
+            }
+
+            if (albumMedia.length === 0) return;
+
+            // 3. Create *one* caption
+            let byemsg;
+            if (!result[0].bye_m || result[0].bye_m.toLowerCase() === 'default') {
+                const creativeGoodbye = [
+                    `😢 @user just left *GROUPNAME*. We’ll truly miss having you around! Your presence added laughter, energy, and warmth to our chats. Wherever you’re headed next, we hope you stay happy and successful. Farewell, friend! 💫`,
+                    `👋 @user has left *GROUPNAME*. It’s never easy saying goodbye to a familiar name. We’ll remember your moments here — your jokes, your kindness, and the way you kept things alive. Take care and keep shining! 🌻`,
+                    `💭 @user decided to move on from *GROUPNAME*. Thank you for being part of our little family. Every conversation leaves a memory, and yours will stay with us. Wishing you nothing but good vibes ahead! ✨`,
+                ];
+                byemsg = creativeGoodbye[Math.floor(Math.random() * creativeGoodbye.length)];
+            } else {
+                byemsg = result[0].bye_m;
+            }
+
+            // 4. Replace placeholders
+            const finalMsg = byemsg
+                .replace(/@user/g, mentionString)
+                .replace(/GROUPNAME/g, groupMetadata.subject);
+
+            // 5. Build quote
+            const fglink = {
+                key: {
+                    fromMe: false,
+                    participant: firstParticipant,
+                    remoteJid: anu.id
+                },
+                message: {
+                    orderMessage: {
+                        itemCount: participants.length,
+                        status: 200,
+                        thumbnail: firstBuffer,
+                        surface: 200,
+                        message: finalMsg,
+                        orderTitle: 'Alexa',
+                        sellerJid: firstParticipant
+                    }
+                },
+                contextInfo: { forwardingScore: 999, isForwarded: true },
                 sendEphemeral: true
             };
 
+            // 6. ✨ **CORRECTED** Add caption to the first image
+            if (albumMedia.length > 0) {
+                albumMedia[0].caption = finalMsg;
+            }
+
+            // 7. Send album
             await AlexaInc.sendMessage(
                 anu.id,
-                { image: buffer, caption: finalMsg, mentions: [num] },
+                {
+                    album: albumMedia,
+                    // caption: finalMsg, // <-- Removed from here
+                    mentions: mentions
+                },
                 { quoted: fglink }
             );
-        }
-    });
-}
+        });
+    }
 
-
-// 🔽 Goodbye message handler
-else if (anu.action == 'leave') {
-    const query = "SELECT * FROM `groups` WHERE group_id = ? AND is_welcome = TRUE";
-
-
-    db.query(query, [anu.id], async (err, result) => {
-        if (err) {
-            console.error('Error fetching goodbye message:', err);
-            return;
-        }
-
-        if (result.length === 0) return; // goodbye off if welcome off
-
-        // 🟣 Handle creative long default goodbye message
-        let byemsg;
-        if (!result[0].bye_m || result[0].bye_m.toLowerCase() === 'default') {
-            const creativeGoodbye = [
-                `😢 @user just left *GROUPNAME*. We’ll truly miss having you around! Your presence added laughter, energy, and warmth to our chats. Wherever you’re headed next, we hope you stay happy and successful. Farewell, friend! 💫`,
-
-                `👋 @user has left *GROUPNAME*. It’s never easy saying goodbye to a familiar name. We’ll remember your moments here — your jokes, your kindness, and the way you kept things alive. Take care and keep shining! 🌻`,
-
-                `💭 @user decided to move on from *GROUPNAME*. Thank you for being part of our little family. Every conversation leaves a memory, and yours will stay with us. Wishing you nothing but good vibes ahead! ✨`,
-
-                `🚪 @user walked out of *GROUPNAME*. As one chapter ends, another begins — may yours be filled with happiness, peace, and new adventures. Farewell from all of us, and don’t forget to visit sometimes! 🌸`,
-
-                `🥀 @user has exited *GROUPNAME*. Though you’re leaving our group, you’ll always be part of its story. Take care out there, friend, and may your next stop be as wonderful as you are. 💌`
-            ];
-            byemsg = creativeGoodbye[Math.floor(Math.random() * creativeGoodbye.length)];
-        } else {
-            byemsg = result[0].bye_m;
-        }
-
-        const finalMsg = byemsg
-            .replace(/@user/g, `@${num.split("@")[0]}`)
-            .replace(/GROUPNAME/g, groupMetadata.subject);
-
-        let buffer;
-        try {
-            buffer = await getBuffer(ppuser);
-        } catch {
-            buffer = fs.readFileSync('./res/alexa.jpg');
-        }
-
-        if (buffer) {
-            const fglink = {
-                key: {
-                    fromMe: false,
-                    participant: num,
-                    remoteJid: anu.id
-                },
-                message: {
-                    orderMessage: {
-                        itemCount: 1,
-                        status: 200,
-                        thumbnail: buffer.data,
-                        surface: 200,
-                        message: finalMsg,
-                        orderTitle: 'Alexa',
-                        sellerJid: num
-                    }
-                },
-                contextInfo: {
-                    forwardingScore: 999,
-                    isForwarded: true
-                },
-                sendEphemeral: true
-            };
-
-            await AlexaInc.sendMessage(anu.id, { image: buffer, caption: finalMsg, mentions: [num] }, { quoted: fglink });
-        }
-    });
-}else if (anu.action == 'remove') {
+    // 🔽 Remove message handler
+    else if (anu.action == 'remove') {
         const query = "SELECT * FROM `groups` WHERE group_id = ? AND is_welcome = TRUE";
 
+        db.query(query, [anu.id], async (err, result) => {
+            if (err) {
+                console.error('Error fetching remove message:', err);
+                return;
+            }
+            if (result.length === 0) return; // remove message off
 
-    db.query(query, [anu.id], async (err, result) => {
-        if (err) {
-            console.error('Error fetching goodbye message:', err);
-            return;
-        }
+            // 1. Prepare album, mentions, and plural caption for the group
+            const albumMedia = [];
+            const mentions = [];
+            const mentionString = participants.map(num => `@${num.split("@")[0]}`).join(', ');
+            const groupFeedbackMsg = `⚠️ ${mentionString} were *removed* from *${groupMetadata.subject}* by an admin. If this was a mistake, please reach out to the group admins.`;
 
-        if (result.length === 0) return; // goodbye off if welcome off
+            let firstParticipant = participants[0];
+            let firstBuffer;
 
+            // 2. Loop to send PMs *and* build group album
+            for (let num of participants) {
+                mentions.push(num); // Add to group mention list
+                let ppuser;
+                try {
+                    ppuser = await AlexaInc.profilePictureUrl(num, 'image');
+                } catch {
+                    ppuser = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png';
+                }
 
-    // Send a feedback message immediately when someone is removed (no welcome check)
-    const removedId = num; // same `num` you used in leave branch
-    const removedShort = removedId.split('@')[0];
+                let buffer;
+                try {
+                    buffer = await getBuffer(ppuser);
+                } catch {
+                    buffer = fs.readFileSync('./res/alexa.jpg');
+                }
 
-    // Feedback message — customize as you like
-    const feedbackMsg = `⚠️ @${removedShort} was *removed* from *${groupMetadata.subject}* by an admin. If this was a mistake, please reach out to the group admins.`;
+                if (!firstBuffer) { // Note: 'firstParticipant' is already set above
+                    firstBuffer = buffer;
+                }
+                
+                albumMedia.push({ image: buffer }); // Add to group album
 
-    // try to get profile picture buffer, fallback to default image
-    let buffer;
-    try {
-        buffer = await getBuffer(ppuser);
-    } catch {
-        buffer = fs.readFileSync('./res/alexa.jpg');
-    }
+                // --- Send Individual PM to removed user ---
+                const removedShort = num.split('@')[0];
+                const pmFeedbackMsg = `⚠️ @${removedShort} you were *removed* from *${groupMetadata.subject}* by an admin. If this was a mistake, please reach out to the group admins.`;
 
-    if (buffer) {
-        const fglink = {
-            key: {
-                fromMe: false,
-                participant: removedId,
-                remoteJid: anu.id
-            },
-            message: {
-                orderMessage: {
-                    itemCount: 1,
-                    status: 200,
-                    thumbnail: buffer.data,
-                    surface: 200,
-                    message: feedbackMsg,
-                    orderTitle: 'Alexa',
-                    sellerJid: removedId
-                }
-            },
-            contextInfo: {
-                forwardingScore: 999,
-                isForwarded: true
-            },
-            sendEphemeral: true
-        };
-// await AlexaInc.sendMessage(anu.id, {text: JSON.stringify(anu) + 'num= '+removedId})
-await AlexaInc.sendMessage(removedId, { image: buffer, caption: feedbackMsg, mentions: [removedId] }, { quoted: fglink });
-        await AlexaInc.sendMessage(anu.id, { image: buffer, caption: feedbackMsg, mentions: [removedId] }, { quoted: fglink });
-    } else {
-        // fallback to text-only if no buffer for some reason
-        await AlexaInc.sendMessage(anu.id, { text: feedbackMsg, mentions: [removedId] });
-    }
+                const fglinkPM = {
+                    key: { fromMe: false, participant: num, remoteJid: anu.id },
+                    message: {
+                        orderMessage: {
+                            itemCount: 1, status: 200, thumbnail: buffer, surface: 200,
+                            message: pmFeedbackMsg, orderTitle: 'Alexa', sellerJid: num
+                        }
+                    },
+                    contextInfo: { forwardingScore: 999, isForwarded: true },
+                    sendEphemeral: true
+                };
 
-})
-}
+                try {
+                    // Send message to the user who was removed
+                    await AlexaInc.sendMessage(num, { image: buffer, caption: pmFeedbackMsg, mentions: [num] }, { quoted: fglinkPM });
+                } catch (pmError) {
+                    console.error(`Failed to send PM to removed user ${num}: ${pmError.message}`);
+                }
+                // --- End Individual PM ---
+            }
 
+            if (albumMedia.length === 0) return;
 
+            // 3. Build group quote
+            const fglinkGroup = {
+                key: { fromMe: false, participant: firstParticipant, remoteJid: anu.id },
+                message: {
+                    orderMessage: {
+                        itemCount: participants.length, status: 200, thumbnail: firstBuffer, surface: 200,
+                        message: groupFeedbackMsg, orderTitle: 'Alexa', sellerJid: firstParticipant
+                    }
+                },
+                contextInfo: { forwardingScore: 999, isForwarded: true },
+                sendEphemeral: true
+            };
 
+            // 4. ✨ **CORRECTED** Add caption to the first image
+            if (albumMedia.length > 0) {
+                albumMedia[0].caption = groupFeedbackMsg;
+            }
 
-            
-        }
-    });
+            // 5. Send *one* album message to the group
+            await AlexaInc.sendMessage(
+                anu.id,
+                {
+                    album: albumMedia,
+                    // caption: groupFeedbackMsg, // <-- Removed from here
+                    mentions: mentions
+                },
+                { quoted: fglinkGroup }
+            );
+        });
+    }
+});
     
 alexasocket.onmessage = async (event) => {
   const data = JSON.parse(event.data);

@@ -1160,6 +1160,20 @@ return;
 }
 
 
+
+if(messageText.includes('@admin') && isGroup){
+if(!isGroup) mess.group()
+  let idminids =[] ;
+await groupAdmins.forEach(admin=>{
+ idminids.push(admin.id)
+  })
+// console.log(idminids)
+AlexaInc.sendMessage(msg.key.remoteJid,{text:'reported to admins',mentions:idminids},{ quoted: msg })
+}
+
+
+
+
 /**
  * Checks for bad words in a message.
  * Queries the database ONLY if a bad word is found.
