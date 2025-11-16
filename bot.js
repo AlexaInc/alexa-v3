@@ -1212,6 +1212,14 @@ async function checkBadWord(msg, messageText, isYtCommand) {
  * Checks for links in a message.
  * Queries the database ONLY if a valid link is found.
  */
+/**
+ * Checks if a message contains a link and if antilink is enabled.
+ * @param {object} msg - The message object from the bot library.
+ * @param {string} messageText - The text content of the message.
+ * @param {boolean} isYtCommand - Flag to ignore checks for YouTube commands.
+ - Flag indicating if the message is in a group.
+ *V @returns {Promise<string|boolean>} Returns the action (e.g., 'kick') if a link is detected and antilink is on, otherwise returns false.
+ */
 async function checkAntiLink(msg, messageText, isYtCommand) {
   // 1. Exit if it's a YouTube command (to allow song/video links)
   if (isYtCommand) return false;
@@ -1219,50 +1227,44 @@ async function checkAntiLink(msg, messageText, isYtCommand) {
   // 2. Exit if it's not a group
   if (!isGroup) return false;
 
-  // 3. Perform the "cheap" regex check first
-  const urlRegex = /(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?/g;
-  const potentialUrls = messageText.match(urlRegex);
+  // 3. UPDATED REGEX:
+  // This regex matches:
+  // (https?:\/\/[^\s]+)       -> http:// or https:// links
+  // (www\.[^\s]+)              -> www. links
+  // ([\w-]+\.)+(com|net|org|io|dev|xyz|lk|in|info|biz|me|app) -> domain.com, domain.net, domain.lk, etc.
+  // \b ensures it's a whole word (prevents matching "test.com" inside "test.comma")
+  // 'gi' means global (find all) and case-insensitive
+  const robustUrlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|([\w-]+\.)+(com|net|org|io|dev|xyz|lk|in|info|biz|me|app))\b/gi;
+
+  const potentialUrls = messageText.match(robustUrlRegex);
 
   // 4. If regex finds nothing, stop immediately.
+  // This will now correctly ignore "kr.nm" and "dafifihf.fa"
   if (!potentialUrls) {
     return false;
   }
 
-  // 5. Regex found matches. Now validate them (still "cheap").
-  let foundValidLink = false;
-  for (const url of potentialUrls) {
-    if (validator.isURL(url, { require_protocol: false })) {
-      foundValidLink = true;
-      break; // Found one valid link, no need to check the others
-    }
-  }
-
-  // 6. If no *valid* links were found, stop.
-  if (!foundValidLink) {
-    return false;
-  }
-
-  // 7. A valid link WAS found.
+  // 5. A valid link WAS found.
+  // We don't need the 'validator.isURL' loop anymore.
   // NOW, check the database to see if antilink is on.
   try {
-    // 8. Updated Query: Select 'link_a' as well.
+    // 6. Query: Select 'link_a' (the action) as well.
     const query = `SELECT antilink, link_a FROM \`groups\` WHERE group_id = ? AND antilink = TRUE`;
     const [results] = await db.promise().query(query, [msg.key.remoteJid]);
 
-    // 9. Check if antilink is enabled (results.length > 0)
+    // 7. Check if antilink is enabled (results.length > 0)
     if (results.length > 0) {
-      // 10. Get the action value from the first result
+      // 8. Get the action value from the first result
       const action = results[0].link_a;
 
-     // console.log('Link detected and antilink is ON.');
+      // console.log('Link detected and antilink is ON.');
+      // console.log('Anti-link action to take:', action);
       
-      // 11. Log the specific action
-     // console.log('Anti-link action to take:', action);
-      
-      return action; // Return true to indicate detection
+      // 9. Return the action (e.g., 'kick', 'warn')
+      return action;
     }
 
-    // 12. Link was found, but antilink is OFF for this group
+    // 10. Link was found, but antilink is OFF for this group
     return false;
 
   } catch (err) {
@@ -1270,7 +1272,6 @@ async function checkAntiLink(msg, messageText, isYtCommand) {
     return false; // Always return false if a DB error occurs
   }
 }
-
 
 
 
@@ -2487,7 +2488,11 @@ try {
 
 case'song':{
   // generateBox('ihahfaafafifasfaik', 50)
-if (!text) return  AlexaInc.sendMessage(msg.key.remoteJid,{text:'url not provided here is ex:- .song song name'},{quoted:msg})
+if (!text) return  AlexaInc.sendMessage(msg.key.remoteJid,{text:'name not provided here is ex:- .song song name'},{quoted:msg})
+
+  const dummymg = await AlexaInc.sendMessage(msg.key.remoteJid,      {
+        text : 'wait song is downloading'
+      }, { quoted: msg });
 try{
     const results = await yts(text);  
     const video = results.videos[0];
@@ -2511,13 +2516,13 @@ const cap = generateBox(textl, 21);
         fileName: `${text}.m4a`,
        mimetype: 'audio/mp4', 
        caption: cap, 
-       footer: 'Powerd by AlexaInc'
+       footer: 'Powerd by AlexaInc',
       }, { quoted: msg });
 
-
+await AlexaInc.sendMessage(msg.key.remoteJid,{delete:dummymg.key})
 
 }catch(error){
-AlexaInc.sendMessage(msg.key.remoteJid, { text: `Error: ${error.message}` }, { quoted: msg });
+AlexaInc.sendMessage(msg.key.remoteJid, { text: `Error: ${error.message}`,edit:dummymg.key }, { quoted: msg });
 console.log(error)
 
 }
