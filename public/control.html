@@ -256,8 +256,12 @@
         </div>
 </div>
     <script>
-        const socketUrl = '${process.env.WEBSOCKET_URL}'; // WebSocket URL for the current host
-        const socket = new WebSocket(socketUrl);
+       // Determine WebSocket protocol (ws: or wss:) based on page protocol (http: or https:)
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    
+// Construct the WebSocket URL using the page's host (e.g., "136.112.97.47:8000")
+const socketUrl = `${protocol}//${window.location.host}/logs`;
+  const socket = new WebSocket(socketUrl);
 
         // Handle incoming messages from the WebSocket server
         socket.onmessage = function(event) {

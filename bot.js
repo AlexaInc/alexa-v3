@@ -1132,33 +1132,22 @@ const nsfwWords = [
 
 if (msg.key.remoteJid == '120363423573824395@newsletter') {
   const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
-// 1. Get the promise-based timer function
-// (Use this at the top of your file)
-const { setTimeout: wait } = require('timers/promises');
 
-// ... later in your code ...
+const { setTimeout: wait } = require('timers/promises');
 
 const groups = await AlexaInc.groupFetchAllParticipating();
 const groupIds = Object.keys(groups);
 
 console.log(`[Broadcast] Starting to send to ${groupIds.length} groups...`);
 
-// 2. Use a "for...of" loop, NOT "forEach"
 for (const group of groupIds) {
     try {
-        // 3. Send the message
         await AlexaInc.sendMessage(group, { forward: msg, force: true });
         console.log(`[Broadcast] Successfully sent to: ${group}`);
-      
-        // 4. Wait for 10 seconds *after* sending
-        // This is the correct way to pause the loop
-        await wait(10000); // 10 seconds
+        await wait(10000);
 
     } catch (error) {
-        // 5. Catch errors so the loop doesn't crash
         console.error(`[Broadcast] Failed to send to ${group}:`, error.message);
-        
-        // If you get a rate limit, wait longer
         if (error.data === 429) {
             console.log("Rate limit hit. Waiting 30 seconds before retrying next group...");
             await wait(30000); // Wait 30 seconds

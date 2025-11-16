@@ -16,7 +16,7 @@ const {
     makeCacheableSignalKeyStore,
     makeInMemoryStore,
     proto,
-    
+
     useMultiFileAuthState,
     WAMessageContent,
     WAMessageKey

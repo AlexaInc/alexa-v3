@@ -10768,5 +10768,10 @@
     "id": 2154,
     "reason": "index.js: ❌ Uncaught Exception: TypeError: Cannot destructure property 'user' of 'WABinary_1.jidDecode(...)' as it is undefined.\nat relayMessage (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/messages-send.js:721:17)\nat Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@whiskeysockets/baileys/lib/Socket/messages-send.js:1728:23)\nat async EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:826:1)\n",
     "timestamp": "2025-11-15T15:51:52.967Z"
+  },
+  {
+    "id": 2155,
+    "reason": "index.js: ❌ Uncaught Exception: TypeError: Cannot read properties of null (reading 'mediaMimetype')\nat handleMessage (/home/hansaka/alexa-v3/bot.js:1905:40)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n",
+    "timestamp": "2025-11-15T16:39:22.030Z"
   }
 ]
