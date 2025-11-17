@@ -12,6 +12,9 @@ const QUIZ_STORAGE_DIR = './quizzes';
 const { promisify } = require('util');
 const validator = require('validator');
 const { exec } = require('child_process');
+const { getEmojicook } = require('./res/js/emojicook.js'); 
+const { Primbon } = require('scrape-primbon')
+const primbon = new Primbon()
 const execAsync = promisify(exec);
 // Ensure the directory exists when the bot starts
 if (!fs.existsSync(QUIZ_STORAGE_DIR)) {
@@ -24,10 +27,10 @@ const path = require('path');
 const quizManager = require('./res/js/quizManager.js');
 const FilterManager = require('filtermatics'); 
 const si = require('os');
-
+const shippingflder ='shipping'
 const axios = require('axios');
 const sharp = require('sharp');
-const { downloadMediaMessage, proto, prepareWAMessageMedia , getGroupMetadata , generateWAMessageFromContent  } = require('@whiskeysockets/baileys');
+const { downloadMediaMessage, proto, prepareWAMessageMedia , getGroupMetadata , generateWAMessageFromContent, generateMessageID  } = require('@whiskeysockets/baileys');
 const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 const { generateLinkPreview } = require("link-preview-js");
 //const {generateWAMessageFromContent} = require('@adiwajshing/baileys')
@@ -89,6 +92,46 @@ function formatTime(seconds) {
   const secs = seconds % 60;
   return `${mins}m ${secs}s`;
 }
+
+
+
+
+/**helpersss */
+fetchJson = async (url, options) => {
+    try {
+        options ? options : {}
+        const res = await axios({
+            method: 'GET',
+            url: url,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36'
+            },
+            ...options
+        })
+        return res.data
+    } catch (err) {
+        return err
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 async function startCustomQuiz(AlexaInc, jid, quizId) {
     const filePath = `${QUIZ_STORAGE_DIR}/${quizId}.json`;
@@ -528,7 +571,7 @@ const { ConsoleMessage } = require('puppeteer');
 const { url } = require('inspector');
 const { json } = require('stream/consumers');
 const { image } = require('ascii-art');
-const { error, Console } = require('console');
+const { error, Console, group } = require('console');
 const { title } = require('process');
 
 
@@ -1494,7 +1537,7 @@ const interactiveButtons = [
     },
     {
         header:' ',
-        title: 'Games', 
+        title: 'Fun features', 
         id: '.menu_games'
     }
 ]
@@ -1570,6 +1613,7 @@ case "menu_games": {
 ┃            🖼 *Sticker & Image Commands:*           
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ ➥ \`.sticker\` - Convert image to sticker  
+┃ ➥ \`.emojimix\` - mix two emojies 
 ┃ ➥ \`.q\` - Convert message to sticker`;
   } 
   else if (respomm === 'web') {
@@ -1644,7 +1688,12 @@ case "menu_games": {
 
 ┃ _*DailyGiveaway*_  
 ┃ ➥ \`.dailyqa\` - Start Q&A  
-┃ ➥ \`.answer\` - Send answer number`;
+┃ ➥ \`.answer\` - Send answer number
+┃ 
+┃ ➥\`.slot\`
+┃ ➥\`.shipping\` or \`couple\`  - chose random couple from group 
+`;
+
   }
 
   const fmenu = `╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
@@ -2158,6 +2207,72 @@ mediaBuffer = await await getDecryptedMediaBuffer(AlexaInc, media);
 }
 
 
+case "emojimix": {
+    if (!text) return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'please send a two emojies /emojimix 💔+😗' });
+    
+    const stickerMetadata = {
+        pack: 'My Bot',
+        author: 'Quotly',
+        quality: 90
+    };
+
+const parts = text.split(/[+._]/);
+
+    if (parts.length !== 2) {
+        return await AlexaInc.sendMessage(msg.key.remoteJid, { text: ' emojies invalid format  /emojimix 💔+😗' });
+    }
+    await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'preparing your sticker' }, { quoted: msg });
+    await AlexaInc.sendMessage(msg.key.remoteJid, { react: { text: '🔄', key: msg.key } });
+
+    try {
+        // Clean invisible \uFE0F and trim any extra spaces
+        // const emoji1 = match[1].replace(/\uFE0F/g, '').trim();
+        // const emoji2 = match[3].replace(/\uFE0F/g, '').trim();
+
+        // --- THIS IS THE CORRECT LINE ---
+        // Use the variables from the user's message
+        const buffer = await getEmojicook(parts[0],parts[1]);
+        // --------------------------------
+
+        const highQualityBuffer = await sharp(buffer)
+            .resize(1024, 1024, {
+                fit: 'contain',
+                background: { r: 0, g: 0, b: 0, alpha: 0 },
+                kernel: sharp.kernel.lanczos3
+            })
+            .webp()
+            .toBuffer();
+
+        const sticker = new Sticker(highQualityBuffer, {
+            ...stickerMetadata,
+            type: StickerTypes.DEFAULT,
+        });
+        
+        const stickerBuffer = await sticker.toBuffer();
+
+        await AlexaInc.sendMessage(
+            msg.key.remoteJid,
+            { sticker: stickerBuffer },
+            { quoted: msg }
+        );
+
+        AlexaInc.sendMessage(msg.key.remoteJid, { react: { text: '✅', key: msg.key } });
+
+    } catch (error) {
+        // This will correctly catch when the API has no match
+        console.error("EmojiMix Error:", error.message);
+        
+        await AlexaInc.sendMessage(msg.key.remoteJid, { react: { text: '❌', key: msg.key } });
+        
+        if (error.message.includes('not found')) {
+            await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Sorry, I can\'t mix those two emojis.' }, { quoted: msg });
+        } else {
+            await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'An error occurred.' }, { quoted: msg });
+        }
+    }
+
+    break;
+}
 
 case"cabout":{
 
@@ -2763,6 +2878,162 @@ case 'answer':{
  }
   break
 }
+
+
+
+
+
+// gamesssssss
+            case 'slot': { 
+                const sotoy = [
+                    '🍊 : 🍒 : 🍐 *YOU LOSE BRO*',
+                    '🍒 : 🔔 : 🍊 *YOU LOSE BRO*',
+                    '🍇 : 🍇 : 🍐 *YOU LOSE BRO*',
+                    '🍊 : 🍋 : 🔔 *YOU LOSE BRO*', //ANKER
+                    '🔔 : 🍒 : 🍐 *YOU LOSE BRO*',
+                    '🔔 : 🍒 : 🍊 *YOU LOSE BRO*',
+                    '🍊 : 🍋 : 🔔 *YOU LOSE BRO*',        
+                    '🍒 : 🍒 : 🍒 *You Win👑*',
+                    '🍐 : 🍒 : 🍐 *YOU LOSE BRO*',
+                    '🍊 : 🍒 : 🍒 *YOU LOSE BRO*',
+                    '🔔 : 🔔 : 🍇 *YOU LOSE BRO*',
+                    '🍌 : 🍌 : 🔔 *YOU LOSE BRO*',
+                    '🍐 : 🔔 : 🔔 *YOU LOSE BRO*',
+                    '🍊 : 🍋 : 🍒 *YOU LOSE BRO*',
+                    '🍋 : 🍋 : 🍋 *You Win👑*',
+                    '🔔 : 🔔 : 🍇 *YOU LOSE BRO*',
+                    '🔔 : 🍇 : 🍇 *YOU LOSE BRO*', 
+                    '🔔 : 🍐 : 🔔',
+                    '🍌 : 🍌 : 🍌 *You Win👑*'
+                    ]
+                    const dripslot = sotoy[Math.floor(Math.random() * sotoy.length)]
+                    let datane = fs.readFileSync('./res/nothing.js')
+                    jsonData = JSON.parse(datane)
+                    randIndex = Math.floor(Math.random() * jsonData.length)
+                    randKey = jsonData[randIndex];
+                    buffer = await getBuffer(randKey.result)
+                    AlexaInc.sendMessage(msg.key.remoteJid, { image: buffer, caption: '*SLOT MACHINE*\n'+ dripslot }, {quoted:msg})
+                
+                
+                            
+              break
+                
+                
+                  }
+                    
+                
+case 'shipping':case 'couple': {
+    if (!isGroup) return mess.group();
+
+    const datajson = `./${shippingflder}/${msg.key.remoteJid}.json`;
+    const todaya = new Date().toLocaleDateString();
+
+    const participantids = participants.map(user => user.id);
+
+    let jsonData;
+    let todatcouple;
+    let couples = []; // Default to an empty array
+
+    try {
+        // --- 1. READ EXISTING FILE ---
+        const fileData = fs.readFileSync(datajson, 'utf8');
+        jsonData = JSON.parse(fileData);
+
+        // Fix for old/corrupted JSON
+        couples = Array.isArray(jsonData.couples) ? jsonData.couples : [];
+
+        const coupleids = couples.flatMap(item => item.couple);
+
+        if (jsonData.lastchoosen === todaya) {
+            // --- 2A. COUPLE ALREADY CHOSEN TODAY ---
+            todatcouple = (couples.find(item => item.date === todaya))?.couple;
+
+        } else {
+            // --- 2B. CHOOSE A NEW COUPLE ---
+            let available = participantids.filter(id => !coupleids.includes(id));
+
+            if (available.length < 2) {
+                available = [...participantids];
+            }
+
+            todatcouple = available.sort(() => 0.5 - Math.random()).slice(0, 2);
+            couples.push({ date: todaya, couple: todatcouple });
+        }
+
+        // --- 3. UPDATE JSON DATA ---
+        jsonData = {
+            lastchoosen: todaya,
+            couples: couples
+        };
+
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            // --- 1. FILE DOESN'T EXIST (FIRST TIME RUN) ---
+            todatcouple = participantids.sort(() => 0.5 - Math.random()).slice(0, 2);
+
+            jsonData = {
+                lastchoosen: todaya,
+                couples: [ { date: todaya, couple: todatcouple } ]
+            };
+
+            try {
+                fs.mkdirSync(path.dirname(datajson), { recursive: true });
+            } catch (writeError) {
+                console.error('Error creating directory:', writeError);
+            }
+
+        } else {
+            // --- OTHER ERRORS (like JSON parse error) ---
+            console.error('Error handling shipping data:', error);
+            await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'An error occurred. Please contact the owner.' });
+            break; // Stop execution
+        }
+    }
+
+    // --- 4. SEND MESSAGE & SAVE FILE (MODIFIED) ---
+    
+    // This is the variable we will send
+    let coupleToSend = todatcouple;
+
+    // **THIS IS THE FIX:**
+    // If 'todatcouple' is undefined, but we *know* a couple was chosen today,
+    // we must find it again from the 'jsonData' we just loaded/created.
+    if ((!coupleToSend || coupleToSend.length !== 2) && jsonData && jsonData.lastchoosen === todaya) {
+        const todaysCouplesArray = Array.isArray(jsonData.couples) ? jsonData.couples : [];
+        coupleToSend = (todaysCouplesArray.find(item => item.date === todaya))?.couple;
+    }
+
+
+    // Now, we check if we have a valid couple to send
+    if (coupleToSend && coupleToSend.length === 2) {
+        await AlexaInc.sendMessage(msg.key.remoteJid, {
+            text: `Today couple is 
+@${coupleToSend[0].replace('@s.whatsapp.net', '')} and @${coupleToSend[1].replace('@s.whatsapp.net', '')}
+Congratulations ❤️`,
+            mentions: coupleToSend
+        });
+
+        // Save the updated data (this is important if a *new* couple was chosen)
+        try {
+            fs.writeFileSync(datajson, JSON.stringify(jsonData, null, 2), 'utf8');
+        } catch (writeError) {
+            console.error('Error writing shipping file:', writeError);
+        }
+
+    } else {
+        // This block now only runs if something is truly wrong
+        console.warn('Could not determine a couple for shipping.');
+        await AlexaInc.sendMessage(msg.key.remoteJid, { text: `Sorry, I couldn't figure out the couple for today.` });
+    }
+
+    break;
+}
+
+
+
+
+
+
   case "hangman": {
     // Starting a new Hangman game
     if (hangmanData[sender]) {
@@ -3092,6 +3363,36 @@ let users = [];
     break;
 }
 
+//invite
+case 'invite':{
+
+if(!isGroup) return mess.group()
+  const code = await AlexaInc.groupInviteCode(msg.key.remoteJid)
+console.log(code)
+let user
+  if (args.length > 0) {
+     user = args
+        .map(arg => arg.replace(/^\+/, '')) // remove leading +
+        .filter(arg => /^\d{5,15}$/.test(arg)) // keep only valid numbers (5–15 digits)
+        .map(num => num + '@s.whatsapp.net');
+      // console.log(users.length)
+    if (user.length === 0) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'enter valid number'},{quoted:msg}) ; // if no valid numbers, stop
+}
+console.log(user)
+await AlexaInc.sendMessage(
+    user[0],
+    {
+        groupInvite: {
+            jid: msg.key.remoteJid,
+            name: groupMetadata.subject, 
+            caption: 'Join My Whatsapp Group',
+            code: code,
+        }
+    }
+)
+break;
+}
+
 
 // set group welcome
 case 'welcomeon': {
@@ -3108,13 +3409,13 @@ case 'welcomeon': {
   `;
   
   // Run the query using MySQL2
-  db.query(query, [msg.key.remoteJid, text||'default', text||'default'], (err, result) => {
+  db.query(query, [msg.key.remoteJid, text||'default', text||'default'], async (err, result) => {
     if (err) {
       console.error('Error updating welcome message:', err);
-      return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to set welcome message.' });
+      return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to set welcome message.' });
     }
 
-    AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Welcome message has been set successfully!' });
+    await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Welcome message has been set successfully!' });
   });
 
   break;
@@ -3729,7 +4030,7 @@ const interactiveButtons = [
     },
     {
         header:' ',
-        title: 'Games', 
+        title: 'Fun features', 
         id: '.menu_games', 
         description: 'get Games menu'
     }
