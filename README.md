@@ -269,11 +269,11 @@ Here are the available commands, grouped by category:
 **Hangman**
 
 
-┃ * `.newhang` - create hangman game
-┃ ➥ `.joinhang` - join a hangman game 
-┃ ➥ `.endhang` - End hangman game  
-┃ ➥ `.starthang` - Start hangman game 
-┃ ➥ `.hanglead` - Get leaderboard  
+  * `.newhang` - create hangman game
+  * `.joinhang` - join a hangman game 
+  * `.endhang` - End hangman game  
+  * `.starthang` - Start hangman game 
+  * `.hanglead` - Get leaderboard  
 
 
 **DailyGiveaway**
