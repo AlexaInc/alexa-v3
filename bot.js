@@ -4,6 +4,7 @@ const USER_DATA_FILE = './users.json';
 const fetchnews = require('./res/news');
 const yts = require('yt-search');
 const weatherof = require('./res/js/weather.js')
+const { handleHangman, checkInactiveGames } = require('./hangman.js');
 const fsp = require('fs').promises;
 const fonts = require('./res/js/fonts.js')
 const hangmanFile = "./hangman.json";
@@ -1450,8 +1451,9 @@ if (!isGroup) {
 
 
 
+const commandhang = messageText.trim().toLowerCase().split(' ')[0];
 
-
+await handleHangman(msg, AlexaInc, commandhang);
 
 
 
@@ -1479,7 +1481,6 @@ const botStatus = loadBotStatus();
 if (botStatus.underMaintenance && !isOwner) {
   return AlexaInc.sendMessage(msg.key.remoteJid, { text: botStatus.message }, { quoted: msg });
 }
-
 
 
 
@@ -1681,10 +1682,11 @@ case "menu_games": {
 ┃                   🪀 *Games Menu:*                 
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ _*Hangman*_  
-┃ ➥ \`.hangman\` - Start hangman  
-┃ ➥ \`.guess\` - Guess a letter  
-┃ ➥ \`.endhangman\` - End game  
-┃ ➥ \`.hangmanlb\` - Get leaderboard  
+┃ ➥ \`.newhang\` - create hangman game
+┃ ➥ \`.joinhang\` - join a hangman game 
+┃ ➥ \`.endhang\` - End hangman game  
+┃ ➥ \`.starthang\` - Start hangman game 
+┃ ➥ \`.hanglead\` - Get leaderboard  
 
 ┃ _*DailyGiveaway*_  
 ┃ ➥ \`.dailyqa\` - Start Q&A  
@@ -2064,6 +2066,17 @@ if (wasRemoved) {
   AlexaInc.sendMessage(msg.key.remoteJid, { text: `✅ Filter removed: \`${text}\`` });
 } else {
   AlexaInc.sendMessage(msg.key.remoteJid, { text: `❌ Filter not found: \`${text}\`` });
+}
+  break;
+}
+
+case"stopall":{
+    if (!isGroup) return mess.group();
+  const wasremoved = Filters.removeAllFilters(msg.key.remoteJid)
+  if (wasremoved){
+      AlexaInc.sendMessage(msg.key.remoteJid, { text: `✅ All Filters removed` });
+} else {
+  AlexaInc.sendMessage(msg.key.remoteJid, { text: `❌ Filters not found or errored` });
 }
   break;
 }
@@ -3034,53 +3047,17 @@ Congratulations ❤️`,
 
 
 
-  case "hangman": {
-    // Starting a new Hangman game
-    if (hangmanData[sender]) {
-      if (hangmanData[sender].word) {
-        AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption: "⚠️ You already have an active game! Use `.guess <letter>` to continue."},{ quoted: msg });
+ case 'newhang':
+            break;
+        case 'joinhang':
+            break;
+        case 'starthang':
+            break;
+        case 'endhang':
+            break;
+        case 'hanglead':
+            break;
 
-
-        
-      }else{
-        let word = hngmnwrds[Math.floor(Math.random() * hngmnwrds.length)];
-        hangmanData[sender] = {
-            word: word,
-            name: msg.pushName,
-            guessed: [],
-            incorrect: 0,
-            maxIncorrect: 6,
-            wins: hangmanData[sender]?.wins || 0 // Ensure wins persist
-        };
-    
-        saveHangmanData(hangmanData);
-    
-        let hiddenWord = "_ ".repeat(word.length).trim();
-        AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption: `🎮 *Hangman Started!*\n🔹 Word: ${hiddenWord}\n🔹 Lives: 6\nUse: .guess <letter>` },{ quoted: msg });
-
-
-       
-      }
-        break;
-    }
-
-    let word = hngmnwrds[Math.floor(Math.random() * hngmnwrds.length)];
-    hangmanData[sender] = {
-        word: word,
-        name: msg.pushName,
-        guessed: [],
-        incorrect: 0,
-        maxIncorrect: 6,
-        wins: hangmanData[sender]?.wins || 0 // Ensure wins persist
-    };
-
-    saveHangmanData(hangmanData);
-
-    let hiddenWord = "_ ".repeat(word.length).trim();
-    AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption: `🎮 *Hangman Started!*\n🔹 Word: ${hiddenWord}\n🔹 Lives: 6\nUse: .guess <letter>` },{ quoted: msg });
-
-    break;
-}
 
 case 'maintain': {
   if (!isOwner) return mess.owner();
@@ -3113,113 +3090,6 @@ break;
 }
 
 
-
-
-
-case "guess": {
-    // Check if the user has an active game
-    if (!hangmanData[sender].word) {
-      AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption:  "❌ You don't have an active game! Start a new game with `.hangman`" },{ quoted: msg });
-
-
-        break;
-    }
-
-    let game = hangmanData[sender];
-    let guess = args[0]?.toLowerCase();
-
-    if (!guess || guess.length !== 1) {
-      AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption:  "⚠️ Send a single letter!" },{ quoted: msg });
-
-
-        break;
-    }
-
-    if (game.guessed.includes(guess)) {
-      AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption:  "🔄 You already guessed that!" },{ quoted: msg });
-
-        break;
-    }
-
-    game.guessed.push(guess);
-
-    if (game.word.includes(guess)) {
-        let revealed = game.word.split("").map(letter => game.guessed.includes(letter) ? letter : "_").join(" ");
-        saveHangmanData(hangmanData);
-
-        if (!revealed.includes("_")) {
-            // Player wins, increase their win count
-            hangmanData[sender].wins++; // Increment win count
-            saveHangmanData(hangmanData); // Save the updated data with win count
-            AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption:  `🎉 You won! The word was: *${game.word}*` },{ quoted: msg });
-            // Log game data before deletion
-            console.log("Game Data Before Deletion:", hangmanData[sender]);
-
-            // Allow the player to start a new game after winning
-            AlexaInc.sendMessage(msg.key.remoteJid, { text: "🎮 You can start a new game by typing .hangman" }, { quoted: msg });
-
-            // Explicitly delete only the game-related data (NOT the win count)
-            delete hangmanData[sender].guessed;
-            delete hangmanData[sender].incorrect;
-            delete hangmanData[sender].word;  // Delete word to start a new game
-            saveHangmanData(hangmanData);
-        } else {
-          AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption:  `✅ Correct!\n🔹 Word: ${revealed}` },{ quoted: msg });
-            
-           
-        }
-    } else {
-        game.incorrect++;
-        saveHangmanData(hangmanData);
-
-        if (game.incorrect >= game.maxIncorrect) {
-          AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption:   `💀 Game Over now you death! The word was: *${game.word}*` },{ quoted: msg });
-            
-      
-            // Log game data before deletion
-            console.log("Game Data Before Deletion:", hangmanData[sender]);
-
-            // Allow the player to start a new game after losing
-            AlexaInc.sendMessage(msg.key.remoteJid, { text: "🎮 You can revive by typing .hangman" }, { quoted: msg });
-
-            // Explicitly delete only the game-related data (NOT the win count)
-            delete hangmanData[sender].guessed;
-            delete hangmanData[sender].incorrect;
-            delete hangmanData[sender].word;  // Delete word to start a new game
-            saveHangmanData(hangmanData);
-        } else {
-          AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption:   `❌ Wrong! Lives left: ${game.maxIncorrect - game.incorrect}`  },{ quoted: msg });
-            
-        }
-    }
-    break;
-}
-
-case "endhangman": {
-    // End an active Hangman game
-    if (!hangmanData[sender]) {
-      
-        AlexaInc.sendMessage(msg.key.remoteJid, { text: "❌ No active game to end!" }, { quoted: msg });
-        break;
-    }
-
-    // Reset game data but keep win count
-    delete hangmanData[sender].guessed;
-    delete hangmanData[sender].incorrect;
-    delete hangmanData[sender].word;  // Delete word to start a new game
-    saveHangmanData(hangmanData);
-    AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption:   "🛑 Hangman game ended."  },{ quoted: msg });
-           
-    break;
-}
-
-case "hangmanlb": {
-    // Display the leaderboard
-    let leaderboardText = getLeaderboard(hangmanData);
-    AlexaInc.sendMessage(msg.key.remoteJid,{ image: {url: './res/img/hangman.jpeg'},caption:   leaderboardText  },{ quoted: msg });
-     
-    break;
-}
 case 'news':{
   AlexaInc.sendMessage(msg.key.remoteJid,{react: {text: '🔄', key: msg.key}});
 fetchnews().then(response=>{

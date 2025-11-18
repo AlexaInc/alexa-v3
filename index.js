@@ -22,6 +22,7 @@ const {
     WAMessageKey
 } = require('@whiskeysockets/baileys');
 require('dotenv').config()
+const { handleHangman, checkInactiveGames } = require('./hangman.js');
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
 const pino = require("pino");
@@ -608,6 +609,9 @@ for (const evName of eventsToStore) {
         console.log(qr);
     })
     AlexaInc.ev.on('creds.update', saveCreds);
+setInterval(() => {
+    checkInactiveGames(AlexaInc); // Pass your client to the function
+}, 60000);
 
 AlexaInc.ev.on('group-participants.update', async (anu) => {
     // console.log(anu);
