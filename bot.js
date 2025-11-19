@@ -13,6 +13,8 @@ const QUIZ_STORAGE_DIR = './quizzes';
 const { promisify } = require('util');
 const validator = require('validator');
 const { exec } = require('child_process');
+const yth2 = require('./res/js/ytHelper2');
+
 const { getEmojicook } = require('./res/js/emojicook.js'); 
 const { Primbon } = require('scrape-primbon')
 const primbon = new Primbon()
@@ -1010,16 +1012,15 @@ const isOwner = allOwners.includes(senderabfff);
 
 //console.log(isOwner); // true if sender matches any owner
 
+// 1. Check if message is from a group
 const isGroup = msg.key.remoteJid.endsWith('@g.us');
 const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : '';
 const participants = isGroup ? groupMetadata?.participants || [] : [];
 const groupAdmins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
-//console.log(isOwner)
 const isAdmins = isGroup
     ? isOwner || groupAdmins.some(admin => admin.jid === senderabfff || admin.lid === senderabfff)
     : false;
-//console.log('a',isAdmins)
-const groupOwner = isGroup ? groupMetadata.owner : ''
+const groupOwner = isGroup ? groupMetadata?.owner || '' : '';
 //console.log(botNumber)
 const ottffsse = msg.participant || msg.key.participant 
 const isBotAdmins = isGroup
@@ -1794,7 +1795,7 @@ case "q": {
 
     // Fix 1: Use optional chaining (?.). 
     // This prevents a crash if 'contextInfo' is null.
-    const quotedid = p.replyInfo.messageId;
+    const quotedid = p.replyInfo?.messageId;
 
     if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid, {
         text: 'please reply to a massage'
@@ -2461,15 +2462,15 @@ case "ytdl_select":{
   await AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key })
 try {
   // 1. Call the function from your module
-  const info = await getVideoInfo(text);
+        const info = await yth2.getVideoInfo(text);
 
-  // 2. Extract the exact details you wanted
-  const details = {
-    name: info.title,
-    uploader: info.uploader,
-    durationInSeconds: info.duration,
-    thumbnailUrl: info.thumbnail
-  };
+        // 2. Assign to your specific variable structure
+        const details = {
+            name: info.title,
+            uploader: info.author,       // Module returns 'author', you map it to 'uploader'
+            durationInSeconds: info.duration, // Note: API usually returns a string like "3:32"
+            thumbnailUrl: info.thumbnail
+        };
 
   // --- NEW LOGIC STARTS HERE ---
 
@@ -2484,7 +2485,7 @@ try {
   };
   const row480p = {
     header: ' ',
-    title: '480p Video',
+    title: '720p Video',
     id: `.dl480p ${text}`
   };
   const rowMp3 = {
@@ -2506,7 +2507,7 @@ try {
     buttonRows.push(rowvoice);
   } else {
     // Video is 8 minutes or less, add all options
-    buttonRows.push(row360p);
+    // buttonRows.push(row360p);
     buttonRows.push(row480p);
     buttonRows.push(rowMp3);
     buttonRows.push(rowvoice);
@@ -2551,7 +2552,7 @@ Duration : ${formatTime(details.durationInSeconds)}
   break;
 }
 
-case 'dl360p': case 'dl480p': case 'dlmp3': case'dlvoice':{
+/*case 'dl360p':*/ case 'dl480p': case 'dlmp3': case'dlvoice':{
   await AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key })
 const smkey =( await AlexaInc.sendMessage(msg.key.remoteJid,{text:'⏳ wait your (Video/Audio) processing'},{quoted:msg})).key
 
@@ -2576,31 +2577,32 @@ try {
 
   if (dlquality === 'ogg') {
     // 1. Download file and get the path
-    filePath = await downloadAudioAsOgg(text); // Assign to the outer variable
-     const devsound = fs.readFileSync(filePath)
+     filePath = await yth2.getAudio(text); // Assign to the outer variable
+     const devsound = await yth2.fetchBuffer(filePath.download)
     // 2. Send the file FROM THE PATH
     await AlexaInc.sendMessage(msg.key.remoteJid,  { audio: devsound, mimetype: 'audio/mp4', ptt: true }, { quoted: msg });
 
   } else if(dlquality === 'mp3'){
-    filePath = await downloadAudioAsMp3(text); // Assign to the outer variable
-     const devsound = fs.readFileSync(filePath)
+     filePath = await yth2.getAudio(text); // Assign to the outer variable
+     const devsound = await yth2.fetchBuffer(filePath.download)
     // 2. Send the file FROM THE PATH
     await AlexaInc.sendMessage(msg.key.remoteJid,  { audio: devsound, mimetype: 'audio/mp4' }, { quoted: msg });
 
 
   } else {
     // 1. Find the video format
-    const formatId = await findVideoFormat(text, dlquality);
-    if (!formatId) {
-      throw new Error(`Could not find a ${dlquality}p MP4 format with audio.`);
-    }
+    // const formatId = await findVideoFormat(text, dlquality);
+    // if (!formatId) {
+    //   throw new Error(`Could not find a ${dlquality}p MP4 format with audio.`);
+    // }
 
     // 2. Download file and get the path
-   const filePath = await downloadSingleFormatToFile(text, formatId); // Assign to the outer variable
+   const fileurl = await yth2.getVideo(text); // Assign to the outer variable
+   const filebuf = await yth2.fetchBuffer(fileurl.download)
     
     // 3. Send the file FROM THE PATH
     await AlexaInc.sendMessage(msg.key.remoteJid, {
-      video: { url: filePath }, 
+      video: filebuf, 
       mimeType: 'video/mp4'
     }, { quoted: msg });
   }
@@ -2612,14 +2614,14 @@ try {
 } finally {
   // 4. DELETE THE FILE
   // This can now see the 'filePath' variable
-  if (filePath) { 
-    try {
-      await fsp.unlink(filePath); // Delete the file
-      console.log('Successfully deleted temp file:', filePath);
-    } catch (deleteError) {
-      console.error('Failed to delete temp file:', deleteError);
-    }
-  }
+  // if (filePath) { 
+  //   try {
+  //     await fsp.unlink(filePath); // Delete the file
+  //     console.log('Successfully deleted temp file:', filePath);
+  //   } catch (deleteError) {
+  //     console.error('Failed to delete temp file:', deleteError);
+  //   }
+  // }
 }
 
 
@@ -2639,8 +2641,8 @@ try{
     const results = await yts(text);  
     const video = results.videos[0];
     // console.log(video.author)
-    const filePath = await downloadAudioAsMp3(video.url); 
-     const devsound = fs.readFileSync(filePath)
+    const filePath = await yth2.getAudio(video.url); // Assign to the outer variable
+     const devsound = await yth2.fetchBuffer(filePath.download)
      const sonst4 =await fonts.convert(video.title,'font1')
      const cons5 =video.duration.timestamp;
      const con4=await fonts.convert(video.author.name,'font1')
@@ -2676,8 +2678,8 @@ case 'ytdl': case 'dlyt':{
 
 if (!text) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'url not provided here is ex:- .ytdl https://www.youtube.com/watch?v=abc4jso0A3k '},{quoted:msg})
 try{
-    filePath = await downloadAudioAsMp3(text); // Assign to the outer variable
-     const devsound = fs.readFileSync(filePath)
+    filePath = await yth2.getAudio(text); // Assign to the outer variable
+     const devsound = yth2.fetchBuffer(filePath.download)
     // 2. Send the file FROM THE PATH
     await AlexaInc.sendMessage(msg.key.remoteJid,  { audio: devsound, mimetype: 'audio/mp4' }, { quoted: msg });
 
