@@ -3,6 +3,7 @@ const  YtDl  = require('./res/ytdl');  // Import downloadVideo from ytdl file
 const USER_DATA_FILE = './users.json';
 const fetchnews = require('./res/news');
 const yts = require('yt-search');
+const mumaker = require('mumaker');
 const weatherof = require('./res/js/weather.js')
 const { handleHangman, checkInactiveGames } = require('./hangman.js');
 const fsp = require('fs').promises;
@@ -12,9 +13,11 @@ const { v4: uuidv4 } = require('uuid');
 const QUIZ_STORAGE_DIR = './quizzes';
 const { promisify } = require('util');
 const validator = require('validator');
+const viewOnce = require('./res/js/vv.js')
 const { exec } = require('child_process');
 const yth2 = require('./res/js/ytHelper2');
-
+const {muteCommand,unmuteCommand} = require('./res/js/mute.js')
+const {warnUser,checkWarns,removeWarn} = require('./res/js/warn.js')
 const { getEmojicook } = require('./res/js/emojicook.js'); 
 const { Primbon } = require('scrape-primbon')
 const primbon = new Primbon()
@@ -42,7 +45,15 @@ const { fileutc } = require('./res/js/fu.js');
 const {runSpeedTest} = require('./res/js/speed_test.js')
 const FormData = require('form-data');
 const websearch_query = require('./res/web/web.js')
-const { updateUser, loadUserByNumber , readUsersFile,saveUsersjsonnn } = require('./store/userscontact.js');
+const {
+    updateUser,
+    loadUserByNumber,
+    loadAllUsers,
+    loadAllGroups,
+    loadAllPrivateChats,
+    readUsersFile,
+    saveUsersjsonnn
+} = require('./store/userscontact.js');
 const generatequote = require('./generatequote2.js')
 const chalk = require('kleur');
 const TEMP_DIR = path.join(__dirname, 'temp');
@@ -122,7 +133,26 @@ fetchJson = async (url, options) => {
 
 
 
+// function isBotOrFakeWeb(msg) {
+//     const id = msg.key.id;
+//     if (!id) return false;
 
+
+//     if (id.startsWith('3EB0') && id.length < 22) {
+//         return true; 
+//     }
+
+
+//     if (id.length < 20 && !id.startsWith('3EB0')) {
+//          return true;
+//     }
+    
+//     if (id.startsWith('BAE5')) {
+//         return true;
+//     }
+
+//     return false;
+// }
 
 
 
@@ -1016,6 +1046,7 @@ const isOwner = allOwners.includes(senderabfff);
 const isGroup = msg.key.remoteJid.endsWith('@g.us');
 const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : '';
 const participants = isGroup ? groupMetadata?.participants || [] : [];
+const groupname = groupMetadata?.subject || null
 const groupAdmins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
 const isAdmins = isGroup
     ? isOwner || groupAdmins.some(admin => admin.jid === senderabfff || admin.lid === senderabfff)
@@ -1027,7 +1058,7 @@ const isBotAdmins = isGroup
     ? groupAdmins.some(admin => admin.jid === (process.env['bot_nb'] + '@s.whatsapp.net') || admin.lid === '279967795560628@lid')
     : false;
 
-      updateUser(msg,participants);
+      updateUser(msg,participants,groupname);
 
 function formatUptime(uptime) {
   const seconds = Math.floor(uptime % 60);
@@ -1099,7 +1130,7 @@ let menu = `╭━━━━━━━━━━━━━━━━━━━━━�
         if (!msg.key.fromMe) {
 
                 AlexaInc.readMessages([msg.key]);
-
+// console.log(msg)
 
 // Check for conversation or extendedTextMessage first (for text messages)
 let messageText = null;
@@ -1112,7 +1143,7 @@ let messageText = null;
                 msg.message?.documentMessage?.caption ||
                 JSON.parse(
                   msg.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson || '{}'
-                ).id ||
+                ).id || msg.message?.templateButtonReplyMessage?.selectedId ||
                 null;
 
   const messageonlyText = msg.message?.conversation ||
@@ -1403,6 +1434,11 @@ if ( wwwwwww && !isYtCommand) {
 if (wwwwwww == 'delete') {
   await   AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 NSFW content is not allowed in this group! your msg will delete' });
     AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key })
+}else if (wwwwwww == 'warn') {
+  await   AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 NSFW content is not allowed in this group! your msg will delete' });
+    AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key })
+    const usertowarn = [msg.key.participant]
+        warnUser(AlexaInc,msg.key.remoteJid,AlexaInc.user.id,usertowarn,msg)
 }else{
   await   AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 NSFW content is not allowed in this group! your msg will delete and you will remove' });
   AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key }).then(response=>{
@@ -1427,7 +1463,11 @@ if ( vvvvvvvv && !isYtCommand) {
 if (vvvvvvvv == 'delete') {
     await AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 Links are not allowed in this group! , your msg will delete' });
     AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key })
-}else{
+}else if (vvvvvvvv == 'warn') {
+    await AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 Links are not allowed in this group! , your msg will delete' });
+    const usertowarn = [msg.key.participant]
+        warnUser(AlexaInc,msg.key.remoteJid,AlexaInc.user.id,usertowarn,msg)
+} else{
   await AlexaInc.sendMessage(msg.key.remoteJid, { text: '🚫 Links are not allowed in this group! , your msg will delete and you will remove' });
    
   AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key }).then(response=>{
@@ -1541,6 +1581,11 @@ const interactiveButtons = [
         header:' ',
         title: 'Fun features', 
         id: '.menu_games'
+    },
+    {
+        header:' ',
+        title: 'text maker', 
+        id: '.menu_tm'
     }
 ]
         }
@@ -1556,7 +1601,7 @@ const interactiveButtons = [
 ];
 
 const interactiveMessage = {
-  image: {url: './res/img/alexa.png'},
+  image: {url: './res/img/alexa.jpg'},
   caption: menu,
   footer: "Powered by HANSAKA",
   interactiveButtons
@@ -1564,14 +1609,14 @@ const interactiveMessage = {
 
 try {
   // 1. Read your audio file into a buffer
-  const audioBuffer = fs.readFileSync('./res/audio/menu.ogg');
+  // const audioBuffer = fs.readFileSync('./res/audio/menu.ogg');
 
-  // 2. Send the buffer directly in the 'audio' property
-  const res = await AlexaInc.sendMessage(msg.key.remoteJid, {
-    audio: audioBuffer, // <--- This is the fix
-    mimetype: 'audio/mpeg',
-    ptt: true // Send as a "push-to-talk" voice note
-  }, { quoted: msg });
+  // // 2. Send the buffer directly in the 'audio' property
+  // const res = await AlexaInc.sendMessage(msg.key.remoteJid, {
+  //   audio: audioBuffer, // <--- This is the fix
+  //   mimetype: 'audio/mpeg',
+  //   ptt: true // Send as a "push-to-talk" voice note
+  // }, { quoted: msg });
 
   // 3. Your follow-up interactive message
  await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg });
@@ -1589,6 +1634,7 @@ try {
 
 
 case "menu_util":
+case "menu_tm":
 case "menu_sticker":
 case "menu_web":
 case "menu_svm":
@@ -1599,7 +1645,29 @@ case "menu_games": {
   const respomm = command.split('_')[1];
   AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key })
   let menus;
-
+   if (respomm === 'tm') {
+    menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃            🖼 *Text formatting Commands:*           
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`metallic\`
+┃ ➥ \`ice\`
+┃ ➥ \`snow\`
+┃ ➥ \`impressive\`
+┃ ➥ \`matrix\`
+┃ ➥ \`light\`
+┃ ➥ \`neon\`
+┃ ➥ \`devil\`
+┃ ➥ \`purple\`
+┃ ➥ \`thunder\`
+┃ ➥ \`leaves\`
+┃ ➥ \`1917\`
+┃ ➥ \`arena\`
+┃ ➥ \`hacker\`
+┃ ➥ \`sand\`
+┃ ➥ \`blackpink\`
+┃ ➥ \`glitch\`
+┃ ➥ \`fire\``;
+  } else
   if (respomm === 'util') {
     menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
 ┃               🛠 *Utility Commands:*                
@@ -1639,11 +1707,15 @@ case "menu_games": {
     menus = `┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
 ┃                👥 *Groups Commands:*                
 ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`.mute\` - put only admins can send massage
+┃ ➥ \`.unmute\` - put all participants can send massage   
+┃ ➥ \`.warn\` - warn a user
+┃ ➥ \`.rmwarn\` - remove warn of a user
 ┃ ➥ \`.add\` - .add 94702368937 97897847134  
 ┃ ➥ \`.remove\` - .remove also like add  
 ┃ ➥ \`.promote\` - also like add  
 ┃ ➥ \`.demote\` - also like add  
-┃ ➥ \`.antilink\` - .antilink on/off/remove  
+┃ ➥ \`.antilink\` - .antilink on/off/remove/warn  
 ┃ ➥ \`.hidetag\` - .hidetag msg (mention all members)  
 ┃ ➥ \`.antinsfw\` - Similar to antilink  
 ┃ ➥ \`.filter\` - /filter trigger to add filter 
@@ -1726,7 +1798,7 @@ ${menus}
 `;
 
   // send or return menu
-AlexaInc.sendMessage(msg.key.remoteJid, {image: {url: './res/img/alexa.png'},caption:fmenu},{quoted:msg})
+AlexaInc.sendMessage(msg.key.remoteJid, {image: {url: './res/img/alexa.jpg'},caption:fmenu},{quoted:msg})
 
   break;
 }
@@ -1780,6 +1852,13 @@ ASSUMPTIONS:
   and 'grandfather.messageText' is a valid property from it.
 */
 
+case "vv":{
+if(!isOwner) return mess.owner();
+await viewOnce(AlexaInc,msg.key.remoteJid,msg)
+
+  break;
+}
+
 case "status":{
   if(!isOwner) return mess.owner();
 
@@ -1792,7 +1871,7 @@ case "status":{
 
 
 case "q": {
-
+  if(!isGroup) return mess.group();
     // Fix 1: Use optional chaining (?.). 
     // This prevents a crash if 'contextInfo' is null.
     const quotedid = p.replyInfo?.messageId;
@@ -2311,6 +2390,58 @@ try {
 }
 
 
+case 'listpc': {
+    const prvatechatss = loadAllPrivateChats();
+    console.log(prvatechatss);
+
+    if (prvatechatss.length === 0) {
+        await AlexaInc.sendMessage(msg.key.remoteJid, { text: '⚠️ No private chat users found in database.' }, { quoted: msg });
+        break;
+    }
+
+    // 1. Extract all JIDs for the 'mentions' parameter
+    const mentionIds = prvatechatss.map(u => u.jid);
+
+    // 2. Create the visible text (e.g. "@947123... (Name)")
+    // We use u.number for the visual tag
+    const txt = prvatechatss
+        .map((u, i) => `${i + 1}. @${u.number} (${u.name || 'Unknown'})`)
+        .join('\n');
+
+    // 3. Send message with 'mentions' array
+    await AlexaInc.sendMessage(msg.key.remoteJid, { 
+        text: `*📂 Private Chat Users List:*\n\n${txt}`, 
+        mentions: mentionIds // <--- REQUIRED to turn the text blue/clickable
+    }, { quoted: msg });
+
+    break;
+}
+
+case 'listgc': {
+    // 1. Load all groups from your database function
+    const groups = loadAllGroups();
+    
+    if (groups.length === 0) {
+        await AlexaInc.sendMessage(msg.key.remoteJid, { text: '⚠️ No groups found in database.' }, { quoted: msg });
+        break;
+    }
+
+    // 2. Create the list text
+    // We display the Name and the ID (cleaned up)
+    const txt = groups
+        .map((g, i) => `*${i + 1}. ${g.name || 'Unknown Name'}*\nID: ${g.id.split('@')[0]}`)
+        .join('\n\n');
+
+    // 3. Send the message
+    // Note: We don't need a 'mentions' array here because you can't tag a Group ID.
+    await AlexaInc.sendMessage(msg.key.remoteJid, { 
+        text: `*🏢 Group Chats List:*\n\n${txt}` 
+    }, { quoted: msg });
+
+    break;
+}
+
+
  case 'search': case 'browse':case 'web':{
 
     try {
@@ -2676,7 +2807,14 @@ console.log(error)
 
 case 'ytdl': case 'dlyt':{
 
-if (!text) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'url not provided here is ex:- .ytdl https://www.youtube.com/watch?v=abc4jso0A3k '},{quoted:msg})
+// Regex to check for valid YouTube links (Desktop, Mobile, Shorts, Short-URLs)
+const isYtUrl = /^(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|v\/|embed\/|shorts\/)|youtu\.be\/)/.test(text);
+
+if (!text || !isYtUrl) {
+    return AlexaInc.sendMessage(msg.key.remoteJid, { 
+        text: '⚠️ URL missing or invalid.\n\nPlease provide a valid YouTube URL.\nExample:\n.ytdl https://www.youtube.com/watch?v=abc4jso0A3k' 
+    }, { quoted: msg });
+}
 try{
     filePath = await yth2.getAudio(text); // Assign to the outer variable
      const devsound = yth2.fetchBuffer(filePath.download)
@@ -2755,7 +2893,100 @@ case 'anal': case 'ass': case 'boobs': case 'gonewild': case 'hanal': case 'hass
   break;
 }
 
+/////images text generation and nsfw and sfw
 
+case 'metallic':
+case 'ice':
+case 'snow':
+case 'impressive':
+case 'matrix':
+case 'light':
+case 'neon':
+case 'devil':
+case 'purple':
+case 'thunder':
+case 'leaves':
+case '1917':
+case 'arena':
+case 'hacker':
+case 'sand':
+case 'blackpink':
+case 'glitch':
+case 'fire':{
+if (!text) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'send text what you want to format ex /fire hi'});
+        try {
+            let result;
+            switch (command) {
+                case 'metallic':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/impressive-decorative-3d-metal-text-effect-798.html", text);
+                    break;
+                case 'ice':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/ice-text-effect-online-101.html", text);
+                    break;
+                case 'snow':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/create-a-snow-3d-text-effect-free-online-621.html", text);
+                    break;
+                case 'impressive':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/create-3d-colorful-paint-text-effect-online-801.html", text);
+                    break;
+                case 'matrix':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/matrix-text-effect-154.html", text);
+                    break;
+                case 'light':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/light-text-effect-futuristic-technology-style-648.html", text);
+                    break;
+                case 'neon':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/create-colorful-neon-light-text-effects-online-797.html", text);
+                    break;
+                case 'devil':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/neon-devil-wings-text-effect-online-683.html", text);
+                    break;
+                case 'purple':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/purple-text-effect-online-100.html", text);
+                    break;
+                case 'thunder':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/thunder-text-effect-online-97.html", text);
+                    break;
+                case 'leaves':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/green-brush-text-effect-typography-maker-online-153.html", text);
+                    break;
+                case '1917':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/1917-style-text-effect-523.html", text);
+                    break;
+                case 'arena':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/create-cover-arena-of-valor-by-mastering-360.html", text);
+                    break;
+                case 'hacker':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/create-anonymous-hacker-avatars-cyan-neon-677.html", text);
+                    break;
+                case 'sand':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/write-names-and-messages-on-the-sand-online-582.html", text);
+                    break;
+                case 'blackpink':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/create-a-blackpink-style-logo-with-members-signatures-810.html", text);
+                    break;
+                case 'glitch':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/create-digital-glitch-text-effects-online-767.html", text);
+                    break;
+                case 'fire':
+                    result = await mumaker.ephoto("https://en.ephoto360.com/flame-lettering-effect-372.html", text);
+                    break;
+                }
+
+            // if (!result || !result.image) {
+            //     throw new Error('No image URL received from the API');
+            // }
+
+            await AlexaInc.sendMessage(msg.key.remoteJid, {image:{url:result.image}});
+        } catch (error) {
+            console.error('Error in text generator:', error);
+            await AlexaInc.sendMessage(msg.key.remoteJid, {text:error.message} );
+        }
+
+
+
+  break
+}
 
 case 'coffee': case 'food': case 'holo': case 'kanna':
   {
@@ -3179,6 +3410,122 @@ break;
 
 
 //group main functionality
+
+
+//warn
+case "warn": case "warning":{
+if (!isGroup) return mess.group();
+if (!isAdmins && !isOwner) return mess['admin&owner']();
+if (!isBotAdmins) return mess.botadmin();
+let users = [];
+    if (msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
+        users = msg.message.extendedTextMessage.contextInfo.mentionedJid;
+
+    } else if (args.length > 0) {
+    users = args
+        .map(arg => arg.replace(/^\+/, ''))
+        .filter(arg => /^\d{5,15}$/.test(arg))
+        .map(num => num + '@s.whatsapp.net');
+      console.log(users.length)
+    if (users.length === 0) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'enter valid number'},{quoted:msg}) ; // if no valid numbers, stop
+}else if (msg.message.extendedTextMessage?.contextInfo?.participant) {
+        users = [msg.message.extendedTextMessage.contextInfo.participant];
+    } else {
+        return AlexaInc.sendMessage(msg.key.remoteJid, { text: `Please mention someone, reply to a user, or provide a number to ${command}!` });
+    }
+
+    await warnUser(AlexaInc,msg.key.remoteJid,msg.key.participant,users,msg)
+
+
+  break;
+}
+case "warns": case "warnings":{
+if (!isGroup) return mess.group();
+if (!isAdmins && !isOwner) return mess['admin&owner']();
+if (!isBotAdmins) return mess.botadmin();
+
+let users = [];
+    if (msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
+        users = msg.message.extendedTextMessage.contextInfo.mentionedJid;
+
+    } else if (args.length > 0) {
+    users = args
+        .map(arg => arg.replace(/^\+/, ''))
+        .filter(arg => /^\d{5,15}$/.test(arg))
+        .map(num => num + '@s.whatsapp.net');
+      console.log(users.length)
+    if (users.length === 0) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'enter valid number'},{quoted:msg}) ; // if no valid numbers, stop
+}else if (msg.message.extendedTextMessage?.contextInfo?.participant) {
+        users = [msg.message.extendedTextMessage.contextInfo.participant];
+    } else {
+        return AlexaInc.sendMessage(msg.key.remoteJid, { text: `Please mention someone, reply to a user, or provide a number to ${command}!` });
+    }
+// console.log(users)
+    await checkWarns(AlexaInc,msg.key.remoteJid,users)
+
+
+break;
+}
+
+case"remwarn":case"rmwarn":{
+if (!isGroup) return mess.group();
+if (!isAdmins && !isOwner) return mess['admin&owner']();
+if (!isBotAdmins) return mess.botadmin();
+let users = [];
+    if (msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
+        users = msg.message.extendedTextMessage.contextInfo.mentionedJid;
+
+    } else if (args.length > 0) {
+    users = args
+        .map(arg => arg.replace(/^\+/, ''))
+        .filter(arg => /^\d{5,15}$/.test(arg))
+        .map(num => num + '@s.whatsapp.net');
+      console.log(users.length)
+    if (users.length === 0) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'enter valid number'},{quoted:msg}) ; // if no valid numbers, stop
+}else if (msg.message.extendedTextMessage?.contextInfo?.participant) {
+        users = [msg.message.extendedTextMessage.contextInfo.participant];
+    } else {
+        return AlexaInc.sendMessage(msg.key.remoteJid, { text: `Please mention someone, reply to a user, or provide a number to ${command}!` });
+    }
+await removeWarn(AlexaInc,msg.key.remoteJid,users)
+break;
+}
+
+case"rmw_fbc":{
+if (!isGroup) return mess.group();
+if (!isAdmins && !isOwner) return mess['admin&owner']();
+if (!isBotAdmins) return mess.botadmin();
+const users = [text]
+await removeWarn(AlexaInc,msg.key.remoteJid,users)
+  break
+}
+
+case "mute":                {
+ if (!isGroup) return mess.group();
+    if (!isAdmins && !isOwner) return mess['admin&owner']() ;
+if(!isBotAdmins) return mess.botadmin()
+                    const muteArg = args[1];
+                    const muteDuration = muteArg !== undefined ? parseInt(muteArg, 10) : undefined;
+                    if (muteArg !== undefined && (isNaN(muteDuration) || muteDuration <= 0)) {
+                        await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please provide a valid number of minutes or use .mute with no number to mute immediately.', ...channelInfo }, { quoted: message });
+                    } else {
+                        await muteCommand(AlexaInc, msg.key.remoteJid, msg.key.participant, msg, muteDuration);
+                    }
+
+
+                    break;
+                }
+  case"unmute":{
+
+if (!isGroup) return mess.group();
+if (!isAdmins && !isOwner) return mess['admin&owner']() ;
+if (!isBotAdmins) return mess.botadmin();
+
+await unmuteCommand(AlexaInc,msg.key.remoteJid)
+
+    break;
+  }
+
 case 'add': 
 case 'remove': 
 case 'promote': 
@@ -3190,7 +3537,7 @@ case 'demote': {
     if (!isBotAdmins) 
         return mess.botadmin();
 
-    console.log({ isGroup, isAdmins, isBotAdmins });
+    // console.log({ isGroup, isAdmins, isBotAdmins });
 
     // Get mentioned users if any
 let users = [];
@@ -3432,10 +3779,11 @@ case 'antilink': {
   const action = args[0] ? args[0].toLowerCase() : '';
 
   // 1. Updated usage check
-  if (action !== 'on' && action !== 'off' && action !== 'remove') {
-    const usageText = 'Usage: .antilink [on | off | remove]\n\n' +
+  if (action !== 'on' && action !== 'off' && action !== 'remove' && action !== 'warn') {
+    const usageText = 'Usage: .antilink [on | off | remove | warn]\n\n' +
                       '- on: Delete messages with links.\n' +
-                      '- remove: Remove user who sends a link.\n' +
+                      '- remove: Remove user who sends a link.\n'+
+                      '- warn: Send warning.' +
                       '- off: Do nothing.';
     return AlexaInc.sendMessage(msg.key.remoteJid, { text: usageText });
   }
@@ -3457,6 +3805,11 @@ case 'antilink': {
       antilinkValue = true;
       linkActionValue = 'remove'; // Action is 'remove'
       replyMessage = 'Antilink is now ON. I will *remove* users who send links.';
+      break;
+          case 'warn':
+      antilinkValue = true;
+      linkActionValue = 'warn'; // Action is 'remove'
+      replyMessage = 'Antilink is now ON. I will *warn* users who send links.';
       break;
 
     case 'off':
@@ -3504,10 +3857,11 @@ case 'antinsfw': {
   const action = args[0] ? args[0].toLowerCase() : '';
 
   // 1. Updated usage check
-  if (action !== 'on' && action !== 'off' && action !== 'remove') {
-    const usageText = 'Usage: .antinsfw [on | off | remove]\n\n' +
-                      '- on: Delete NSFW messages.\n' +
-                      '- remove: Remove user who sends NSFW.\n' +
+  if (action !== 'on' && action !== 'off' && action !== 'remove' && action !== 'warn') {
+    const usageText = 'Usage: .antilink [on | off | remove | warn]\n\n' +
+                      '- on: Delete messages with links.\n' +
+                      '- remove: Remove user who sends a link.\n'+
+                      '- warn: Send warning.' +
                       '- off: Do nothing.';
     return AlexaInc.sendMessage(msg.key.remoteJid, { text: usageText });
   }
@@ -3530,7 +3884,11 @@ case 'antinsfw': {
       nsfwActionValue = 'remove'; // Action is 'remove'
       replyMessage = 'Antinsfw is now ON. I will *remove* users who send NSFW.';
       break;
-
+          case 'warn':
+      antilinkValue = true;
+      linkActionValue = 'warn'; // Action is 'remove'
+      replyMessage = 'Antilink is now ON. I will *warn* users who send links.';
+      break;
     case 'off':
       antinsfwValue = false;
       nsfwActionValue = 'false'; // Set action to 'false' (safer than null)
@@ -3921,7 +4279,7 @@ const interactiveButtons = [
 ];
 
 const interactiveMessage = {
-  image: {url: './res/img/alexa.png'},
+  image: {url: './res/img/alexa.jpg'},
   caption: menu,
   footer: "Powered by HANSAKA",
   interactiveButtons
@@ -3930,14 +4288,7 @@ const interactiveMessage = {
 
 try {
   // 1. Read your audio file into a buffer
-  const audioBuffer = fs.readFileSync('./res/audio/menu.ogg');
 
-  // 2. Send the buffer directly in the 'audio' property
-  const res = await AlexaInc.sendMessage(msg.key.remoteJid, {
-    audio: audioBuffer, // <--- This is the fix
-    mimetype: 'audio/mpeg',
-    ptt: true // Send as a "push-to-talk" voice note
-  }, { quoted: msg });
 
   // 3. Your follow-up interactive message
  await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, { quoted: msg });

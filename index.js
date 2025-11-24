@@ -113,7 +113,7 @@ let restartHistory = JSON.parse(fs.readFileSync('./restarts.json', 'utf8'));
  * @param {object} msg The raw Baileys message object
  * @returns {object} A simplified message object
  */
-function parseMessage(msg) {
+function parseMessage(msg ,AlexaInc) {
     if (!msg || !msg.message) return {};
 
     const m = msg.message;
@@ -163,9 +163,12 @@ function parseMessage(msg) {
     const mentionedJids = contextInfo?.mentionedJid;
 
     // 4. Get sender info
+ // 4. Get sender info
     const isGroup = msg.key.remoteJid.endsWith("@g.us");
-    const sender = msg.key.fromMe ? "me" : (isGroup ? msg.key.participant : msg.key.remoteJid);
-
+    
+    const sender = isGroup 
+        ? (msg.key.participant || msg.participant) 
+        : (msg.key.fromMe ? AlexaInc.user.id.split(':')[0] + '@s.whatsapp.net' : msg.key.remoteJid);
     // 5. Get the command and the text *after* the command
     const prefix = /^[./!]/; // Assumes prefix is /, ., or !
     const body = text.trim().split(/ +/);
@@ -206,120 +209,141 @@ function parseMessage(msg) {
  * Saves a message, including media decryption keys (mediaKey, iv, etc.).
  * Converts Buffers to base64 for JSON storage.
  */
+function getContentType(content) {
+    if (!content) return null;
+    const keys = Object.keys(content);
+    const key = keys.find(k => (k === 'conversation' || k.endsWith('Message')) && k !== 'senderKeyDistributionMessage' && k !== 'messageContextInfo');
+    return key;
+}
+
 function saveMessage(jid, msg) {
-  if (!jid || !msg?.message) return;
+    if (!jid || !msg?.message) return;
 
-  const isGroup = jid.endsWith("@g.us");
-  const filePath = path.join(STORE_DIR, `${jid}.json`);
-  let chatData = [];
+    // 1. Normalize the Message (Unwrap Ephemeral/ViewOnce if needed)
+    // This handles 'Disappearing Messages' which wrap the actual content
+    let finalMessage = msg.message;
+    if (finalMessage.ephemeralMessage) {
+        finalMessage = finalMessage.ephemeralMessage.message;
+    }
+    if (finalMessage.viewOnceMessage) {
+        finalMessage = finalMessage.viewOnceMessage.message;
+    }
+    
+    // 2. Get the Real Message Type safely
+    const msgType = getContentType(finalMessage);
+    if (!msgType) return; // Skip if no valid content found
 
-  // Load existing messages
-  if (fs.existsSync(filePath)) {
-    try {
-      chatData = JSON.parse(fs.readFileSync(filePath));
-    } catch {
-      chatData = [];
-    }
-  }
+    const messageContent = finalMessage[msgType];
 
-  // --- Start: Media Logic ---
-  let messageText = "";
-  let mediaUrl = null;
-  let mediaMimetype = null;
-  // --- Fields for decryption ---
-  let mediaKey = null;
-  let mediaIv = null;
-  let mediaFileEncSha256 = null;
-  let mediaFileSha256 = null;
+    const isGroup = jid.endsWith("@g.us");
+    const filePath = path.join(STORE_DIR, `${jid}.json`);
+    let chatData = [];
 
-  const msgType = Object.keys(msg.message)[0];
-  const messageContent = msg.message[msgType];
+    // Load existing messages
+    if (fs.existsSync(filePath)) {
+        try {
+            chatData = JSON.parse(fs.readFileSync(filePath));
+        } catch {
+            chatData = [];
+        }
+    }
 
-  switch (msgType) {
-    case "conversation":
-      messageText = messageContent;
-      break;
-    case "extendedTextMessage":
-      messageText = messageContent.text;
-      break;
-    case "imageMessage":
-    case "videoMessage":
-    case "documentMessage":
-    case "stickerMessage":
-    case "audioMessage":
-      messageText = messageContent.caption || "";
-      mediaUrl = messageContent.url;
-      mediaMimetype = messageContent.mimetype;
+    // --- Start: Media Logic ---
+    let messageText = "";
+    let mediaUrl = null;
+    let mediaMimetype = null;
+    let mediaKey = null;
+    let mediaIv = null;
+    let mediaFileEncSha256 = null;
+    let mediaFileSha256 = null;
 
-      // --- Store decryption keys as base64 strings ---
-      mediaKey = messageContent.mediaKey?.toString('base64') || null;
-      mediaIv = messageContent.iv?.toString('base64') || null;
-      mediaFileEncSha256 = messageContent.fileEncSha256?.toString('base64') || null;
-      mediaFileSha256 = messageContent.fileSha256?.toString('base64') || null;
-      break;
-    default:
-      // Other message types (reaction, poll, etc.)
-      break;
-  }
-  // --- End: Media Logic ---
+    switch (msgType) {
+        case "conversation":
+            messageText = messageContent;
+            break;
+        case "extendedTextMessage":
+            messageText = messageContent.text;
+            break;
+        case "imageMessage":
+        case "videoMessage":
+        case "documentMessage":
+        case "stickerMessage":
+        case "audioMessage":
+            messageText = messageContent.caption || "";
+            mediaUrl = messageContent.url;
+            mediaMimetype = messageContent.mimetype;
+            mediaKey = messageContent.mediaKey?.toString('base64') || null;
+            mediaIv = messageContent.iv?.toString('base64') || null;
+            mediaFileEncSha256 = messageContent.fileEncSha256?.toString('base64') || null;
+            mediaFileSha256 = messageContent.fileSha256?.toString('base64') || null;
+            break;
+        default:
+            // If we can't parse the text/media, we might still want to save it 
+            // simply to record that a message existed.
+            break;
+    }
+    // --- End: Media Logic ---
 
-  // Handle replies
-  let replyInfo = null;
-  const contextInfo = messageContent?.contextInfo;
+    // Handle replies
+    let replyInfo = null;
+    const contextInfo = messageContent?.contextInfo;
 
-  if (contextInfo?.quotedMessage) {
-    const quoted = contextInfo.quotedMessage;
-    const quotedType = Object.keys(quoted)[0];
-    const quotedContent = quoted[quotedType];
-    let quotedText = "";
+    if (contextInfo?.quotedMessage) {
+        const quoted = contextInfo.quotedMessage;
+        // Use the same safe logic for quoted messages
+        const quotedType = getContentType(quoted); 
+        const quotedContent = quoted[quotedType];
+        let quotedText = "";
 
-    switch (quotedType) {
-      case "conversation":
-        quotedText = quotedContent;
-        break;
-      case "extendedTextMessage":
-        quotedText = quotedContent.text || "";
-        break;
-      case "imageMessage":
-      case "videoMessage":
-      case "documentMessage":
-        quotedText = quotedContent.caption || "";
-        break;
-    }
+        if (quotedContent) {
+            switch (quotedType) {
+                case "conversation":
+                    quotedText = quotedContent;
+                    break;
+                case "extendedTextMessage":
+                    quotedText = quotedContent.text || "";
+                    break;
+                case "imageMessage":
+                case "videoMessage":
+                case "documentMessage":
+                    quotedText = quotedContent.caption || "";
+                    break;
+            }
+        }
 
-    replyInfo = {
-      sender: contextInfo.participant,
-      messageId: contextInfo.stanzaId,
-      messageText: quotedText,
-    };
-  }
+        replyInfo = {
+            sender: contextInfo.participant,
+            messageId: contextInfo.stanzaId,
+            messageText: quotedText,
+        };
+    }
 
-  // --- Formatted Object ---
-  const formatted = {
-    sender: msg.key.fromMe ? "me" : isGroup ? msg.key.participant || msg.participant : msg.key.remoteJid,
-    pushname: msg.pushname,
-    messageId: msg.key.id,
-    messageText: messageText,
-    mediaUrl: mediaUrl,
-    mediaMimetype: mediaMimetype,
-    // --- New fields added (as base64 strings) ---
-    mediaKey: mediaKey,
-    mediaIv: mediaIv,
-    mediaFileEncSha256: mediaFileEncSha256,
-    mediaFileSha256: mediaFileSha256,
-    //
-    reply: replyInfo,
-  };
+    // --- Formatted Object ---
+    const formatted = {
+        sender: msg.key.fromMe ? "me" : (isGroup ? (msg.key.participant || msg.participant) : msg.key.remoteJid),
+        pushname: msg.pushName, // Note: pushName usually capital N
+        messageId: msg.key.id,
+        messageText: messageText,
+        type: msgType, // Useful for debugging
+        mediaUrl: mediaUrl,
+        mediaMimetype: mediaMimetype,
+        mediaKey: mediaKey,
+        mediaIv: mediaIv,
+        mediaFileEncSha256: mediaFileEncSha256,
+        mediaFileSha256: mediaFileSha256,
+        reply: replyInfo,
+        timestamp: msg.messageTimestamp // Useful to have
+    };
 
-  // Avoid duplicates
-  if (!chatData.find(m => m.messageId === formatted.messageId)) {
-    chatData.push(formatted);
-  }
+    // Avoid duplicates
+    if (!chatData.find(m => m.messageId === formatted.messageId)) {
+        chatData.push(formatted);
+        
+        // Only keep last 500
+        if (chatData.length > 500) chatData = chatData.slice(-500);
 
-  // Optional: keep last 500 messages
-  if (chatData.length > 500) chatData = chatData.slice(-500);
-
-  fs.writeFileSync(filePath, JSON.stringify(chatData, null, 2));
+        fs.writeFileSync(filePath, JSON.stringify(chatData, null, 2));
+    }
 }
 
 
@@ -414,43 +438,43 @@ function loadMessagesBetween(jid, startId, endId) {
 
 
 
-const STORE_DIR2 = path.join(__dirname, "store_ev");
-if (!fs.existsSync(STORE_DIR2)) fs.mkdirSync(STORE_DIR2);
+// const STORE_DIR2 = path.join(__dirname, "store_ev");
+// if (!fs.existsSync(STORE_DIR2)) fs.mkdirSync(STORE_DIR2);
 
-// Save any event
-function saveEvent(eventName, data) {
-  const filePath = path.join(STORE_DIR2, `${eventName}.json`);
-  let existing = [];
+// // Save any event
+// function saveEvent(eventName, data) {
+//   const filePath = path.join(STORE_DIR2, `${eventName}.json`);
+//   let existing = [];
 
-  if (fs.existsSync(filePath)) {
-    try {
-      existing = JSON.parse(fs.readFileSync(filePath));
-    } catch {
-      existing = [];
-    }
-  }
+//   if (fs.existsSync(filePath)) {
+//     try {
+//       existing = JSON.parse(fs.readFileSync(filePath));
+//     } catch {
+//       existing = [];
+//     }
+//   }
 
-  existing.push({
-    timestamp: Date.now(),
-    data,
-  });
+//   existing.push({
+//     timestamp: Date.now(),
+//     data,
+//   });
 
-  // Optional: keep last 500 events per type
-  if (existing.length > 500) existing = existing.slice(-500);
+//   // Optional: keep last 500 events per type
+//   if (existing.length > 500) existing = existing.slice(-500);
 
-  fs.writeFileSync(filePath, JSON.stringify(existing, null, 2));
-}
+//   fs.writeFileSync(filePath, JSON.stringify(existing, null, 2));
+// }
 
-// Load events of a certain type
-function loadEvents(eventName) {
-  const filePath = path.join(STORE_DIR2, `${eventName}.json`);
-  if (!fs.existsSync(filePath)) return [];
-  try {
-    return JSON.parse(fs.readFileSync(filePath));
-  } catch {
-    return [];
-  }
-}
+// // Load events of a certain type
+// function loadEvents(eventName) {
+//   const filePath = path.join(STORE_DIR2, `${eventName}.json`);
+//   if (!fs.existsSync(filePath)) return [];
+//   try {
+//     return JSON.parse(fs.readFileSync(filePath));
+//   } catch {
+//     return [];
+//   }
+// }
 
 
 
@@ -556,53 +580,53 @@ const CustomBrowsersMap = {
         // implement to handle retries & poll updates
     });
 
-const eventsToStore = [
-  // Messages
-  'messages.upsert',      // new incoming messages
-  'messages.update',      // message status updates (read, deleted, etc.)
-  'messages.delete',      // message deletions
+// const eventsToStore = [
+//   // Messages
+//   'messages.upsert',      // new incoming messages
+//   'messages.update',      // message status updates (read, deleted, etc.)
+//   'messages.delete',      // message deletions
 
-  // Connections
-  'connection.update',    // connection status (open, close, reconnect)
-  'creds.update',         // credentials updated
+//   // Connections
+//   'connection.update',    // connection status (open, close, reconnect)
+//   'creds.update',         // credentials updated
 
-  // Groups
-  'group-participants.update', // someone joins/leaves/kicked
-  'group-update',             // group settings changed
+//   // Groups
+//   'group-participants.update', // someone joins/leaves/kicked
+//   'group-update',             // group settings changed
 
-  // Chats & Contacts
-  'chats.upsert',        // new chat added
-  'chats.update',        // chat info updated
-  'contacts.upsert',     // contact info added
-  'contacts.update',     // contact info updated
+//   // Chats & Contacts
+//   'chats.upsert',        // new chat added
+//   'chats.update',        // chat info updated
+//   'contacts.upsert',     // contact info added
+//   'contacts.update',     // contact info updated
 
-  // Presence / Typing
-  'presence.update',     // user presence (online/offline)
-  'user-presence.update',// typing/recording
-  'reaction',            // message reactions
-  'poll.update',         // poll updates
+//   // Presence / Typing
+//   'presence.update',     // user presence (online/offline)
+//   'user-presence.update',// typing/recording
+//   'reaction',            // message reactions
+//   'poll.update',         // poll updates
 
-  // Misc / Other
-  'call',                // call received
-  'call.reject',         // call rejected
-  'call.accept',         // call accepted
-  'blocklist.update',    // blocked contacts
-  'chats.delete',        // chat deleted
-  'messages.reaction',   // reactions to messages
-  'history.sync',        // history sync notifications
-  'message-receipt.update', // message read/delivery receipts
-];
+//   // Misc / Other
+//   'call',                // call received
+//   'call.reject',         // call rejected
+//   'call.accept',         // call accepted
+//   'blocklist.update',    // blocked contacts
+//   'chats.delete',        // chat deleted
+//   'messages.reaction',   // reactions to messages
+//   'history.sync',        // history sync notifications
+//   'message-receipt.update', // message read/delivery receipts
+// ];
 
 
-for (const evName of eventsToStore) {
-  AlexaInc.ev.on(evName, (data) => {
-    try {
-      saveEvent(evName, data); // your persistent store function
-    } catch (err) {
-      console.error(`❌ Failed to store event ${evName}:`, err);
-    }
-  });
-}
+// for (const evName of eventsToStore) {
+//   AlexaInc.ev.on(evName, (data) => {
+//     try {
+//       saveEvent(evName, data); // your persistent store function
+//     } catch (err) {
+//       console.error(`❌ Failed to store event ${evName}:`, err);
+//     }
+//   });
+// }
 
     AlexaInc.ev.on('qr',(qr)=>{
         console.log("\n📌 Scan this QR code with WhatsApp:\n");
@@ -1010,16 +1034,22 @@ const groupIds = Object.keys(groups);
     console.error(`Server error: ${data.message}`);
   }
 };
-    AlexaInc.ev.on('messages.upsert', (m) => {
-          const { messages } = m;
-  if (!messages?.length) return;
+AlexaInc.ev.on('messages.upsert', (m) => {
+    const { messages, type } = m; // Get type
+    if (!messages?.length) return;
 
-  const msg = messages[0];
-  const jid = msg.key.remoteJid;
-const p = parseMessage(msg);
-  saveMessage(jid, msg);
-        handleMessage(AlexaInc, m , loadMessage, saveMessage, p,alexasocket)
-    }); // Call bot.js function
+    const msg = messages[0];
+    const jid = msg.key.remoteJid;
+
+    // OPTIONAL: If you want to ignore history syncs (old messages) but keep Desktop commands:
+    // if (type === 'append' && !msg.key.fromMe) return; 
+
+    const p = parseMessage(msg,AlexaInc);
+    saveMessage(jid, msg);
+    
+    // Pass 'type' or handle it inside bot.js
+    handleMessage(AlexaInc, m, loadMessage, saveMessage, p, alexasocket);
+});
 
     let isConnected = false;
 

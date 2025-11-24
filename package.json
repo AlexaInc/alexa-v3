@@ -42,6 +42,7 @@
         "kleur": "^4.1.5",
         "link-preview-js": "^3.0.14",
         "moment-timezone": "^0.5.47",
+        "mumaker": "^2.0.0",
         "mysql2": "^3.12.0",
         "node-cache": "^5.1.2",
         "node-fetch": "^2.7.0",
