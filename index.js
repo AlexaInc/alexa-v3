@@ -113,96 +113,99 @@ let restartHistory = JSON.parse(fs.readFileSync('./restarts.json', 'utf8'));
  * @param {object} msg The raw Baileys message object
  * @returns {object} A simplified message object
  */
-function parseMessage(msg ,AlexaInc) {
+/**
+ * Parses the raw message object into a simple, usable format.
+ * Handles Ephemeral and ViewOnce unwrapping automatically.
+ */
+function parseMessage(msg, AlexaInc) {
     if (!msg || !msg.message) return {};
 
-    const m = msg.message;
-    const msgType = Object.keys(m)[0];
+    // 1. Unwrap Ephemeral / ViewOnce messages to get real content
+    let m = msg.message;
+    if (m.ephemeralMessage) {
+        m = m.ephemeralMessage.message;
+    }
+    if (m.viewOnceMessage) {
+        m = m.viewOnceMessage.message;
+    }
+
+    // 2. Get the Message Type safely
+    const getContentType = (content) => {
+        if (!content) return null;
+        const keys = Object.keys(content);
+        const key = keys.find(k => (k === 'conversation' || k.endsWith('Message')) && k !== 'senderKeyDistributionMessage' && k !== 'messageContextInfo');
+        return key;
+    };
+
+    const msgType = getContentType(m);
     const messageContent = m[msgType];
 
     if (!messageContent) return {};
 
-    // This is the ONLY contextInfo you need.
-    // It comes from imageMessage, extendedTextMessage, videoMessage, etc.
     const contextInfo = messageContent.contextInfo;
 
-    // 1. Get the full text (from caption or text)
-    const text = messageContent.text || messageContent.caption || "";
-    
-    // 2. Get the quoted message ID
-    // We just use optional chaining on the 'contextInfo' variable.
+    // 3. Get the full text (from caption or text)
+    const text = messageContent.text || messageContent.caption || messageContent.conversation || "";
+
+    // 4. Handle Reply Info
     const quotedid = contextInfo?.stanzaId;
-  let replyInfo = null;
-  if (contextInfo?.quotedMessage) {
-    const quoted = contextInfo.quotedMessage;
-    const quotedType = Object.keys(quoted)[0];
-    const quotedContent = quoted[quotedType];
-    let quotedText = "";
-
-    switch (quotedType) {
-      case "conversation":
-        quotedText = quotedContent;
-        break;
-      case "extendedTextMessage":
-        quotedText = quotedContent.text || "";
-        break;
-      case "imageMessage":
-      case "videoMessage":
-      case "documentMessage":
-        quotedText = quotedContent.caption || "";
-        break;
-    }
-
-    replyInfo = {
-      sender: contextInfo.participant,
-      messageId: contextInfo.stanzaId,
-      messageText: quotedText,
-    };
-  }
-    // 3. Get mentioned JIDs
-    const mentionedJids = contextInfo?.mentionedJid;
-
-    // 4. Get sender info
- // 4. Get sender info
-    const isGroup = msg.key.remoteJid.endsWith("@g.us");
+    let replyInfo = null;
     
+    if (contextInfo?.quotedMessage) {
+        const quoted = contextInfo.quotedMessage;
+        const quotedType = getContentType(quoted);
+        const quotedContent = quoted[quotedType];
+        let quotedText = "";
+
+        if (quotedContent) {
+            quotedText = quotedContent.text || quotedContent.caption || quotedContent.conversation || "";
+        }
+
+        replyInfo = {
+            sender: contextInfo.participant,
+            messageId: contextInfo.stanzaId,
+            messageText: quotedText,
+        };
+    }
+
+    // 5. Get sender info
+    const isGroup = msg.key.remoteJid.endsWith("@g.us");
     const sender = isGroup 
         ? (msg.key.participant || msg.participant) 
         : (msg.key.fromMe ? AlexaInc.user.id.split(':')[0] + '@s.whatsapp.net' : msg.key.remoteJid);
-    // 5. Get the command and the text *after* the command
-    const prefix = /^[./!]/; // Assumes prefix is /, ., or !
+
+    // 6. Command parsing
+    const prefix = /^[./!]/; 
     const body = text.trim().split(/ +/);
     const commandWithPrefix = body.shift().toLowerCase();
     
     let command = null;
-    let commandText = text; // Default to full text if no command
+    let commandText = text; 
 
     if (prefix.test(commandWithPrefix)) {
-        command = commandWithPrefix.slice(1); // "filter"
-        commandText = body.join(' '); // "hi"
+        command = commandWithPrefix.slice(1);
+        commandText = body.join(' '); 
     }
 
     // --- Return a clean, simple object ---
     return {
-        msg, // The original message, just in case
+        msg, // Original raw message (kept for references like .key)
         msgType,
-        messageContent,
+        messageContent, // The UNWRAPPED content
         contextInfo,
         replyInfo,
-        text: text,           // The full, original text/caption
-        command: command,       // The command (e.g., "filter")
-        commandText: commandText, // The text after the command (e.g., "hi")
-        
-        quotedid: quotedid,     // The ID of the replied-to message
-        mentionedJids: mentionedJids, // List of mentions
-        
+        text: text,
+        command: command,
+        commandText: commandText,
+        quotedid: quotedid,
+        mentionedJids: contextInfo?.mentionedJid || [],
         sender: sender,
         isGroup: isGroup,
         fromMe: msg.key.fromMe,
-        jid: msg.key.remoteJid
+        jid: msg.key.remoteJid,
+        pushName: msg.pushName
     };
 }
-
 
 
 /**
@@ -216,26 +219,16 @@ function getContentType(content) {
     return key;
 }
 
-function saveMessage(jid, msg) {
-    if (!jid || !msg?.message) return;
+/**
+ * Saves a message using the ALREADY PARSED object.
+ * Drastically reduces processing time by avoiding re-parsing.
+ * @param {string} jid 
+ * @param {object} p - The parsed message object returned by parseMessage()
+ */
+function saveMessage(jid, p) {
+    // Basic validation using the parsed object
+    if (!jid || !p || !p.messageContent) return;
 
-    // 1. Normalize the Message (Unwrap Ephemeral/ViewOnce if needed)
-    // This handles 'Disappearing Messages' which wrap the actual content
-    let finalMessage = msg.message;
-    if (finalMessage.ephemeralMessage) {
-        finalMessage = finalMessage.ephemeralMessage.message;
-    }
-    if (finalMessage.viewOnceMessage) {
-        finalMessage = finalMessage.viewOnceMessage.message;
-    }
-    
-    // 2. Get the Real Message Type safely
-    const msgType = getContentType(finalMessage);
-    if (!msgType) return; // Skip if no valid content found
-
-    const messageContent = finalMessage[msgType];
-
-    const isGroup = jid.endsWith("@g.us");
     const filePath = path.join(STORE_DIR, `${jid}.json`);
     let chatData = [];
 
@@ -248,91 +241,35 @@ function saveMessage(jid, msg) {
         }
     }
 
-    // --- Start: Media Logic ---
-    let messageText = "";
-    let mediaUrl = null;
-    let mediaMimetype = null;
-    let mediaKey = null;
-    let mediaIv = null;
-    let mediaFileEncSha256 = null;
-    let mediaFileSha256 = null;
-
-    switch (msgType) {
-        case "conversation":
-            messageText = messageContent;
-            break;
-        case "extendedTextMessage":
-            messageText = messageContent.text;
-            break;
-        case "imageMessage":
-        case "videoMessage":
-        case "documentMessage":
-        case "stickerMessage":
-        case "audioMessage":
-            messageText = messageContent.caption || "";
-            mediaUrl = messageContent.url;
-            mediaMimetype = messageContent.mimetype;
-            mediaKey = messageContent.mediaKey?.toString('base64') || null;
-            mediaIv = messageContent.iv?.toString('base64') || null;
-            mediaFileEncSha256 = messageContent.fileEncSha256?.toString('base64') || null;
-            mediaFileSha256 = messageContent.fileSha256?.toString('base64') || null;
-            break;
-        default:
-            // If we can't parse the text/media, we might still want to save it 
-            // simply to record that a message existed.
-            break;
-    }
-    // --- End: Media Logic ---
-
-    // Handle replies
-    let replyInfo = null;
-    const contextInfo = messageContent?.contextInfo;
-
-    if (contextInfo?.quotedMessage) {
-        const quoted = contextInfo.quotedMessage;
-        // Use the same safe logic for quoted messages
-        const quotedType = getContentType(quoted); 
-        const quotedContent = quoted[quotedType];
-        let quotedText = "";
-
-        if (quotedContent) {
-            switch (quotedType) {
-                case "conversation":
-                    quotedText = quotedContent;
-                    break;
-                case "extendedTextMessage":
-                    quotedText = quotedContent.text || "";
-                    break;
-                case "imageMessage":
-                case "videoMessage":
-                case "documentMessage":
-                    quotedText = quotedContent.caption || "";
-                    break;
-            }
-        }
-
-        replyInfo = {
-            sender: contextInfo.participant,
-            messageId: contextInfo.stanzaId,
-            messageText: quotedText,
-        };
-    }
+    // --- Media Logic (Extracting from p.messageContent) ---
+    // We don't need to check msgType string matching, we just check if the properties exist
+    const content = p.messageContent;
+    
+    const mediaUrl = content.url || null;
+    const mediaMimetype = content.mimetype || null;
+    const mediaKey = content.mediaKey?.toString('base64') || null;
+    const mediaIv = content.iv?.toString('base64') || null;
+    const mediaFileEncSha256 = content.fileEncSha256?.toString('base64') || null;
+    const mediaFileSha256 = content.fileSha256?.toString('base64') || null;
 
     // --- Formatted Object ---
     const formatted = {
-        sender: msg.key.fromMe ? "me" : (isGroup ? (msg.key.participant || msg.participant) : msg.key.remoteJid),
-        pushname: msg.pushName, // Note: pushName usually capital N
-        messageId: msg.key.id,
-        messageText: messageText,
-        type: msgType, // Useful for debugging
-        mediaUrl: mediaUrl,
-        mediaMimetype: mediaMimetype,
-        mediaKey: mediaKey,
-        mediaIv: mediaIv,
-        mediaFileEncSha256: mediaFileEncSha256,
-        mediaFileSha256: mediaFileSha256,
-        reply: replyInfo,
-        timestamp: msg.messageTimestamp // Useful to have
+        sender: p.fromMe ? "me" : p.sender,
+        pushname: p.pushName,
+        messageId: p.msg.key.id, // Accessing key from the raw msg inside p
+        messageText: p.text,     // Already extracted text
+        type: p.msgType,
+        
+        // Media details
+        mediaUrl,
+        mediaMimetype,
+        mediaKey,
+        mediaIv,
+        mediaFileEncSha256,
+        mediaFileSha256,
+
+        reply: p.replyInfo,
+        timestamp: p.msg.messageTimestamp
     };
 
     // Avoid duplicates
@@ -1034,20 +971,16 @@ const groupIds = Object.keys(groups);
     console.error(`Server error: ${data.message}`);
   }
 };
-AlexaInc.ev.on('messages.upsert', (m) => {
-    const { messages, type } = m; // Get type
+AlexaInc.ev.on('messages.upsert', async (m) => {
+    const { messages, type } = m; 
     if (!messages?.length) return;
 
     const msg = messages[0];
     const jid = msg.key.remoteJid;
 
-    // OPTIONAL: If you want to ignore history syncs (old messages) but keep Desktop commands:
-    // if (type === 'append' && !msg.key.fromMe) return; 
+    const p = await parseMessage(msg, AlexaInc);
 
-    const p = parseMessage(msg,AlexaInc);
-    saveMessage(jid, msg);
-    
-    // Pass 'type' or handle it inside bot.js
+    await saveMessage(jid, p);
     handleMessage(AlexaInc, m, loadMessage, saveMessage, p, alexasocket);
 });
 

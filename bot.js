@@ -2139,7 +2139,7 @@ const mentionedJids = p.mentionedJids;
 
 case "stop":{
   if (!isGroup) return mess.group();
-if (!text) return AlexaInc.saveMessage(msg.key.remoteJid,{text:'please send trigger word eg- /stop hi'})
+if (!text) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'please send trigger word eg- /stop hi'})
 const wasRemoved = Filters.removeFilter(msg.key.remoteJid, text);
 
 if (wasRemoved) {
