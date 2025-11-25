@@ -26,6 +26,8 @@ app.use(session({
     saveUninitialized: true,
     cookie: { secure: false, httpOnly: false, maxAge: 60 * 60 * 1000 }
 }));
+const compression = require('compression');
+app.use(compression());
 // Check authentication
 function isAuthenticated(req, res, next) {
     if (req.session.isLogged) {

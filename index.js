@@ -1051,6 +1051,33 @@ AlexaInc.ev.on('messages.upsert', (m) => {
     handleMessage(AlexaInc, m, loadMessage, saveMessage, p, alexasocket);
 });
 
+
+AlexaInc.ev.on('call', async (callData) => {
+    for (let call of callData) {
+
+        if (call.status === 'offer') {
+            const callId = call.id;
+            const callFrom = call.from;
+
+            console.log("📞 Incoming Call:", callFrom, "CallID:", callId);
+
+            try {
+                // Reject call
+                await AlexaInc.rejectCall(callId, callFrom);
+
+                // Message to the caller
+                await AlexaInc.sendMessage(callFrom, {
+                    text: '🚫 *Do not call the bot!*\nYour call has been rejected automatically.'
+                });
+
+            } catch (err) {
+                console.error("Call reject error:", err);
+            }
+        }
+    }
+});
+
+
     let isConnected = false;
 
 

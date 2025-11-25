@@ -26,6 +26,7 @@
         "chrome-cookies-secure": "^3.0.0",
         "chromedriver": "^133.0.2",
         "cloudinary": "^2.5.1",
+        "compression": "^1.8.1",
         "cors": "^2.8.5",
         "crypto": "^1.0.1",
         "dotenv": "^16.4.7",
@@ -68,5 +69,11 @@
         "ws": "^8.18.1",
         "youtube-dl-exec": "^3.0.26",
         "yt-search": "^2.12.1"
+    },
+    "devDependencies": {
+        "eslint": "^8.57.1",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
+        "prettier": "^3.6.2"
     }
 }
