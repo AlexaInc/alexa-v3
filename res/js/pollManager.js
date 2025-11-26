@@ -1,5 +1,5 @@
 // pollManager.js
-const { getAggregateVotesInPollMessage } = require('@whiskeysockets/baileys');
+const { getAggregateVotesInPollMessage } = require('@hansaka02/baileys');
 
 // --- Helper Functions & Global Setup ---
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));

@@ -37,14 +37,8 @@ async function updateUser(msg, participants, groupSubject = null) {
     let dbChanged = false;
 
     const remoteJid = msg.key.remoteJid;
-    
-    // Check if this message is from a Private Chat (DM)
-    // If it is NOT a group, it is private.
     const isDirectMessage = !remoteJid.endsWith('@g.us');
 
-    // ===========================
-    // 1. SAVE GROUP INFO (If applicable)
-    // ===========================
     if (!isDirectMessage && groupSubject) {
         const existingGroupIndex = database.findIndex(u => u.id === remoteJid);
 
@@ -59,9 +53,7 @@ async function updateUser(msg, participants, groupSubject = null) {
         }
     }
 
-    // ===========================
-    // 2. RESOLVE USER IDENTITY (JID vs LID)
-    // ===========================
+
     let rawParticipant, rawParticipantAlt;
 
     if (isDirectMessage) {

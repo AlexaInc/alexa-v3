@@ -1,4 +1,4 @@
-const { default: makeWASocket, useSingleFileAuthState } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useSingleFileAuthState } = require('@hansaka02/baileys');
 const { Boom } = require('@hapi/boom');
 
 const groupJid = "120363407628540320@g.us"; // Replace with your group JID

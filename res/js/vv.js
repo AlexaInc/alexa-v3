@@ -1,4 +1,4 @@
-const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+const { downloadContentFromMessage } = require('@hansaka02/baileys');
 
 async function viewonceCommand(AlexaInc, chatId, message) {
     // Extract quoted imageMessage or videoMessage from your structure

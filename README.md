@@ -129,7 +129,7 @@ npm start
     "@googleapis/customsearch": "^6.0.0",
     "@huggingface/inference": "^3.5.1",
     "@ookla/speedtest-js-sdk": "^1.1.1",
-    "@whiskeysockets/baileys": "github:hansaka02/Baileys",
+    "@hansaka02/baileys": "github:hansaka02/Baileys",
     "ascii-art": "^2.8.5",
     "axios": "^1.13.1",
     "bad-words-next": "^3.1.1",

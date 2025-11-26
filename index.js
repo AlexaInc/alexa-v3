@@ -20,7 +20,11 @@ const {
     useMultiFileAuthState,
     WAMessageContent,
     WAMessageKey
-} = require('@whiskeysockets/baileys');
+} = require('@hansaka02/baileys');
+const path = require('path');
+const { makeWASocket: WAConnection } = require('waconnection');
+; // for first-time QR login
+const authPath = path.join(__dirname, 'auth5a');
 require('dotenv').config()
 const { handleHangman, checkInactiveGames } = require('./hangman.js');
 // const Ai = require('./res/js/ollama')
@@ -30,7 +34,7 @@ const alexasock = require('ws');
 //const art = require('ascii-art');
 let isNewLogin = null;
 //const app = require('./server');
-const baileys = require('@whiskeysockets/baileys')
+const baileys = require('@hansaka02/baileys')
 const mysql = require("mysql2");
 const DB_HOST = process.env["DB_HOST"];
 const DB_UNAME = process.env["DB_UNAME"];
@@ -83,7 +87,7 @@ const NodeCache = require('node-cache');
 
 const session = require('express-session');
 const fs = require('fs');
-const path = require('path');
+
 const STORE_DIR = "./store";
 if (!fs.existsSync(STORE_DIR)) fs.mkdirSync(STORE_DIR);
 const msgRetryCounterCache = new NodeCache();
@@ -445,134 +449,144 @@ db.getConnection((err) => {
 // Store logs in an array, now also keeping HTML-styled logs
 const SESSION_FOLDER = './auth5a'
 
-async function startWhatsAppConnection ()  {
-
-const art = require('ascii-art');
-
-fs.readFile('./res/ascii.txt', 'utf8', (err, data) => {
-  if (err) {
-    console.error('Error reading the file:', err);
-    return;
-  }
-  console.log(data);
-});
-
-    
-    // 2. SECOND: Connect your bot
-    // (This is just an example, use your bot's connect logic)
-    console.log('Cookies fetched. Starting bot...');
+async function startWhatsAppConnection() {
 
 
-    const {
-        state,
-        saveCreds
-    } = await useMultiFileAuthState('./auth5a');
-    const {
-        version,
-        isLatest
-    } = await fetchLatestBaileysVersion();
-    console.log(`using WA v${version.join('.')}, isLatest: ${isLatest}`);
+    // 1. Display ASCII logo
+    fs.readFile('./res/ascii.txt', 'utf8', (err, data) => {
+        if (err) return console.error('Error reading ASCII:', err);
+        console.log(data);
+    });
+    const sessionExists = fs.existsSync(authPath) && fs.readdirSync(authPath).length > 0;
+    // 3. Browser info
+    const APP_NAME = 'Alexa';
+    const ORGANIZATION_NAME = 'AlexaInc';
+    const APP_VERSION = '3.0.0';
+
+    const CustomBrowsersMap = {
+        appropriate: () => [ORGANIZATION_NAME, APP_NAME, APP_VERSION]
+    };
+    if (!sessionExists) {
+        console.log("❌ No session found, using WhiskeySocket to create creds...");
+const { state, saveCreds } = await useMultiFileAuthState(authPath);
+        const wsSock = WAConnection({
+            browser: CustomBrowsersMap.appropriate(),
+            auth: { creds: state.creds }
+        });
+
+        wsSock.ev.on('connection.update', (update) => {
+            const { connection, lastDisconnect, qr } = update;
+
+            if (qr){
+                            console.log('\n📌 Scan this QR code with WhatsApp:\n');
+            const qrcode = require('qrcode-terminal');
+            qrcode.generate(qr, { small: true });
+            }; // show QR code yourself
+
+            if (connection === 'open') {
+                console.log("✅ WhiskeySocket login done, creds.json ready");
+                wsSock.ev.removeAllListeners();
+                startWhatsAppConnection(); // now start Baileys normally
+            }
+
+            if (connection === 'close') {
+                            const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
+           
+            if (reason !== 401) setTimeout(startWhatsAppConnection, 5000);
+                console.log("❌ Connection closed");
+                if (lastDisconnect?.error?.output?.statusCode === 401) {
+                    console.log("❌ Auth failed, removing folder...");
+                    fs.rmSync(authFolder, { recursive: true, force: true });
+                    startWhatsAppConnection();
+                }
+            }
+        });
+
+        wsSock.ev.on('creds.update', saveCreds);
+        return;
+    }
+
+    console.log("✅ Session exists, start normal Baileys connection...");
+    // 2. Fetch auth and Baileys version
+    const { state, saveCreds } = await useMultiFileAuthState(authPath);
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    console.log(`using WA v${version.join('.')}, isLatest: ${isLatest}`);
 
 
-const APP_NAME = 'Alexa'; // Your app name
-const ORGANIZATION_NAME = 'AlexaInc'; // Your organization's name
-const APP_VERSION = '3.0.0'; // Your app version
 
-const CustomBrowsersMap = {
-    ...Browsers, // Spread the original BrowsersMap to keep existing functionality
+    // 4. Create the WhatsApp connection
+    const AlexaInc = makeWASocket({
+        version,
+        logger: P({ level: 'fatal' }),
+        browser: CustomBrowsersMap.appropriate(),
+        printQRInTerminal: false, // handle QR manually
+        auth: {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, P({ level: 'fatal' }))
+        },
+        msgRetryCounterCache: new Map(),
+        generateHighQualityLinkPreview: true,
+        shouldIgnoreJid: isJidBroadcast
+    });
 
-    // Override the appropriate method
-    appropriate: (browser) => {
-        // Use custom values for your app, organization, and version
-        if (process.platform === 'linux') {
-            return [ORGANIZATION_NAME, APP_NAME,  APP_VERSION];
-        } else if (process.platform === 'darwin') {
-            return [ORGANIZATION_NAME, APP_NAME, APP_VERSION];
-        } else if (process.platform === 'win32') {
-            return [ORGANIZATION_NAME, APP_NAME, APP_VERSION];
-        } else {
-            return [ORGANIZATION_NAME, APP_NAME, APP_VERSION]; // Default for unknown platform
-        }
-    }
-};
+    // 5. QR & credentials handling
+    AlexaInc.ev.on('connection.update', update => {
+        const { connection, lastDisconnect, qr, isNewLogin } = update;
 
+        if (qr) {
+            console.log('\n📌 Scan this QR code with WhatsApp:\n');
+            const qrcode = require('qrcode-terminal');
+            qrcode.generate(qr, { small: true });
+        }
 
-    const AlexaInc = makeWASocket({
-        version,
-        logger: P({
-            level: "fatal"
-        }),
-        browser: CustomBrowsersMap.appropriate('Alexa'),
-        printQRInTerminal: true,
-        auth: {
-            creds: state.creds,
-            /** caching makes the store faster to send/recv messages */
-            keys: makeCacheableSignalKeyStore(state.keys, logger),
-        },
-        msgRetryCounterCache,
-        generateHighQualityLinkPreview: true,
-        // ignore all broadcast messages -- to receive the same
-        // comment the line below out
-        shouldIgnoreJid: jid => isJidBroadcast(jid),
-        // implement to handle retries & poll updates
-    });
+        if (connection === 'open') {
+            global.botPhoneNumber = AlexaInc.user?.id?.split(':')[0] || null;
+            global.connectionStatus = global.botPhoneNumber ? 'Online' : 'Offline';
+            console.log('✅ WhatsApp bot connected!');
 
-// const eventsToStore = [
-//   // Messages
-//   'messages.upsert',      // new incoming messages
-//   'messages.update',      // message status updates (read, deleted, etc.)
-//   'messages.delete',      // message deletions
+            // Send startup message to owner
+            const fownerNumber = process.env["Owner_nb"]?.split(",")[0]?.trim();
+            const lastLog = restartHistory?.[restartHistory.length - 1];
+            const logmessage = `Your bot Alexa is ready!\nRestart id: ${lastLog?.id || 'N/A'} at ${lastLog?.timestamp || 'N/A'}\nReason: ${lastLog?.reason || 'Startup'}`;
 
-//   // Connections
-//   'connection.update',    // connection status (open, close, reconnect)
-//   'creds.update',         // credentials updated
+            if (fownerNumber) {
+                AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, { text: logmessage }).catch(console.error);
+            }
+        }
 
-//   // Groups
-//   'group-participants.update', // someone joins/leaves/kicked
-//   'group-update',             // group settings changed
+        if (connection === 'close') {
+            const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
+            console.log('❌ Connection closed:', reason);
 
-//   // Chats & Contacts
-//   'chats.upsert',        // new chat added
-//   'chats.update',        // chat info updated
-//   'contacts.upsert',     // contact info added
-//   'contacts.update',     // contact info updated
+            // Retry if not a logout
+            if (reason !== 401) setTimeout(startWhatsAppConnection, 5000);
+        }
 
-//   // Presence / Typing
-//   'presence.update',     // user presence (online/offline)
-//   'user-presence.update',// typing/recording
-//   'reaction',            // message reactions
-//   'poll.update',         // poll updates
+        if (isNewLogin) {
+            console.log('🔄 New login detected, restarting...');
+            setTimeout(startWhatsAppConnection, 5000);
+        }
+    });
 
-//   // Misc / Other
-//   'call',                // call received
-//   'call.reject',         // call rejected
-//   'call.accept',         // call accepted
-//   'blocklist.update',    // blocked contacts
-//   'chats.delete',        // chat deleted
-//   'messages.reaction',   // reactions to messages
-//   'history.sync',        // history sync notifications
-//   'message-receipt.update', // message read/delivery receipts
-// ];
+    AlexaInc.ev.on('creds.update', saveCreds);
 
+    // 6. Call handling
+    AlexaInc.ev.on('call', async callData => {
+        for (let call of callData) {
+            if (call.status === 'offer') {
+                const callId = call.id;
+                const callFrom = call.from;
+                console.log("📞 Incoming Call:", callFrom);
 
-// for (const evName of eventsToStore) {
-//   AlexaInc.ev.on(evName, (data) => {
-//     try {
-//       saveEvent(evName, data); // your persistent store function
-//     } catch (err) {
-//       console.error(`❌ Failed to store event ${evName}:`, err);
-//     }
-//   });
-// }
-
-    AlexaInc.ev.on('qr',(qr)=>{
-        console.log("\n📌 Scan this QR code with WhatsApp:\n");
-        console.log(qr);
-    })
-    AlexaInc.ev.on('creds.update', saveCreds);
-setInterval(() => {
-    checkInactiveGames(AlexaInc); // Pass your client to the function
-}, 60000);
+                try {
+                    await AlexaInc.rejectCall(callId, callFrom);
+                    await AlexaInc.sendMessage(callFrom, { text: '🚫 *Do not call the bot!* Your call has been rejected automatically.' });
+                } catch (err) {
+                    console.error("Call reject error:", err);
+                }
+            }
+        }
+    });
 
 AlexaInc.ev.on('group-participants.update', async (anu) => {
     // console.log(anu);
@@ -1009,90 +1023,12 @@ AlexaInc.ev.on('call', async (callData) => {
         }
     }
 });
-
-
-    let isConnected = false;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    AlexaInc.ev.on('connection.update', (update) => {
-
-        const { connection,lastDisconnect, qr, isNewLogin } = update;
-        if (qr) {
-            console.log("\n🔄 New QR code generated! Please scan it.\n");
-            var qrcode = require('qrcode-terminal');
-console.log("\n📌 Scan this QR code with WhatsApp:\n");
-console.log(qr);
-qrcode.generate(qr, {small: true}, function (qrcode) {
-    console.log(qrcode)
-});
-            
-        }
-
-        isConnected = connection === 'open';
-
-if (connection === 'open') {
-
-
- global.botPhoneNumber = AlexaInc.user.id.split(':')[0];
-
- if (!global.botPhoneNumber) {
-    global.connectionStatus = 'Offline';
- }else{
-    global.connectionStatus = 'Online';
- }
- const lastLog = restartHistory[restartHistory.length - 1]; 
- const logmessage = 
- `Your bot Alexa is ready to use now\n
-alexa restarted restart id ${lastLog.id}  at ${lastLog.timestamp} 
-because of ${lastLog.reason} `
-
-            const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
-            if (fownerNumber) {
-                AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {
-                    text: logmessage
-                })
-                AlexaInc.sendMessage('120363407628540320@g.us', {
-                    text: logmessage
-                })
-                    .then(() => console.log('Bot started without error'))
-                    .catch(err => console.error('Error sending message to owner:', err));
-            } else {
-                console.error('Error: Owner phone number not found');
-            }
-        }
-
-                if (isNewLogin) {
-            console.log("🔄 Restarting connection after QR scan...");
-            setTimeout(startWhatsAppConnection, 5000); // Restart after 2 sec
-        } else                 if (connection === 'close') {
-            const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
- console.log(reason);
-
-
-        } 
-    });
-
-
-
-
-//await AlexaInc.start();
+    // 8. Inactive game checker
+    setInterval(() => checkInactiveGames(AlexaInc), 60000);
 }
+
 startWhatsAppConnection();
+
 
 // Log initialization
 function writeData(data) {

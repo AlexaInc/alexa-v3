@@ -36,11 +36,11 @@ const si = require('os');
 const shippingflder ='shipping'
 const axios = require('axios');
 const sharp = require('sharp');
-const { downloadMediaMessage, proto, prepareWAMessageMedia , getGroupMetadata , generateWAMessageFromContent, generateMessageID  } = require('@whiskeysockets/baileys');
+const { downloadMediaMessage, proto, prepareWAMessageMedia , getGroupMetadata , generateWAMessageFromContent, generateMessageID  } = require('@hansaka02/baileys');
 const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 const { generateLinkPreview } = require("link-preview-js");
 //const {generateWAMessageFromContent} = require('@adiwajshing/baileys')
-//const { Button, ButtonMessage } = require('@whiskeysockets/baileys').WA_MESSAGE_TYPE;
+//const { Button, ButtonMessage } = require('@hansaka02/baileys').WA_MESSAGE_TYPE;
 const { fileutc } = require('./res/js/fu.js');
 const {runSpeedTest} = require('./res/js/speed_test.js')
 const FormData = require('form-data');
@@ -1073,7 +1073,36 @@ const iduser = isGroup
   ? (participants.find(jsn => jsn.lid === msg.key.participant)?.id || msg.key.participant)
   : senderabfff;
 
-addXP(iduser);
+  const remoteJid = msg.key.remoteJid;
+    const isDirectMessage = !remoteJid.endsWith('@g.us');
+
+
+
+    let rawParticipant, rawParticipantAlt;
+
+    if (isDirectMessage) {
+        rawParticipant = remoteJid;
+        rawParticipantAlt = msg.key.remoteJidAlt;
+    } else {
+        rawParticipant = msg.key.participant;
+        rawParticipantAlt = msg.key.participantAlt;
+    }
+
+    let finalJid = null; 
+    let finalLid = null;
+
+    if (rawParticipant?.endsWith('@lid')) {
+        finalLid = rawParticipant;
+        finalJid = rawParticipantAlt; 
+    } else if (rawParticipantAlt?.endsWith('@s.whatsapp.net')) {
+        finalJid = rawParticipantAlt;
+        finalLid = rawParticipant;
+    } else {
+        finalJid = rawParticipant;
+        finalLid = rawParticipantAlt;
+    }
+    
+addXP(finalLid);
 
 
 
