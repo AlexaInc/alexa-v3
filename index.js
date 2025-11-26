@@ -941,7 +941,7 @@ const interactiveButtons = [{
 ];
 
 const interactiveMessage = {
-  image: {url: './res/img/alexa.png'},
+  image: {url: './res/img/alexa.jpg'},
   caption: data.payload.message,
   footer: "Powered by HANSAKA",
   interactiveButtons
