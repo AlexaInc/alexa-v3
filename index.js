@@ -174,9 +174,35 @@ function parseMessage(msg, AlexaInc) {
 
     // 5. Get sender info
     const isGroup = msg.key.remoteJid.endsWith("@g.us");
-    const sender = isGroup 
-        ? (msg.key.participant || msg.participant) 
-        : (msg.key.fromMe ? AlexaInc.user.id.split(':')[0] + '@s.whatsapp.net' : msg.key.remoteJid);
+     const remoteJid = msg.key.remoteJid;
+    const isDirectMessage = !remoteJid.endsWith('@g.us');
+
+
+
+    let rawParticipant, rawParticipantAlt;
+
+    if (isDirectMessage) {
+        rawParticipant = remoteJid;
+        rawParticipantAlt = msg.key.remoteJidAlt;
+    } else {
+        rawParticipant = msg.key.participant;
+        rawParticipantAlt = msg.key.participantAlt;
+    }
+
+    let finalJid = null; 
+    let finalLid = null;
+
+    if (rawParticipant?.endsWith('@lid')) {
+        finalLid = rawParticipant;
+        finalJid = rawParticipantAlt; 
+    } else if (rawParticipantAlt?.endsWith('@s.whatsapp.net')) {
+        finalJid = rawParticipantAlt;
+        finalLid = rawParticipant;
+    } else {
+        finalJid = rawParticipant;
+        finalLid = rawParticipantAlt;
+    }
+    const sender = finalLid;
 
     // 6. Command parsing
     const prefix = /^[./!]/; 
@@ -204,6 +230,8 @@ function parseMessage(msg, AlexaInc) {
         quotedid: quotedid,
         mentionedJids: contextInfo?.mentionedJid || [],
         sender: sender,
+        senderJid: finalJid,
+        senderlid:finalLid,
         isGroup: isGroup,
         fromMe: msg.key.fromMe,
         jid: msg.key.remoteJid,
