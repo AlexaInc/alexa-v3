@@ -1620,6 +1620,10 @@ async function handleMessage(AlexaInc, {
                                                 header: ' ',
                                                 title: 'Main',
                                                 id: '.menu_util'
+                                            },{
+                                                header: ' ',
+                                                title: 'Owners',
+                                                id: '.menu_owner'
                                             },
                                             {
                                                 header: ' ',
@@ -1789,10 +1793,13 @@ async function handleMessage(AlexaInc, {
                         case "menu_sticker":
                         case "menu_web":
                         case "menu_svm":
+                        case "menu_owner":
                         case "menu_groups":
                         case "menu_nsfw":
                         case "menu_sfw":
                         case "menu_games": {
+                            if (command =="menu_owner" && !isOwner) return mess.owner();
+                            if (command =="menu_owner" && !isOwner) return mess.private();
                             const respomm = command.split('_')[1];
                             AlexaInc.sendMessage(msg.key.remoteJid, {
                                 delete: msg.key
@@ -1820,7 +1827,31 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`blackpink\`
 ┃ ➥ \`glitch\`
 ┃ ➥ \`fire\``;
-                            } else
+                            }else if(respomm === 'owner'){
+                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+┃            🖼 *Owner menu*           
+┣━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`metallic\`
+┃ ➥ \`ice\`
+┃ ➥ \`snow\`
+┃ ➥ \`impressive\`
+┃ ➥ \`matrix\`
+┃ ➥ \`light\`
+┃ ➥ \`neon\`
+┃ ➥ \`devil\`
+┃ ➥ \`purple\`
+┃ ➥ \`thunder\`
+┃ ➥ \`leaves\`
+┃ ➥ \`1917\`
+┃ ➥ \`arena\`
+┃ ➥ \`hacker\`
+┃ ➥ \`sand\`
+┃ ➥ \`blackpink\`
+┃ ➥ \`glitch\`
+┃ ➥ \`fire\``;
+                            } 
+                            
+                            else
                             if (respomm === 'util') {
                                 menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃               🛠 *Utility Commands:*                
@@ -1920,7 +1951,7 @@ async function handleMessage(AlexaInc, {
                             }
 
                             const fmenu = `╭━━━━━━━━━━━━━━━━━━━━━━╮
-┃                        🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                          ┃
+┃               🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                ┃
 ┃━━━━━━━━━━━━━━━━━━━━━━┃
 ┃
 ┃🖥️ : ${cpuData}
@@ -1939,9 +1970,9 @@ async function handleMessage(AlexaInc, {
 ${menus}
 ┃
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃                         🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                         ┃
+┃                🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                ┃
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃                © 2025 Hansaka @ AlexaInc                   ┃
+┃       © 2025 Hansaka @ AlexaInc          ┃
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
 `;
 
@@ -2063,7 +2094,7 @@ END:VCARD`;
                             if (!loadedMessage) return AlexaInc.sendMessage(msg.key.remoteJid, {
                                 text: 'fail to load that massag try again'
                             })
-                            const quotedSender = loadMessage?.sender
+                            const quotedSender = loadedMessage?.sender
                             //console.log(quotedSender)
                             // Fix 2: Make text fetching more robust.
                             // A quoted message's text can be in 'conversation' OR 'extendedTextMessage.text'.
@@ -2074,7 +2105,7 @@ END:VCARD`;
                                 ?.text ||
                                 ''; // Fallback to empty string
 
-                            //const islid = quotedSender.endsWith('@lid');
+                            const islid = quotedSender.endsWith('@lid');
 
                             if (isGroup && islid) {
                                 // Fix 3: Add optional chaining (?).
