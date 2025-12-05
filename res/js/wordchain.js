@@ -221,6 +221,10 @@ async function handleJoinChain(msg, AlexaInc) {
         } else {
             return AlexaInc.sendMessage(chatId, { text: `You are already in!` }, { quoted: msg });
         }
+    }if(game && game.state === 'playing'){
+        return AlexaInc.sendMessage(chatId, { text: `game already startet wait for next game` }, { quoted: msg });
+    }else{
+        return AlexaInc.sendMessage(chatId, { text: `there are no games started to join firsh use \`/startchain\`` }, { quoted: msg });
     }
 }
 
