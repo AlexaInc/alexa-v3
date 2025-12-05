@@ -1053,6 +1053,12 @@ AlexaInc.ev.on('call', async (callData) => {
 });
     // 8. Inactive game checker
     setInterval(() => checkInactiveGames(AlexaInc), 60000);
+    const { 
+    checkInactiveChainGames 
+} = require('./res/js/wordchain.js');
+    setInterval(() => {
+    checkInactiveChainGames(AlexaInc);
+}, 60000); // Check every minute
 }
 
 startWhatsAppConnection();

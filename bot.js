@@ -15,6 +15,13 @@ const hangmanFile = "./hangman.json";
 const {
     v4: uuidv4
 } = require('uuid');
+const { 
+    handleStartChain, 
+    handleJoinChain, 
+    handleStopChain, 
+    handleChainGuess, 
+    checkInactiveChainGames 
+} = require('./res/js/wordchain.js');
 const QUIZ_STORAGE_DIR = './quizzes';
 const {
     promisify
@@ -1155,7 +1162,7 @@ async function handleMessage(AlexaInc, {
 ┃
 ┃ ✧ ʟɪᴍɪᴛ: *no limit enjoy* 
 ┃ ✧ ʀᴏʟᴇ: *${roleuser}*  
-┃ ✧ ʟᴇᴠᴇʟ: *${getLevel(iduser)}*
+┃ ✧ ʟᴇᴠᴇʟ: *${getLevel(senderabfff)}*
 ┃ ✧ ᴅᴀʏ: *${moment.tz('Asia/Colombo').format('dddd')}*,  
 ┃ ✧ ᴅᴀᴛᴇ: *${moment.tz('Asia/Colombo').format('MMMM Do YYYY')}*  
 ┃ ✧ ᴛɪᴍᴇ: *${moment.tz('Asia/Colombo').format('HH:mm:ss')}*
@@ -1567,7 +1574,7 @@ async function handleMessage(AlexaInc, {
                 const commandhang = messageText.trim().toLowerCase().split(' ')[0];
 
                 await handleHangman(msg, AlexaInc, commandhang);
-
+await handleChainGuess(msg, AlexaInc, messageText.toLowerCase());
 
 
 
@@ -3867,7 +3874,15 @@ Congratulations ❤️`,
 
 
 
-
+            case 'startchain':
+                await handleStartChain(msg, AlexaInc);
+                break;
+            case 'joinchain':
+                await handleJoinChain(msg, AlexaInc);
+                break;
+            case 'stopchain':
+                await handleStopChain(msg, AlexaInc);
+                break;
 
                         case 'newhang':
                             break;
@@ -4180,7 +4195,7 @@ Url: ${response[1].url}
                         case 'promote':
                         case 'demote': {
                             if (!isGroup) return mess.group();
-                            if (command == 'add' && !isOwner) mess.owner()
+                            if (command == 'add' && !isOwner) return mess.owner()
                             if (!isAdmins && !isOwner) return mess['admin&owner']();
 
                             if (!isBotAdmins)
@@ -4676,22 +4691,44 @@ Url: ${response[1].url}
                         }
 
 
-                        case 'hidetag': {
+case 'hidetag': {
 
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins) return mess.admin();
-                            if (!isBotAdmins) return mess.botadmin();
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: text ? text : '',
-                                mentions: participants.map(a => a.id)
-                            }, {
-                                quoted: msg
-                            })
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                delete: msg.key
-                            });
-                            break
-                        }
+    if (!isGroup) return mess.group();
+    // if (!isAdmins) return mess.admin();
+    if (!isBotAdmins) return mess.botadmin();
+
+    const lid = msg.key.participant || msg.sender;
+// console.log(participants[0]);
+
+    // Convert LID → real phone JID
+    const realJid = (await participants.find(p =>p.lid === finalLid)).id
+
+    // Extract phone number
+    const visibleNumber = realJid.split("@")[0];
+
+    const messagetosent = `
+message : ${text}
+from : @${visibleNumber}
+`;
+
+    // Mention all members (LID or JID is fine)
+    const mentionList = participants.map(p => p.id);
+
+    await AlexaInc.sendMessage(
+        msg.key.remoteJid,
+        {
+            text: messagetosent,
+            mentions: mentionList
+        },
+        { quoted: msg }
+    );
+
+    // await AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key });
+
+    break;
+}
+
+
 
 
 
