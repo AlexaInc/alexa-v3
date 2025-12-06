@@ -4,6 +4,7 @@ const USER_DATA_FILE = './users.json';
 const fetchnews = require('./res/news');
 const yts = require('yt-search');
 const mumaker = require('mumaker');
+const battlearena = require("./res/js/battlearena.js");
 const weatherof = require('./res/js/weather.js')
 const {
     handleHangman,
@@ -1946,7 +1947,19 @@ await handleChainGuess(msg, AlexaInc, messageText.toLowerCase());
 ┃ ➥ \`.endhang\` - End hangman game  
 ┃ ➥ \`.starthang\` - Start hangman game 
 ┃ ➥ \`.hanglead\` - Get leaderboard  
-
+┃
+┃ _*wordchain*_  
+┃ ➥ \`.startchain\` - create wordchain game
+┃ ➥ \`.joincain\` - join a wordchain game 
+┃ 
+┃ 
+┃ _*battle arena*_  
+┃ ➥ \`.battle\` - start battle arena
+┃ ➥ \`.attack\`  
+┃ ➥ \`.defend\`  
+┃ ➥ \`.heal\`  
+┃ ➥ \`.special\` 
+┃ 
 ┃ _*DailyGiveaway*_  
 ┃ ➥ \`.dailyqa\` - Start Q&A  
 ┃ ➥ \`.answer\` - Send answer number
@@ -3883,6 +3896,52 @@ Congratulations ❤️`,
             case 'stopchain':
                 await handleStopChain(msg, AlexaInc);
                 break;
+
+
+
+
+case"battle":{
+
+                            const mentionedJids = p.mentionedJids;
+                            let resultNumbers = []; // Initialize as an array
+
+                            if (mentionedJids && mentionedJids.length > 0) {
+                                // 1. Map over ALL mentionedJids
+                                resultNumbers = mentionedJids.map(rid => {
+                                        if (rid.endsWith('@lid')) {
+                                            // Find the ID and strip the server part
+                                            return rid;
+                                        } else if (rid.endsWith('@s.whatsapp.net')) {
+                                            // Find the LID and strip the server part
+                                            return (participants.find(jsn => jsn.id === rid))
+                                                ?.lid
+                                        }
+                                        return null; // Return null if the JID format isn't recognized
+                                    })
+                                    // 2. Filter out any null/undefined results (where a match wasn't found)
+                                    .filter(Boolean); // 'Boolean' removes falsy values (null, undefined, "")
+                            }else{
+                                resultNumbers =  null
+                            }
+if (!resultNumbers ) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'pleace mention a user to start battle'})
+if (resultNumbers.length > 1 ) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'you only can battle with one user at one time'})
+let res = battlearena.startBattle(msg.key.remoteJid, `@`+finalLid.replace(/@.*/, ""), `@`+resultNumbers[0].replace(/@.*/, ""));
+
+    AlexaInc.sendMessage(msg.key.remoteJid,{text:res.message,mentions:[finalLid,resultNumbers[0]]},{quoted:msg})
+
+    break
+}
+
+case"attack":
+case"heal":
+case"defend":
+case"special":{
+
+let res = battlearena.playerMove(msg.key.remoteJid, `@`+finalLid.replace(/@.*/, ""), command);
+ AlexaInc.sendMessage(msg.key.remoteJid,{text:res.message,mentions:res.players || []},{quoted:msg})
+
+    break
+}
 
                         case 'newhang':
                             break;
