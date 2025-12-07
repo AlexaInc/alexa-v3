@@ -173,17 +173,19 @@ function getLeaderboard() {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 20);
 
-    if (sorted.length === 0) return "📛 No battles played yet.";
+    if (sorted.length === 0) return {msg:"📛 No battles played yet."};
 
     let msg = "🏆 *BATTLE ARENA LEADERBOARD*\n\n";
     let rank = 1;
+    let ids = []
 
     sorted.forEach(([user, wins]) => {
         msg += `${rank}. ${formatUser(user)} — *${wins} wins*\n`;
+        ids.push(user.replace(/^@?(\d+)$/, '$1@lid'))
         rank++;
     });
 
-    return msg;
+    return {msg:msg,uids:ids};
 }
 
 // ---------------- FORMAT USER ---------------- //

@@ -16,12 +16,12 @@ const hangmanFile = "./hangman.json";
 const {
     v4: uuidv4
 } = require('uuid');
-const { 
-    handleStartChain, 
-    handleJoinChain, 
-    handleStopChain, 
-    handleChainGuess, 
-    checkInactiveChainGames 
+const {
+    handleStartChain,
+    handleJoinChain,
+    handleStopChain,
+    handleChainGuess,
+    checkInactiveChainGames
 } = require('./res/js/wordchain.js');
 const QUIZ_STORAGE_DIR = './quizzes';
 const {
@@ -1575,7 +1575,7 @@ async function handleMessage(AlexaInc, {
                 const commandhang = messageText.trim().toLowerCase().split(' ')[0];
 
                 await handleHangman(msg, AlexaInc, commandhang);
-await handleChainGuess(msg, AlexaInc, messageText.toLowerCase());
+                await handleChainGuess(msg, AlexaInc, messageText.toLowerCase());
 
 
 
@@ -1628,7 +1628,7 @@ await handleChainGuess(msg, AlexaInc, messageText.toLowerCase());
                                                 header: ' ',
                                                 title: 'Main',
                                                 id: '.menu_util'
-                                            },{
+                                            }, {
                                                 header: ' ',
                                                 title: 'Owners',
                                                 id: '.menu_owner'
@@ -1806,8 +1806,8 @@ await handleChainGuess(msg, AlexaInc, messageText.toLowerCase());
                         case "menu_nsfw":
                         case "menu_sfw":
                         case "menu_games": {
-                            if (command =="menu_owner" && !isOwner) return mess.owner();
-                            if (command =="menu_owner" && !isOwner) return mess.private();
+                            if (command == "menu_owner" && !isOwner) return mess.owner();
+                            if (command == "menu_owner" && !isOwner) return mess.private();
                             const respomm = command.split('_')[1];
                             AlexaInc.sendMessage(msg.key.remoteJid, {
                                 delete: msg.key
@@ -1835,7 +1835,7 @@ await handleChainGuess(msg, AlexaInc, messageText.toLowerCase());
 ┃ ➥ \`blackpink\`
 ┃ ➥ \`glitch\`
 ┃ ➥ \`fire\``;
-                            }else if(respomm === 'owner'){
+                            } else if (respomm === 'owner') {
                                 menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃            🖼 *Owner menu*           
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
@@ -1857,9 +1857,7 @@ await handleChainGuess(msg, AlexaInc, messageText.toLowerCase());
 ┃ ➥ \`blackpink\`
 ┃ ➥ \`glitch\`
 ┃ ➥ \`fire\``;
-                            } 
-                            
-                            else
+                            } else
                             if (respomm === 'util') {
                                 menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃               🛠 *Utility Commands:*                
@@ -3887,20 +3885,20 @@ Congratulations ❤️`,
 
 
 
-            case 'startchain':
-                await handleStartChain(msg, AlexaInc);
-                break;
-            case 'joinchain':
-                await handleJoinChain(msg, AlexaInc);
-                break;
-            case 'stopchain':
-                await handleStopChain(msg, AlexaInc);
-                break;
+                        case 'startchain':
+                            await handleStartChain(msg, AlexaInc);
+                            break;
+                        case 'joinchain':
+                            await handleJoinChain(msg, AlexaInc);
+                            break;
+                        case 'stopchain':
+                            await handleStopChain(msg, AlexaInc);
+                            break;
 
 
 
 
-case"battle":{
+                        case "battle": {
 
                             const mentionedJids = p.mentionedJids;
                             let resultNumbers = []; // Initialize as an array
@@ -3920,28 +3918,57 @@ case"battle":{
                                     })
                                     // 2. Filter out any null/undefined results (where a match wasn't found)
                                     .filter(Boolean); // 'Boolean' removes falsy values (null, undefined, "")
-                            }else{
-                                resultNumbers =  null
+                            } else {
+                                resultNumbers = null
                             }
-if (!resultNumbers ) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'pleace mention a user to start battle'})
-if (resultNumbers.length > 1 ) return AlexaInc.sendMessage(msg.key.remoteJid,{text:'you only can battle with one user at one time'})
-let res = battlearena.startBattle(msg.key.remoteJid, `@`+finalLid.replace(/@.*/, ""), `@`+resultNumbers[0].replace(/@.*/, ""));
+                            if (!resultNumbers) return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: 'pleace mention a user to start battle'
+                            })
+                            if (resultNumbers.length > 1) return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: 'you only can battle with one user at one time'
+                            })
+                            let res = battlearena.startBattle(msg.key.remoteJid, `@` + finalLid.replace(/@.*/, ""),
+                                `@` + resultNumbers[0].replace(/@.*/, ""));
 
-    AlexaInc.sendMessage(msg.key.remoteJid,{text:res.message,mentions:[finalLid,resultNumbers[0]]},{quoted:msg})
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: res.message,
+                                mentions: [finalLid, resultNumbers[0]]
+                            }, {
+                                quoted: msg
+                            })
 
-    break
-}
+                            break
+                        }
 
-case"attack":
-case"heal":
-case"defend":
-case"special":{
+                        case "attack":
+                        case "heal":
+                        case "defend":
+                        case "special": {
 
-let res = battlearena.playerMove(msg.key.remoteJid, `@`+finalLid.replace(/@.*/, ""), command);
- AlexaInc.sendMessage(msg.key.remoteJid,{text:res.message,mentions:res.players || []},{quoted:msg})
+                            let res = battlearena.playerMove(msg.key.remoteJid, `@` + finalLid.replace(/@.*/, ""),
+                                command);
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: res.message,
+                                mentions: res.players || []
+                            }, {
+                                quoted: msg
+                            })
 
-    break
-}
+                            break
+                        }
+
+                        case "battletop": {
+
+                            let res = battlearena.getLeaderboard();
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: res.msg,
+                                mentions: res.uids || []
+                            }, {
+                                quoted: msg
+                            })
+
+                            break
+                        }
 
                         case 'newhang':
                             break;
@@ -4750,42 +4777,42 @@ Url: ${response[1].url}
                         }
 
 
-case 'hidetag': {
+                        case 'hidetag': {
 
-    if (!isGroup) return mess.group();
-    // if (!isAdmins) return mess.admin();
-    if (!isBotAdmins) return mess.botadmin();
+                            if (!isGroup) return mess.group();
+                            // if (!isAdmins) return mess.admin();
+                            if (!isBotAdmins) return mess.botadmin();
 
-    const lid = msg.key.participant || msg.sender;
-// console.log(participants[0]);
+                            const lid = msg.key.participant || msg.sender;
+                            // console.log(participants[0]);
 
-    // Convert LID → real phone JID
-    const realJid = (await participants.find(p =>p.lid === finalLid)).id
+                            // Convert LID → real phone JID
+                            const realJid = (await participants.find(p => p.lid === finalLid)).id
 
-    // Extract phone number
-    const visibleNumber = realJid.split("@")[0];
+                            // Extract phone number
+                            const visibleNumber = realJid.split("@")[0];
 
-    const messagetosent = `
+                            const messagetosent = `
 message : ${text}
 from : @${visibleNumber}
 `;
 
-    // Mention all members (LID or JID is fine)
-    const mentionList = participants.map(p => p.id);
+                            // Mention all members (LID or JID is fine)
+                            const mentionList = participants.map(p => p.id);
 
-    await AlexaInc.sendMessage(
-        msg.key.remoteJid,
-        {
-            text: messagetosent,
-            mentions: mentionList
-        },
-        { quoted: msg }
-    );
+                            await AlexaInc.sendMessage(
+                                msg.key.remoteJid, {
+                                    text: messagetosent,
+                                    mentions: mentionList
+                                }, {
+                                    quoted: msg
+                                }
+                            );
 
-    // await AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key });
+                            // await AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key });
 
-    break;
-}
+                            break;
+                        }
 
 
 
@@ -5279,7 +5306,7 @@ from : @${visibleNumber}
                                                                         0x19f),
                                                                     _0x52ae49(
                                                                         0x19f), 0x20
-                                                                    ),
+                                                                ),
                                                                 _0x11b14a =
                                                                 _0x283399[_0x52ae49(
                                                                     0x1a3)](
