@@ -1429,11 +1429,21 @@ async function handleMessage(AlexaInc, {
                     AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
                 }
 
-                if (matchedFilter) {
+                if (matchedFilter && !messageText.startsWith('/stop'||'/filter')) {
 
                     if (matchedFilter.type === 'text') {
+                        let reptxt = matchedFilter.reply;
+
+reptxt = reptxt
+  .replace(/\{name\}|<name>/gi, msg.pushName || '')
+  .replace(/\{gname\}|<gname>|\{group name\}|<group name>/gi, groupname || '')
+  .replace(/\{time\}/gi,moment.tz('Asia/Colombo').format('HH:mm:ss'))
+  .replace(/\{date\}/gi,moment.tz('Asia/Colombo').format('MMMM Do YYYY'))
+  .replace(/\{day\}/gi,moment.tz('Asia/Colombo').format('dddd'))
+  .replace(/\{greating\}/,getGreeting());
+
                         AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: matchedFilter.reply
+                            text: reptxt
                         }, {
                             quoted: msg
                         });
