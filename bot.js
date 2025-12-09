@@ -214,6 +214,8 @@ function isBotOrFakeWeb(msg) {
         return true;
     } else if (id.length < 20 && !id.startsWith('3EB0')) {
         return true;
+    } else if (id.length < 21 && id.startsWith('3A')) {
+        return true;
     } else if (id.startsWith('BAE5')) {
         return true;
     } else {
@@ -3248,6 +3250,61 @@ Duration : ${formatTime(details.durationInSeconds)}
                                 }, {
                                     quoted: msg
                                 });
+
+                                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    delete: dummymg.key
+                                })
+
+                            } catch (error) {
+                                AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    text: `Error: ${error.message}`,
+                                    edit: dummymg.key
+                                }, {
+                                    quoted: msg
+                                });
+                                console.log(error)
+
+                            }
+
+                            break
+                        }
+                        case 'play': {
+                            // generateBox('ihahfaafafifasfaik', 50)
+                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: 'name not provided here is ex:- .song song name'
+                            }, {
+                                quoted: msg
+                            })
+
+                            const dummymg = await AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: 'wait song is downloading'
+                            }, {
+                                quoted: msg
+                            });
+                            try {
+                                const results = await yts(text);
+                                const video = results.videos[0];
+                                // console.log(video.author)
+                                const filePath = await yth2.getAudio(video.url); // Assign to the outer variable
+                                const devsound = await yth2.fetchBuffer(filePath.download)
+                                const sonst4 = await fonts.convert(video.title, 'font1')
+                                const cons5 = video.duration.timestamp;
+                                const con4 = await fonts.convert(video.author.name, 'font1')
+
+                                const textl = `
+ɴᴀᴍᴇ : ${sonst4}
+ᴅᴜʀᴀᴛɪᴏɴ : ${cons5}
+ᴀᴜᴛʜᴏʀ : ${con4}
+`;
+   
+                                    // 2. Send the file FROM THE PATH
+                                    await AlexaInc.sendMessage(msg.key.remoteJid, {
+                                        audio: devsound,
+                                        mimetype: 'audio/mp4'
+                                    }, {
+                                        quoted: msg
+                                    });
+
 
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
                                     delete: dummymg.key
