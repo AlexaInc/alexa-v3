@@ -18,7 +18,6 @@ baileys_auth_info/
 store/
 filters/
 store_ev/
-emoji_status/
 msgstore.json
 
 # Specific temporary files to ignore

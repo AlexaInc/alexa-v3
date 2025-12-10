@@ -2207,10 +2207,12 @@ END:VCARD`;
                             // If Owner_nb="12345" and quotesendernumber="123", .includes() would be true.
                             // Split into an array to check for an exact match.
                             const ownerNumbers = (process.env.Owner_nb || '').split(',');
+                            const rank = (process.env.spc_nb || '').split(',');
                             const isquoteowner = ownerNumbers.includes(quotesendernumber);
+                            const isquoterank = rank.includes(quotesendernumber);
 
                             // Fix 7: Fix typo "costom" -> "custom"
-                            const customemojiid = isquoteowner ? '5267500801240092311' : null;
+                            const customemojiid = isquoteowner ? '5267500801240092311' : isquoterank ? '6228999461754900766':null;
 
                             let firstNum = Math.floor(Math.random() * 10);
                             let secondNum;
