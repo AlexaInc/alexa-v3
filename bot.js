@@ -16,6 +16,7 @@ const hangmanFile = "./hangman.json";
 const {
     v4: uuidv4
 } = require('uuid');
+
 const {
     handleStartChain,
     handleJoinChain,
@@ -181,8 +182,77 @@ fetchJson = async (url, options) => {
     }
 }
 
+const RANKING_FOLDER = './database/rankings';
+const TIMEZONE = 'Asia/Colombo';
 
+// --- CACHE SYSTEM ---
+// This holds the data in RAM while the bot is running
+const rankingCache = {}; 
+// This keeps track of which groups have new data to save
+const groupsToSave = new Set(); 
 
+// --- HELPER FUNCTIONS ---
+const getDayKey = () => moment().tz(TIMEZONE).format('YYYY-MM-DD');
+const getWeekKey = () => moment().tz(TIMEZONE).format('YYYY-WW');
+
+// --- THE SAVER INTERVAL (Runs every 1 minute) ---
+setInterval(() => {
+    if (groupsToSave.size === 0) return; // Nothing to save
+
+    // console.log(`[RANKING] Saving data for ${groupsToSave.size} groups...`);
+    
+    groupsToSave.forEach(groupId => {
+        try {
+            const filePath = `${RANKING_FOLDER}/${groupId}.json`;
+            const data = rankingCache[groupId];
+            
+            // Ensure folder exists (just in case)
+            if (!fs.existsSync(RANKING_FOLDER)) {
+                fs.mkdirSync(RANKING_FOLDER, { recursive: true });
+            }
+            
+            // Write from RAM to Disk
+            fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+        } catch (err) {
+            console.error(`Failed to save ranking for ${groupId}:`, err);
+        }
+    });
+
+    // Clear the list after saving
+    groupsToSave.clear();
+}, 60 * 1000); // 60 seconds * 1000 ms
+
+// 2. Define the Save Function
+const saveRankingCacheOnExit = () => {
+    if (typeof groupsToSave === 'undefined' || groupsToSave.size === 0) return;
+
+    console.log(`[SYSTEM] Saving ${groupsToSave.size} ranking files before shutdown...`);
+    
+    // We use a simple loop to ensure it runs synchronously
+    groupsToSave.forEach(groupId => {
+        try {
+            const filePath = `${RANKING_FOLDER}/${groupId}.json`;
+            
+            // Check if we have data for this group
+            if (rankingCache[groupId]) {
+                const data = rankingCache[groupId];
+                
+                if (!fs.existsSync(RANKING_FOLDER)) {
+                    fs.mkdirSync(RANKING_FOLDER, { recursive: true });
+                }
+                
+                // SYNC write is required for process.exit
+                fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+            }
+        } catch (err) {
+            console.error(`Failed to save ranking for ${groupId}:`, err);
+        }
+    });
+    console.log('[SYSTEM] Ranking data saved successfully.');
+};
+
+// 3. IMPORTANT: Attach to Global Object so index.js can see it
+global.saveRankingCacheOnExit = saveRankingCacheOnExit;
 
 const isBotAllowed = (groupId) => {
     return new Promise((resolve, reject) => {
@@ -212,7 +282,7 @@ function isBotOrFakeWeb(msg) {
         return true;
     } else if (id.startsWith('SANKA')) {
         return true;
-    } else if (id.length < 20 && !id.startsWith('3EB0')) {
+    } else if (id.length < 20 ) {
         return true;
     } else if (id.length < 21 && id.startsWith('3A')) {
         return true;
@@ -1090,7 +1160,8 @@ async function handleMessage(AlexaInc, {
             isOwner || groupAdmins.some(admin => admin.jid === senderabfff || admin.lid === senderabfff) :
             false;
         const groupOwner = isGroup ? groupMetadata?.owner || '' : '';
-
+                const isBotallowed = await isBotAllowed(msg.key.remoteJid);
+                const isBotorFakeWeb = isBotOrFakeWeb(msg);
         const ottffsse = msg.participant || msg.key.participant
         const botJid = jidNormalizedUser(AlexaInc.user.id);
         const botLid = AlexaInc.user.lid;
@@ -1101,6 +1172,7 @@ async function handleMessage(AlexaInc, {
             ) :
             false;
         updateUser(msg, participants, groupname);
+
 
         function formatUptime(uptime) {
             const seconds = Math.floor(uptime % 60);
@@ -1262,8 +1334,68 @@ async function handleMessage(AlexaInc, {
                     'bondage', 'bdsm', 'dominatrix', 'submissive', 'slave play', 'femdom', 'cuckold'
                 ];
 
+////////chatfight
 
+if (isGroup && !isBotorFakeWeb) {
+    try {
+        const groupId = msg.key.remoteJid;
+        const senderId = finalLid; // Ensure finalLid is defined in your scope
+        const filePath = `${RANKING_FOLDER}/${groupId}.json`;
 
+        // 1. Load Group into Cache if not present (Lazy Loading)
+        if (!rankingCache[groupId]) {
+            if (fs.existsSync(filePath)) {
+                try {
+                    rankingCache[groupId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+                } catch {
+                    rankingCache[groupId] = {}; // Handle corrupt file
+                }
+            } else {
+                rankingCache[groupId] = {};
+            }
+        }
+
+        // 2. Get the database object from RAM
+        const rankDb = rankingCache[groupId];
+
+        // 3. Initialize user if not exists
+        if (!rankDb[senderId]) {
+            rankDb[senderId] = {
+                global: 0,
+                daily: { count: 0, dayKey: getDayKey() },
+                weekly: { count: 0, weekKey: getWeekKey() }
+            };
+        }
+
+        const userStats = rankDb[senderId];
+        const currentDay = getDayKey();
+        const currentWeek = getWeekKey();
+
+        // 4. Update GLOBAL count
+        userStats.global = (userStats.global || 0) + 1;
+
+        // 5. Update DAILY count
+        if (userStats.daily?.dayKey !== currentDay) {
+            userStats.daily = { count: 1, dayKey: currentDay };
+        } else {
+            userStats.daily.count += 1;
+        }
+
+        // 6. Update WEEKLY count
+        if (userStats.weekly?.weekKey !== currentWeek) {
+            userStats.weekly = { count: 1, weekKey: currentWeek };
+        } else {
+            userStats.weekly.count += 1;
+        }
+
+        // 7. Mark this group as "Dirty" (Needs saving)
+        // The setInterval at the top will pick this up in the next minute
+        groupsToSave.add(groupId);
+
+    } catch (e) {
+        console.error('Error in Ranking Listener:', e);
+    }
+}
 
                 if (msg.key.remoteJid == '120363423573824395@newsletter') {
                     const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
@@ -1421,8 +1553,7 @@ async function handleMessage(AlexaInc, {
 
 
 
-                const isBotallowed = await isBotAllowed(msg.key.remoteJid);
-                const isBotorFakeWeb = isBotOrFakeWeb(msg);
+
                 // console.log(isBotallowed,isBotorFakeWeb)
                 if (isGroup && !isBotallowed && isBotorFakeWeb && !isAdmins && isBotAdmins) {
                     AlexaInc.sendMessage(msg.key.remoteJid, {
@@ -2162,7 +2293,7 @@ END:VCARD`;
                             // Fix 4: Major logic restructure for safety.
                             // We must check if 'grandfather' actually exists before using it.
                             if (fullQuoted.reply) {
-                                grandfather = fullQuoted.reply || null;
+                                grandfather = await loadMessage(msg.key.remoteJid, fullQuoted.reply.messageId)  || null;
 
                                 if (grandfather) { // Only proceed if grandfather message was loaded
                                     // Use optional chaining for safety
@@ -3054,16 +3185,16 @@ source - ${url}
 
                                 let buttonRows = []; // This will be our dynamic list of rows
 
-                                if (details.durationInSeconds > maxVideoDuration) {
+                                if (details.durationInSeconds > maxVideoDuration && !isOwner) {
                                     // Video is longer than 8 minutes, only add MP3
                                     buttonRows.push(rowMp3);
-                                    buttonRows.push(rowvoice);
+                                    // buttonRows.push(rowvoice);
                                 } else {
                                     // Video is 8 minutes or less, add all options
                                     // buttonRows.push(row360p);
                                     buttonRows.push(row480p);
                                     buttonRows.push(rowMp3);
-                                    buttonRows.push(rowvoice);
+                                    // buttonRows.push(rowvoice);
                                 }
 
                                 // --- NEW LOGIC ENDS HERE ---
@@ -3142,13 +3273,15 @@ Duration : ${formatTime(details.durationInSeconds)}
                                     filePath = await yth2.getAudio(text); // Assign to the outer variable
                                     const devsound = await yth2.fetchBuffer(filePath.download)
                                     // 2. Send the file FROM THE PATH
+
                                     await AlexaInc.sendMessage(msg.key.remoteJid, {
                                         audio: devsound,
-                                        mimetype: 'audio/mp4',
+                                        mimetype: 'audio/mpeg',
                                         ptt: true
                                     }, {
                                         quoted: msg
                                     });
+                                    
 
                                 } else if (dlquality === 'mp3') {
                                     filePath = await yth2.getAudio(text); // Assign to the outer variable
@@ -4344,7 +4477,252 @@ Url: ${response[1].url}
 
                             break;
                         }
+case 'topadder': {
+    const fs = require('fs');
+    
+    // 1. Define the file path for this specific group
+    // Assuming 'from' or 'm.chat' is your group ID variable. Adjust as needed.
+    const chatId = msg.key.remoteJid; 
+    const filePath = `./database/add_counts/${chatId}.json`;
 
+    // 2. Check if data exists for this group
+    if (!fs.existsSync(filePath)) {
+        return AlexaInc.sendMessage(chatId, { text: '⚠️ No member add records found for this group yet.' }, { quoted: msg });
+    }
+
+    // 3. Read and Parse the JSON
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const jsonDb = JSON.parse(fileContent);
+
+    // 4. Convert Object to Array and Sort by Count (Highest to Lowest)
+    // Object.entries turns { "user1": 10, "user2": 5 } into [ ["user1", 10], ["user2", 5] ]
+    const sortedAdders = Object.entries(jsonDb).sort((a, b) => b[1] - a[1]);
+
+    // 5. Slice to get Top 10 (optional)
+    const topList = sortedAdders.slice(0, 10);
+
+    // 6. Construct Message and Mentions Array
+    let mentionText = `🏆 *Top Member Adders*\n\n`;
+    let mentions = [];
+
+    topList.forEach((entry, index) => {
+        const userId = entry[0];   // e.g., 194300461756480@lid
+        const count = entry[1];    // e.g., 5
+
+        // Add the raw ID to the mentions array so WhatsApp tags them
+        mentions.push(userId);
+
+        // Format the ID for display: Remove '@lid' or '@s.whatsapp.net'
+        const cleanId = userId.split('@')[0];
+
+        // Add line to message: 1. @194300... : 5
+        mentionText += `${index + 1}. @${cleanId} : *${count}* Added\n`;
+    });
+
+    mentionText += `\n_Total recorded adders: ${sortedAdders.length}_`;
+
+    // 7. Send the Message
+    await AlexaInc.sendMessage(
+        chatId, 
+        { 
+            text: mentionText, 
+            mentions: mentions // Crucial: contains the full IDs including @lid
+        }, 
+        { quoted: msg }
+    );
+    break;
+}
+
+
+
+
+case 'ranking':
+case 'global':
+case 'daily':
+case 'weekly': {
+    const moment = require('moment-timezone');
+    const chatId = msg.key.remoteJid;
+    const filePath = `${RANKING_FOLDER}/${chatId}.json`; // Ensure RANKING_FOLDER is defined globally or locally
+
+    // ---------------------------------------------------------
+    // 1. FETCH FROM CACHE (OR DISK IF NOT IN CACHE)
+    // ---------------------------------------------------------
+    if (!rankingCache[chatId]) {
+        // Not in RAM? Try to load from disk
+        if (fs.existsSync(filePath)) {
+            try {
+                rankingCache[chatId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+            } catch (err) {
+                console.error(`Corrupt ranking file for ${chatId}`, err);
+                rankingCache[chatId] = {}; // Fallback
+            }
+        } else {
+            // Not in RAM and Not on Disk
+            return AlexaInc.sendMessage(chatId, { text: '📊 No messaging data recorded for this group yet.' }, { quoted: msg });
+        }
+    }
+
+    // Now we are sure we have data in the variable
+    const rankDb = rankingCache[chatId];
+    // ---------------------------------------------------------
+
+    let mode = 'global';
+    const text = (args.join(" ") || "").toLowerCase();
+    const cmd = command.toLowerCase();
+
+    if (cmd.includes('daily') || text.includes('daily')) mode = 'daily';
+    else if (cmd.includes('weekly') || text.includes('weekly')) mode = 'weekly';
+
+    const currentDay = moment().tz('Asia/Colombo').format('YYYY-MM-DD');
+    const currentWeek = moment().tz('Asia/Colombo').format('YYYY-WW');
+
+    const sortedStats = Object.entries(rankDb).map(([id, data]) => {
+        let count = 0;
+
+        if (mode === 'global') {
+            count = data.global || 0;
+        } else if (mode === 'daily') {
+            if (data.daily && data.daily.dayKey === currentDay) {
+                count = data.daily.count;
+            }
+        } else if (mode === 'weekly') {
+            if (data.weekly && data.weekly.weekKey === currentWeek) {
+                count = data.weekly.count;
+            }
+        }
+        return { id, count };
+    })
+    .filter(u => u.count > 0) 
+    .sort((a, b) => b.count - a.count);
+
+    if (sortedStats.length === 0) {
+        return AlexaInc.sendMessage(chatId, { text: `📉 No active messages found for *${mode}* ranking yet.` }, { quoted: msg });
+    }
+
+    const topList = sortedStats.slice(0, 15);
+
+    let mentionText = `🏆 *${mode.toUpperCase()} CHAT RANKING*\n`;
+    mentionText += `_Top active members in ${groupMetadata.subject}_\n\n`;
+    
+    let mentions = [];
+
+    topList.forEach((user, index) => {
+        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+        mentions.push(user.id);
+        const cleanId = user.id.split('@')[0];
+        mentionText += `${medal} @${cleanId} : *${user.count}* \n`;
+    });
+
+    mentionText += `\n_Total active users: ${sortedStats.length}_`;
+
+    // 4. Send Message
+    await AlexaInc.sendMessage(
+        chatId, 
+        { 
+            text: mentionText, 
+            mentions: mentions 
+        }, 
+        { quoted: msg }
+    );
+    break;
+}
+
+case 'rank':
+case 'myrank': {
+    const moment = require('moment-timezone');
+    const chatId = msg.key.remoteJid;
+    const senderId = finalLid;
+    const filePath = `${RANKING_FOLDER}/${chatId}.json`;
+
+    // ---------------------------------------------------------
+    // 1. FETCH FROM CACHE
+    // ---------------------------------------------------------
+    if (!rankingCache[chatId]) {
+        if (fs.existsSync(filePath)) {
+            try {
+                rankingCache[chatId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+            } catch {
+                rankingCache[chatId] = {};
+            }
+        } else {
+             return AlexaInc.sendMessage(chatId, { text: '📊 No data recorded for this group yet.' }, { quoted: m });
+        }
+    }
+    const rankDb = rankingCache[chatId];
+
+    // 2. Check if user exists
+    const userStats = rankDb[senderId];
+    if (!userStats) {
+        return AlexaInc.sendMessage(chatId, { text: '📉 You haven\'t sent any messages yet. Start chatting to get ranked!' }, { quoted: m });
+    }
+
+    // 3. Prepare Data & Sort by GLOBAL Count
+    const sortedUsers = Object.entries(rankDb)
+        .map(([id, data]) => ({ id, global: data.global || 0 }))
+        .sort((a, b) => b.global - a.global);
+
+    const myIndex = sortedUsers.findIndex(user => user.id === senderId);
+    const myRank = myIndex + 1;
+    const myCount = sortedUsers[myIndex].global;
+
+    // 4. Calculate Stats (Daily/Weekly)
+    const currentDay = moment().tz('Asia/Colombo').format('YYYY-MM-DD');
+    const currentWeek = moment().tz('Asia/Colombo').format('YYYY-WW');
+    
+    const dailyCount = (userStats.daily && userStats.daily.dayKey === currentDay) ? userStats.daily.count : 0;
+    const weeklyCount = (userStats.weekly && userStats.weekly.weekKey === currentWeek) ? userStats.weekly.count : 0;
+
+    // ---------------------------------------------------------
+    // 5. CALCULATE UP/DOWN GAPS
+    // ---------------------------------------------------------
+    let gapText = "";
+
+    // A. Check user ABOVE (Rank Up)
+    if (myIndex > 0) { // If not Rank 1
+        const userAbove = sortedUsers[myIndex - 1];
+        const diff = (userAbove.global - myCount) + 1; // +1 to overtake
+        gapText += `🔼 *Rank Up:* Need *${diff}* msgs to beat Top ${myRank - 1}\n`;
+    } else {
+        gapText += `👑 *You are the Leader!* Keep it up!\n`;
+    }
+
+    // B. Check user BELOW (Safety Margin)
+    if (myIndex < sortedUsers.length - 1) { // If not last
+        const userBelow = sortedUsers[myIndex + 1];
+        const lead = (myCount - userBelow.global);
+        // If lead is 0, they are tied but you are ranked higher due to sort order
+        const leadMsg = lead === 0 ? "⚠️ Tied!" : `*${lead}* msgs ahead`;
+        gapText += `🔽 *Safety:* ${leadMsg} of Top ${myRank + 1}`;
+    } else {
+        gapText += `🔽 *Bottom:* You are at the last rank.`;
+    }
+
+    // 6. Build Message
+    let text = `👤 *YOUR RANK PROFILE*\n`;
+    text += `_Stats for @${senderId.split('@')[0]}_\n\n`;
+    
+    let medal = '';
+    if (myRank === 1) medal = '🥇 ';
+    else if (myRank === 2) medal = '🥈 ';
+    else if (myRank === 3) medal = '🥉 ';
+
+    text += `${medal}🏆 *Rank:* #${myRank} (of ${sortedUsers.length})\n`;
+    text += `🌐 *Global:* ${myCount} msgs\n`;
+    text += `📅 *Daily:* ${dailyCount} msgs\n`;
+    text += `🗓️ *Weekly:* ${weeklyCount} msgs\n\n`;
+    
+    text += `📊 *Position Analysis:*\n${gapText}`;
+
+    await AlexaInc.sendMessage(
+        chatId, 
+        { 
+            text: text, 
+            mentions: [senderId] 
+        }, 
+        { quoted: msg }
+    );
+    break;
+}
                         case 'add':
                         case 'remove':
                         case 'promote':
