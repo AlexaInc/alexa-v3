@@ -2124,6 +2124,12 @@ reptxt = reptxt
 ┃ ➥ \`.special\` 
 ┃ 
 ┃ _*DailyGiveaway*_  
+┃ ➥ \`.newmafia\` - Start mafia game registration  
+┃ ➥ \`.extendmafia\` - extend registration time
+┃ ➥ \`.startmafia\` - menual start mafia game  
+┃ ➥ \`.mafiatop\` - get mafea leaderboard
+┃ 
+┃ _*DailyGiveaway*_  
 ┃ ➥ \`.dailyqa\` - Start Q&A  
 ┃ ➥ \`.answer\` - Send answer number
 ┃ 
@@ -4143,8 +4149,7 @@ case "startmafia": {
 }
 
 // 🏆 LEADERBOARD
-case "mafiatop":
-case "leaderboard": {
+case "mafiatop": {
     await mafiaGame.showLeaderboard(AlexaInc, msg);
     break;
 }
