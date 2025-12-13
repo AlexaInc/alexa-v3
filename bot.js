@@ -24,6 +24,7 @@ const {
     handleChainGuess,
     checkInactiveChainGames
 } = require('./res/js/wordchain.js');
+const mafiaGame = require('./res/js/mafia.js')
 const QUIZ_STORAGE_DIR = './quizzes';
 const {
     promisify
@@ -1676,16 +1677,23 @@ reptxt = reptxt
                         text: 'You are the Owner. Lucky You'
                     });
                     if (vvvvvvvv == 'delete') {
+
                         await AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: '🚫 Links are not allowed in this group! , your msg will delete'
-                        });
-                        AlexaInc.sendMessage(msg.key.remoteJid, {
                             delete: msg.key
+                        }).then(response=>{
+                         AlexaInc.sendMessage(msg.key.remoteJid, {
+                            text: '🚫 Links are not allowed in this group! , your msg will delete'
+                        })
                         })
                     } else if (vvvvvvvv == 'warn') {
-                        await AlexaInc.sendMessage(msg.key.remoteJid, {
+                        
+                                                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                            delete: msg.key
+                        }).then(response=>{
+                         AlexaInc.sendMessage(msg.key.remoteJid, {
                             text: '🚫 Links are not allowed in this group! , your msg will delete'
-                        });
+                        })
+                        })
                         const usertowarn = [msg.key.participant]
                         warnUser(AlexaInc, msg.key.remoteJid, AlexaInc.user.id, usertowarn, msg)
                     } else {
@@ -1722,7 +1730,21 @@ reptxt = reptxt
 
 
 
-
+                if (messageText.startsWith("_join_")){
+                    if(isGroup) return mess.private();
+                    await mafiaGame.joinGame(AlexaInc, msg,finalLid);
+                    return;
+                }
+                if (messageText.startsWith("_night_")){
+                    if(isGroup) return mess.private();
+                    await mafiaGame.handleNightAction(AlexaInc, msg, messageText,finalLid);
+                    return;
+                }
+                if (messageText.startsWith("_day_vote_")){
+                    if(isGroup) return mess.private();
+                     await mafiaGame.handleVote(AlexaInc, msg, messageText,finalLid);
+                     return;
+                }
 
 
 
@@ -4098,6 +4120,34 @@ Congratulations ❤️`,
                             break;
 
 
+
+// 🆕 CREATE GAME
+case "newmafia": {
+    if (!isGroup) return mess.group();
+    await mafiaGame.createGame(AlexaInc, msg, botJid.split("@")[0]);
+    break;
+}
+
+// ⏳ EXTEND REGISTRATION TIME (New Feature)
+case "extendmafia": {
+    if (!isGroup) return mess.group();
+    await mafiaGame.extendRegistration(AlexaInc, msg);
+    break;
+}
+
+// ⚡ MANUAL START
+case "startmafia": {
+    if (!isGroup) return mess.group();
+    await mafiaGame.startGame(AlexaInc, msg);
+    break;
+}
+
+// 🏆 LEADERBOARD
+case "mafiatop":
+case "leaderboard": {
+    await mafiaGame.showLeaderboard(AlexaInc, msg);
+    break;
+}
 
 
                         case "battle": {
