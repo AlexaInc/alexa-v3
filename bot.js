@@ -76,10 +76,7 @@ const {
     generateWAMessageFromContent,
     generateMessageID
 } = require('@hansaka02/baileys');
-const {
-    Sticker,
-    StickerTypes
-} = require('wa-sticker-formatter');
+// 
 const {
     generateLinkPreview
 } = require("link-preview-js");
