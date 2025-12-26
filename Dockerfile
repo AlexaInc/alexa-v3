@@ -6,10 +6,18 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install dependencies
 RUN apt update \
     && apt install -y software-properties-common speedtest-cli \
+    && apt-get install -y \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libjpeg-dev \
+    libgif-dev \
+    librsvg2-dev \
+    pkg-config \
+    build-essential \
+    python3
     && apt install -y ffmpeg \
     && apt clean \
     && rm -rf /var/lib/apt/lists/*
-
 
 
 # Create a virtual environment
