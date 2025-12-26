@@ -2439,14 +2439,14 @@ END:VCARD`;
                                 .toBuffer();
 
                             // 3. Create the sticker using the NEW high-quality buffer
-                            const sticker = new Sticker(highQualityBuffer, { // <-- Use highQualityBuffer here
-                                pack: 'My Bot',
-                                author: 'Quotly',
-                                type: StickerTypes.DEFAULT, // Type doesn't matter as much now
-                                quality: 90 // Keep quality high
-                            });
+                            // const sticker = new Sticker(highQualityBuffer, { // <-- Use highQualityBuffer here
+                            //     pack: 'My Bot',
+                            //     author: 'Quotly',
+                            //     type: StickerTypes.DEFAULT, // Type doesn't matter as much now
+                            //     quality: 90 // Keep quality high
+                            // });
 
-                            const stickerBuffer = await sticker.toBuffer();
+                            // const stickerBuffer = await sticker.toBuffer();
 
                             // 4. Send the final sticker
                             await AlexaInc.sendMessage(msg.key.remoteJid, {
@@ -2742,7 +2742,7 @@ END:VCARD`;
                                 }
 
                                 // 3. Process the buffer and create sticker
-                                let stickerBuffer;
+                
                                 const isVideo = messageType === "videoMessage";
                                 const stickerMetadata = {
                                     pack: 'My Bot', // Your Sticker Pack Name
@@ -2750,50 +2750,65 @@ END:VCARD`;
                                     quality: 90
                                 };
 
-                                if (isVideo) {
-                                    // --- Video Processing ---
-                                    // 'wa-sticker-formatter' handles video buffers directly
-                                    const sticker = new Sticker(mediaBuffer, {
-                                        ...stickerMetadata,
-                                        type: StickerTypes.DEFAULT, // or FULL, CROP
-                                    });
-                                    stickerBuffer = await sticker.toBuffer();
+let stickerBuffer;
 
-                                } else {
-                                    // --- Image Processing (using your sharp logic) ---
+if (isVideo) {
+    // --- Video Processing (MP4/GIF/WEBM → animated WEBP) ---
 
-                                    // 3a. Process with sharp
-                                    const highQualityBuffer = await sharp(mediaBuffer)
-                                        .resize(1024, 1024, { // Using the 1024x1024 from your example
-                                            fit: 'contain',
-                                            background: {
-                                                r: 0,
-                                                g: 0,
-                                                b: 0,
-                                                alpha: 0
-                                            }, // Transparent background
-                                            kernel: sharp.kernel.lanczos3
-                                        })
-                                        .webp() // Convert it to webp
-                                        .toBuffer();
+    const inputPath = path.join(__dirname, `video_${Date.now()}.mp4`);
+    const outputPath = path.join(__dirname, `sticker_${Date.now()}.webp`);
 
-                                    // 3b. Create sticker from the processed image buffer
-                                    const sticker = new Sticker(highQualityBuffer, {
-                                        ...stickerMetadata,
-                                        type: StickerTypes.DEFAULT,
-                                    });
-                                    stickerBuffer = await sticker.toBuffer();
-                                }
+    // write video buffer to temp file
+    fs.writeFileSync(inputPath, mediaBuffer);
 
-                                // 4. Send the sticker (as a buffer)
-                                await AlexaInc.sendMessage(
-                                    msg.key.remoteJid, {
-                                        sticker: stickerBuffer
-                                    }, // Send the buffer directly
-                                    {
-                                        quoted: msg
-                                    }
-                                );
+    await new Promise((resolve, reject) => {
+        ffmpeg(inputPath)
+            .outputOptions([
+                "-vcodec libwebp",
+                "-vf scale=512:512:force_original_aspect_ratio=decrease,fps=15",
+                "-loop 0",
+                "-ss 0",
+                "-t 6",          // max 6 seconds (WhatsApp rule)
+                "-preset default",
+                "-an",
+                "-vsync 0"
+            ])
+            .format("webp")
+            .save(outputPath)
+            .on("end", resolve)
+            .on("error", reject);
+    });
+
+    // read sticker buffer
+    stickerBuffer = fs.readFileSync(outputPath);
+
+    // cleanup
+    fs.unlinkSync(inputPath);
+    fs.unlinkSync(outputPath);
+
+} else {
+    // --- Image Processing (Image → WEBP sticker) ---
+
+    stickerBuffer = await sharp(mediaBuffer)
+        .resize(512, 512, {
+            fit: "contain",
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+            kernel: sharp.kernel.lanczos3
+        })
+        .webp({
+            quality: 100,
+            lossless: true
+        })
+        .toBuffer();
+}
+
+// --- Send the sticker ---
+await AlexaInc.sendMessage(
+    msg.key.remoteJid,
+    { sticker: stickerBuffer },
+    { quoted: msg }
+);
+
 
                                 AlexaInc.sendMessage(msg.key.remoteJid, {
                                     react: {
