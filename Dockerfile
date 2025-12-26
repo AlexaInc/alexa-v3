@@ -34,4 +34,4 @@ COPY . .
 
 EXPOSE 4001
 
-CMD ["node", "app"]
+CMD ["node", "index"]
