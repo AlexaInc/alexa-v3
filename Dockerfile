@@ -22,7 +22,7 @@ WORKDIR /api
 COPY package*.json ./
 RUN npm config set ignore-scripts true
 
-RUN npm install --platform=linux --arch=x64 sharp && npm install
+RUN npm install --legacy-peer-deps
 RUN npm rebuild sharp --platform=linux --arch=x64 --force
 
 # Copy the rest of the application files

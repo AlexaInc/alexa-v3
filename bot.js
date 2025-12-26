@@ -6,6 +6,7 @@ const yts = require('yt-search');
 const mumaker = require('mumaker');
 const battlearena = require("./res/js/battlearena.js");
 const weatherof = require('./res/js/weather.js')
+const Assassin = require('./res/js/assassin.js');
 const {
     handleHangman,
     checkInactiveGames
@@ -188,9 +189,9 @@ const TIMEZONE = 'Asia/Colombo';
 
 // --- CACHE SYSTEM ---
 // This holds the data in RAM while the bot is running
-const rankingCache = {}; 
+const rankingCache = {};
 // This keeps track of which groups have new data to save
-const groupsToSave = new Set(); 
+const groupsToSave = new Set();
 
 // --- HELPER FUNCTIONS ---
 const getDayKey = () => moment().tz(TIMEZONE).format('YYYY-MM-DD');
@@ -201,17 +202,19 @@ setInterval(() => {
     if (groupsToSave.size === 0) return; // Nothing to save
 
     // console.log(`[RANKING] Saving data for ${groupsToSave.size} groups...`);
-    
+
     groupsToSave.forEach(groupId => {
         try {
             const filePath = `${RANKING_FOLDER}/${groupId}.json`;
             const data = rankingCache[groupId];
-            
+
             // Ensure folder exists (just in case)
             if (!fs.existsSync(RANKING_FOLDER)) {
-                fs.mkdirSync(RANKING_FOLDER, { recursive: true });
+                fs.mkdirSync(RANKING_FOLDER, {
+                    recursive: true
+                });
             }
-            
+
             // Write from RAM to Disk
             fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
         } catch (err) {
@@ -228,20 +231,22 @@ const saveRankingCacheOnExit = () => {
     if (typeof groupsToSave === 'undefined' || groupsToSave.size === 0) return;
 
     console.log(`[SYSTEM] Saving ${groupsToSave.size} ranking files before shutdown...`);
-    
+
     // We use a simple loop to ensure it runs synchronously
     groupsToSave.forEach(groupId => {
         try {
             const filePath = `${RANKING_FOLDER}/${groupId}.json`;
-            
+
             // Check if we have data for this group
             if (rankingCache[groupId]) {
                 const data = rankingCache[groupId];
-                
+
                 if (!fs.existsSync(RANKING_FOLDER)) {
-                    fs.mkdirSync(RANKING_FOLDER, { recursive: true });
+                    fs.mkdirSync(RANKING_FOLDER, {
+                        recursive: true
+                    });
                 }
-                
+
                 // SYNC write is required for process.exit
                 fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
             }
@@ -283,7 +288,7 @@ function isBotOrFakeWeb(msg) {
         return true;
     } else if (id.startsWith('SANKA')) {
         return true;
-    } else if (id.length < 20 ) {
+    } else if (id.length < 20) {
         return true;
     } else if (id.length < 21 && id.startsWith('3A')) {
         return true;
@@ -1088,7 +1093,7 @@ async function handleMessage(AlexaInc, {
 }, loadMessage, saveMessage, p, alexasocket) {
 
 
-    const botNumber = await AlexaInc.user.id.split(':')[0];
+    // const botNumber = await AlexaInc.user.id.split(':')[0];
 
 
 
@@ -1161,10 +1166,11 @@ async function handleMessage(AlexaInc, {
             isOwner || groupAdmins.some(admin => admin.jid === senderabfff || admin.lid === senderabfff) :
             false;
         const groupOwner = isGroup ? groupMetadata?.owner || '' : '';
-                const isBotallowed = await isBotAllowed(msg.key.remoteJid);
-                const isBotorFakeWeb = isBotOrFakeWeb(msg);
+        const isBotallowed = await isBotAllowed(msg.key.remoteJid);
+        const isBotorFakeWeb = isBotOrFakeWeb(msg);
         const ottffsse = msg.participant || msg.key.participant
         const botJid = jidNormalizedUser(AlexaInc.user.id);
+        const botNumber = botJid.replace(/@.*/, "")
         const botLid = AlexaInc.user.lid;
         const isBotAdmins = isGroup ?
             groupAdmins.some(admin =>
@@ -1335,68 +1341,80 @@ async function handleMessage(AlexaInc, {
                     'bondage', 'bdsm', 'dominatrix', 'submissive', 'slave play', 'femdom', 'cuckold'
                 ];
 
-////////chatfight
+                ////////chatfight
 
-if (isGroup && !isBotorFakeWeb) {
-    try {
-        const groupId = msg.key.remoteJid;
-        const senderId = finalLid; // Ensure finalLid is defined in your scope
-        const filePath = `${RANKING_FOLDER}/${groupId}.json`;
+                if (isGroup && !isBotorFakeWeb) {
+                    try {
+                        const groupId = msg.key.remoteJid;
+                        const senderId = finalLid; // Ensure finalLid is defined in your scope
+                        const filePath = `${RANKING_FOLDER}/${groupId}.json`;
 
-        // 1. Load Group into Cache if not present (Lazy Loading)
-        if (!rankingCache[groupId]) {
-            if (fs.existsSync(filePath)) {
-                try {
-                    rankingCache[groupId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-                } catch {
-                    rankingCache[groupId] = {}; // Handle corrupt file
+                        // 1. Load Group into Cache if not present (Lazy Loading)
+                        if (!rankingCache[groupId]) {
+                            if (fs.existsSync(filePath)) {
+                                try {
+                                    rankingCache[groupId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+                                } catch {
+                                    rankingCache[groupId] = {}; // Handle corrupt file
+                                }
+                            } else {
+                                rankingCache[groupId] = {};
+                            }
+                        }
+
+                        // 2. Get the database object from RAM
+                        const rankDb = rankingCache[groupId];
+
+                        // 3. Initialize user if not exists
+                        if (!rankDb[senderId]) {
+                            rankDb[senderId] = {
+                                global: 0,
+                                daily: {
+                                    count: 0,
+                                    dayKey: getDayKey()
+                                },
+                                weekly: {
+                                    count: 0,
+                                    weekKey: getWeekKey()
+                                }
+                            };
+                        }
+
+                        const userStats = rankDb[senderId];
+                        const currentDay = getDayKey();
+                        const currentWeek = getWeekKey();
+
+                        // 4. Update GLOBAL count
+                        userStats.global = (userStats.global || 0) + 1;
+
+                        // 5. Update DAILY count
+                        if (userStats.daily?.dayKey !== currentDay) {
+                            userStats.daily = {
+                                count: 1,
+                                dayKey: currentDay
+                            };
+                        } else {
+                            userStats.daily.count += 1;
+                        }
+
+                        // 6. Update WEEKLY count
+                        if (userStats.weekly?.weekKey !== currentWeek) {
+                            userStats.weekly = {
+                                count: 1,
+                                weekKey: currentWeek
+                            };
+                        } else {
+                            userStats.weekly.count += 1;
+                        }
+
+                        // 7. Mark this group as "Dirty" (Needs saving)
+                        // The setInterval at the top will pick this up in the next minute
+                        groupsToSave.add(groupId);
+
+                    } catch (e) {
+                        console.error('Error in Ranking Listener:', e);
+                    }
                 }
-            } else {
-                rankingCache[groupId] = {};
-            }
-        }
-
-        // 2. Get the database object from RAM
-        const rankDb = rankingCache[groupId];
-
-        // 3. Initialize user if not exists
-        if (!rankDb[senderId]) {
-            rankDb[senderId] = {
-                global: 0,
-                daily: { count: 0, dayKey: getDayKey() },
-                weekly: { count: 0, weekKey: getWeekKey() }
-            };
-        }
-
-        const userStats = rankDb[senderId];
-        const currentDay = getDayKey();
-        const currentWeek = getWeekKey();
-
-        // 4. Update GLOBAL count
-        userStats.global = (userStats.global || 0) + 1;
-
-        // 5. Update DAILY count
-        if (userStats.daily?.dayKey !== currentDay) {
-            userStats.daily = { count: 1, dayKey: currentDay };
-        } else {
-            userStats.daily.count += 1;
-        }
-
-        // 6. Update WEEKLY count
-        if (userStats.weekly?.weekKey !== currentWeek) {
-            userStats.weekly = { count: 1, weekKey: currentWeek };
-        } else {
-            userStats.weekly.count += 1;
-        }
-
-        // 7. Mark this group as "Dirty" (Needs saving)
-        // The setInterval at the top will pick this up in the next minute
-        groupsToSave.add(groupId);
-
-    } catch (e) {
-        console.error('Error in Ranking Listener:', e);
-    }
-}
 
                 if (msg.key.remoteJid == '120363423573824395@newsletter') {
                     const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
@@ -1563,18 +1581,18 @@ if (isGroup && !isBotorFakeWeb) {
                     AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
                 }
 
-                if (matchedFilter && !messageText.startsWith('/stop'||'/filter')) {
+                if (matchedFilter && !messageText.startsWith('/stop' || '/filter')) {
 
                     if (matchedFilter.type === 'text') {
                         let reptxt = matchedFilter.reply;
 
-reptxt = reptxt
-  .replace(/\{name\}|<name>/gi, msg.pushName || '')
-  .replace(/\{gname\}|<gname>|\{group name\}|<group name>/gi, groupname || '')
-  .replace(/\{time\}/gi,moment.tz('Asia/Colombo').format('HH:mm:ss'))
-  .replace(/\{date\}/gi,moment.tz('Asia/Colombo').format('MMMM Do YYYY'))
-  .replace(/\{day\}/gi,moment.tz('Asia/Colombo').format('dddd'))
-  .replace(/\{greating\}/,getGreeting());
+                        reptxt = reptxt
+                            .replace(/\{name\}|<name>/gi, msg.pushName || '')
+                            .replace(/\{gname\}|<gname>|\{group name\}|<group name>/gi, groupname || '')
+                            .replace(/\{time\}/gi, moment.tz('Asia/Colombo').format('HH:mm:ss'))
+                            .replace(/\{date\}/gi, moment.tz('Asia/Colombo').format('MMMM Do YYYY'))
+                            .replace(/\{day\}/gi, moment.tz('Asia/Colombo').format('dddd'))
+                            .replace(/\{greating\}/, getGreeting());
 
                         AlexaInc.sendMessage(msg.key.remoteJid, {
                             text: reptxt
@@ -1618,6 +1636,8 @@ reptxt = reptxt
 
                 const allowedCommands = [
                     '.ytdl_select',
+                    '.ytdl',
+                    '.dlyt',
                     '.dl360p',
                     '.dl480p',
                     '.dlmp3',
@@ -1680,19 +1700,19 @@ reptxt = reptxt
 
                         await AlexaInc.sendMessage(msg.key.remoteJid, {
                             delete: msg.key
-                        }).then(response=>{
-                         AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: '🚫 Links are not allowed in this group! , your msg will delete'
-                        })
+                        }).then(response => {
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: '🚫 Links are not allowed in this group! , your msg will delete'
+                            })
                         })
                     } else if (vvvvvvvv == 'warn') {
-                        
-                                                await AlexaInc.sendMessage(msg.key.remoteJid, {
+
+                        await AlexaInc.sendMessage(msg.key.remoteJid, {
                             delete: msg.key
-                        }).then(response=>{
-                         AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: '🚫 Links are not allowed in this group! , your msg will delete'
-                        })
+                        }).then(response => {
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: '🚫 Links are not allowed in this group! , your msg will delete'
+                            })
                         })
                         const usertowarn = [msg.key.participant]
                         warnUser(AlexaInc, msg.key.remoteJid, AlexaInc.user.id, usertowarn, msg)
@@ -1730,20 +1750,34 @@ reptxt = reptxt
 
 
 
-                if (messageText.startsWith("_join_")){
-                    if(isGroup) return mess.private();
-                    await mafiaGame.joinGame(AlexaInc, msg,finalLid);
+                if (messageText.startsWith("_join_")) {
+                    if (isGroup) return mess.private();
+                    // console.log(finalLid,finalJid)
+                    await mafiaGame.joinGame(AlexaInc, msg, finalLid, messageText);
                     return;
                 }
-                if (messageText.startsWith("_night_")){
-                    if(isGroup) return mess.private();
-                    await mafiaGame.handleNightAction(AlexaInc, msg, messageText,finalLid);
+                if (messageText.startsWith("_night_")) {
+                    if (isGroup) return mess.private();
+                    await mafiaGame.handleNightAction(AlexaInc, msg, messageText, finalLid);
                     return;
                 }
-                if (messageText.startsWith("_day_vote_")){
-                    if(isGroup) return mess.private();
-                     await mafiaGame.handleVote(AlexaInc, msg, messageText,finalLid);
-                     return;
+                if (messageText.startsWith("_n_") || messageText.startsWith("_set_det_")) {
+                    await mafiaGame.handleNightAction(AlexaInc, msg, messageText, finalLid);
+                    return;
+                }
+                if (messageText.startsWith("_day_vote_")) {
+                    if (isGroup) return mess.private();
+                    await mafiaGame.handleVote(AlexaInc, msg, messageText, finalLid);
+                    return;
+                }
+                if (messageText.startsWith("_joinass_")) {
+                    await Assassin.joinGame(AlexaInc, msg, finalLid);
+                    return;
+                }
+
+                if (messageText.startsWith("_assassin_vote_")) {
+                    await Assassin.handleVote(AlexaInc, msg, messageText, finalLid);
+                    return;
                 }
 
 
@@ -2302,14 +2336,14 @@ END:VCARD`;
                                 quotesendernumber = (await participants.find(jsn => jsn.lid === quotedSender))?.id
                                     ?.replace(/@.*/, "");
                             } else {
-                                quotesendernumber = quotedSender === 'me' ? process.env.bot_nb : isGroup ?
+                                quotesendernumber = quotedSender === 'me' ? botNumber : isGroup ?
                                     quotedSender.replace(/:.*/, "") : quotedSender.replace(/@.*/, "");
                             }
 
                             console.log(quotesendernumber);
                             usercontact = await loadUserByNumber(quotesendernumber);
                             quotesendername = usercontact.name ? usercontact.name : quotesendernumber;
-                            const id2getpp = quotedSender === 'me' ? `${process.env.bot_nb}@s.whatsapp.net` :
+                            const id2getpp = quotedSender === 'me' ? `${botNumber}@s.whatsapp.net` :
                                 quotedSender
                             const dpurl = await getdpurl(AlexaInc, id2getpp);
                             const dpbuffer = dpurl ? await getBuffer(dpurl) : null;
@@ -2321,7 +2355,8 @@ END:VCARD`;
                             // Fix 4: Major logic restructure for safety.
                             // We must check if 'grandfather' actually exists before using it.
                             if (fullQuoted.reply) {
-                                grandfather = await loadMessage(msg.key.remoteJid, fullQuoted.reply.messageId)  || null;
+                                grandfather = await loadMessage(msg.key.remoteJid, fullQuoted.reply.messageId) ||
+                                    null;
 
                                 if (grandfather) { // Only proceed if grandfather message was loaded
                                     // Use optional chaining for safety
@@ -2339,7 +2374,7 @@ END:VCARD`;
                                         gftsendernumber = grandfather.sender ? grandfather.sender.replace(/@.*/,
                                             "") : null;
                                     } else { // isgftrfm is true
-                                        gftsendernumber = process.env.bot_nb;
+                                        gftsendernumber = botNumber;
                                     }
 
                                     console.log(gftsendernumber);
@@ -2371,7 +2406,8 @@ END:VCARD`;
                             const isquoterank = rank.includes(quotesendernumber);
 
                             // Fix 7: Fix typo "costom" -> "custom"
-                            const customemojiid = isquoteowner ? '5267500801240092311' : isquoterank ? '6228999461754900766':null;
+                            const customemojiid = isquoteowner ? '5267500801240092311' : isquoterank ?
+                                '6228999461754900766' : null;
 
                             let firstNum = Math.floor(Math.random() * 10);
                             let secondNum;
@@ -3309,7 +3345,7 @@ Duration : ${formatTime(details.durationInSeconds)}
                                     }, {
                                         quoted: msg
                                     });
-                                    
+
 
                                 } else if (dlquality === 'mp3') {
                                     filePath = await yth2.getAudio(text); // Assign to the outer variable
@@ -3459,14 +3495,14 @@ Duration : ${formatTime(details.durationInSeconds)}
 ᴅᴜʀᴀᴛɪᴏɴ : ${cons5}
 ᴀᴜᴛʜᴏʀ : ${con4}
 `;
-   
-                                    // 2. Send the file FROM THE PATH
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        audio: devsound,
-                                        mimetype: 'audio/mp4'
-                                    }, {
-                                        quoted: msg
-                                    });
+
+                                // 2. Send the file FROM THE PATH
+                                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    audio: devsound,
+                                    mimetype: 'audio/mp4'
+                                }, {
+                                    quoted: msg
+                                });
 
 
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
@@ -3503,12 +3539,12 @@ Duration : ${formatTime(details.durationInSeconds)}
                                 });
                             }
                             try {
-                                filePath = await yth2.getAudio(text); // Assign to the outer variable
-                                const devsound = yth2.fetchBuffer(filePath.download)
+                                const filePath = await yth2.getVideo(text); // Assign to the outer variable
+                                const devsound = await yth2.fetchBuffer(filePath.download)
                                 // 2. Send the file FROM THE PATH
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    audio: devsound,
-                                    mimetype: 'audio/mp4'
+                                    video: devsound,
+                                    mimetype: 'video/mp4'
                                 }, {
                                     quoted: msg
                                 });
@@ -3520,18 +3556,19 @@ Duration : ${formatTime(details.durationInSeconds)}
                                 }, {
                                     quoted: msg
                                 });
-                            } finally {
-                                // 4. DELETE THE FILE
-                                // This can now see the 'filePath' variable
-                                if (filePath) {
-                                    try {
-                                        await fsp.unlink(filePath); // Delete the file
-                                        console.log('Successfully deleted temp file:', filePath);
-                                    } catch (deleteError) {
-                                        console.error('Failed to delete temp file:', deleteError);
-                                    }
-                                }
-                            };
+                            } 
+                            // finally {
+                            //     // 4. DELETE THE FILE
+                            //     // This can now see the 'filePath' variable
+                            //     if (filePath) {
+                            //         try {
+                            //             await fsp.unlink(filePath); // Delete the file
+                            //             console.log('Successfully deleted temp file:', filePath);
+                            //         } catch (deleteError) {
+                            //             console.error('Failed to delete temp file:', deleteError);
+                            //         }
+                            //     }
+                            // };
 
 
 
@@ -4127,34 +4164,50 @@ Congratulations ❤️`,
 
 
 
-// 🆕 CREATE GAME
-case "newmafia": {
-    if (!isGroup) return mess.group();
-    await mafiaGame.createGame(AlexaInc, msg, botJid.split("@")[0]);
-    break;
-}
+                            // 🆕 CREATE GAME
+                        case "newmafia": {
+                            if (!isGroup) return mess.group();
+                            await mafiaGame.createGame(AlexaInc, msg, botJid.split("@")[0]);
+                            break;
+                        }
 
-// ⏳ EXTEND REGISTRATION TIME (New Feature)
-case "extendmafia": {
-    if (!isGroup) return mess.group();
-    await mafiaGame.extendRegistration(AlexaInc, msg);
-    break;
-}
+                        // ⏳ EXTEND REGISTRATION TIME (New Feature)
+                        case "extendmafia": {
+                            if (!isGroup) return mess.group();
+                            await mafiaGame.extendRegistration(AlexaInc, msg);
+                            break;
+                        }
 
-// ⚡ MANUAL START
-case "startmafia": {
-    if (!isGroup) return mess.group();
-    await mafiaGame.startGame(AlexaInc, msg);
-    break;
-}
+                        // ⚡ MANUAL START
+                        case "startmafia": {
+                            if (!isGroup) return mess.group();
+                            await mafiaGame.startGame(AlexaInc, msg);
+                            break;
+                        }
 
-// 🏆 LEADERBOARD
-case "mafiatop": {
-    await mafiaGame.showLeaderboard(AlexaInc, msg);
-    break;
-}
+                        // 🏆 LEADERBOARD
+                        case "mafiatop": {
+                            await mafiaGame.showLeaderboard(AlexaInc, msg);
+                            break;
+                        }
 
+                        case "newassassin":
+                        case "assassin": {
+                            if (!isGroup) return mess.group();
+                            await Assassin.createGame(AlexaInc, msg, botJid.split("@")[0]);
+                            break;
+                        }
 
+                        case "startassassin": {
+                            if (!isGroup) return mess.group();
+                            await Assassin.startGame(AlexaInc, msg);
+                            break;
+                        }
+
+                        case "assassintop": {
+                            await Assassin.showLeaderboard(AlexaInc, msg);
+                            break;
+                        }
                         case "battle": {
 
                             const mentionedJids = p.mentionedJids;
@@ -4532,252 +4585,282 @@ Url: ${response[1].url}
 
                             break;
                         }
-case 'topadder': {
-    const fs = require('fs');
-    
-    // 1. Define the file path for this specific group
-    // Assuming 'from' or 'm.chat' is your group ID variable. Adjust as needed.
-    const chatId = msg.key.remoteJid; 
-    const filePath = `./database/add_counts/${chatId}.json`;
+                        case 'topadder': {
+                            const fs = require('fs');
 
-    // 2. Check if data exists for this group
-    if (!fs.existsSync(filePath)) {
-        return AlexaInc.sendMessage(chatId, { text: '⚠️ No member add records found for this group yet.' }, { quoted: msg });
-    }
+                            // 1. Define the file path for this specific group
+                            // Assuming 'from' or 'm.chat' is your group ID variable. Adjust as needed.
+                            const chatId = msg.key.remoteJid;
+                            const filePath = `./database/add_counts/${chatId}.json`;
 
-    // 3. Read and Parse the JSON
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
-    const jsonDb = JSON.parse(fileContent);
+                            // 2. Check if data exists for this group
+                            if (!fs.existsSync(filePath)) {
+                                return AlexaInc.sendMessage(chatId, {
+                                    text: '⚠️ No member add records found for this group yet.'
+                                }, {
+                                    quoted: msg
+                                });
+                            }
 
-    // 4. Convert Object to Array and Sort by Count (Highest to Lowest)
-    // Object.entries turns { "user1": 10, "user2": 5 } into [ ["user1", 10], ["user2", 5] ]
-    const sortedAdders = Object.entries(jsonDb).sort((a, b) => b[1] - a[1]);
+                            // 3. Read and Parse the JSON
+                            const fileContent = fs.readFileSync(filePath, 'utf-8');
+                            const jsonDb = JSON.parse(fileContent);
 
-    // 5. Slice to get Top 10 (optional)
-    const topList = sortedAdders.slice(0, 10);
+                            // 4. Convert Object to Array and Sort by Count (Highest to Lowest)
+                            // Object.entries turns { "user1": 10, "user2": 5 } into [ ["user1", 10], ["user2", 5] ]
+                            const sortedAdders = Object.entries(jsonDb).sort((a, b) => b[1] - a[1]);
 
-    // 6. Construct Message and Mentions Array
-    let mentionText = `🏆 *Top Member Adders*\n\n`;
-    let mentions = [];
+                            // 5. Slice to get Top 10 (optional)
+                            const topList = sortedAdders.slice(0, 10);
 
-    topList.forEach((entry, index) => {
-        const userId = entry[0];   // e.g., 194300461756480@lid
-        const count = entry[1];    // e.g., 5
+                            // 6. Construct Message and Mentions Array
+                            let mentionText = `🏆 *Top Member Adders*\n\n`;
+                            let mentions = [];
 
-        // Add the raw ID to the mentions array so WhatsApp tags them
-        mentions.push(userId);
+                            topList.forEach((entry, index) => {
+                                const userId = entry[0]; // e.g., 194300461756480@lid
+                                const count = entry[1]; // e.g., 5
 
-        // Format the ID for display: Remove '@lid' or '@s.whatsapp.net'
-        const cleanId = userId.split('@')[0];
+                                // Add the raw ID to the mentions array so WhatsApp tags them
+                                mentions.push(userId);
 
-        // Add line to message: 1. @194300... : 5
-        mentionText += `${index + 1}. @${cleanId} : *${count}* Added\n`;
-    });
+                                // Format the ID for display: Remove '@lid' or '@s.whatsapp.net'
+                                const cleanId = userId.split('@')[0];
 
-    mentionText += `\n_Total recorded adders: ${sortedAdders.length}_`;
+                                // Add line to message: 1. @194300... : 5
+                                mentionText += `${index + 1}. @${cleanId} : *${count}* Added\n`;
+                            });
 
-    // 7. Send the Message
-    await AlexaInc.sendMessage(
-        chatId, 
-        { 
-            text: mentionText, 
-            mentions: mentions // Crucial: contains the full IDs including @lid
-        }, 
-        { quoted: msg }
-    );
-    break;
-}
+                            mentionText += `\n_Total recorded adders: ${sortedAdders.length}_`;
+
+                            // 7. Send the Message
+                            await AlexaInc.sendMessage(
+                                chatId, {
+                                    text: mentionText,
+                                    mentions: mentions // Crucial: contains the full IDs including @lid
+                                }, {
+                                    quoted: msg
+                                }
+                            );
+                            break;
+                        }
 
 
 
 
-case 'ranking':
-case 'global':
-case 'daily':
-case 'weekly': {
-    const moment = require('moment-timezone');
-    const chatId = msg.key.remoteJid;
-    const filePath = `${RANKING_FOLDER}/${chatId}.json`; // Ensure RANKING_FOLDER is defined globally or locally
+                        case 'ranking':
+                        case 'global':
+                        case 'daily':
+                        case 'weekly': {
+                            const moment = require('moment-timezone');
+                            const chatId = msg.key.remoteJid;
+                            const filePath =
+                                `${RANKING_FOLDER}/${chatId}.json`; // Ensure RANKING_FOLDER is defined globally or locally
 
-    // ---------------------------------------------------------
-    // 1. FETCH FROM CACHE (OR DISK IF NOT IN CACHE)
-    // ---------------------------------------------------------
-    if (!rankingCache[chatId]) {
-        // Not in RAM? Try to load from disk
-        if (fs.existsSync(filePath)) {
-            try {
-                rankingCache[chatId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-            } catch (err) {
-                console.error(`Corrupt ranking file for ${chatId}`, err);
-                rankingCache[chatId] = {}; // Fallback
-            }
-        } else {
-            // Not in RAM and Not on Disk
-            return AlexaInc.sendMessage(chatId, { text: '📊 No messaging data recorded for this group yet.' }, { quoted: msg });
-        }
-    }
+                            // ---------------------------------------------------------
+                            // 1. FETCH FROM CACHE (OR DISK IF NOT IN CACHE)
+                            // ---------------------------------------------------------
+                            if (!rankingCache[chatId]) {
+                                // Not in RAM? Try to load from disk
+                                if (fs.existsSync(filePath)) {
+                                    try {
+                                        rankingCache[chatId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+                                    } catch (err) {
+                                        console.error(`Corrupt ranking file for ${chatId}`, err);
+                                        rankingCache[chatId] = {}; // Fallback
+                                    }
+                                } else {
+                                    // Not in RAM and Not on Disk
+                                    return AlexaInc.sendMessage(chatId, {
+                                        text: '📊 No messaging data recorded for this group yet.'
+                                    }, {
+                                        quoted: msg
+                                    });
+                                }
+                            }
 
-    // Now we are sure we have data in the variable
-    const rankDb = rankingCache[chatId];
-    // ---------------------------------------------------------
+                            // Now we are sure we have data in the variable
+                            const rankDb = rankingCache[chatId];
+                            // ---------------------------------------------------------
 
-    let mode = 'global';
-    const text = (args.join(" ") || "").toLowerCase();
-    const cmd = command.toLowerCase();
+                            let mode = 'global';
+                            const text = (args.join(" ") || "").toLowerCase();
+                            const cmd = command.toLowerCase();
 
-    if (cmd.includes('daily') || text.includes('daily')) mode = 'daily';
-    else if (cmd.includes('weekly') || text.includes('weekly')) mode = 'weekly';
+                            if (cmd.includes('daily') || text.includes('daily')) mode = 'daily';
+                            else if (cmd.includes('weekly') || text.includes('weekly')) mode = 'weekly';
 
-    const currentDay = moment().tz('Asia/Colombo').format('YYYY-MM-DD');
-    const currentWeek = moment().tz('Asia/Colombo').format('YYYY-WW');
+                            const currentDay = moment().tz('Asia/Colombo').format('YYYY-MM-DD');
+                            const currentWeek = moment().tz('Asia/Colombo').format('YYYY-WW');
 
-    const sortedStats = Object.entries(rankDb).map(([id, data]) => {
-        let count = 0;
+                            const sortedStats = Object.entries(rankDb).map(([id, data]) => {
+                                    let count = 0;
 
-        if (mode === 'global') {
-            count = data.global || 0;
-        } else if (mode === 'daily') {
-            if (data.daily && data.daily.dayKey === currentDay) {
-                count = data.daily.count;
-            }
-        } else if (mode === 'weekly') {
-            if (data.weekly && data.weekly.weekKey === currentWeek) {
-                count = data.weekly.count;
-            }
-        }
-        return { id, count };
-    })
-    .filter(u => u.count > 0) 
-    .sort((a, b) => b.count - a.count);
+                                    if (mode === 'global') {
+                                        count = data.global || 0;
+                                    } else if (mode === 'daily') {
+                                        if (data.daily && data.daily.dayKey === currentDay) {
+                                            count = data.daily.count;
+                                        }
+                                    } else if (mode === 'weekly') {
+                                        if (data.weekly && data.weekly.weekKey === currentWeek) {
+                                            count = data.weekly.count;
+                                        }
+                                    }
+                                    return {
+                                        id,
+                                        count
+                                    };
+                                })
+                                .filter(u => u.count > 0)
+                                .sort((a, b) => b.count - a.count);
 
-    if (sortedStats.length === 0) {
-        return AlexaInc.sendMessage(chatId, { text: `📉 No active messages found for *${mode}* ranking yet.` }, { quoted: msg });
-    }
+                            if (sortedStats.length === 0) {
+                                return AlexaInc.sendMessage(chatId, {
+                                    text: `📉 No active messages found for *${mode}* ranking yet.`
+                                }, {
+                                    quoted: msg
+                                });
+                            }
 
-    const topList = sortedStats.slice(0, 15);
+                            const topList = sortedStats.slice(0, 15);
 
-    let mentionText = `🏆 *${mode.toUpperCase()} CHAT RANKING*\n`;
-    mentionText += `_Top active members in ${groupMetadata.subject}_\n\n`;
-    
-    let mentions = [];
+                            let mentionText = `🏆 *${mode.toUpperCase()} CHAT RANKING*\n`;
+                            mentionText += `_Top active members in ${groupMetadata.subject}_\n\n`;
 
-    topList.forEach((user, index) => {
-        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-        mentions.push(user.id);
-        const cleanId = user.id.split('@')[0];
-        mentionText += `${medal} @${cleanId} : *${user.count}* \n`;
-    });
+                            let mentions = [];
 
-    mentionText += `\n_Total active users: ${sortedStats.length}_`;
+                            topList.forEach((user, index) => {
+                                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' :
+                                    `${index + 1}.`;
+                                mentions.push(user.id);
+                                const cleanId = user.id.split('@')[0];
+                                mentionText += `${medal} @${cleanId} : *${user.count}* \n`;
+                            });
 
-    // 4. Send Message
-    await AlexaInc.sendMessage(
-        chatId, 
-        { 
-            text: mentionText, 
-            mentions: mentions 
-        }, 
-        { quoted: msg }
-    );
-    break;
-}
+                            mentionText += `\n_Total active users: ${sortedStats.length}_`;
 
-case 'rank':
-case 'myrank': {
-    const moment = require('moment-timezone');
-    const chatId = msg.key.remoteJid;
-    const senderId = finalLid;
-    const filePath = `${RANKING_FOLDER}/${chatId}.json`;
+                            // 4. Send Message
+                            await AlexaInc.sendMessage(
+                                chatId, {
+                                    text: mentionText,
+                                    mentions: mentions
+                                }, {
+                                    quoted: msg
+                                }
+                            );
+                            break;
+                        }
 
-    // ---------------------------------------------------------
-    // 1. FETCH FROM CACHE
-    // ---------------------------------------------------------
-    if (!rankingCache[chatId]) {
-        if (fs.existsSync(filePath)) {
-            try {
-                rankingCache[chatId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-            } catch {
-                rankingCache[chatId] = {};
-            }
-        } else {
-             return AlexaInc.sendMessage(chatId, { text: '📊 No data recorded for this group yet.' }, { quoted: m });
-        }
-    }
-    const rankDb = rankingCache[chatId];
+                        case 'rank':
+                        case 'myrank': {
+                            const moment = require('moment-timezone');
+                            const chatId = msg.key.remoteJid;
+                            const senderId = finalLid;
+                            const filePath = `${RANKING_FOLDER}/${chatId}.json`;
 
-    // 2. Check if user exists
-    const userStats = rankDb[senderId];
-    if (!userStats) {
-        return AlexaInc.sendMessage(chatId, { text: '📉 You haven\'t sent any messages yet. Start chatting to get ranked!' }, { quoted: m });
-    }
+                            // ---------------------------------------------------------
+                            // 1. FETCH FROM CACHE
+                            // ---------------------------------------------------------
+                            if (!rankingCache[chatId]) {
+                                if (fs.existsSync(filePath)) {
+                                    try {
+                                        rankingCache[chatId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+                                    } catch {
+                                        rankingCache[chatId] = {};
+                                    }
+                                } else {
+                                    return AlexaInc.sendMessage(chatId, {
+                                        text: '📊 No data recorded for this group yet.'
+                                    }, {
+                                        quoted: m
+                                    });
+                                }
+                            }
+                            const rankDb = rankingCache[chatId];
 
-    // 3. Prepare Data & Sort by GLOBAL Count
-    const sortedUsers = Object.entries(rankDb)
-        .map(([id, data]) => ({ id, global: data.global || 0 }))
-        .sort((a, b) => b.global - a.global);
+                            // 2. Check if user exists
+                            const userStats = rankDb[senderId];
+                            if (!userStats) {
+                                return AlexaInc.sendMessage(chatId, {
+                                    text: '📉 You haven\'t sent any messages yet. Start chatting to get ranked!'
+                                }, {
+                                    quoted: m
+                                });
+                            }
 
-    const myIndex = sortedUsers.findIndex(user => user.id === senderId);
-    const myRank = myIndex + 1;
-    const myCount = sortedUsers[myIndex].global;
+                            // 3. Prepare Data & Sort by GLOBAL Count
+                            const sortedUsers = Object.entries(rankDb)
+                                .map(([id, data]) => ({
+                                    id,
+                                    global: data.global || 0
+                                }))
+                                .sort((a, b) => b.global - a.global);
 
-    // 4. Calculate Stats (Daily/Weekly)
-    const currentDay = moment().tz('Asia/Colombo').format('YYYY-MM-DD');
-    const currentWeek = moment().tz('Asia/Colombo').format('YYYY-WW');
-    
-    const dailyCount = (userStats.daily && userStats.daily.dayKey === currentDay) ? userStats.daily.count : 0;
-    const weeklyCount = (userStats.weekly && userStats.weekly.weekKey === currentWeek) ? userStats.weekly.count : 0;
+                            const myIndex = sortedUsers.findIndex(user => user.id === senderId);
+                            const myRank = myIndex + 1;
+                            const myCount = sortedUsers[myIndex].global;
 
-    // ---------------------------------------------------------
-    // 5. CALCULATE UP/DOWN GAPS
-    // ---------------------------------------------------------
-    let gapText = "";
+                            // 4. Calculate Stats (Daily/Weekly)
+                            const currentDay = moment().tz('Asia/Colombo').format('YYYY-MM-DD');
+                            const currentWeek = moment().tz('Asia/Colombo').format('YYYY-WW');
 
-    // A. Check user ABOVE (Rank Up)
-    if (myIndex > 0) { // If not Rank 1
-        const userAbove = sortedUsers[myIndex - 1];
-        const diff = (userAbove.global - myCount) + 1; // +1 to overtake
-        gapText += `🔼 *Rank Up:* Need *${diff}* msgs to beat Top ${myRank - 1}\n`;
-    } else {
-        gapText += `👑 *You are the Leader!* Keep it up!\n`;
-    }
+                            const dailyCount = (userStats.daily && userStats.daily.dayKey === currentDay) ?
+                                userStats.daily.count : 0;
+                            const weeklyCount = (userStats.weekly && userStats.weekly.weekKey === currentWeek) ?
+                                userStats.weekly.count : 0;
 
-    // B. Check user BELOW (Safety Margin)
-    if (myIndex < sortedUsers.length - 1) { // If not last
-        const userBelow = sortedUsers[myIndex + 1];
-        const lead = (myCount - userBelow.global);
-        // If lead is 0, they are tied but you are ranked higher due to sort order
-        const leadMsg = lead === 0 ? "⚠️ Tied!" : `*${lead}* msgs ahead`;
-        gapText += `🔽 *Safety:* ${leadMsg} of Top ${myRank + 1}`;
-    } else {
-        gapText += `🔽 *Bottom:* You are at the last rank.`;
-    }
+                            // ---------------------------------------------------------
+                            // 5. CALCULATE UP/DOWN GAPS
+                            // ---------------------------------------------------------
+                            let gapText = "";
 
-    // 6. Build Message
-    let text = `👤 *YOUR RANK PROFILE*\n`;
-    text += `_Stats for @${senderId.split('@')[0]}_\n\n`;
-    
-    let medal = '';
-    if (myRank === 1) medal = '🥇 ';
-    else if (myRank === 2) medal = '🥈 ';
-    else if (myRank === 3) medal = '🥉 ';
+                            // A. Check user ABOVE (Rank Up)
+                            if (myIndex > 0) { // If not Rank 1
+                                const userAbove = sortedUsers[myIndex - 1];
+                                const diff = (userAbove.global - myCount) + 1; // +1 to overtake
+                                gapText += `🔼 *Rank Up:* Need *${diff}* msgs to beat Top ${myRank - 1}\n`;
+                            } else {
+                                gapText += `👑 *You are the Leader!* Keep it up!\n`;
+                            }
 
-    text += `${medal}🏆 *Rank:* #${myRank} (of ${sortedUsers.length})\n`;
-    text += `🌐 *Global:* ${myCount} msgs\n`;
-    text += `📅 *Daily:* ${dailyCount} msgs\n`;
-    text += `🗓️ *Weekly:* ${weeklyCount} msgs\n\n`;
-    
-    text += `📊 *Position Analysis:*\n${gapText}`;
+                            // B. Check user BELOW (Safety Margin)
+                            if (myIndex < sortedUsers.length - 1) { // If not last
+                                const userBelow = sortedUsers[myIndex + 1];
+                                const lead = (myCount - userBelow.global);
+                                // If lead is 0, they are tied but you are ranked higher due to sort order
+                                const leadMsg = lead === 0 ? "⚠️ Tied!" : `*${lead}* msgs ahead`;
+                                gapText += `🔽 *Safety:* ${leadMsg} of Top ${myRank + 1}`;
+                            } else {
+                                gapText += `🔽 *Bottom:* You are at the last rank.`;
+                            }
 
-    await AlexaInc.sendMessage(
-        chatId, 
-        { 
-            text: text, 
-            mentions: [senderId] 
-        }, 
-        { quoted: msg }
-    );
-    break;
-}
+                            // 6. Build Message
+                            let text = `👤 *YOUR RANK PROFILE*\n`;
+                            text += `_Stats for @${senderId.split('@')[0]}_\n\n`;
+
+                            let medal = '';
+                            if (myRank === 1) medal = '🥇 ';
+                            else if (myRank === 2) medal = '🥈 ';
+                            else if (myRank === 3) medal = '🥉 ';
+
+                            text += `${medal}🏆 *Rank:* #${myRank} (of ${sortedUsers.length})\n`;
+                            text += `🌐 *Global:* ${myCount} msgs\n`;
+                            text += `📅 *Daily:* ${dailyCount} msgs\n`;
+                            text += `🗓️ *Weekly:* ${weeklyCount} msgs\n\n`;
+
+                            text += `📊 *Position Analysis:*\n${gapText}`;
+
+                            await AlexaInc.sendMessage(
+                                chatId, {
+                                    text: text,
+                                    mentions: [senderId]
+                                }, {
+                                    quoted: msg
+                                }
+                            );
+                            break;
+                        }
                         case 'add':
                         case 'remove':
                         case 'promote':
@@ -4955,7 +5038,7 @@ case 'myrank': {
 
 
                         case 'cmtdt': {
-                            const botJid = process.env.bot_nb + '@s.whatsapp.net';
+                            const botJid = botNumber + '@s.whatsapp.net';
 
                             // Get all user contacts
                             const allContacts = Object.values(AlexaInc.store.contacts);

@@ -13,7 +13,7 @@
         "@cacheable/node-cache": "^1.5.2",
         "@distube/ytdl-core": "^4.16.12",
         "@googleapis/customsearch": "^6.0.0",
-        "@hansaka02/baileys": "^7.3.2",
+        "@hansaka02/baileys": "^7.3.4",
         "@huggingface/inference": "^3.5.1",
         "@ookla/speedtest-js-sdk": "^1.1.1",
         "ascii-art": "^2.8.5",
