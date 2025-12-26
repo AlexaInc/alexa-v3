@@ -3,6 +3,7 @@ FROM node:20-bullseye
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
+    fonts-noto \
     software-properties-common \
     speedtest-cli \
     libcairo2-dev \
@@ -14,8 +15,10 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     python3 \
     ffmpeg \
+    && fc-cache -f -v \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
 
 WORKDIR /api
 
