@@ -1,5 +1,5 @@
 const axios = require('axios');
-
+const {jidNormalizedUser} = require('@hansaka02/baileys')
 // Configuration
 const QUIZ_URL = 'https://raw.githubusercontent.com/hansaka02/questionjson/main/quiz.json';
 const QUESTION_TIMEOUT_SECONDS = 40;
