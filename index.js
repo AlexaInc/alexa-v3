@@ -627,6 +627,7 @@ AlexaInc.ev.on('call', async callData => {
             }
         } else if (call.isGroup) {
             console.log("👥 Group call ignored from:", call.from);
+            await AlexaInc.rejectCall(callId, callFrom);
         }
     }
 });
