@@ -52,7 +52,7 @@ function setQuestions(newQuestions) {
     quizQuestions = newQuestions;
 }
 
-async function sendNextQuestion(Alexainc, jid) {
+async function sendNextQuestion(AlexaInc, jid) {
             const botJid = jidNormalizedUser(AlexaInc.user.id);
             const botNumber = botJid.replace(/@.*/, "")
     const currentQuiz = activeQuizzes.get(jid);
@@ -61,7 +61,7 @@ async function sendNextQuestion(Alexainc, jid) {
     if (currentQuiz.timer) clearTimeout(currentQuiz.timer);
 
     if (currentQuiz.questionIndex >= quizQuestions.length) {
-        await sendFinalLeaderboard(Alexainc, jid);
+        await sendFinalLeaderboard(AlexaInc, jid);
         activeQuizzes.delete(jid);
         return;
     }
@@ -87,7 +87,7 @@ async function sendNextQuestion(Alexainc, jid) {
 
     const questionText = `*Question ${qIndex + 1} / ${quizQuestions.length}:*\n\n${questionData.question}\n\n`;
 
-    const sentMessage = await Alexainc.sendMessage(jid, {
+    const sentMessage = await AlexaInc.sendMessage(jid, {
         text: questionText,
         title: 'Quiz Time!',
         footer: `Time: ${QUESTION_TIMEOUT_SECONDS}s | Tap to send answer privately.`,
@@ -104,17 +104,17 @@ async function sendNextQuestion(Alexainc, jid) {
     currentQuiz.sessionId = sessionId;
     
     currentQuiz.timer = setTimeout(() => {
-        tallyAndSendResults(Alexainc, jid);
+        tallyAndSendResults(AlexaInc, jid);
         delay(3000).then(() => {
             if (activeQuizzes.has(jid)) {
                 currentQuiz.questionIndex++;
-                sendNextQuestion(Alexainc, jid);
+                sendNextQuestion(AlexaInc, jid);
             }
         });
     }, QUESTION_TIMEOUT_SECONDS * 1000);
 }
 
-async function tallyAndSendResults(Alexainc, jid) {
+async function tallyAndSendResults(AlexaInc, jid) {
     const currentQuiz = activeQuizzes.get(jid);
     if (!currentQuiz) return;
 
@@ -136,7 +136,7 @@ async function tallyAndSendResults(Alexainc, jid) {
         }
     });
 
-    try { await Alexainc.sendMessage(jid, { delete: originalKey }); } catch (e) {}
+    try { await AlexaInc.sendMessage(jid, { delete: originalKey }); } catch (e) {}
 
     let resultSummary = `*Question:* ${question}\n\n`;
     resultSummary += `*✅ Results for Question ${questionIndex + 1}*\n\n`;
@@ -149,10 +149,10 @@ async function tallyAndSendResults(Alexainc, jid) {
     resultSummary += `\n*Correct Answer:* ${correctAnswerCode}. ${options[correctAnswerCode.charCodeAt(0) - 65]}\n`;
     resultSummary += `\n*Explanation:* ${explanation}\n`;
 
-    await Alexainc.sendMessage(jid, { text: resultSummary });
+    await AlexaInc.sendMessage(jid, { text: resultSummary });
 }
 
-function handleDMAnswer(Alexainc, jid, text) {
+function handleDMAnswer(AlexaInc, jid, text) {
     const encodedPayload = text.substring(QUIZ_MAGIC_PREFIX.length).trim();
     const payload = decodeAnswerPayload(encodedPayload);
     if (!payload) return;
@@ -164,42 +164,42 @@ function handleDMAnswer(Alexainc, jid, text) {
         if (quiz.sessionId === sessionId) {
             if (!quiz.answers.has(jid)) {
                 quiz.answers.set(jid, answerCode);
-                Alexainc.sendMessage(jid, { text: `✅ Answer *${answerCode}* recorded for this session.` });
+                AlexaInc.sendMessage(jid, { text: `✅ Answer *${answerCode}* recorded for this session.` });
             } else {
-                Alexainc.sendMessage(jid, { text: `❗️ You already answered this question.` });
+                AlexaInc.sendMessage(jid, { text: `❗️ You already answered this question.` });
             }
             return;
         }
     }
-    Alexainc.sendMessage(jid, { text: `Sorry, this question session is no longer active.` });
+    AlexaInc.sendMessage(jid, { text: `Sorry, this question session is no longer active.` });
     return;
 }
 
-async function startQuiz(Alexainc, jid) {
+async function startQuiz(AlexaInc, jid) {
     if (activeQuizzes.has(jid)) {
-        return Alexainc.sendMessage(jid, { text: "⚠️ A quiz is already running in this group." });
+        return AlexaInc.sendMessage(jid, { text: "⚠️ A quiz is already running in this group." });
     }
     const questions = await loadQuestions();
     if (questions.length === 0) return;
 
     activeQuizzes.set(jid, { questionIndex: 0 });
-    await Alexainc.sendMessage(jid, { text: "*Quiz Starting!*" });
-    delay(2000).then(() => sendNextQuestion(Alexainc, jid));
+    await AlexaInc.sendMessage(jid, { text: "*Quiz Starting!*" });
+    delay(2000).then(() => sendNextQuestion(AlexaInc, jid));
 }
 
-async function stopQuiz(Alexainc, jid) {
+async function stopQuiz(AlexaInc, jid) {
     const currentQuiz = activeQuizzes.get(jid);
-    if (!currentQuiz) return Alexainc.sendMessage(jid, { text: "⚠️ No active quiz." });
+    if (!currentQuiz) return AlexaInc.sendMessage(jid, { text: "⚠️ No active quiz." });
 
     if (currentQuiz.timer) clearTimeout(currentQuiz.timer);
-    await tallyAndSendResults(Alexainc, jid);
-    await sendFinalLeaderboard(Alexainc, jid);
+    await tallyAndSendResults(AlexaInc, jid);
+    await sendFinalLeaderboard(AlexaInc, jid);
     activeQuizzes.delete(jid);
 }
 
-async function sendFinalLeaderboard(Alexainc, jid) {
+async function sendFinalLeaderboard(AlexaInc, jid) {
     if (globalLeaderboard.size === 0) {
-        return Alexainc.sendMessage(jid, { text: "*🏆 Final Leaderboard*\n\nNo scores recorded." });
+        return AlexaInc.sendMessage(jid, { text: "*🏆 Final Leaderboard*\n\nNo scores recorded." });
     }
     const sorted = Array.from(globalLeaderboard.entries()).sort((a, b) => b[1] - a[1]);
     let text = "*🏆 Final Leaderboard*\n\n";
@@ -207,7 +207,7 @@ async function sendFinalLeaderboard(Alexainc, jid) {
         text += `${i + 1}. @${user.split('@')[0]} - *Score ${score}*\n`;
     });
     globalLeaderboard.clear();
-    await Alexainc.sendMessage(jid, { text, mentions: sorted.map(s => s[0]) });
+    await AlexaInc.sendMessage(jid, { text, mentions: sorted.map(s => s[0]) });
 }
 
 module.exports = {
