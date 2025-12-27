@@ -53,6 +53,8 @@ function setQuestions(newQuestions) {
 }
 
 async function sendNextQuestion(Alexainc, jid) {
+            const botJid = jidNormalizedUser(AlexaInc.user.id);
+            const botNumber = botJid.replace(/@.*/, "")
     const currentQuiz = activeQuizzes.get(jid);
     if (!currentQuiz) return;
 
@@ -72,7 +74,7 @@ async function sendNextQuestion(Alexainc, jid) {
         const answerCode = String.fromCharCode(65 + index);
         const encryptedPayload = encodeAnswerPayload(sessionId, answerCode);
         const dmPayload = encodeURIComponent(`${QUIZ_MAGIC_PREFIX}${encryptedPayload}`);
-        const dmLink = `https://wa.me/${BOT_PHONE_NUMBER}?text=${dmPayload}`;
+        const dmLink = `https://wa.me/${botNumber}?text=${dmPayload}`;
 
         return {
             name: 'cta_url',
