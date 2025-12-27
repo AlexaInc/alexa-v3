@@ -48313,5 +48313,85 @@
     "id": 9663,
     "reason": "index.js: node:internal/modules/cjs/loader:1210\nthrow err;\n^\nError: Cannot find module 'wa-sticker-formatter'\nRequire stack:\n- /home/hansaka/alexa-v3/bot.js\n- /home/hansaka/alexa-v3/index.js\nat Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)\nat Module._load (node:internal/modules/cjs/loader:1038:27)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:82:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19) {\ncode: 'MODULE_NOT_FOUND',\nrequireStack: [\n'/home/hansaka/alexa-v3/bot.js',\n'/home/hansaka/alexa-v3/index.js'\n]\n}\n",
     "timestamp": "2025-12-26T11:53:20.164Z"
+  },
+  {
+    "id": 9664,
+    "reason": "index.js: ❌ Uncaught Exception: Error: Connection Closed\nat sendRawMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:241:19)\nat sendNode (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:264:16)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:118:15)\nat assertSessions (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:556:34)\nat async /home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:931:21\nat async executeTransactionWork (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/auth-utils.js:335:24)\nat async Object.transaction (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/auth-utils.js:484:28)\nat async relayMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:832:9)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1772:17) {\ndata: null,\nisBoom: true,\nisServer: false,\noutput: {\nstatusCode: 428,\npayload: {\nstatusCode: 428,\nerror: 'Precondition Required',\nmessage: 'Connection Closed'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-12-26T16:56:32.151Z"
+  },
+  {
+    "id": 9665,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:55:52.177Z"
+  },
+  {
+    "id": 9666,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:55:52.510Z"
+  },
+  {
+    "id": 9667,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:55:52.843Z"
+  },
+  {
+    "id": 9668,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:55:53.198Z"
+  },
+  {
+    "id": 9669,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:55:53.559Z"
+  },
+  {
+    "id": 9670,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:55:53.915Z"
+  },
+  {
+    "id": 9671,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:55:54.291Z"
+  },
+  {
+    "id": 9672,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:55:54.649Z"
+  },
+  {
+    "id": 9673,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:56:55.538Z"
+  },
+  {
+    "id": 9674,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:56:55.924Z"
+  },
+  {
+    "id": 9675,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:56:56.317Z"
+  },
+  {
+    "id": 9676,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:56:56.741Z"
+  },
+  {
+    "id": 9677,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:56:57.119Z"
+  },
+  {
+    "id": 9678,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:56:57.512Z"
+  },
+  {
+    "id": 9679,
+    "reason": "server.js: node:events:502\nthrow er; // Unhandled 'error' event\n^\nError: listen EADDRINUSE: address already in use 0.0.0.0:8000\nat Server.setupListenHandle [as _listen2] (node:net:1908:16)\nat listenInCluster (node:net:1965:12)\nat doListen (node:net:2139:7)\nat process.processTicksAndRejections (node:internal/process/task_queues:83:21)\nEmitted 'error' event on Server instance at:\nat emitErrorNT (node:net:1944:8)\nat process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\ncode: 'EADDRINUSE',\nerrno: -98,\nsyscall: 'listen',\naddress: '0.0.0.0',\nport: 8000\n}\n",
+    "timestamp": "2025-12-27T02:56:57.898Z"
   }
 ]

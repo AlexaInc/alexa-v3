@@ -2832,110 +2832,92 @@ await AlexaInc.sendMessage(
                         }
 
 
-                        case "emojimix": {
-                            if (!text) return await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'please send a two emojies /emojimix 💔+😗'
-                            });
+case "emojimix": {
+    if (!text) {
+        return await AlexaInc.sendMessage(
+            msg.key.remoteJid,
+            { text: "please send two emojis\n/emojimix 💔+😗" },
+            { quoted: msg }
+        );
+    }
 
-                            const stickerMetadata = {
-                                pack: 'My Bot',
-                                author: 'Quotly',
-                                quality: 90
-                            };
+    const parts = text.split(/[+._]/);
 
-                            const parts = text.split(/[+._]/);
+    if (parts.length !== 2) {
+        return await AlexaInc.sendMessage(
+            msg.key.remoteJid,
+            { text: "emojis invalid format\n/emojimix 💔+😗" },
+            { quoted: msg }
+        );
+    }
 
-                            if (parts.length !== 2) {
-                                return await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: ' emojies invalid format  /emojimix 💔+😗'
-                                });
-                            }
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'preparing your sticker'
-                            }, {
-                                quoted: msg
-                            });
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                react: {
-                                    text: '🔄',
-                                    key: msg.key
-                                }
-                            });
+    await AlexaInc.sendMessage(
+        msg.key.remoteJid,
+        { text: "preparing your sticker..." },
+        { quoted: msg }
+    );
 
-                            try {
-                                // Clean invisible \uFE0F and trim any extra spaces
-                                // const emoji1 = match[1].replace(/\uFE0F/g, '').trim();
-                                // const emoji2 = match[3].replace(/\uFE0F/g, '').trim();
+    await AlexaInc.sendMessage(msg.key.remoteJid, {
+        react: { text: "🔄", key: msg.key }
+    });
 
-                                // --- THIS IS THE CORRECT LINE ---
-                                // Use the variables from the user's message
-                                const buffer = await getEmojicook(parts[0], parts[1]);
-                                // --------------------------------
+    try {
+        // clean emojis (remove invisible FE0F)
+        const emoji1 = parts[0].replace(/\uFE0F/g, "").trim();
+        const emoji2 = parts[1].replace(/\uFE0F/g, "").trim();
 
-                                const highQualityBuffer = await sharp(buffer)
-                                    .resize(1024, 1024, {
-                                        fit: 'contain',
-                                        background: {
-                                            r: 0,
-                                            g: 0,
-                                            b: 0,
-                                            alpha: 0
-                                        },
-                                        kernel: sharp.kernel.lanczos3
-                                    })
-                                    .webp()
-                                    .toBuffer();
+        // get emoji mix image buffer
+        const buffer = await getEmojicook(emoji1, emoji2);
 
-                                const sticker = new Sticker(highQualityBuffer, {
-                                    ...stickerMetadata,
-                                    type: StickerTypes.DEFAULT,
-                                });
+        // convert image → sticker webp
+        const stickerBuffer = await sharp(buffer)
+            .resize(512, 512, {
+                fit: "contain",
+                background: { r: 0, g: 0, b: 0, alpha: 0 },
+                kernel: sharp.kernel.lanczos3
+            })
+            .webp({
+                quality: 100,
+                lossless: true
+            })
+            .toBuffer();
 
-                                const stickerBuffer = await sticker.toBuffer();
+        // send sticker
+        await AlexaInc.sendMessage(
+            msg.key.remoteJid,
+            { sticker: stickerBuffer },
+            { quoted: msg }
+        );
 
-                                await AlexaInc.sendMessage(
-                                    msg.key.remoteJid, {
-                                        sticker: stickerBuffer
-                                    }, {
-                                        quoted: msg
-                                    }
-                                );
+        await AlexaInc.sendMessage(msg.key.remoteJid, {
+            react: { text: "✅", key: msg.key }
+        });
 
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    react: {
-                                        text: '✅',
-                                        key: msg.key
-                                    }
-                                });
+    } catch (error) {
+        console.error("EmojiMix Error:", error.message);
 
-                            } catch (error) {
-                                // This will correctly catch when the API has no match
-                                console.error("EmojiMix Error:", error.message);
+        await AlexaInc.sendMessage(msg.key.remoteJid, {
+            react: { text: "❌", key: msg.key }
+        });
 
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    react: {
-                                        text: '❌',
-                                        key: msg.key
-                                    }
-                                });
+        if (error.message?.includes("not found")) {
+            await AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: "Sorry, I can't mix those two emojis 😢" },
+                { quoted: msg }
+            );
+        } else {
+            await AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: "An error occurred while creating the sticker." },
+                { quoted: msg }
+            );
+        }
+    }
 
-                                if (error.message.includes('not found')) {
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'Sorry, I can\'t mix those two emojis.'
-                                    }, {
-                                        quoted: msg
-                                    });
-                                } else {
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'An error occurred.'
-                                    }, {
-                                        quoted: msg
-                                    });
-                                }
-                            }
+    break;
+}
 
-                            break;
-                        }
 
                         case "cabout": {
 

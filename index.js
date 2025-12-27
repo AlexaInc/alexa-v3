@@ -606,22 +606,30 @@ const { state, saveCreds } = await useMultiFileAuthState(authPath);
     AlexaInc.ev.on('creds.update', saveCreds);
 
     // 6. Call handling
-    AlexaInc.ev.on('call', async callData => {
-        for (let call of callData) {
-            if (call.status === 'offer') {
-                const callId = call.id;
-                const callFrom = call.from;
-                console.log("📞 Incoming Call:", callFrom);
+AlexaInc.ev.on('call', async callData => {
+    for (let call of callData) {
+        // Only proceed if the call is an incoming 'offer' AND it is NOT a group call
+        if (call.status === 'offer' && !call.isGroup) {
+            const callId = call.id;
+            const callFrom = call.from;
+            console.log("📞 Incoming Private Call:", callFrom);
 
-                try {
-                    await AlexaInc.rejectCall(callId, callFrom);
-                    await AlexaInc.sendMessage(callFrom, { text: '🚫 *Do not call the bot!* Your call has been rejected automatically.' });
-                } catch (err) {
-                    console.error("Call reject error:", err);
-                }
+            try {
+                // Reject the call
+                await AlexaInc.rejectCall(callId, callFrom);
+                
+                // Send a notification message to the user
+                await AlexaInc.sendMessage(callFrom, { 
+                    text: '🚫 *Do not call the bot!* Your call has been rejected automatically.' 
+                });
+            } catch (err) {
+                console.error("Call reject error:", err);
             }
+        } else if (call.isGroup) {
+            console.log("👥 Group call ignored from:", call.from);
         }
-    });
+    }
+});
 
 AlexaInc.ev.on('group-participants.update', async (anu) => {
     // console.log(anu);
