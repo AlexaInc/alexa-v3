@@ -2,6 +2,7 @@ FROM node:20-bullseye
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Install system dependencies for Puppeteer + your current requirements
 RUN apt-get update && apt-get install -y \
     fonts-noto \
     software-properties-common \
@@ -15,23 +16,47 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     python3 \
     ffmpeg \
+    libnspr4 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpangocairo-1.0-0 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libgtk-3-0 \
+    fonts-liberation \
+    ca-certificates \
     && fc-cache -f -v \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-
 WORKDIR /api
 
+# Copy package.json first for caching
 COPY package*.json ./
 
-# IMPORTANT: allow postinstall scripts
+# Install Node.js dependencies
 RUN npm install --legacy-peer-deps
 
-# Optional but safe
+# Rebuild native modules if needed
 RUN npm rebuild canvas sharp --force
 
+# Copy the rest of your app
 COPY . .
 
 EXPOSE 4001
+
+# Puppeteer-friendly launch flags can be set in your Node.js code
+# Example:
+# const browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox','--disable-setuid-sandbox'] });
 
 CMD ["node", "app"]

@@ -48498,5 +48498,10 @@
     "id": 9700,
     "reason": "index.js: ❌ Uncaught Exception: TypeError: num.split is not a function\nat /home/hansaka/alexa-v3/index.js:711:63\nat Array.map (<anonymous>)\nat Query.onResult (/home/hansaka/alexa-v3/index.js:711:44)\nat /home/hansaka/alexa-v3/node_modules/mysql2/lib/commands/query.js:87:16\nat process.processTicksAndRejections (node:internal/process/task_queues:77:11)\n",
     "timestamp": "2025-12-27T03:44:31.091Z"
+  },
+  {
+    "id": 9701,
+    "reason": "index.js: Error in warn command: Error: not-authorized\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.groupParticipantsUpdate (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/groups.js:177:28)\nat async warnUser (/home/hansaka/alexa-v3/res/js/warn.js:94:17) {\ndata: 401,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: ENOENT: no such file or directory, open '/home/hansaka/alexa-v3/auth5a/creds.json'\nat async open (node:internal/fs/promises:639:25)\nat async Object.writeFile (node:internal/fs/promises:1216:14)\nat async /home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/use-multi-file-auth-state.js:42:16 {\nerrno: -2,\ncode: 'ENOENT',\nsyscall: 'open',\npath: '/home/hansaka/alexa-v3/auth5a/creds.json'\n}\n",
+    "timestamp": "2025-12-27T04:49:50.333Z"
   }
 ]
