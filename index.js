@@ -42,7 +42,7 @@ const DB_NAME = process.env["DB_NAME"];
 const DB_PASS = process.env["DB_PASS"];
 const DB_PORT = process.env["DB_PORT"] || 3306 ;
 // Example in browser JavaScript
-const alexasocket = new alexasock('ws://localhost:8000/data-transfer');
+const alexasocket = new alexasock(`${process.env.Alexasock_url}`);
 
 alexasocket.onopen = () => {
   // Register with a unique ID
