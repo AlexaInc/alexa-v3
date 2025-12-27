@@ -1,30 +1,21 @@
-// quizManager.js
 const axios = require('axios');
-const fs = require('fs-extra');
-require('dotenv').config()
+
 // Configuration
 const QUIZ_URL = 'https://raw.githubusercontent.com/hansaka02/questionjson/main/quiz.json';
-const QUESTION_TIMEOUT_SECONDS = 45;
-const BOT_PHONE_NUMBER = process.env.bot_nb; // 🚨 IMPORTANT: Replace with your Bot's number (e.g., 12345678901, NO + OR SPACES)
-const QUIZ_MAGIC_PREFIX = '.ansq_'; 
-const QUIZ_STORAGE_DIR = './quizzes';
+const QUESTION_TIMEOUT_SECONDS = 40;
+const BOT_PHONE_NUMBER = 'YOUR_BOTS_PHONE_NUMBER'; // 🚨 Replace with your bot's number
+const QUIZ_MAGIC_PREFIX = '.ansq_';
 
-// Ensure the directory exists when the bot starts
-if (!fs.existsSync(QUIZ_STORAGE_DIR)) {
-    fs.mkdirSync(QUIZ_STORAGE_DIR);
-}
 // State Management
 let quizQuestions = [];
 let isFetching = false;
-let activeQuiz = null; 
-let globalLeaderboard = new Map(); // Map<userId, score>
+const activeQuizzes = new Map(); // Key: Group JID, Value: Quiz Object
+let globalLeaderboard = new Map(); // Global scores across all groups
 
 // Helper functions
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-const QUIZ_MAGIC_PREFIX_EXPORT = QUIZ_MAGIC_PREFIX; 
 
-// --- ENCRYPTION/DECRYPTION FUNCTIONS ---
-
+// --- ENCRYPTION/DECRYPTION ---
 function encodeAnswerPayload(sessionId, answerCode) {
     const payload = `${sessionId}|${answerCode}`;
     return Buffer.from(payload).toString('base64');
@@ -34,334 +25,194 @@ function decodeAnswerPayload(encodedString) {
     try {
         const decoded = Buffer.from(encodedString, 'base64').toString('utf-8');
         const [sessionId, answerCode] = decoded.split('|');
-        if (sessionId && answerCode) {
-            return { sessionId, answerCode };
-        }
+        if (sessionId && answerCode) return { sessionId, answerCode };
     } catch (e) {
         console.error("[QuizManager] Decryption failed:", e.message);
     }
     return null;
 }
 
-// --- CORE QUIZ FUNCTIONS ---
+// --- CORE LOGIC ---
 
 async function loadQuestions() {
     if (quizQuestions.length > 0 || isFetching) return quizQuestions;
     isFetching = true;
     try {
-        console.log('[QuizManager] Fetching questions...');
         const response = await axios.get(QUIZ_URL);
         quizQuestions = response.data;
-        console.log(`[QuizManager] Loaded ${quizQuestions.length} questions.`);
     } catch (error) {
-        console.error('[QuizManager] ERROR loading quiz questions:', error.message);
+        console.error('[QuizManager] ERROR loading questions:', error.message);
     } finally {
         isFetching = false;
     }
     return quizQuestions;
 }
 
-/**
- * Sends the current question to the group using the correct interactive button structure.
- */
-// quizManager.js
+function setQuestions(newQuestions) {
+    quizQuestions = newQuestions;
+}
 
-// ... (Keep all preceding functions the same) ...
+async function sendNextQuestion(Alexainc, jid) {
+    const currentQuiz = activeQuizzes.get(jid);
+    if (!currentQuiz) return;
 
-/**
- * Sends the current question to the group using the correct interactive button structure.
- */
-async function sendNextQuestion(AlexaInc, jid) {
-    if (activeQuiz && activeQuiz.timer) {
-        clearTimeout(activeQuiz.timer);
-    }
-    
-    if (activeQuiz && activeQuiz.questionIndex >= quizQuestions.length) {
-        await sendFinalLeaderboard(AlexaInc, jid);
-        activeQuiz = null;
+    if (currentQuiz.timer) clearTimeout(currentQuiz.timer);
+
+    if (currentQuiz.questionIndex >= quizQuestions.length) {
+        await sendFinalLeaderboard(Alexainc, jid);
+        activeQuizzes.delete(jid);
         return;
     }
 
-    const qIndex = activeQuiz ? activeQuiz.questionIndex : 0;
+    const qIndex = currentQuiz.questionIndex;
     const questionData = quizQuestions[qIndex];
-    const sessionId = `Q${qIndex + 1}_${Date.now()}`; 
+    const sessionId = `Q${qIndex + 1}_${Date.now()}`;
 
     const buttons = questionData.options.map((option, index) => {
-        const answerCode = String.fromCharCode(65 + index); // A, B, C...
-
-        const encryptedPayload = encodeAnswerPayload(sessionId, answerCode); 
+        const answerCode = String.fromCharCode(65 + index);
+        const encryptedPayload = encodeAnswerPayload(sessionId, answerCode);
         const dmPayload = encodeURIComponent(`${QUIZ_MAGIC_PREFIX}${encryptedPayload}`);
         const dmLink = `https://wa.me/${BOT_PHONE_NUMBER}?text=${dmPayload}`;
 
         return {
             name: 'cta_url',
             buttonParamsJson: JSON.stringify({
-               display_text: `${answerCode}. ${option}`,
-               url: dmLink
+                display_text: `${answerCode}. ${option}`,
+                url: dmLink
             })
         };
     });
 
     const questionText = `*Question ${qIndex + 1} / ${quizQuestions.length}:*\n\n${questionData.question}\n\n`;
 
-    const sentMessage = await AlexaInc.sendMessage(jid, {
+    const sentMessage = await Alexainc.sendMessage(jid, {
         text: questionText,
-        title: 'Quiz Time!', 
-        footer: `Time: ${QUESTION_TIMEOUT_SECONDS}s | Tap a button to send your answer privately.`,
-        interactiveButtons: buttons, 
+        title: 'Quiz Time!',
+        footer: `Time: ${QUESTION_TIMEOUT_SECONDS}s | Tap to send answer privately.`,
+        interactiveButtons: buttons,
     });
 
-    // 🚨 CRITICAL FIX APPLIED HERE 🚨
-    activeQuiz = {
-        questionIndex: qIndex,
-        groupJid: jid,
-        answers: new Map(), 
-        // FIX: Changed 64 to 65. 'A' is ASCII 65. 65 + 0 = 'A'.
-        correctAnswerCode: String.fromCharCode(65 + questionData.answer), 
-        question: questionData.question,
-        options: questionData.options,         
-        explanation: questionData.explanation, 
-        originalKey: sentMessage.key, 
-        sessionId: sessionId,
-        timer: null
-    };
+    // Update state for this specific group
+    currentQuiz.answers = new Map();
+    currentQuiz.correctAnswerCode = String.fromCharCode(65 + questionData.answer);
+    currentQuiz.question = questionData.question;
+    currentQuiz.options = questionData.options;
+    currentQuiz.explanation = questionData.explanation;
+    currentQuiz.originalKey = sentMessage.key;
+    currentQuiz.sessionId = sessionId;
     
-    activeQuiz.timer = setTimeout(() => {
-        tallyAndSendResults(AlexaInc, jid);
-        
+    currentQuiz.timer = setTimeout(() => {
+        tallyAndSendResults(Alexainc, jid);
         delay(3000).then(() => {
-            activeQuiz.questionIndex++;
-            sendNextQuestion(AlexaInc, jid);
+            if (activeQuizzes.has(jid)) {
+                currentQuiz.questionIndex++;
+                sendNextQuestion(Alexainc, jid);
+            }
         });
     }, QUESTION_TIMEOUT_SECONDS * 1000);
-
-    console.log(`[QuizManager] Question ${qIndex + 1} started. Session ID: ${sessionId}. Expected Answer: ${activeQuiz.correctAnswerCode}`);
 }
 
-// ... (Keep all subsequent functions the same) ...
+async function tallyAndSendResults(Alexainc, jid) {
+    const currentQuiz = activeQuizzes.get(jid);
+    if (!currentQuiz) return;
 
-async function tallyAndSendResults(AlexaInc, jid) {
-    if (!activeQuiz) return;
+    const { question, answers, options, correctAnswerCode, explanation, questionIndex, originalKey } = currentQuiz;
 
-    // Ensure all necessary properties are destructured (including originalKey)
-    const { 
-        question, 
-        answers, 
-        options, 
-        correctAnswerCode, 
-        explanation, 
-        questionIndex, 
-        originalKey // Key of the message to delete
-    } = activeQuiz;
-    
-    // Tallying logic
-    const answerCounts = options.reduce((acc, option, index) => {
-        const answerCode = String.fromCharCode(65 + index);
-        acc[answerCode] = { count: 0, option: option };
+    const answerCounts = options.reduce((acc, opt, idx) => {
+        acc[String.fromCharCode(65 + idx)] = { count: 0, option: opt };
         return acc;
     }, {});
-    
+
     let totalVotes = 0;
     answers.forEach((submittedCode, userId) => {
         if (answerCounts[submittedCode]) {
             answerCounts[submittedCode].count++;
             totalVotes++;
-            
-            // LEADERBOARD UPDATE
             if (submittedCode === correctAnswerCode) {
-                const currentScore = globalLeaderboard.get(userId) || 0;
-                globalLeaderboard.set(userId, currentScore + 1);
+                globalLeaderboard.set(userId, (globalLeaderboard.get(userId) || 0) + 1);
             }
         }
     });
-    
-    // 1. 🚨 FIX: DELETE THE ORIGINAL GROUP MESSAGE
-    try {
-        await AlexaInc.sendMessage(jid, {
-            delete: originalKey, 
-        });
-        console.log(`[QuizManager] Deleted original message for Q${questionIndex + 1}.`);
-    } catch (e) {
-        console.warn(`[QuizManager] Could not delete original message for Q${questionIndex + 1}. It may be too old or due to API restriction.`);
-    }
 
-    // 2. 🚨 FIX: Add question text to the top of the result message
-    let resultSummary = `*Question:* ${question}\n\n`; // ADDED QUESTION HERE
+    try { await Alexainc.sendMessage(jid, { delete: originalKey }); } catch (e) {}
+
+    let resultSummary = `*Question:* ${question}\n\n`;
     resultSummary += `*✅ Results for Question ${questionIndex + 1}*\n\n`;
-    
     resultSummary += `*Total Submissions:* ${totalVotes}\n\n`;
-    options.forEach((option, index) => {
-        const answerCode = String.fromCharCode(65 + index);
-        const count = answerCounts[answerCode].count;
-        const emoji = answerCode === correctAnswerCode ? '✅' : '❌';
-        resultSummary += `${emoji} ${answerCode}. ${option} - *${count}* votes\n`;
+    options.forEach((opt, idx) => {
+        const code = String.fromCharCode(65 + idx);
+        const emoji = code === correctAnswerCode ? '✅' : '❌';
+        resultSummary += `${emoji} ${code}. ${opt} - *${answerCounts[code].count}* votes\n`;
     });
     resultSummary += `\n*Correct Answer:* ${correctAnswerCode}. ${options[correctAnswerCode.charCodeAt(0) - 65]}\n`;
     resultSummary += `\n*Explanation:* ${explanation}\n`;
-    
-    await AlexaInc.sendMessage(jid, { text: resultSummary });
+
+    await Alexainc.sendMessage(jid, { text: resultSummary });
 }
 
-function handleDMAnswer(AlexaInc, jid, text) {
-    if (!text.startsWith(QUIZ_MAGIC_PREFIX)) return;
-
+function handleDMAnswer(Alexainc, jid, text) {
     const encodedPayload = text.substring(QUIZ_MAGIC_PREFIX.length).trim();
     const payload = decodeAnswerPayload(encodedPayload);
-
-    if (!payload) {
-        AlexaInc.sendMessage(jid, { text: `❗️ Could not read your answer. Please tap the button again.` });
-        return;
-    }
+    if (!payload) return;
 
     const { sessionId, answerCode } = payload;
-    
-    if (activeQuiz && sessionId === activeQuiz.sessionId) {
-        const userId = jid; 
 
-        if (!activeQuiz.answers.has(userId)) {
-            activeQuiz.answers.set(userId, answerCode);
-            AlexaInc.sendMessage(userId, { text: `✅ Answer *${answerCode}* recorded. Thank you!` });
-        } else {
-            AlexaInc.sendMessage(userId, { text: `❗️ You have already answered this question.` });
-        }
-    } else {
-        AlexaInc.sendMessage(jid, { text: `Sorry, the time limit for this question has expired.` });
-    }
-}
-
-async function sendFinalLeaderboard(AlexaInc, jid) {
-    if (globalLeaderboard.size === 0) {
-        await AlexaInc.sendMessage(jid, { text: "*🏆 Final Leaderboard*\n\nNo scores were recorded." });
-        return;
-    }
-    
-    const sortedScores = Array.from(globalLeaderboard.entries())
-        .sort(([, scoreA], [, scoreB]) => scoreB - scoreA);
-
-    let leaderboardText = "*🏆 Final Leaderboard*\n\n";
-
-    for (let i = 0; i < sortedScores.length; i++) {
-        const [userId, score] = sortedScores[i];
-        // Display JID as identifier
-        leaderboardText += `${i + 1}. @${userId.split('@')[0]} - *Score ${score}*\n`;
-    }
-
-    globalLeaderboard.clear();
-
-    await AlexaInc.sendMessage(jid, { 
-        text: leaderboardText,
-        mentions: sortedScores.map(([userId]) => userId) 
-    });
-}
-
-async function startQuiz(AlexaInc, jid) {
-    if (activeQuiz) {
-        await AlexaInc.sendMessage(jid, { text: "⚠️ A quiz is already active." });
-        return;
-    }
-    
-    const questions = await loadQuestions();
-    
-    if (questions.length === 0) {
-        await AlexaInc.sendMessage(jid, { text: "Could not load questions. Please try again later." });
-        return;
-    }
-    
-    globalLeaderboard.clear();
-    
-    activeQuiz = { questionIndex: -1 }; 
-    await AlexaInc.sendMessage(jid, { text: "*Quiz Starting!* The first question will appear shortly." });
-    
-    delay(2000).then(() => {
-        activeQuiz.questionIndex = 0;
-        sendNextQuestion(AlexaInc, jid);
-    });
-}
-
-function setQuestions(newQuestions) {
-    quizQuestions = newQuestions;
-}
-
-
-// quizManager.js
-
-// ... (Your existing functions: loadQuestions, sendNextQuestion, tallyAndSendResults, etc.) ...
-
-/**
- * Immediately stops the active quiz session, tallies the current question, 
- * and displays the final leaderboard.
- */
-async function stopQuiz(AlexaInc, jid) {
-    if (!activeQuiz) {
-        await AlexaInc.sendMessage(jid, { text: "⚠️ No quiz is currently running to stop." });
-        return;
-    }
-
-    const { question, answers, options, correctAnswerCode, explanation, originalKey, questionIndex } = activeQuiz;
-    const qIndex = questionIndex;
-
-    // 1. Stop the active timer
-    clearTimeout(activeQuiz.timer);
-
-    // 2. Delete the current question message (if possible)
-    try {
-        await AlexaInc.sendMessage(jid, { delete: originalKey });
-    } catch (e) {
-        console.warn(`[QuizManager] Could not delete message during stop: ${e.message}`);
-    }
-
-    // 3. Tally results for the question that was cut short (logic copied from tallyAndSendResults)
-    const answerCounts = options.reduce((acc, option, index) => {
-        const answerCode = String.fromCharCode(65 + index);
-        acc[answerCode] = { count: 0, option: option };
-        return acc;
-    }, {});
-    
-    let totalVotes = 0;
-    answers.forEach((submittedCode, userId) => {
-        if (answerCounts[submittedCode]) {
-            answerCounts[submittedCode].count++;
-            totalVotes++;
-            
-            // NOTE: Leaderboard is updated here for answers submitted before the stop
-            if (submittedCode === correctAnswerCode) {
-                const currentScore = globalLeaderboard.get(userId) || 0;
-                globalLeaderboard.set(userId, currentScore + 1);
+    // Logic: Look through all active group quizzes to find the one matching this sessionId
+    for (let [groupJid, quiz] of activeQuizzes.entries()) {
+        if (quiz.sessionId === sessionId) {
+            if (!quiz.answers.has(jid)) {
+                quiz.answers.set(jid, answerCode);
+                Alexainc.sendMessage(jid, { text: `✅ Answer *${answerCode}* recorded for this session.` });
+            } else {
+                Alexainc.sendMessage(jid, { text: `❗️ You already answered this question.` });
             }
+            return;
         }
-    });
-
-    // 4. Send results for the final question
-    let resultSummary = `*🚨 QUIZ STOPPED EARLY by Admin 🚨*\n\n`;
-    resultSummary += `*Question:* ${question}\n\n`;
-    resultSummary += `*Results for Question ${qIndex + 1} (Final Tally)*\n\n`;
-    resultSummary += `*Total Submissions:* ${totalVotes}\n`;
-    options.forEach((option, index) => {
-        const answerCode = String.fromCharCode(65 + index);
-        const count = answerCounts[answerCode].count;
-        const emoji = answerCode === correctAnswerCode ? '✅' : '❌';
-        resultSummary += `${emoji} ${answerCode}. ${option} - *${count}* votes\n`;
-    });
-    resultSummary += `\n*Correct Answer:* ${correctAnswerCode}. ${options[correctAnswerCode.charCodeAt(0) - 65]}\n`;
-    resultSummary += `\n*Explanation:* ${explanation}\n`;
-
-    await AlexaInc.sendMessage(jid, { text: resultSummary });
-
-    // 5. Send the overall final leaderboard
-    await sendFinalLeaderboard(AlexaInc, jid);
-
-    // 6. Reset state
-    activeQuiz = null;
-    console.log(`[QuizManager] Quiz stopped by admin after Q${qIndex + 1}.`);
+    }
+    Alexainc.sendMessage(jid, { text: `Sorry, this question session is no longer active.` });
+    return;
 }
 
-// ... (End of quizManager.js file) ...
+async function startQuiz(Alexainc, jid) {
+    if (activeQuizzes.has(jid)) {
+        return Alexainc.sendMessage(jid, { text: "⚠️ A quiz is already running in this group." });
+    }
+    const questions = await loadQuestions();
+    if (questions.length === 0) return;
+
+    activeQuizzes.set(jid, { questionIndex: 0 });
+    await Alexainc.sendMessage(jid, { text: "*Quiz Starting!*" });
+    delay(2000).then(() => sendNextQuestion(Alexainc, jid));
+}
+
+async function stopQuiz(Alexainc, jid) {
+    const currentQuiz = activeQuizzes.get(jid);
+    if (!currentQuiz) return Alexainc.sendMessage(jid, { text: "⚠️ No active quiz." });
+
+    if (currentQuiz.timer) clearTimeout(currentQuiz.timer);
+    await tallyAndSendResults(Alexainc, jid);
+    await sendFinalLeaderboard(Alexainc, jid);
+    activeQuizzes.delete(jid);
+}
+
+async function sendFinalLeaderboard(Alexainc, jid) {
+    if (globalLeaderboard.size === 0) {
+        return Alexainc.sendMessage(jid, { text: "*🏆 Final Leaderboard*\n\nNo scores recorded." });
+    }
+    const sorted = Array.from(globalLeaderboard.entries()).sort((a, b) => b[1] - a[1]);
+    let text = "*🏆 Final Leaderboard*\n\n";
+    sorted.forEach(([user, score], i) => {
+        text += `${i + 1}. @${user.split('@')[0]} - *Score ${score}*\n`;
+    });
+    globalLeaderboard.clear();
+    await Alexainc.sendMessage(jid, { text, mentions: sorted.map(s => s[0]) });
+}
 
 module.exports = {
     startQuiz,
+    stopQuiz,
     handleDMAnswer,
     loadQuestions,
-    stopQuiz,
     setQuestions,
-    QUIZ_MAGIC_PREFIX: QUIZ_MAGIC_PREFIX_EXPORT
+    QUIZ_MAGIC_PREFIX
 };
