@@ -48503,5 +48503,75 @@
     "id": 9701,
     "reason": "index.js: Error in warn command: Error: not-authorized\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.groupParticipantsUpdate (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/groups.js:177:28)\nat async warnUser (/home/hansaka/alexa-v3/res/js/warn.js:94:17) {\ndata: 401,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: ENOENT: no such file or directory, open '/home/hansaka/alexa-v3/auth5a/creds.json'\nat async open (node:internal/fs/promises:639:25)\nat async Object.writeFile (node:internal/fs/promises:1216:14)\nat async /home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/use-multi-file-auth-state.js:42:16 {\nerrno: -2,\ncode: 'ENOENT',\nsyscall: 'open',\npath: '/home/hansaka/alexa-v3/auth5a/creds.json'\n}\n",
     "timestamp": "2025-12-27T04:49:50.333Z"
+  },
+  {
+    "id": 9702,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:15:28.438Z"
+  },
+  {
+    "id": 9703,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:15:31.175Z"
+  },
+  {
+    "id": 9704,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:15:33.804Z"
+  },
+  {
+    "id": 9705,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:15:36.549Z"
+  },
+  {
+    "id": 9706,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:15:39.156Z"
+  },
+  {
+    "id": 9707,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:15:41.915Z"
+  },
+  {
+    "id": 9708,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:15:44.866Z"
+  },
+  {
+    "id": 9709,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:15:47.626Z"
+  },
+  {
+    "id": 9710,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:15:50.251Z"
+  },
+  {
+    "id": 9711,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:15:53.354Z"
+  },
+  {
+    "id": 9712,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:15:57.649Z"
+  },
+  {
+    "id": 9713,
+    "reason": "index.js: /home/hansaka/alexa-v3/bot.js:129\ndbPath: mongo_url\n^\nReferenceError: Cannot access 'mongo_url' before initialization\nat Object.<anonymous> (/home/hansaka/alexa-v3/bot.js:129:13)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\nat Module.load (node:internal/modules/cjs/loader:1266:32)\nat Module._load (node:internal/modules/cjs/loader:1091:12)\nat Module.require (node:internal/modules/cjs/loader:1289:19)\nat require (node:internal/modules/helpers:182:18)\nat Object.<anonymous> (/home/hansaka/alexa-v3/index.js:80:5)\nat Module._compile (node:internal/modules/cjs/loader:1521:14)\nat Module._extensions..js (node:internal/modules/cjs/loader:1623:10)\n",
+    "timestamp": "2025-12-28T15:16:00.444Z"
+  },
+  {
+    "id": 9714,
+    "reason": "index.js: ❌ Uncaught Exception: TypeError: allFilters.forEach is not a function\nat handleMessage (/home/hansaka/alexa-v3/bot.js:2655:40)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n",
+    "timestamp": "2025-12-28T15:19:17.449Z"
+  },
+  {
+    "id": 9715,
+    "reason": "index.js: ❌ Uncaught Exception: TypeError: allFilters.forEach is not a function\nat handleMessage (/home/hansaka/alexa-v3/bot.js:2655:40)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n",
+    "timestamp": "2025-12-28T15:22:17.077Z"
   }
 ]

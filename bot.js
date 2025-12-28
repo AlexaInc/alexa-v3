@@ -4,6 +4,7 @@ const USER_DATA_FILE = './users.json';
 const fetchnews = require('./res/news');
 const yts = require('yt-search');
 const mumaker = require('mumaker');
+
 const battlearena = require("./res/js/battlearena.js");
 const weatherof = require('./res/js/weather.js')
 const Assassin = require('./res/js/assassin.js');
@@ -123,9 +124,9 @@ const {
 } = require("openai");
 require('dotenv').config();
 const mysql = require("mysql2");
-
+const mongo_url= process.env.mongo_url;
 const Filters = new FilterManager({
-    dbPath: './filters'
+    dbPath: mongo_url
 });
 
 const badwordNext = require('bad-words-next');
@@ -1565,8 +1566,8 @@ async function handleMessage(AlexaInc, {
                 }
 
 
-                const matchedFilter = Filters.checkFilters(msg.key.remoteJid, messageText);
-
+                const matchedFilter = await Filters.checkFilters(msg.key.remoteJid, messageText);
+console.log(matchedFilter)
 
 
 
@@ -2594,7 +2595,7 @@ END:VCARD`;
                                 mimetype: loadedmsg.mediaMimetype
                             };
 
-                            const done = Filters.addFilter(msg.key.remoteJid, newfilter);
+                            const done = await Filters.addFilter(msg.key.remoteJid, newfilter);
                             AlexaInc.sendMessage(msg.key.remoteJid, {
                                 text: `filter set ${unique.join(' , ')}`
                             }, {
@@ -2609,7 +2610,7 @@ END:VCARD`;
                             if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
                                 text: 'please send trigger word eg- /stop hi'
                             })
-                            const wasRemoved = Filters.removeFilter(msg.key.remoteJid, text);
+                            const wasRemoved = await Filters.removeFilter(msg.key.remoteJid, text);
 
                             if (wasRemoved) {
                                 AlexaInc.sendMessage(msg.key.remoteJid, {
@@ -2625,7 +2626,7 @@ END:VCARD`;
 
                         case "stopall": {
                             if (!isGroup) return mess.group();
-                            const wasremoved = Filters.removeAllFilters(msg.key.remoteJid)
+                            const wasremoved = await Filters.removeAllFilters(msg.key.remoteJid)
                             if (wasremoved) {
                                 AlexaInc.sendMessage(msg.key.remoteJid, {
                                     text: `✅ All Filters removed`
@@ -2641,7 +2642,7 @@ END:VCARD`;
                         case "filters": {
 
                             if (!isGroup) return mess.group();
-                            const allFilters = Filters.getFilters(msg.key.remoteJid);
+                            const allFilters = await Filters.getFilters(msg.key.remoteJid);
                             const filterCount = allFilters.length;
                             if (filterCount === 0) {
                                 AlexaInc.sendMessage(msg.key.remoteJid, {
