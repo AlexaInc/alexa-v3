@@ -124,7 +124,7 @@ async function createDummyAvatarBuffer(f, l, c, scale = 1) {
     let browser;
     let pngBuffer;
     try {
-        browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-gpu'] });
+        browser = await puppeteer.launch({ headless: true,executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox', '--disable-gpu'] });
         const page = await browser.newPage();
         await page.setViewport({ width: avatarSize, height: avatarSize });
         await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' }); // Reverted from networkidle0
@@ -629,7 +629,7 @@ async function createImage(firstName, lastName, customemojiid, message, nameColo
     const VIEWPORT_WIDTH = BODY_PADDING_HORIZONTAL + AVATAR_WIDTH + AVATAR_MARGIN_RIGHT + BUBBLE_TAIL_WIDTH + Math.max(ESTIMATED_MAX_NAME_WIDTH, DEFAULT_MESSAGE_MAX_WIDTH + BUBBLE_PADDING_HORIZONTAL) + (50 * scale); // Add extra buffer
     const VIEWPORT_HEIGHT = 1200 * scale; // Default height, will be cropped later
 
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-gpu','--no-proxy-server'] });
+    const browser = await puppeteer.launch({ headless: true,executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox', '--disable-gpu','--no-proxy-server'] });
     const page = await browser.newPage();
     await page.setViewport({ width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT }); 
     // Wait until dom is loaded (reverted from networkidle0)

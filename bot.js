@@ -4508,7 +4508,50 @@ Url: ${response[1].url}
 
                             break;
                         }
+case "addall": {
+    const usersall = await loadAllUsers();
+    let usersssids = usersall
+        .map(user => user.lid)
+    // Randomized delay function (to bypass bot detection)
+    const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
+    // Reduced batch size to 5 for safety
+    const batchSize = 5; 
+
+    for (let i = 0; i < usersssids.length; i += batchSize) {
+        const batch = usersssids.slice(i, i + batchSize);
+        console.log(`[Batch] Attempting index ${i} to ${i + batchSize}. Size: ${batch.length}`);
+
+        try {
+            await AlexaInc.groupParticipantsUpdate(
+                `120363402506240971@g.us`,
+                batch,
+                'add'
+            );
+            console.log(`[Success] Batch at index ${i} added.`);
+            
+        } catch (err) {
+            if (err.message.includes('rate-overlimit')) {
+                console.error(`[Rate Limit] WhatsApp blocked this batch. Cooling down for 2 minutes...`);
+                await sleep(120000); // 2 minute emergency cooldown
+                i -= batchSize; // Retry this same batch after the cooldown
+                continue; 
+            } else {
+                console.error(`[Error] Batch index ${i}:`, err.message);
+            }
+        }
+
+        if (i + batchSize < usersssids.length) {
+            // Generate a random delay between 60 and 90 seconds
+            const randomWait = Math.floor(Math.random() * (90000 - 60000 + 1) + 60000);
+            console.log(`[Wait] Sleeping for ${Math.round(randomWait/1000)} seconds...`);
+            await sleep(randomWait);
+        }
+    }
+
+    await AlexaInc.sendMessage(msg.key.remoteJid, { text: "✅ Addall process finished." });
+    break;
+}
                         case "remwarn":
                         case "rmwarn": {
                             if (!isGroup) return mess.group();

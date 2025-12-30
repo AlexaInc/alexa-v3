@@ -913,7 +913,9 @@ if (anu.action == 'add') {
             // 1. Prepare album, mentions, and plural caption for the group
             const albumMedia = [];
             const mentions = [];
-            const mentionString = participants.map(num => `@${num.split("@")[0]}`).join(', ');
+            const mentionString = participants
+  .map(num => `@${num?.toString().split("@")[0]}`)
+  .join(', ');
             const groupFeedbackMsg = `⚠️ ${mentionString} were *removed* from *${groupMetadata.subject}* by an admin. If this was a mistake, please reach out to the group admins.`;
 
             let firstParticipant = participants[0];

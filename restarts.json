@@ -48573,5 +48573,510 @@
     "id": 9715,
     "reason": "index.js: ❌ Uncaught Exception: TypeError: allFilters.forEach is not a function\nat handleMessage (/home/hansaka/alexa-v3/bot.js:2655:40)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n",
     "timestamp": "2025-12-28T15:22:17.077Z"
+  },
+  {
+    "id": 9716,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async processNodeWithBuffer (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1480:9)\nat async processNode (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1560:13)\nat async WebSocketClient.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1570:9)\n",
+    "timestamp": "2025-12-28T16:31:48.081Z"
+  },
+  {
+    "id": 9717,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:31:52.383Z"
+  },
+  {
+    "id": 9718,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:31:56.126Z"
+  },
+  {
+    "id": 9719,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:31:59.881Z"
+  },
+  {
+    "id": 9720,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:04.466Z"
+  },
+  {
+    "id": 9721,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:08.783Z"
+  },
+  {
+    "id": 9722,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:13.348Z"
+  },
+  {
+    "id": 9723,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:17.725Z"
+  },
+  {
+    "id": 9724,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:21.169Z"
+  },
+  {
+    "id": 9725,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:25.207Z"
+  },
+  {
+    "id": 9726,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:29.477Z"
+  },
+  {
+    "id": 9727,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:33.461Z"
+  },
+  {
+    "id": 9728,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:36.834Z"
+  },
+  {
+    "id": 9729,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:40.257Z"
+  },
+  {
+    "id": 9730,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:43.873Z"
+  },
+  {
+    "id": 9731,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:47.275Z"
+  },
+  {
+    "id": 9732,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:50.759Z"
+  },
+  {
+    "id": 9733,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:54.541Z"
+  },
+  {
+    "id": 9734,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:32:57.929Z"
+  },
+  {
+    "id": 9735,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:01.326Z"
+  },
+  {
+    "id": 9736,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:05.587Z"
+  },
+  {
+    "id": 9737,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:09.097Z"
+  },
+  {
+    "id": 9738,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:14.075Z"
+  },
+  {
+    "id": 9739,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:18.433Z"
+  },
+  {
+    "id": 9740,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:22.583Z"
+  },
+  {
+    "id": 9741,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:26.542Z"
+  },
+  {
+    "id": 9742,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:30.572Z"
+  },
+  {
+    "id": 9743,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:34.229Z"
+  },
+  {
+    "id": 9744,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:38.434Z"
+  },
+  {
+    "id": 9745,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:41.903Z"
+  },
+  {
+    "id": 9746,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:45.398Z"
+  },
+  {
+    "id": 9747,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:49.649Z"
+  },
+  {
+    "id": 9748,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-28T16:33:52.979Z"
+  },
+  {
+    "id": 9749,
+    "reason": "index.js: Error calling OpenRouter API: NotFoundError: 404 No endpoints found for meta-llama/llama-4-maverick:free.\nat APIError.generate (/home/hansaka/alexa-v3/node_modules/openai/error.js:54:20)\nat OpenAI.makeStatusError (/home/hansaka/alexa-v3/node_modules/openai/core.js:302:33)\nat OpenAI.makeRequest (/home/hansaka/alexa-v3/node_modules/openai/core.js:346:30)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5) {\nstatus: 404,\nheaders: {\n'access-control-allow-origin': '*',\n'cf-ray': '9b52c9773b415d15-YYZ',\nconnection: 'keep-alive',\n'content-encoding': 'gzip',\n'content-type': 'application/json',\ndate: 'Sun, 28 Dec 2025 17:30:41 GMT',\n'permissions-policy': 'payment=(self \"https://checkout.stripe.com\" \"https://connect-js.stripe.com\" \"https://js.stripe.com\" \"https://*.js.stripe.com\" \"https://hooks.stripe.com\")',\n'referrer-policy': 'no-referrer, strict-origin-when-cross-origin',\nserver: 'cloudflare',\n'transfer-encoding': 'chunked',\nvary: 'Accept-Encoding',\n'x-content-type-options': 'nosniff'\n},\nrequest_id: undefined,\nerror: {\nmessage: 'No endpoints found for meta-llama/llama-4-maverick:free.',\ncode: 404\n},\ncode: 404,\nparam: undefined,\ntype: undefined\n}\nError calling OpenRouter API: NotFoundError: 404 No endpoints found for meta-llama/llama-4-maverick:free.\nat APIError.generate (/home/hansaka/alexa-v3/node_modules/openai/error.js:54:20)\nat OpenAI.makeStatusError (/home/hansaka/alexa-v3/node_modules/openai/core.js:302:33)\nat OpenAI.makeRequest (/home/hansaka/alexa-v3/node_modules/openai/core.js:346:30)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5) {\nstatus: 404,\nheaders: {\n'access-control-allow-origin': '*',\n'cf-ray': '9b52c9846e785d15-YYZ',\nconnection: 'keep-alive',\n'content-encoding': 'gzip',\n'content-type': 'application/json',\ndate: 'Sun, 28 Dec 2025 17:30:43 GMT',\n'permissions-policy': 'payment=(self \"https://checkout.stripe.com\" \"https://connect-js.stripe.com\" \"https://js.stripe.com\" \"https://*.js.stripe.com\" \"https://hooks.stripe.com\")',\n'referrer-policy': 'no-referrer, strict-origin-when-cross-origin',\nserver: 'cloudflare',\n'transfer-encoding': 'chunked',\nvary: 'Accept-Encoding',\n'x-content-type-options': 'nosniff'\n},\nrequest_id: undefined,\nerror: {\nmessage: 'No endpoints found for meta-llama/llama-4-maverick:free.',\ncode: 404\n},\ncode: 404,\nparam: undefined,\ntype: undefined\n}\nError calling OpenRouter API: NotFoundError: 404 No endpoints found for meta-llama/llama-4-maverick:free.\nat APIError.generate (/home/hansaka/alexa-v3/node_modules/openai/error.js:54:20)\nat OpenAI.makeStatusError (/home/hansaka/alexa-v3/node_modules/openai/core.js:302:33)\nat OpenAI.makeRequest (/home/hansaka/alexa-v3/node_modules/openai/core.js:346:30)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5) {\nstatus: 404,\nheaders: {\n'access-control-allow-origin': '*',\n'cf-ray': '9b52c991793d5d15-YYZ',\nconnection: 'keep-alive',\n'content-encoding': 'gzip',\n'content-type': 'application/json',\ndate: 'Sun, 28 Dec 2025 17:30:45 GMT',\n'permissions-policy': 'payment=(self \"https://checkout.stripe.com\" \"https://connect-js.stripe.com\" \"https://js.stripe.com\" \"https://*.js.stripe.com\" \"https://hooks.stripe.com\")',\n'referrer-policy': 'no-referrer, strict-origin-when-cross-origin',\nserver: 'cloudflare',\n'transfer-encoding': 'chunked',\nvary: 'Accept-Encoding',\n'x-content-type-options': 'nosniff'\n},\nrequest_id: undefined,\nerror: {\nmessage: 'No endpoints found for meta-llama/llama-4-maverick:free.',\ncode: 404\n},\ncode: 404,\nparam: undefined,\ntype: undefined\n}\nError calling OpenRouter API: NotFoundError: 404 No endpoints found for meta-llama/llama-4-maverick:free.\nat APIError.generate (/home/hansaka/alexa-v3/node_modules/openai/error.js:54:20)\nat OpenAI.makeStatusError (/home/hansaka/alexa-v3/node_modules/openai/core.js:302:33)\nat OpenAI.makeRequest (/home/hansaka/alexa-v3/node_modules/openai/core.js:346:30)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5) {\nstatus: 404,\nheaders: {\n'access-control-allow-origin': '*',\n'cf-ray': '9b52c99e7dc45d15-YYZ',\nconnection: 'keep-alive',\n'content-encoding': 'gzip',\n'content-type': 'application/json',\ndate: 'Sun, 28 Dec 2025 17:30:47 GMT',\n'permissions-policy': 'payment=(self \"https://checkout.stripe.com\" \"https://connect-js.stripe.com\" \"https://js.stripe.com\" \"https://*.js.stripe.com\" \"https://hooks.stripe.com\")',\n'referrer-policy': 'no-referrer, strict-origin-when-cross-origin',\nserver: 'cloudflare',\n'transfer-encoding': 'chunked',\nvary: 'Accept-Encoding',\n'x-content-type-options': 'nosniff'\n},\nrequest_id: undefined,\nerror: {\nmessage: 'No endpoints found for meta-llama/llama-4-maverick:free.',\ncode: 404\n},\ncode: 404,\nparam: undefined,\ntype: undefined\n}\nError calling OpenRouter API: NotFoundError: 404 No endpoints found for meta-llama/llama-4-maverick:free.\nat APIError.generate (/home/hansaka/alexa-v3/node_modules/openai/error.js:54:20)\nat OpenAI.makeStatusError (/home/hansaka/alexa-v3/node_modules/openai/core.js:302:33)\nat OpenAI.makeRequest (/home/hansaka/alexa-v3/node_modules/openai/core.js:346:30)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5) {\nstatus: 404,\nheaders: {\n'access-control-allow-origin': '*',\n'cf-ray': '9b52c9ab89885d15-YYZ',\nconnection: 'keep-alive',\n'content-encoding': 'gzip',\n'content-type': 'application/json',\ndate: 'Sun, 28 Dec 2025 17:30:49 GMT',\n'permissions-policy': 'payment=(self \"https://checkout.stripe.com\" \"https://connect-js.stripe.com\" \"https://js.stripe.com\" \"https://*.js.stripe.com\" \"https://hooks.stripe.com\")',\n'referrer-policy': 'no-referrer, strict-origin-when-cross-origin',\nserver: 'cloudflare',\n'transfer-encoding': 'chunked',\nvary: 'Accept-Encoding',\n'x-content-type-options': 'nosniff'\n},\nrequest_id: undefined,\nerror: {\nmessage: 'No endpoints found for meta-llama/llama-4-maverick:free.',\ncode: 404\n},\ncode: 404,\nparam: undefined,\ntype: undefined\n}\nError calling OpenRouter API: NotFoundError: 404 No endpoints found for meta-llama/llama-4-maverick:free.\nat APIError.generate (/home/hansaka/alexa-v3/node_modules/openai/error.js:54:20)\nat OpenAI.makeStatusError (/home/hansaka/alexa-v3/node_modules/openai/core.js:302:33)\nat OpenAI.makeRequest (/home/hansaka/alexa-v3/node_modules/openai/core.js:346:30)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5) {\nstatus: 404,\nheaders: {\n'access-control-allow-origin': '*',\n'cf-ray': '9b52c9b8acfe5d15-YYZ',\nconnection: 'keep-alive',\n'content-encoding': 'gzip',\n'content-type': 'application/json',\ndate: 'Sun, 28 Dec 2025 17:30:51 GMT',\n'permissions-policy': 'payment=(self \"https://checkout.stripe.com\" \"https://connect-js.stripe.com\" \"https://js.stripe.com\" \"https://*.js.stripe.com\" \"https://hooks.stripe.com\")',\n'referrer-policy': 'no-referrer, strict-origin-when-cross-origin',\nserver: 'cloudflare',\n'transfer-encoding': 'chunked',\nvary: 'Accept-Encoding',\n'x-content-type-options': 'nosniff'\n},\nrequest_id: undefined,\nerror: {\nmessage: 'No endpoints found for meta-llama/llama-4-maverick:free.',\ncode: 404\n},\ncode: 404,\nparam: undefined,\ntype: undefined\n}\nError calling OpenRouter API\nError: Error calling OpenRouter API\n❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async processNodeWithBuffer (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1480:9)\nat async processNode (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1560:13)\nat async WebSocketClient.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1570:9)\n",
+    "timestamp": "2025-12-29T03:11:26.478Z"
+  },
+  {
+    "id": 9750,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:11:31.241Z"
+  },
+  {
+    "id": 9751,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:11:34.821Z"
+  },
+  {
+    "id": 9752,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:11:38.632Z"
+  },
+  {
+    "id": 9753,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:11:42.464Z"
+  },
+  {
+    "id": 9754,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:11:46.607Z"
+  },
+  {
+    "id": 9755,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:11:50.097Z"
+  },
+  {
+    "id": 9756,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:11:54.164Z"
+  },
+  {
+    "id": 9757,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:11:58.685Z"
+  },
+  {
+    "id": 9758,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:02.512Z"
+  },
+  {
+    "id": 9759,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:06.020Z"
+  },
+  {
+    "id": 9760,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:10.215Z"
+  },
+  {
+    "id": 9761,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:13.986Z"
+  },
+  {
+    "id": 9762,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:18.387Z"
+  },
+  {
+    "id": 9763,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:22.255Z"
+  },
+  {
+    "id": 9764,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:26.025Z"
+  },
+  {
+    "id": 9765,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:29.562Z"
+  },
+  {
+    "id": 9766,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:33.986Z"
+  },
+  {
+    "id": 9767,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:38.277Z"
+  },
+  {
+    "id": 9768,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:42.432Z"
+  },
+  {
+    "id": 9769,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:46.905Z"
+  },
+  {
+    "id": 9770,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:50.891Z"
+  },
+  {
+    "id": 9771,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:55.339Z"
+  },
+  {
+    "id": 9772,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:12:59.512Z"
+  },
+  {
+    "id": 9773,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:13:03.791Z"
+  },
+  {
+    "id": 9774,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:13:07.743Z"
+  },
+  {
+    "id": 9775,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:13:13.019Z"
+  },
+  {
+    "id": 9776,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:13:17.535Z"
+  },
+  {
+    "id": 9777,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:13:21.866Z"
+  },
+  {
+    "id": 9778,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:13:25.398Z"
+  },
+  {
+    "id": 9779,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:13:29.451Z"
+  },
+  {
+    "id": 9780,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:13:33.873Z"
+  },
+  {
+    "id": 9781,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:13:37.482Z"
+  },
+  {
+    "id": 9782,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:13:41.752Z"
+  },
+  {
+    "id": 9783,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async processNodeWithBuffer (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1480:9)\nat async processNode (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1560:13)\nat async WebSocketClient.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1570:9)\n",
+    "timestamp": "2025-12-29T03:14:37.875Z"
+  },
+  {
+    "id": 9784,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:14:42.019Z"
+  },
+  {
+    "id": 9785,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:14:46.181Z"
+  },
+  {
+    "id": 9786,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:14:49.801Z"
+  },
+  {
+    "id": 9787,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:14:54.057Z"
+  },
+  {
+    "id": 9788,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:14:57.573Z"
+  },
+  {
+    "id": 9789,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:15:00.941Z"
+  },
+  {
+    "id": 9790,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:15:05.498Z"
+  },
+  {
+    "id": 9791,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T03:15:09.310Z"
+  },
+  {
+    "id": 9792,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async processNodeWithBuffer (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1480:9)\nat async processNode (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1560:13)\nat async WebSocketClient.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1570:9)\n",
+    "timestamp": "2025-12-29T06:46:47.914Z"
+  },
+  {
+    "id": 9793,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:46:54.449Z"
+  },
+  {
+    "id": 9794,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:46:59.640Z"
+  },
+  {
+    "id": 9795,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:47:05.719Z"
+  },
+  {
+    "id": 9796,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:47:11.933Z"
+  },
+  {
+    "id": 9797,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:47:18.018Z"
+  },
+  {
+    "id": 9798,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:47:23.922Z"
+  },
+  {
+    "id": 9799,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:47:28.619Z"
+  },
+  {
+    "id": 9800,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:47:34.019Z"
+  },
+  {
+    "id": 9801,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:47:38.641Z"
+  },
+  {
+    "id": 9802,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:47:43.400Z"
+  },
+  {
+    "id": 9803,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:47:48.811Z"
+  },
+  {
+    "id": 9804,
+    "reason": "index.js: ❌ Uncaught Exception: ReferenceError: callId is not defined\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:630:39)\nat EventEmitter.emit (node:events:536:35)\nat EventEmitter.<anonymous> (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:49:16)\nat EventEmitter.emit (node:events:524:28)\nat Object.emit (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/event-buffer.js:155:23)\nat handleCall (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1425:12)\nat async promise (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-recv.js:1529:21)\n",
+    "timestamp": "2025-12-29T06:47:54.096Z"
+  },
+  {
+    "id": 9805,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: not-authorized\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.groupParticipantsUpdate (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/groups.js:177:28)\nat async handleMessage (/home/hansaka/alexa-v3/bot.js:4528:9) {\ndata: 401,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-12-29T12:36:58.787Z"
+  },
+  {
+    "id": 9806,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: bad-request\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.groupParticipantsUpdate (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/groups.js:177:28)\nat async handleMessage (/home/hansaka/alexa-v3/bot.js:4528:9) {\ndata: 400,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-12-29T12:38:15.598Z"
+  },
+  {
+    "id": 9807,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: bad-request\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.groupParticipantsUpdate (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/groups.js:177:28)\nat async handleMessage (/home/hansaka/alexa-v3/bot.js:4528:9) {\ndata: 400,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-12-29T12:40:06.641Z"
+  },
+  {
+    "id": 9808,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\nError fetching group metadata: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.groupMetadata (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/groups.js:43:24)\nat async EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:645:25) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\nFailed to remove user(s): Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\nError fetching group metadata: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.groupMetadata (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/groups.js:43:24)\nat async EventEmitter.<anonymous> (/home/hansaka/alexa-v3/index.js:645:25) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-12-29T14:12:47.831Z"
+  },
+  {
+    "id": 9809,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: Cannot derive from empty media key\nat getMediaKeys (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages-media.js:133:15)\nat downloadContentFromMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages-media.js:615:24)\nat downloadMsg (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages.js:1777:30)\nat downloadMediaMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages.js:1729:26)\nat handleMessage (/home/hansaka/alexa-v3/bot.js:5626:46)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5) {\ndata: null,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-12-29T15:45:45.827Z"
+  },
+  {
+    "id": 9810,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: Cannot derive from empty media key\nat getMediaKeys (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages-media.js:133:15)\nat downloadContentFromMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages-media.js:615:24)\nat downloadMsg (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages.js:1777:30)\nat downloadMediaMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages.js:1729:26)\nat handleMessage (/home/hansaka/alexa-v3/bot.js:5626:46)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5) {\ndata: null,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2025-12-30T01:34:59.153Z"
+  },
+  {
+    "id": 9811,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: Could not find Chrome (ver. 142.0.7444.162). This can occur if either\n1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n2. your cache path is incorrectly configured (which is: /home/hansaka/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.\nat ChromeLauncher.resolveExecutablePath (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:333:27)\nat ChromeLauncher.computeLaunchArguments (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/ChromeLauncher.js:93:24)\nat async ChromeLauncher.launch (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:85:28)\nat async createImage (/home/hansaka/alexa-v3/generatequote2.js:632:21)\nat async handleMessage (/home/hansaka/alexa-v3/bot.js:2417:46)\n",
+    "timestamp": "2025-12-30T02:43:26.555Z"
+  },
+  {
+    "id": 9812,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: Could not find Chrome (ver. 142.0.7444.162). This can occur if either\n1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n2. your cache path is incorrectly configured (which is: /home/hansaka/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.\nat ChromeLauncher.resolveExecutablePath (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:333:27)\nat ChromeLauncher.computeLaunchArguments (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/ChromeLauncher.js:93:24)\nat async ChromeLauncher.launch (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:85:28)\nat async createImage (/home/hansaka/alexa-v3/generatequote2.js:632:21)\nat async handleMessage (/home/hansaka/alexa-v3/bot.js:2417:46)\n",
+    "timestamp": "2025-12-30T04:36:42.369Z"
+  },
+  {
+    "id": 9813,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: Could not find Chrome (ver. 142.0.7444.162). This can occur if either\n1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n2. your cache path is incorrectly configured (which is: /home/hansaka/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.\nat ChromeLauncher.resolveExecutablePath (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:333:27)\nat ChromeLauncher.computeLaunchArguments (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/ChromeLauncher.js:93:24)\nat async ChromeLauncher.launch (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:85:28)\nat async createImage (/home/hansaka/alexa-v3/generatequote2.js:632:21)\nat async handleMessage (/home/hansaka/alexa-v3/bot.js:2417:46)\n",
+    "timestamp": "2025-12-30T04:39:33.660Z"
+  },
+  {
+    "id": 9814,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: Could not find Chrome (ver. 142.0.7444.162). This can occur if either\n1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n2. your cache path is incorrectly configured (which is: /home/hansaka/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.\nat ChromeLauncher.resolveExecutablePath (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:333:27)\nat ChromeLauncher.computeLaunchArguments (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/ChromeLauncher.js:93:24)\nat async ChromeLauncher.launch (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:85:28)\nat async createImage (/home/hansaka/alexa-v3/generatequote2.js:632:21)\nat async handleMessage (/home/hansaka/alexa-v3/bot.js:2417:46)\n",
+    "timestamp": "2025-12-30T04:42:18.844Z"
+  },
+  {
+    "id": 9815,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: Could not find Chrome (ver. 142.0.7444.162). This can occur if either\n1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n2. your cache path is incorrectly configured (which is: /home/hansaka/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.\nat ChromeLauncher.resolveExecutablePath (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:333:27)\nat ChromeLauncher.computeLaunchArguments (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/ChromeLauncher.js:93:24)\nat async ChromeLauncher.launch (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:85:28)\nat async createImage (/home/hansaka/alexa-v3/generatequote2.js:632:21)\nat async handleMessage (/home/hansaka/alexa-v3/bot.js:2417:46)\n",
+    "timestamp": "2025-12-30T04:42:40.347Z"
+  },
+  {
+    "id": 9816,
+    "reason": "index.js: Error: forbidden\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40) {\ndata: 403,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n❌ Uncaught Exception: Error: Could not find Chrome (ver. 142.0.7444.162). This can occur if either\n1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n2. your cache path is incorrectly configured (which is: /home/hansaka/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.\nat ChromeLauncher.resolveExecutablePath (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:333:27)\nat ChromeLauncher.computeLaunchArguments (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/ChromeLauncher.js:93:24)\nat async ChromeLauncher.launch (/home/hansaka/alexa-v3/node_modules/puppeteer-core/lib/cjs/puppeteer/node/BrowserLauncher.js:85:28)\nat async createImage (/home/hansaka/alexa-v3/generatequote2.js:632:21)\nat async handleMessage (/home/hansaka/alexa-v3/bot.js:2417:46)\n",
+    "timestamp": "2025-12-30T04:43:33.434Z"
   }
 ]
