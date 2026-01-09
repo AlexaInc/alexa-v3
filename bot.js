@@ -1577,7 +1577,7 @@ async function handleMessage(AlexaInc, {
 
 
                 // console.log(isBotallowed,isBotorFakeWeb)
-                console.log(isGroup , !isBotallowed , isBotorFakeWeb , !isAdmins , isBotAdmins)
+                // console.log(isGroup , !isBotallowed , isBotorFakeWeb , !isAdmins , isBotAdmins)
                 if (isGroup && !isBotallowed && isBotorFakeWeb && !isAdmins && isBotAdmins) {
                     console.log('kik',msg.key.participant)
                     await AlexaInc.sendMessage(msg.key.remoteJid, {

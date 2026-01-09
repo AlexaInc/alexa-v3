@@ -49618,5 +49618,15 @@
     "id": 9924,
     "reason": "index.js: Exited with code null (restarting)",
     "timestamp": "2026-01-08T10:10:16.106Z"
+  },
+  {
+    "id": 9925,
+    "reason": "index.js: ❌ Uncaught Exception: Error: Input file is missing: https://pps.whatsapp.net/v/t61.24694-24/557028609_877577771330060_4748076003539693684_n.jpg?ccb=11-4&oh=01_Q5Aa3gGb9PLKLC7QcfJCmp207BO1DFLYzZTIoBCkN_apK_bDIw&oe=696DC59C&_nc_sid=5e03e0&_nc_cat=104\nat Sharp.metadata (/home/hansaka/alexa-v3/node_modules/sharp/lib/input.js:637:17)\nat extractImageThumb (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages-media.js:171:38)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async generateThumbnail (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages-media.js:363:38)\nat async generateWAMessageContent (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages.js:557:35)\nat async generateWAMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Utils/messages.js:1439:46)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1658:33)\nat async handleMessage (/home/hansaka/alexa-v3/bot.js:4999:29)\n",
+    "timestamp": "2026-01-09T05:58:24.153Z"
+  },
+  {
+    "id": 9926,
+    "reason": "index.js: ❌ Uncaught Exception: Error: rate-overlimit\nat assertNodeErrorFree (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/WABinary/generic-utils.js:56:15)\nat query (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/socket.js:210:13)\nat process.processTicksAndRejections (node:internal/process/task_queues:95:5)\nat async Object.sendMessage (/home/hansaka/alexa-v3/node_modules/@hansaka02/baileys/lib/Socket/messages-send.js:1618:40)\nat async Query.onResult (/home/hansaka/alexa-v3/index.js:738:13) {\ndata: 429,\nisBoom: true,\nisServer: true,\noutput: {\nstatusCode: 500,\npayload: {\nstatusCode: 500,\nerror: 'Internal Server Error',\nmessage: 'An internal server error occurred'\n},\nheaders: {}\n}\n}\n",
+    "timestamp": "2026-01-09T07:25:57.692Z"
   }
 ]

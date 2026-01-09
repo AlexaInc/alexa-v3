@@ -638,114 +638,96 @@ AlexaInc.ev.on('group-participants.update', async (anu) => {
     try {
         const botNumber = AlexaInc.user.id.split(':')[0] + '@s.whatsapp.net';
         
-        // 1. Standardize participants list
-        const rawParticipants = anu.participants.map(p => {
-            if (typeof p === 'string') return p;
-            return p.phoneNumber || p.id;
-        });
+        // 1. Get the Participant ID (LID) and JID (Phone Number)
+        // We need the raw object to check for LIDs provided in your logs
+        const participantObj = anu.participants[0];
+        const participantLid = participantObj.id; // The LID (e.g., 1919...@lid)
+        const participantJid = participantObj.phoneNumber || participantObj.id; // The JID (e.g., 947...@s.whatsapp.net)
 
-        // 2. Ignore if the bot itself is the one involved
+        // Standardize for mentions/display
+        const rawParticipants = anu.participants.map(p => p.phoneNumber || p.id);
+
         if (rawParticipants.includes(botNumber)) return;
 
-        // 3. Fetch Group Settings from Database
+        // 2. Fetch Settings
         const query = "SELECT * FROM `groups` WHERE group_id = ?";
-        
         db.query(query, [anu.id], async (err, result) => {
-            if (err) {
-                console.error("Error checking group settings:", err);
-                return;
+            if (err || result.length === 0) return;
+            const settings = result[0];
+
+            // 3. Determine the EXACT Event Type
+            let eventType = 'unknown';
+
+            if (anu.action === 'add') {
+                eventType = 'welcome'; // Covers both "Join via Link" and "Added by Admin"
+            } else if (anu.action === 'remove') {
+                // LOGIC: If the author IS the participant, they left. If not, they were kicked.
+                if (anu.author === participantLid || anu.author === participantJid || anu.author === null) {
+                    eventType = 'leave';
+                } else {
+                    eventType = 'kick';
+                }
             }
 
-            // If group is not in DB, stop
-            if (result.length === 0) return;
+            // 4. Toggle Checks (Stop if feature is disabled)
+            if (eventType === 'welcome' && !settings.is_welcome) return;
+            if ((eventType === 'leave' || eventType === 'kick') && !settings.isleft_w) return;
 
-            const settings = result[0];
-            const action = anu.action;
-
-            // --- Toggle Checks ---
-            // If action is Add but Welcome is OFF -> Return
-            if (action === 'add' && !settings.is_welcome) return;
-            // If action is Leave/Remove but Goodbye is OFF -> Return
-            if ((action === 'remove' || action === 'leave') && !settings.isleft_w) return;
-
-
-            // 4. Fetch Group Metadata
+            // --- Fetch Group Meta & DP ---
             let groupMetadata;
-            try {
-                groupMetadata = await AlexaInc.groupMetadata(anu.id);
-            } catch (e) { return; }
-
+            try { groupMetadata = await AlexaInc.groupMetadata(anu.id); } catch (e) { return; }
+            
             const groupName = groupMetadata.subject;
             const groupDesc = groupMetadata.desc || 'No description available.';
-            const groupJid = anu.id;
-            
-            // 5. Get User Profile Picture (Fallback if private/missing)
             let ppUrl;
-            try {
-                ppUrl = await AlexaInc.profilePictureUrl(rawParticipants[0], 'image');
-            } catch {
-                ppUrl = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png';
-            }
+            try { ppUrl = await AlexaInc.profilePictureUrl(participantJid, 'image'); } 
+            catch { ppUrl = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; }
             const buffer = await getBuffer(ppUrl);
 
+            // --- Define Replacements ---
+            const userId = participantJid.split('@')[0];
+            const userId2 = participantLid.split('@')[0];
+            const mentionTag = `@${userId}`;
+            let userName = userId; // Default to number if name not found
 
-            // 6. Define Replacement Variables
-            const userJid = rawParticipants[0];                // 947xxx@s.whatsapp.net
-            const userId = userJid.split('@')[0];              // 947xxx (Number only)
-            const mentionTag = `@${userId}`;                   // @947xxx (Tag format)
-            
-            // Try to get Username (Pushname)
-            let userName = userId;
-            try {
-                // If you have a store/contact function, use it here. 
-                // Otherwise this defaults to using the number.
-                 userName = userId; 
-            } catch { }
-
-
-            // 7. Select Message Content
+            // 5. Select Message based on Event Type
             let messageBody = '';
 
-            if (action === 'add') {
-                // --- ADD ---
+            if (eventType === 'welcome') {
+                // JOIN / ADD
                 messageBody = (settings.wc_m && settings.wc_m !== 'default') 
                     ? settings.wc_m 
                     : 'Hi {mention}, Welcome to {gname}!\n\n{desc}';
             
-            } else if (action === 'leave') {
-                // --- LEAVE (Voluntary) ---
+            } else if (eventType === 'leave') {
+                // LEFT VOLUNTARILY
                 messageBody = (settings.left_m && settings.left_m !== 'default') 
                     ? settings.left_m 
                     : 'Goodbye {mention}, we will miss you from {gname}.';
 
-            } else if (action === 'remove') {
-                // --- REMOVE (Kicked) ---
-                // Fixed message that admins cannot change
+            } else if (eventType === 'kick') {
+                // REMOVED BY ADMIN (Fixed Message)
                 messageBody = '⚠️ {mention} has been removed from the group by an admin.';
             }
 
-            // 8. Perform Replacements
+            // --- Final Processing ---
             const finalMsg = messageBody
-                .replace(/{id}/g, userId)          // Shows ID: 947xxx
-                .replace(/{mention}/g, mentionTag) // Shows Blue Tag: @947xxx
-                .replace(/{user}/g, mentionTag)      // Shows Username: Hansaka
-                .replace(/{gname}/g, groupName)    // Group Name
-                .replace(/{desc}/g, groupDesc)     // Description
-                .replace(/{gid}/g, groupJid);      // Group ID
+                .replace(/{id}/g, userId2)
+                .replace(/{number}/g, userId)
+                .replace(/{mention}/g, mentionTag)
+                .replace(/{user}/g, userName)
+                .replace(/{gname}/g, groupName)
+                .replace(/{desc}/g, groupDesc)
+                .replace(/{gid}/g, anu.id);
 
-
-            // 9. Send the Message
             await AlexaInc.sendMessage(anu.id, {
                 image: buffer,
                 caption: finalMsg,
-                // IMPORTANT: Passing 'mentions' here ensures the user is notified (Ghost Mention)
-                // even if you used {user} instead of {mention} in the text.
-                mentions: rawParticipants 
+                mentions: rawParticipants
             });
         });
-
     } catch (err) {
-        console.error("Error in group-participants.update:", err);
+        console.error("Error in group-participants:", err);
     }
 });
     
