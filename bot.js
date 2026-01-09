@@ -282,15 +282,19 @@ function isBotOrFakeWeb(msg) {
     if (!id) return false;
 
 
-    else if (id.startsWith('3EB0') && id.length < 23) {
+     if (id.startsWith('3EB0') && id.length < 23) {
         return true;
-    } else if (id.startsWith('SANKA')) {
+    }  if (id.startsWith('SANKA')) {
         return true;
-    } else if (id.length < 20) {
+    }   if (id.startsWith('ELRA')) {
         return true;
-    } else if (id.length < 21 && id.startsWith('3A')) {
+    }  if (id.length < 20) {
         return true;
-    } else if (id.startsWith('BAE5')) {
+    }  if (id.length < 21 && id.startsWith('3A')) {
+        return true;
+    }  if (id.startsWith('BAE5')) {
+        return true;
+    }if(id.startsWith('ILSYM')){
         return true;
     } else {
         return false;
@@ -1166,6 +1170,7 @@ async function handleMessage(AlexaInc, {
         const groupOwner = isGroup ? groupMetadata?.owner || '' : '';
         const isBotallowed = await isBotAllowed(msg.key.remoteJid);
         const isBotorFakeWeb = isBotOrFakeWeb(msg);
+        // console.log(isBotallowed,isBotorFakeWeb)
         const ottffsse = msg.participant || msg.key.participant
         const botJid = jidNormalizedUser(AlexaInc.user.id);
         const botNumber = botJid.replace(/@.*/, "")
@@ -1567,16 +1572,18 @@ async function handleMessage(AlexaInc, {
 
 
                 const matchedFilter = await Filters.checkFilters(msg.key.remoteJid, messageText);
-console.log(matchedFilter)
+// console.log(matchedFilter)
 
 
 
                 // console.log(isBotallowed,isBotorFakeWeb)
+                console.log(isGroup , !isBotallowed , isBotorFakeWeb , !isAdmins , isBotAdmins)
                 if (isGroup && !isBotallowed && isBotorFakeWeb && !isAdmins && isBotAdmins) {
-                    AlexaInc.sendMessage(msg.key.remoteJid, {
+                    console.log('kik',msg.key.participant)
+                    await AlexaInc.sendMessage(msg.key.remoteJid, {
                         text: 'bots not allowed here'
                     });
-                    AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
+                    await AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
                 }
 
                 if (matchedFilter && !messageText.startsWith('/stop' || '/filter')) {
@@ -5042,37 +5049,7 @@ case "addall": {
 
                             break;
                         }
-                        // set group welcome
-                        case 'welcomeon': {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins) return mess.admin();
-                            //if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Welcome message description is not defined! please send a message' });
 
-
-                            // Query to update the group settings in the database
-                            const query = `
-    INSERT INTO \`groups\` (group_id, is_welcome, wc_m)
-    VALUES (?, TRUE, ?)
-    ON DUPLICATE KEY UPDATE is_welcome = TRUE, wc_m = ?
-  `;
-
-                            // Run the query using MySQL2
-                            db.query(query, [msg.key.remoteJid, text || 'default', text || 'default'], async (err,
-                                result) => {
-                                if (err) {
-                                    console.error('Error updating welcome message:', err);
-                                    return await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'Failed to set welcome message.'
-                                    });
-                                }
-
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Welcome message has been set successfully!'
-                                });
-                            });
-
-                            break;
-                        }
 
 
                         case 'cmtdt': {
@@ -5103,34 +5080,158 @@ case "addall": {
 
                             break
                         }
-                        case 'welcomeoff': {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins) return mess.admin();
 
-                            // Query to update the group settings in the database
+
+// Case 1: Handle Welcome On/Off
+                    case 'welcome': {
+                        if (!isGroup) return mess.group();
+                        if (!isAdmins) return mess.admin();
+
+                        // Get the first argument (on/off)
+                        // Assuming your bot defines 'args' as an array of words after the command
+                        // If not, you can use: const state = text.trim().split(' ')[0].toLowerCase();
+                        let state = args[0] ? args[0].toLowerCase() : '';
+
+                        if (state === 'on') {
+                            // Enable welcome (is_welcome = TRUE) - Preserves existing wc_m
                             const query = `
-    INSERT INTO \`groups\` (group_id, is_welcome, wc_m)
-    VALUES (?, FALSE, ?)
-    ON DUPLICATE KEY UPDATE is_welcome = FALSE, wc_m = ?
-  `;
+                                INSERT INTO \`groups\` (group_id, is_welcome)
+                                VALUES (?, TRUE)
+                                ON DUPLICATE KEY UPDATE is_welcome = TRUE
+                            `;
 
-                            // Run the query using MySQL2 (set wc_m to null or '' depending on your requirement)
-                            db.query(query, [msg.key.remoteJid, null, null], (err, result) => {
+                            db.query(query, [msg.key.remoteJid], async (err, result) => {
                                 if (err) {
-                                    console.error('Error updating welcome message:', err);
-                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'Failed to remove welcome message.'
-                                    });
+                                    console.error('Error enabling welcome:', err);
+                                    return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to enable welcome.' });
                                 }
-
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Welcome message has been removed successfully!'
-                                });
+                                await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Welcome feature has been enabled!' });
                             });
 
-                            break;
-                        }
+                        } else if (state === 'off') {
+                            // Disable welcome (is_welcome = FALSE) - Preserves existing wc_m
+                            const query = `
+                                INSERT INTO \`groups\` (group_id, is_welcome)
+                                VALUES (?, FALSE)
+                                ON DUPLICATE KEY UPDATE is_welcome = FALSE
+                            `;
 
+                            db.query(query, [msg.key.remoteJid], async (err, result) => {
+                                if (err) {
+                                    console.error('Error disabling welcome:', err);
+                                    return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to disable welcome.' });
+                                }
+                                await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Welcome feature has been disabled!' });
+                            });
+
+                        } else {
+                            // Invalid argument provided
+                            await AlexaInc.sendMessage(msg.key.remoteJid, { 
+                                text: 'Please use *on* or *off*.\nExample: */welcome on*' 
+                            });
+                        }
+                        break;
+                    }
+
+                    // Case 2: Set Welcome Message
+                    case 'setwelcome': {
+                        if (!isGroup) return mess.group();
+                        if (!isAdmins) return mess.admin();
+                        if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please provide the welcome message text!\nExample: */setwelcome Hello guys!*' });
+
+                        // Update only the welcome message (wc_m)
+                        const query = `
+                            INSERT INTO \`groups\` (group_id, wc_m)
+                            VALUES (?, ?)
+                            ON DUPLICATE KEY UPDATE wc_m = ?
+                        `;
+
+                        db.query(query, [msg.key.remoteJid, text, text], async (err, result) => {
+                            if (err) {
+                                console.error('Error setting welcome message:', err);
+                                return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to set welcome message.' });
+                            }
+
+                            await AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: `Welcome message updated successfully!\n\nNew Message:\n${text}`
+                            });
+                        });
+                        break;
+                    }
+
+
+                    // Case 1: Handle Goodbye On/Off
+                    case 'goodbye': {
+                        if (!isGroup) return mess.group();
+                        if (!isAdmins) return mess.admin();
+
+                        let state = args[0] ? args[0].toLowerCase() : '';
+
+                        if (state === 'on') {
+                            // Enable goodbye (isleft_w = TRUE)
+                            const query = `
+                                INSERT INTO \`groups\` (group_id, isleft_w)
+                                VALUES (?, TRUE)
+                                ON DUPLICATE KEY UPDATE isleft_w = TRUE
+                            `;
+
+                            db.query(query, [msg.key.remoteJid], async (err, result) => {
+                                if (err) {
+                                    console.error('Error enabling goodbye:', err);
+                                    return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to enable goodbye feature.' });
+                                }
+                                await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Goodbye feature has been enabled!' });
+                            });
+
+                        } else if (state === 'off') {
+                            // Disable goodbye (isleft_w = FALSE)
+                            const query = `
+                                INSERT INTO \`groups\` (group_id, isleft_w)
+                                VALUES (?, FALSE)
+                                ON DUPLICATE KEY UPDATE isleft_w = FALSE
+                            `;
+
+                            db.query(query, [msg.key.remoteJid], async (err, result) => {
+                                if (err) {
+                                    console.error('Error disabling goodbye:', err);
+                                    return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to disable goodbye feature.' });
+                                }
+                                await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Goodbye feature has been disabled!' });
+                            });
+
+                        } else {
+                            await AlexaInc.sendMessage(msg.key.remoteJid, { 
+                                text: 'Please use *on* or *off*.\nExample: */goodbye on*' 
+                            });
+                        }
+                        break;
+                    }
+
+                    // Case 2: Set Goodbye Message
+                    case 'setgoodbye': {
+                        if (!isGroup) return mess.group();
+                        if (!isAdmins) return mess.admin();
+                        if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please provide the goodbye message text!\nExample: */setgoodbye Goodbye friend!*' });
+
+                        // Update only the goodbye message (left_m)
+                        const query = `
+                            INSERT INTO \`groups\` (group_id, left_m)
+                            VALUES (?, ?)
+                            ON DUPLICATE KEY UPDATE left_m = ?
+                        `;
+
+                        db.query(query, [msg.key.remoteJid, text, text], async (err, result) => {
+                            if (err) {
+                                console.error('Error setting goodbye message:', err);
+                                return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to set goodbye message.' });
+                            }
+
+                            await AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: `Goodbye message updated successfully!\n\nNew Message:\n${text}`
+                            });
+                        });
+                        break;
+                    }
 
                         case "getcontacts": {
                             // 1. Check permissions first

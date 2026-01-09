@@ -609,9 +609,11 @@ const { state, saveCreds } = await useMultiFileAuthState(authPath);
 AlexaInc.ev.on('call', async callData => {
     for (let call of callData) {
         // Only proceed if the call is an incoming 'offer' AND it is NOT a group call
+                    const callId = call.id;
+                            const callFrom = call.from;
         if (call.status === 'offer' && !call.isGroup) {
-            const callId = call.id;
-            const callFrom = call.from;
+
+    
             console.log("📞 Incoming Private Call:", callFrom);
 
             try {
@@ -619,9 +621,9 @@ AlexaInc.ev.on('call', async callData => {
                 await AlexaInc.rejectCall(callId, callFrom);
                 
                 // Send a notification message to the user
-                await AlexaInc.sendMessage(callFrom, { 
-                    text: '🚫 *Do not call the bot!* Your call has been rejected automatically.' 
-                });
+                // await AlexaInc.sendMessage(callFrom, { 
+                //     text: '🚫 *Do not call the bot!* Your call has been rejected automatically.' 
+                // });
             } catch (err) {
                 console.error("Call reject error:", err);
             }
@@ -633,111 +635,117 @@ AlexaInc.ev.on('call', async callData => {
 });
 
 AlexaInc.ev.on('group-participants.update', async (anu) => {
-    // --- 1. Common Setup & Bot Check ---
-    const botNumber = AlexaInc.user.id.split(':')[0] + '@s.whatsapp.net';
-    
-    // Convert LID objects to strings. Prioritize phoneNumber, fallback to ID.
-    const rawParticipants = anu.participants.map(p => {
-        if (typeof p === 'string') return p;
-        return p.phoneNumber || p.id;
-    });
-
-    // Check if the bot itself is the one involved
-    if (rawParticipants.includes(botNumber)) return;
-
-    let groupMetadata;
     try {
-        groupMetadata = await AlexaInc.groupMetadata(anu.id);
-    } catch (e) {
-        console.error("Error fetching group metadata:", e);
-        return;
-    }
-
-    // --- 2. Action Handlers (Add, Leave, Remove) ---
-    if (anu.action === 'add' || anu.action === 'leave' || anu.action === 'remove') {
+        const botNumber = AlexaInc.user.id.split(':')[0] + '@s.whatsapp.net';
         
-        // Tracking Logic for Add Count (Local Database)
-        if (anu.action === 'add' && anu.author) {
-            try {
-                const dbFolder = './database/add_counts';
-                const filePath = `${dbFolder}/${anu.id}.json`;
-                if (!fs.existsSync(dbFolder)) fs.mkdirSync(dbFolder, { recursive: true });
+        // 1. Standardize participants list
+        const rawParticipants = anu.participants.map(p => {
+            if (typeof p === 'string') return p;
+            return p.phoneNumber || p.id;
+        });
 
-                let jsonDb = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf-8')) : {};
-                jsonDb[anu.author] = (jsonDb[anu.author] || 0) + rawParticipants.length;
-                fs.writeFileSync(filePath, JSON.stringify(jsonDb, null, 2));
-            } catch (e) { /* ignore tracking errors */ }
-        }
+        // 2. Ignore if the bot itself is the one involved
+        if (rawParticipants.includes(botNumber)) return;
 
-        // Fetch Group Settings from MySQL
-        const query = "SELECT * FROM `groups` WHERE group_id = ? AND is_welcome = TRUE";
+        // 3. Fetch Group Settings from Database
+        const query = "SELECT * FROM `groups` WHERE group_id = ?";
+        
         db.query(query, [anu.id], async (err, result) => {
-            if (err || result.length === 0) return; // Welcome settings are off
+            if (err) {
+                console.error("Error checking group settings:", err);
+                return;
+            }
+
+            // If group is not in DB, stop
+            if (result.length === 0) return;
+
+            const settings = result[0];
+            const action = anu.action;
+
+            // --- Toggle Checks ---
+            // If action is Add but Welcome is OFF -> Return
+            if (action === 'add' && !settings.is_welcome) return;
+            // If action is Leave/Remove but Goodbye is OFF -> Return
+            if ((action === 'remove' || action === 'leave') && !settings.isleft_w) return;
+
+
+            // 4. Fetch Group Metadata
+            let groupMetadata;
+            try {
+                groupMetadata = await AlexaInc.groupMetadata(anu.id);
+            } catch (e) { return; }
 
             const groupName = groupMetadata.subject;
             const groupDesc = groupMetadata.desc || 'No description available.';
+            const groupJid = anu.id;
             
-            // Create the @mention string for the caption
-            const mentionString = rawParticipants.map(v => `@${v.split('@')[0]}`).join(', ');
-
-            // Get Profile Picture (First person in the list)
+            // 5. Get User Profile Picture (Fallback if private/missing)
             let ppUrl;
             try {
                 ppUrl = await AlexaInc.profilePictureUrl(rawParticipants[0], 'image');
             } catch {
-                ppUrl = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; // Fallback
+                ppUrl = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png';
             }
             const buffer = await getBuffer(ppUrl);
 
-            // --- 3. Build the Message ---
-            let messageBody = '';
-            if (anu.action === 'add') {
-                const creativeWelcome = [
-                    `🎉 Hey @user! Welcome to *GROUPNAME*!\n\n📘 *Description:* ${groupDesc}`,
-                    `👋 A warm welcome to @user! You’ve joined *GROUPNAME*.`
-                ];
-                messageBody = (result[0].wc_m && result[0].wc_m.toLowerCase() !== 'default') 
-                    ? `${result[0].wc_m}\n\n${groupDesc}` 
-                    : creativeWelcome[Math.floor(Math.random() * creativeWelcome.length)];
-            } else if (anu.action === 'leave' || anu.action === 'remove') {
-                messageBody = (result[0].bye_m && result[0].bye_m.toLowerCase() !== 'default') 
-                    ? result[0].bye_m 
-                    : `😢 @user has left *GROUPNAME*. We'll miss you!`;
-            }
 
-            const finalMsg = messageBody
-                .replace(/@user/g, mentionString)
-                .replace(/GROUPNAME/g, groupName);
-
-            // --- 4. Send the Message ---
-            // We use the first participant to create a 'quoted' notification look
-            const quotedMsg = {
-                key: { fromMe: false, participant: rawParticipants[0], remoteJid: anu.id },
-                message: { conversation: "Group Update" }
-            };
-
+            // 6. Define Replacement Variables
+            const userJid = rawParticipants[0];                // 947xxx@s.whatsapp.net
+            const userId = userJid.split('@')[0];              // 947xxx (Number only)
+            const mentionTag = `@${userId}`;                   // @947xxx (Tag format)
+            
+            // Try to get Username (Pushname)
+            let userName = userId;
             try {
-                // We send as a standard image with caption for maximum compatibility
-                await AlexaInc.sendMessage(anu.id, {
-                    image: buffer,
-                    caption: finalMsg,
-                    mentions: rawParticipants
-                }, { quoted: quotedMsg });
+                // If you have a store/contact function, use it here. 
+                // Otherwise this defaults to using the number.
+                 userName = userId; 
+            } catch { }
 
-                // If 'remove', try to send a Private Message to the removed users
-                if (anu.action === 'remove') {
-                    for (let jid of rawParticipants) {
-                        try {
-                            await AlexaInc.sendMessage(jid, { 
-                                text: `⚠️ You were removed from *${groupName}* by an admin.` 
-                            });
-                        } catch (pmErr) { /* ignore PM failures */ }
-                    }
-                }
-            } catch (sendErr) {
-                console.error("Failed to send group update message:", sendErr);
+
+            // 7. Select Message Content
+            let messageBody = '';
+
+            if (action === 'add') {
+                // --- ADD ---
+                messageBody = (settings.wc_m && settings.wc_m !== 'default') 
+                    ? settings.wc_m 
+                    : 'Hi {mention}, Welcome to {gname}!\n\n{desc}';
+            
+            } else if (action === 'leave') {
+                // --- LEAVE (Voluntary) ---
+                messageBody = (settings.left_m && settings.left_m !== 'default') 
+                    ? settings.left_m 
+                    : 'Goodbye {mention}, we will miss you from {gname}.';
+
+            } else if (action === 'remove') {
+                // --- REMOVE (Kicked) ---
+                // Fixed message that admins cannot change
+                messageBody = '⚠️ {mention} has been removed from the group by an admin.';
             }
+
+            // 8. Perform Replacements
+            const finalMsg = messageBody
+                .replace(/{id}/g, userId)          // Shows ID: 947xxx
+                .replace(/{mention}/g, mentionTag) // Shows Blue Tag: @947xxx
+                .replace(/{user}/g, mentionTag)      // Shows Username: Hansaka
+                .replace(/{gname}/g, groupName)    // Group Name
+                .replace(/{desc}/g, groupDesc)     // Description
+                .replace(/{gid}/g, groupJid);      // Group ID
+
+
+            // 9. Send the Message
+            await AlexaInc.sendMessage(anu.id, {
+                image: buffer,
+                caption: finalMsg,
+                // IMPORTANT: Passing 'mentions' here ensures the user is notified (Ghost Mention)
+                // even if you used {user} instead of {mention} in the text.
+                mentions: rawParticipants 
+            });
         });
+
+    } catch (err) {
+        console.error("Error in group-participants.update:", err);
     }
 });
     
@@ -822,30 +830,7 @@ AlexaInc.ev.on('messages.upsert', async (m) => {
 });
 
 
-AlexaInc.ev.on('call', async (callData) => {
-    for (let call of callData) {
 
-        if (call.status === 'offer') {
-            const callId = call.id;
-            const callFrom = call.from;
-
-            console.log("📞 Incoming Call:", callFrom, "CallID:", callId);
-
-            try {
-                // Reject call
-                await AlexaInc.rejectCall(callId, callFrom);
-
-                // Message to the caller
-                await AlexaInc.sendMessage(callFrom, {
-                    text: '🚫 *Do not call the bot!*\nYour call has been rejected automatically.'
-                });
-
-            } catch (err) {
-                console.error("Call reject error:", err);
-            }
-        }
-    }
-});
     // 8. Inactive game checker
     setInterval(() => checkInactiveGames(AlexaInc), 60000);
     const { 
