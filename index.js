@@ -21,6 +21,7 @@ const {
     WAMessageContent,
     WAMessageKey
 } = require('@hansaka02/baileys');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 const path = require('path');
 const { makeWASocket: WAConnection } = require('waconnection');
 ; // for first-time QR login
@@ -479,6 +480,9 @@ const SESSION_FOLDER = './auth5a'
 
 async function startWhatsAppConnection() {
 
+const proxyAgent = process.env.PROXY_URL 
+        ? new HttpsProxyAgent(process.env.PROXY_URL) 
+        : undefined;
 
     // 1. Display ASCII logo
     fs.readFile('./res/ascii.txt', 'utf8', (err, data) => {
@@ -496,8 +500,9 @@ async function startWhatsAppConnection() {
     };
     if (!sessionExists) {
         console.log("❌ No session found, using WhiskeySocket to create creds...");
-const { state, saveCreds } = await useMultiFileAuthState(authPath);
+    const { state, saveCreds } = await useMultiFileAuthState(authPath);
         const wsSock = WAConnection({
+            agent: proxyAgent,
             browser: CustomBrowsersMap.appropriate(),
             auth: { creds: state.creds }
         });
@@ -545,6 +550,7 @@ const { state, saveCreds } = await useMultiFileAuthState(authPath);
     // 4. Create the WhatsApp connection
     const AlexaInc = makeWASocket({
         version,
+        agent: proxyAgent,
         logger: P({ level: 'fatal' }),
         browser: CustomBrowsersMap.appropriate(),
         printQRInTerminal: false, // handle QR manually
