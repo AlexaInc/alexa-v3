@@ -3461,8 +3461,8 @@ Duration : ${formatTime(details.durationInSeconds)}
                                 // console.log(cap)
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
                                     document: devsound,
-                                    fileName: `${text}.m4a`,
-                                    mimetype: 'audio/mp4',
+                                    fileName: `${text}.mp3`,
+                                    mimetype: 'audio/mp3',
                                     caption: cap,
                                     footer: 'Powerd by AlexaInc',
                                 }, {

@@ -1,28 +1,19 @@
-const { default: makeWASocket, useSingleFileAuthState } = require('@hansaka02/baileys');
-const { Boom } = require('@hapi/boom');
+// test.js
+const dl = require('./res/js/ytHelper2');
 
-const groupJid = "120363407628540320@g.us"; // Replace with your group JID
+(async () => {
+    const url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    
+    console.log('Fetching Info...');
+    const info = await dl.getVideoInfo(url);
+    console.log('Info:', info);
 
-async function main() {
-    try {
-        // If you already have a socket, use it instead of creating a new one
-        const sock = AlexaInc; // your existing WhiskeySocket instance
+    console.log('\nFetching Audio Link...');
+    const audio = await dl.getAudio(url);
+    console.log('Audio Result:', audio);
 
-        // Fetch group metadata
-        const metadata = await sock.groupMetadata(groupJid);
-
-        console.log("Group Metadata:");
-        console.log("Subject:", metadata.subject);
-        console.log("Owner:", metadata.owner);
-        console.log("Creation:", new Date(metadata.creation * 1000).toLocaleString());
-        console.log("Participants:");
-        metadata.participants.forEach(p => {
-            console.log(`- ${p.id} (${p.admin || "member"})`);
-        });
-
-    } catch (err) {
-        console.error("Error fetching group metadata:", err);
-    }
-}
-
-main();
+    // Uncomment to test Buffer Download (Heavy)
+    console.log('\nDownloading Buffer...');
+    const buf = await dl.fetchBuffer(audio.download);
+    console.log('Buffer Size:', buf.length);
+})();
