@@ -23,7 +23,7 @@ const {
 } = require('@hansaka02/baileys');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const path = require('path');
-const { makeWASocket: WAConnection } = require('waconnection');
+const { makeWASocket: WAConnection } = require('@hansaka02/baileys');
 ; // for first-time QR login
 const authPath = path.join(__dirname, 'auth5a');
 require('dotenv').config()
@@ -612,33 +612,33 @@ const proxyAgent = process.env.PROXY_URL
     AlexaInc.ev.on('creds.update', saveCreds);
 
     // 6. Call handling
-AlexaInc.ev.on('call', async callData => {
-    for (let call of callData) {
-        // Only proceed if the call is an incoming 'offer' AND it is NOT a group call
-                    const callId = call.id;
-                            const callFrom = call.from;
-        if (call.status === 'offer' && !call.isGroup) {
+// AlexaInc.ev.on('call', async callData => {
+//     for (let call of callData) {
+//         // Only proceed if the call is an incoming 'offer' AND it is NOT a group call
+//                     const callId = call.id;
+//                             const callFrom = call.from;
+//         if (call.status === 'offer' && !call.isGroup) {
 
     
-            console.log("📞 Incoming Private Call:", callFrom);
+//             console.log("📞 Incoming Private Call:", callFrom);
 
-            try {
-                // Reject the call
-                await AlexaInc.rejectCall(callId, callFrom);
+//             try {
+//                 // Reject the call
+//                 await AlexaInc.rejectCall(callId, callFrom);
                 
-                // Send a notification message to the user
-                // await AlexaInc.sendMessage(callFrom, { 
-                //     text: '🚫 *Do not call the bot!* Your call has been rejected automatically.' 
-                // });
-            } catch (err) {
-                console.error("Call reject error:", err);
-            }
-        } else if (call.isGroup) {
-            console.log("👥 Group call ignored from:", call.from);
-            await AlexaInc.rejectCall(callId, callFrom);
-        }
-    }
-});
+//                 // Send a notification message to the user
+//                 // await AlexaInc.sendMessage(callFrom, { 
+//                 //     text: '🚫 *Do not call the bot!* Your call has been rejected automatically.' 
+//                 // });
+//             } catch (err) {
+//                 console.error("Call reject error:", err);
+//             }
+//         } else if (call.isGroup) {
+//             console.log("👥 Group call ignored from:", call.from);
+//             await AlexaInc.rejectCall(callId, callFrom);
+//         }
+//     }
+// });
 
 AlexaInc.ev.on('group-participants.update', async (anu) => {
     try {

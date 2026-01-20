@@ -4,10 +4,11 @@ const USER_DATA_FILE = './users.json';
 const fetchnews = require('./res/news');
 const yts = require('yt-search');
 const mumaker = require('mumaker');
-
+const { parsePhoneNumberFromString } = require("libphonenumber-js");
 const battlearena = require("./res/js/battlearena.js");
 const weatherof = require('./res/js/weather.js')
 const Assassin = require('./res/js/assassin.js');
+const { validStrengerss } = require("./res/js/validStrengerss.js");
 const {
     handleHangman,
     checkInactiveGames
@@ -61,6 +62,7 @@ if (!fs.existsSync(QUIZ_STORAGE_DIR)) {
 const questionsFile = './dailyQuestions.json';
 const QresponsesFile = './dailyqresp.json';
 const upadestatusstate = {};
+const userreportingstate ={};
 const path = require('path');
 const quizManager = require('./res/js/quizManager.js');
 const FilterManager = require('filtermatics');
@@ -1159,6 +1161,8 @@ async function handleMessage(AlexaInc, {
             .map(id => id.trim() + "@lid");
         const allOwners = [...ownerJIDs, ...ownerLIDs];
         const isOwner = allOwners.includes(senderabfff);
+        const rank = (process.env.spc_nb || '').split(',');
+        const isspc= rank.includes(senderabfff)
         const isGroup = msg.key.remoteJid.endsWith('@g.us');
         const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => {}) : '';
         const participants = isGroup ? groupMetadata?.participants || [] : [];
@@ -1311,7 +1315,7 @@ async function handleMessage(AlexaInc, {
 
                 const firstWord = messageText.trim().split(/\s+/)[0].toLowerCase();
 
-
+                
 
 
 
@@ -1578,7 +1582,7 @@ async function handleMessage(AlexaInc, {
 
                 // console.log(isBotallowed,isBotorFakeWeb)
                 // console.log(isGroup , !isBotallowed , isBotorFakeWeb , !isAdmins , isBotAdmins)
-                if (isGroup && !isBotallowed && isBotorFakeWeb && !isAdmins && isBotAdmins) {
+                if (isGroup && !isBotallowed && isBotorFakeWeb && !isAdmins && isBotAdmins && !isspc && !isOwner) {
                     console.log('kik',msg.key.participant)
                     await AlexaInc.sendMessage(msg.key.remoteJid, {
                         text: 'bots not allowed here'
@@ -1760,6 +1764,19 @@ async function handleMessage(AlexaInc, {
                     // console.log(finalLid,finalJid)
                     await mafiaGame.joinGame(AlexaInc, msg, finalLid, messageText);
                     return;
+                }
+                if (messageText.startsWith("_report_")) {
+                    const gid = messageText.replace("_report_", "").trim();
+                    userreportingstate[msg.key.remoteJid] = {
+                                step: 'awaiting_number',
+                                gid: gid
+                            }
+                        await AlexaInc.sendMessage(msg.key.remoteJid, {
+                            text: 'send user number to report'
+                        }, {
+                            quoted: msg
+                        });
+                    return
                 }
                 if (messageText.startsWith("_night_")) {
                     if (isGroup) return mess.private();
@@ -2280,7 +2297,7 @@ END:VCARD`;
                         */
 
                         case "vv": {
-                            if (!isOwner) return mess.owner();
+                            // if (!isOwner) return mess.owner();
                             await viewOnce(AlexaInc, msg.key.remoteJid, msg)
 
                             break;
@@ -4515,50 +4532,27 @@ Url: ${response[1].url}
 
                             break;
                         }
-case "addall": {
-    const usersall = await loadAllUsers();
-    let usersssids = usersall
-        .map(user => user.lid)
-    // Randomized delay function (to bypass bot detection)
-    const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
-    // Reduced batch size to 5 for safety
-    const batchSize = 5; 
 
-    for (let i = 0; i < usersssids.length; i += batchSize) {
-        const batch = usersssids.slice(i, i + batchSize);
-        console.log(`[Batch] Attempting index ${i} to ${i + batchSize}. Size: ${batch.length}`);
 
-        try {
-            await AlexaInc.groupParticipantsUpdate(
-                `120363402506240971@g.us`,
-                batch,
-                'add'
-            );
-            console.log(`[Success] Batch at index ${i} added.`);
-            
-        } catch (err) {
-            if (err.message.includes('rate-overlimit')) {
-                console.error(`[Rate Limit] WhatsApp blocked this batch. Cooling down for 2 minutes...`);
-                await sleep(120000); // 2 minute emergency cooldown
-                i -= batchSize; // Retry this same batch after the cooldown
-                continue; 
-            } else {
-                console.error(`[Error] Batch index ${i}:`, err.message);
-            }
-        }
+                        case "report" :{
 
-        if (i + batchSize < usersssids.length) {
-            // Generate a random delay between 60 and 90 seconds
-            const randomWait = Math.floor(Math.random() * (90000 - 60000 + 1) + 60000);
-            console.log(`[Wait] Sleeping for ${Math.round(randomWait/1000)} seconds...`);
-            await sleep(randomWait);
-        }
-    }
+        const joinUrl = `https://wa.me/${botNumber}?text=_report_${msg.key.remoteJid}`;
 
-    await AlexaInc.sendMessage(msg.key.remoteJid, { text: "✅ Addall process finished." });
-    break;
-}
+        await AlexaInc.sendMessage(msg.key.remoteJid, {
+            title: "🕵️ report a user",
+            text: `click here to report about a member `,
+            footer: "click this button to dm",
+            interactiveButtons: [{
+                name: "cta_url",
+                buttonParamsJson: JSON.stringify({ display_text: "Report", url: joinUrl })
+            }]
+        });
+break
+                        }
+
+
+
                         case "remwarn":
                         case "rmwarn": {
                             if (!isGroup) return mess.group();
@@ -5743,10 +5737,43 @@ from : @${visibleNumber}
                             image: buffer,
                             caption: messageText
                         }]
+
+
+
+
                     }
 
 
-                    //console.log(upadestatusstate[msg.key.remoteJid].step)
+if (userreportingstate[msg.key.remoteJid]?.step === "awaiting_number") {
+
+     const gid =  userreportingstate[msg.key.remoteJid].gid; 
+
+    const phoneNumber = parsePhoneNumberFromString(messageText);
+
+    if (phoneNumber && phoneNumber.isValid()) {
+        
+        // 2. Success: Update state and save the formatted number
+        userreportingstate[msg.key.remoteJid] = {
+            step: 'awaiting_ss', // Note: Fixed syntax here
+            gid: gid,
+            number: phoneNumber.number
+        };
+
+        // 3. Send the response
+        await AlexaInc.sendMessage(msg.key.remoteJid, {
+            text: "✅ Number saved! Please send a screenshot next."
+        });
+
+    } else {
+        // 4. Invalid: Ask again
+        await AlexaInc.sendMessage(msg.key.remoteJid, {
+            text: "❌ Invalid number. Please enter a valid mobile number with the country code (e.g., +94771234567)."
+        });
+    }
+    return
+}
+
+
 
                     if (upadestatusstate[msg.key.remoteJid]?.step === 'awaiting_content') {
                         const allcontactss = readUsersFile();
@@ -6298,6 +6325,64 @@ ${summary}
 
 
             }
+
+
+            if(msg.message?.imageMessage){
+                                        // Download the image as a buffer
+                        const buffer = await downloadMediaMessage(msg, "buffer", {}, {});
+
+
+
+                        // Convert buffer to Base64
+                        const base64Image = buffer.toString("base64");
+                        mesafesfb = [{
+                                type: "text",
+                                text: messageText
+                            },
+                            {
+                                type: "image_url",
+                                image_url: `data:image/jpeg;base64,${base64Image}`,
+                            }
+                        ]
+                        lalala = [{
+                            image: buffer,
+                            caption: messageText
+                        }]
+
+                            if(userreportingstate[msg.key.remoteJid]?.step === "awaiting_ss") {
+                                const statep =userreportingstate[msg.key.remoteJid]
+                                const reportingfor = statep?.number.replace(/^\+/, '')+ '@s.whatsapp.net';
+                                const ongrp = statep?.gid;
+                                console.log(statep)
+                    try {
+
+        const result = await validStrengerss(lalala[0].image);
+
+        if (result.valid) {
+            console.log("✅ Success:", result.reason);
+            await AlexaInc.groupParticipantsUpdate(ongrp, [reportingfor], 'remove').then(console.log)
+                  await AlexaInc.sendMessage(msg.key.remoteJid, {
+            text: "✅ User will remove!."
+        });
+                          await AlexaInc.sendMessage(ongrp, {
+            text: `✅ User ${reportingfor} will remove!. because he/she put dm without permission`
+        });
+               
+        } else {
+                              await AlexaInc.sendMessage(msg.key.remoteJid, {
+            text: result.reason || result.error
+        });
+           
+        }
+
+    } catch (e) {
+        console.error("Main App Error:", e);
+    }
+                }
+
+
+            }
+
         }
     }
 }
