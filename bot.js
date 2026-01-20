@@ -6374,7 +6374,7 @@ ${summary}
         });
            
         }
-
+        userreportingstate[msg.key.remoteJid] = {}
     } catch (e) {
         console.error("Main App Error:", e);
     }
