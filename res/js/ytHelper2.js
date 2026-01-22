@@ -1,6 +1,4 @@
 const axios = require('axios');
-
-// --- Configuration ---
 const AXIOS_DEFAULTS = {
     timeout: 60000,
     headers: {
@@ -11,7 +9,6 @@ const AXIOS_DEFAULTS = {
     }
 };
 
-// --- 1. Retry Helper ---
 async function tryRequest(getter, attempts = 3) {
     let lastError;
     for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -27,31 +24,22 @@ async function tryRequest(getter, attempts = 3) {
     throw lastError;
 }
 
-// --- 2. API Wrappers (Internal) ---
 
-/**
- * Internal logic for cnv.cx (Reverse Engineered)
- * Handles both MP3 and MP4
- */
+
 async function _cnvConverter(url, format, quality) {
-    // Step A: Get Validation Key
     const keyRes = await tryRequest(() => axios.get('https://cnv.cx/v2/sanity/key', AXIOS_DEFAULTS));
     const apiKey = keyRes.data.key;
     if (!apiKey) throw new Error('CNV: Could not fetch API Key');
 
-    // Step B: Prepare Parameters
+
     const params = new URLSearchParams();
     params.append('link', url);
     params.append('format', format); // 'mp3' or 'mp4'
-    // Logic specific to this API:
-    // For MP4: audioBitrate is ignored (defaults to 128), videoQuality determines resolution
-    // For MP3: videoQuality is ignored (defaults to 720), audioBitrate determines quality
     params.append('audioBitrate', format === 'mp4' ? '128' : quality); 
     params.append('videoQuality', format === 'mp3' ? '720' : quality); 
     params.append('filenameStyle', 'pretty');
     params.append('vCodec', 'h264');
 
-    // Step C: Send Conversion Request
     const convertRes = await tryRequest(() => axios.post('https://cnv.cx/v2/converter', params, {
         headers: { 
             ...AXIOS_DEFAULTS.headers,
@@ -63,7 +51,6 @@ async function _cnvConverter(url, format, quality) {
     if (convertRes?.data?.url) {
         return { 
             download: convertRes.data.url, 
-            // API doesn't return title in JSON, we'll fetch it separately or use a placeholder
             title: `YouTube Download (${format})`, 
             source: 'CNV.cx' 
         };
@@ -71,11 +58,7 @@ async function _cnvConverter(url, format, quality) {
     throw new Error('CNV: Conversion returned no URL');
 }
 
-// --- Info Extractors (Internal) ---
 
-/**
- * Uses YouTube OEmbed (Official, No-Key) to get metadata
- */
 async function _oembedInfo(url) {
     const apiUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
     const res = await tryRequest(() => axios.get(apiUrl, AXIOS_DEFAULTS));
@@ -84,7 +67,7 @@ async function _oembedInfo(url) {
         return {
             title: res.data.title,
             thumbnail: res.data.thumbnail_url,
-            duration: null, // OEmbed doesn't provide duration, usually
+            duration: null,
             author: res.data.author_name,
             source: 'YouTube OEmbed'
         };
@@ -92,7 +75,7 @@ async function _oembedInfo(url) {
     throw new Error('OEmbed Info failed');
 }
 
-// --- 3. Main Logic Functions (Public) ---
+
 
 async function getVideoInfo(youtubeUrl) {
     try {
@@ -105,10 +88,9 @@ async function getVideoInfo(youtubeUrl) {
 
 async function getVideo(youtubeUrl) {
     try {
-        // Defaults to 360p or 480p equivalent if not specified
         const info = await getVideoInfo(youtubeUrl);
         const result = await _cnvConverter(youtubeUrl, 'mp4', '480');
-        return { ...result, title: info.title }; // Merge correct title
+        return { ...result, title: info.title };
     } catch (e) {
         console.error('⚠️ Video download failed:', e.message);
         throw e;

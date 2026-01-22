@@ -12,7 +12,7 @@ async function validStrengerss(imageBuffer) {
         const imageBlob = new Blob([imageBuffer], { type: "image/jpeg" });
 
  
-        const result = await client.predict("/validate_chat_origin", [ imageBlob ]);
+        const result = await client.predict("/validate_whatsapp_hybrid", [ imageBlob ]);
         
 
         return result.data[0];

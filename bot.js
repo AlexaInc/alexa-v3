@@ -288,7 +288,7 @@ function isBotOrFakeWeb(msg) {
         return true;
     }  if (id.startsWith('SANKA')) {
         return true;
-    }   if (id.startsWith('ELRA')) {
+    }   if (id.startsWith('ELRAY')) {
         return true;
     }  if (id.length < 20) {
         return true;
@@ -2317,7 +2317,17 @@ END:VCARD`;
                         }
 
 
-
+                        case 'id':{
+                            const groupid = msg.key.remoteJid;
+                            const yourid = `Your Lid:${finalLid}\nYour Jid:${finalJid}`;
+                            const quotedid = p.replyInfo?.sender;
+                            const tepmlt = `
+Group Id :${groupid}
+${yourid}
+${quotedid ? "Senderid:"+quotedid:""}`
+AlexaInc.sendMessage(msg.key.remoteJid,{text:tepmlt},{quoted:msg})
+break;
+                        }
                         case "q": {
                             if (!isGroup) return mess.group();
                             // Fix 1: Use optional chaining (?.). 
@@ -4900,6 +4910,7 @@ break
                             );
                             break;
                         }
+
                         case 'add':
                         case 'remove':
                         case 'promote':
@@ -5841,41 +5852,41 @@ if (userreportingstate[msg.key.remoteJid]?.step === "awaiting_number") {
                     /*****************   ai function for  language process  *****************/
                     const groupId = msg.key.remoteJid;
 
-                    if (!isGroup) {
-                        // ✅ Not a group → run AI
-                        runAI();
-                    } else {
-                        // ✅ Group → Check if chatbot is enabled in DB
-                        const query = `
-        SELECT chatbot FROM \`groups\` 
-        WHERE group_id = ? AND chatbot = TRUE
-    `;
+    //                 if (!isGroup) {
+    //                     // ✅ Not a group → run AI
+    //                     runAI();
+    //                 } else {
+    //                     // ✅ Group → Check if chatbot is enabled in DB
+    //                     const query = `
+    //     SELECT chatbot FROM \`groups\` 
+    //     WHERE group_id = ? AND chatbot = TRUE
+    // `;
 
-                        db.query(query, [groupId], async (err, results) => {
-                            if (err) {
-                                console.error('Error checking chatbot status:', err);
-                                return;
-                            }
+    //                     db.query(query, [groupId], async (err, results) => {
+    //                         if (err) {
+    //                             console.error('Error checking chatbot status:', err);
+    //                             return;
+    //                         }
 
-                            if (results.length > 0) {
-                                const botStatus = loadBotStatus();
+    //                         if (results.length > 0) {
+    //                             const botStatus = loadBotStatus();
 
-                                // Check before executing commands
-                                if (botStatus.underMaintenance && !isOwner) {
-                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: botStatus.message
-                                    }, {
-                                        quoted: msg
-                                    });
-                                }
-                                // ✅ Group + chatbot enabled → run AI
-                                runAI();
-                            } else {
-                                // ❌ Group but chatbot disabled → skip
-                                console.log('Chatbot is disabled for this group.');
-                            }
-                        });
-                    }
+    //                             // Check before executing commands
+    //                             if (botStatus.underMaintenance && !isOwner) {
+    //                                 return AlexaInc.sendMessage(msg.key.remoteJid, {
+    //                                     text: botStatus.message
+    //                                 }, {
+    //                                     quoted: msg
+    //                                 });
+    //                             }
+    //                             // ✅ Group + chatbot enabled → run AI
+    //                             runAI();
+    //                         } else {
+    //                             // ❌ Group but chatbot disabled → skip
+    //                             console.log('Chatbot is disabled for this group.');
+    //                         }
+    //                     });
+    //                 }
 
                     function runAI() {
                         ai(msg.pushName, mesafesfb, sender, async (err, reply) => {
@@ -6230,13 +6241,13 @@ ${summary}
 
                                         while (attempts < maxRetries) {
                                             try {
-                                                const response = await AlexaInc.sendMessage(msg.key
-                                                    .remoteJid, {
-                                                        react: {
-                                                            text: '☹️',
-                                                            key: msg.key
-                                                        }
-                                                    });
+                                                // const response = await AlexaInc.sendMessage(msg.key
+                                                //     .remoteJid, {
+                                                //         react: {
+                                                //             text: '☹️',
+                                                //             key: msg.key
+                                                //         }
+                                                //     });
                                                 console.log("Message sent successfully:");
                                                 break; // Exit loop if successful
                                             } catch (error) {
@@ -6256,12 +6267,12 @@ ${summary}
                                                 }
                                             }
                                         }
-                                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                                            react: {
-                                                text: '✅',
-                                                key: msg.key
-                                            }
-                                        });
+                                        // AlexaInc.sendMessage(msg.key.remoteJid, {
+                                        //     react: {
+                                        //         text: '✅',
+                                        //         key: msg.key
+                                        //     }
+                                        // });
                                         AlexaInc.sendMessage(msg.key.remoteJid, {
                                             text: `${replyyy}`
                                         }, {
