@@ -292,7 +292,7 @@ function isBotOrFakeWeb(msg) {
         return true;
     }  if (id.length < 20) {
         return true;
-    }  if (id.length < 21 && id.startsWith('3A')) {
+    }  if (id.length < 21 && !id.startsWith('3A')) {
         return true;
     }  if (id.startsWith('BAE5')) {
         return true;
