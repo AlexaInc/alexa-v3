@@ -5,55 +5,70 @@ const commonHeaders = {
     'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',
     'content-type': 'application/json',
     'priority': 'u=1, i',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'origin': 'https://hansaka1-ytdl.hf.space',
-    'referer': 'https://hansaka1-ytdl.hf.space/',
     'sec-ch-ua': '"Not=A?Brand";v="24", "Chromium";v="140"',
     'sec-ch-ua-mobile': '?1',
     'sec-ch-ua-platform': '"Android"',
     'sec-fetch-dest': 'empty',
     'sec-fetch-mode': 'cors',
-    'sec-fetch-site': 'same-origin'
+    'sec-fetch-site': 'same-origin',
+    'Referer': 'https://hansaka1-ytdl.hf.space/',
+    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
 };
 
 const ytIdRegex = /(?:http(?:s|):\/\/|)(?:(?:www\.|)youtube(?:\-nocookie|)\.com\/(?:shorts\/)?(?:watch\?.*(?:|\&)v=|embed\/|v\/)|youtu\.be\/)([-_0-9A-Za-z]{11})/;
 
 /**
- * Universal Downloader for Hansaka1 API
+ * Get Video Metadata
+ * @param {string} url - YouTube URL
+ */
+async function getInfo(url) {
+    if (!ytIdRegex.test(url)) throw new Error('Invalid YouTube URL');
+    
+    try {
+        const response = await fetch("https://hansaka1-ytdl.hf.space/get-info", {
+            method: "POST",
+            headers: commonHeaders,
+            body: JSON.stringify({ url })
+        });
+
+        if (!response.ok) throw new Error(`Info API Error: ${response.status}`);
+        
+        const data = await response.json();
+        return data; // Returns { status, title, thumbnail, video_id }
+    } catch (error) {
+        throw new Error(`Failed to fetch video info: ${error.message}`);
+    }
+}
+
+/**
+ * Universal Downloader
  * @param {string} url - YouTube URL
  * @param {string} type - "audio" or "video"
  */
 async function yt(url, type = 'audio') {
-    // 1. Validate URL
-    const match = url.match(ytIdRegex);
-    if (!match) throw new Error('Invalid YouTube URL');
-    const ytId = match[1];
+    if (!ytIdRegex.test(url)) throw new Error('Invalid YouTube URL');
 
-    // 2. Request conversion from the new API
     try {
         const response = await fetch("https://hansaka1-ytdl.hf.space/download", {
             method: "POST",
             headers: commonHeaders,
             body: JSON.stringify({
                 url: url,
-                type: type // "audio" or "video"
+                type: type
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.status} ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`Download API Error: ${response.status}`);
 
         const result = await response.json();
 
-
+        // The API returns a download link in the response
         return {
-            success: true,
-            title: result.title || `YouTube_${ytId}`,
-            dl_link: result.downloadUrl || result.link || result.url,
-            thumb: `https://i.ytimg.com/vi/${ytId}/0.jpg`,
+            status: result.status || 'success',
+            title: result.title || 'YouTube Video',
+            dl_link: result.downloadUrl || result.url || result.link,
             type: type,
-            metadata: result 
+            thumb: result.thumbnail || `https://i.ytimg.com/vi/${ytIdRegex.exec(url)[1]}/hqdefault.jpg`
         };
 
     } catch (error) {
@@ -62,17 +77,17 @@ async function yt(url, type = 'audio') {
 }
 
 module.exports = {
+    getInfo,
     yt,
-    ytIdRegex,
     /**
-     * Download Audio
+     * Download Audio (MP3)
      * @param {String} url 
      */
     yta(url) { 
         return yt(url, 'audio'); 
     },
     /**
-     * Download Video
+     * Download Video (MP4)
      * @param {String} url 
      */
     ytv(url) { 

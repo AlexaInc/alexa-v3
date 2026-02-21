@@ -1,5 +1,5 @@
 const fs = require('fs-extra');
-const YtDl = require('./res/ytdl'); // Import downloadVideo from ytdl file
+const yth2 = require('.res/js/y2mate.js'); // Import downloadVideo from ytdl file
 const USER_DATA_FILE = './users.json';
 const fetchnews = require('./res/news');
 const yts = require('yt-search');
@@ -37,7 +37,7 @@ const viewOnce = require('./res/js/vv.js')
 const {
     exec
 } = require('child_process');
-const yth2 = require('./res/js/ytHelper2');
+// const yth2 = require('./res/js/ytHelper2');
 const {
     muteCommand,
     unmuteCommand
@@ -3238,7 +3238,7 @@ source - ${url}
                             })
                             try {
                                 // 1. Call the function from your module
-                                const info = await yth2.getVideoInfo(text);
+                                const info = await yth2.getInfo(text);
 
                                 // 2. Assign to your specific variable structure
                                 const details = {
@@ -3363,12 +3363,12 @@ Duration : ${formatTime(details.durationInSeconds)}
 
                                 if (dlquality === 'ogg') {
                                     // 1. Download file and get the path
-                                    filePath = await yth2.getAudio(text); // Assign to the outer variable
-                                    const devsound = await yth2.fetchBuffer(filePath.download)
+                                    filePath = await yth2.yta(text); // Assign to the outer variable
+                                    // const devsound = await yth2.fetchBuffer(filePath.download)
                                     // 2. Send the file FROM THE PATH
 
                                     await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        audio: devsound,
+                                        audio: filePath,
                                         mimetype: 'audio/mpeg',
                                         ptt: true
                                     }, {
@@ -3377,11 +3377,11 @@ Duration : ${formatTime(details.durationInSeconds)}
 
 
                                 } else if (dlquality === 'mp3') {
-                                    filePath = await yth2.getAudio(text); // Assign to the outer variable
-                                    const devsound = await yth2.fetchBuffer(filePath.download)
+                                    filePath = await yth2.yta(text); // Assign to the outer variable
+                                    // const devsound = await yth2.fetchBuffer(filePath.download)
                                     // 2. Send the file FROM THE PATH
                                     await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        audio: devsound,
+                                        audio: filePath,
                                         mimetype: 'audio/mp4'
                                     }, {
                                         quoted: msg
@@ -3396,12 +3396,12 @@ Duration : ${formatTime(details.durationInSeconds)}
                                     // }
 
                                     // 2. Download file and get the path
-                                    const fileurl = await yth2.getVideo(text); // Assign to the outer variable
-                                    const filebuf = await yth2.fetchBuffer(fileurl.download)
+                                    const fileurl = await yth2.ytv(text); // Assign to the outer variable
+                                    // const filebuf = await yth2.fetchBuffer(fileurl.download)
 
                                     // 3. Send the file FROM THE PATH
                                     await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        video: filebuf,
+                                        video: fileurl,
                                         mimeType: 'video/mp4'
                                     }, {
                                         quoted: msg
@@ -3455,8 +3455,8 @@ Duration : ${formatTime(details.durationInSeconds)}
                                 const results = await yts(text);
                                 const video = results.videos[0];
                                 // console.log(video.author)
-                                const filePath = await yth2.getAudio(video.url); // Assign to the outer variable
-                                const devsound = await yth2.fetchBuffer(filePath.download)
+                                const filePath = await yth2.yta(video.url); // Assign to the outer variable
+                                // const devsound = await yth2.fetchBuffer(filePath.download)
                                 const sonst4 = await fonts.convert(video.title, 'font1')
                                 const cons5 = video.duration.timestamp;
                                 const con4 = await fonts.convert(video.author.name, 'font1')
@@ -3470,7 +3470,7 @@ Duration : ${formatTime(details.durationInSeconds)}
                                 const cap = generateBox(textl, 21);
                                 // console.log(cap)
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    document: devsound,
+                                    document: filePath,
                                     fileName: `${text}.mp3`,
                                     mimetype: 'audio/mp3',
                                     caption: cap,
@@ -3513,8 +3513,8 @@ Duration : ${formatTime(details.durationInSeconds)}
                                 const results = await yts(text);
                                 const video = results.videos[0];
                                 // console.log(video.author)
-                                const filePath = await yth2.getAudio(video.url); // Assign to the outer variable
-                                const devsound = await yth2.fetchBuffer(filePath.download)
+                                const filePath = await yth2.yta(video.url); // Assign to the outer variable
+                                // const devsound = await yth2.fetchBuffer(filePath.download)
                                 const sonst4 = await fonts.convert(video.title, 'font1')
                                 const cons5 = video.duration.timestamp;
                                 const con4 = await fonts.convert(video.author.name, 'font1')
@@ -3527,7 +3527,7 @@ Duration : ${formatTime(details.durationInSeconds)}
 
                                 // 2. Send the file FROM THE PATH
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    audio: devsound,
+                                    audio: filePath,
                                     mimetype: 'audio/mp4'
                                 }, {
                                     quoted: msg
@@ -3568,11 +3568,11 @@ Duration : ${formatTime(details.durationInSeconds)}
                                 });
                             }
                             try {
-                                const filePath = await yth2.getVideo(text); // Assign to the outer variable
-                                const devsound = await yth2.fetchBuffer(filePath.download)
+                                const filePath = await yth2.ytv(text); // Assign to the outer variable
+                                // const devsound = await yth2.fetchBuffer(filePath.download)
                                 // 2. Send the file FROM THE PATH
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    video: devsound,
+                                    video: filePath,
                                     mimetype: 'video/mp4'
                                 }, {
                                     quoted: msg
