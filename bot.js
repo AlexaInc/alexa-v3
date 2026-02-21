@@ -1,5 +1,5 @@
 const fs = require('fs-extra');
-const yth2 = require('.res/js/y2mate.js'); // Import downloadVideo from ytdl file
+const yth2 = require('./res/js/y2mate.js'); // Import downloadVideo from ytdl file
 const USER_DATA_FILE = './users.json';
 const fetchnews = require('./res/news');
 const yts = require('yt-search');
