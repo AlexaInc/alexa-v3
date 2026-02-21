@@ -5693,8 +5693,8 @@ from : @${visibleNumber}
                     /*****************   ai function for  language process  *****************/
                     const groupId = msg.key.remoteJid;
 
-                    const isReplyToBot = msg.message?.extendedTextMessage?.contextInfo?.participant === botJid || msg.message?.extendedTextMessage?.contextInfo?.participant === botLid;
-
+                    const isReplyToBot = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.participant === botJid || msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.participant === botLid;
+                    console.log(isReplyToBot);
                     if (!isGroup) {
                         // ✅ Not a group → run AI
                         runAI();
