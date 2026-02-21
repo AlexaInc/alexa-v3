@@ -5693,11 +5693,13 @@ from : @${visibleNumber}
                     /*****************   ai function for  language process  *****************/
                     const groupId = msg.key.remoteJid;
 
+                    const isReplyToBot = msg.message?.extendedTextMessage?.contextInfo?.participant === botJid || msg.message?.extendedTextMessage?.contextInfo?.participant === botLid;
+
                     if (!isGroup) {
                         // ✅ Not a group → run AI
                         runAI();
-                    } else {
-                        // ✅ Group → Check if chatbot is enabled in DB
+                    } else if (isReplyToBot) {
+                        // ✅ Group + Reply to Bot → Check if chatbot is enabled in DB
                         const query = `
                         SELECT chatbot FROM \`groups\` 
                         WHERE group_id = ? AND chatbot = TRUE

@@ -28,31 +28,34 @@
 2.  First, install a MySQL client on your PC or mobile device and connect to your database remotely.
 3.  After connecting, execute the following queries to set up the required tables:
 
-### First Query (Conversation History)
+### SQL Query (Conversation History)
+
 ```sql
-CREATE TABLE `conversation_history` (
-    id VARCHAR(100) NOT NULL PRIMARY KEY,
-    conventions JSON DEFAULT NULL
+CREATE TABLE IF NOT EXISTS `groups` (
+    `group_id` VARCHAR(255) PRIMARY KEY,
+    `chatbot` TINYINT(1) DEFAULT 0,
+    `antilink` TINYINT(1) DEFAULT 0,
+    `link_a` VARCHAR(50) DEFAULT 'delete',
+    `antinsfw` TINYINT(1) DEFAULT 0,
+    `nsfw_a` VARCHAR(50) DEFAULT 'delete',
+    `is_allow_bots` TINYINT(1) DEFAULT 0,
+    `is_welcome` TINYINT(1) DEFAULT 0,
+    `wc_m` TEXT DEFAULT NULL,
+    `isleft_w` TINYINT(1) DEFAULT 0,
+    `left_m` TEXT DEFAULT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `conversation_history` (
+    `id` VARCHAR(255) PRIMARY KEY,
+    `conventions` LONGTEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `tasks` (
+    `user_id` VARCHAR(255) PRIMARY KEY,
+    `tasks` TEXT NOT NULL
 );
 ```
 
-### Second Query (Group Settings)
-
-```sql
-CREATE TABLE `groups` (
-    group_id VARCHAR(255) NOT NULL PRIMARY KEY,
-    is_welcome BOOLEAN NOT NULL DEFAULT FALSE,
-    wc_m TEXT DEFAULT NULL,
-    isleft_w BOOLEAN NOT NULL DEFAULT FALSE,
-    left_m TEXT DEFAULT NULL,
-    antilink BOOLEAN NOT NULL DEFAULT FALSE,
-    link_a VARCHAR(50) DEFAULT 'delete',
-    antinsfw BOOLEAN NOT NULL DEFAULT FALSE,
-    nsfw_a VARCHAR(50) DEFAULT 'delete'
-);
-```
-
------
 
 ## 🔧 Environment Variables
 
