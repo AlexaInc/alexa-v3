@@ -3401,8 +3401,12 @@ Duration : ${formatTime(details.durationInSeconds)}
 
                                     // 3. Send the file FROM THE PATH
                                     await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        video: fileurl,
-                                        mimeType: 'video/mp4'
+                                     
+                                        document: fileurl,
+                                    fileName: `${text}.mp4`,
+                                    caption: `here is your video ${text}`,
+                                    footer: 'Powerd by AlexaInc',
+                                    mimeType: 'video/mp4'
                                     }, {
                                         quoted: msg
                                     });
@@ -3572,7 +3576,10 @@ Duration : ${formatTime(details.durationInSeconds)}
                                 // const devsound = await yth2.fetchBuffer(filePath.download)
                                 // 2. Send the file FROM THE PATH
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    video: filePath,
+                                    document: filePath,
+                                    fileName: `${text}.mp4`,
+                                    caption: `here is your video ${text}`,
+                                    footer: 'Powerd by AlexaInc',
                                     mimetype: 'video/mp4'
                                 }, {
                                     quoted: msg
