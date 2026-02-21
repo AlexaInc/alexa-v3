@@ -18,79 +18,52 @@ const commonHeaders = {
 const ytIdRegex = /(?:http(?:s|):\/\/|)(?:(?:www\.|)youtube(?:\-nocookie|)\.com\/(?:shorts\/)?(?:watch\?.*(?:|\&)v=|embed\/|v\/)|youtu\.be\/)([-_0-9A-Za-z]{11})/;
 
 /**
- * Get Video Metadata
- * @param {string} url - YouTube URL
+ * Get Video Metadata (Returns JSON as requested)
  */
 async function getInfo(url) {
     if (!ytIdRegex.test(url)) throw new Error('Invalid YouTube URL');
     
-    try {
-        const response = await fetch("https://hansaka1-ytdl.hf.space/get-info", {
-            method: "POST",
-            headers: commonHeaders,
-            body: JSON.stringify({ url })
-        });
+    const response = await fetch("https://hansaka1-ytdl.hf.space/get-info", {
+        method: "POST",
+        headers: commonHeaders,
+        body: JSON.stringify({ url })
+    });
 
-        if (!response.ok) throw new Error(`Info API Error: ${response.status}`);
-        
-        const data = await response.json();
-        return data; // Returns { status, title, thumbnail, video_id }
-    } catch (error) {
-        throw new Error(`Failed to fetch video info: ${error.message}`);
-    }
+    if (!response.ok) throw new Error(`Info API Error: ${response.status}`);
+    return await response.json();
 }
 
 /**
- * Universal Downloader
- * @param {string} url - YouTube URL
- * @param {string} type - "audio" or "video"
+ * Direct Buffer Downloader
+ * Returns the raw binary Buffer instead of an object
  */
 async function yt(url, type = 'audio') {
     if (!ytIdRegex.test(url)) throw new Error('Invalid YouTube URL');
 
-    try {
-        const response = await fetch("https://hansaka1-ytdl.hf.space/download", {
-            method: "POST",
-            headers: commonHeaders,
-            body: JSON.stringify({
-                url: url,
-                type: type
-            })
-        });
+    const response = await fetch("https://hansaka1-ytdl.hf.space/download", {
+        method: "POST",
+        headers: commonHeaders,
+        body: JSON.stringify({ url, type })
+    });
 
-        if (!response.ok) throw new Error(`Download API Error: ${response.status}`);
+    if (!response.ok) throw new Error(`Download failed with status: ${response.status}`);
 
-        const result = await response.json();
-
-        // The API returns a download link in the response
-        return {
-            status: result.status || 'success',
-            title: result.title || 'YouTube Video',
-            dl_link: result.downloadUrl || result.url || result.link,
-            type: type,
-            thumb: result.thumbnail || `https://i.ytimg.com/vi/${ytIdRegex.exec(url)[1]}/hqdefault.jpg`
-        };
-
-    } catch (error) {
-        throw new Error(`Download failed: ${error.message}`);
-    }
+    // Return the raw buffer directly
+    return await response.buffer();
 }
 
 module.exports = {
     getInfo,
-    yt,
     /**
-     * Download Audio (MP3)
-     * @param {String} url 
+     * Returns raw MP3 Buffer
      */
-    yta(url) { 
-        return yt(url, 'audio'); 
+    async yta(url) { 
+        return await yt(url, 'audio'); 
     },
     /**
-     * Download Video (MP4)
-     * @param {String} url 
+     * Returns raw MP4 Buffer
      */
-    ytv(url) { 
-        return yt(url, 'video'); 
+    async ytv(url) { 
+        return await yt(url, 'video'); 
     }
 };
