@@ -141,7 +141,7 @@ const badwordceck = new badwordNext({
 const {
     mediafireDl
 } = require('./res/mediafire.js')
-const { getCachedGroupMetadata, clearGroupCache } = require('./res/js/cacheHelper.js');
+const { getCachedGroupMetadata, clearGroupCache, getCachedGroupSettings, clearSettingsCache } = require('./res/js/cacheHelper.js');
 const DB_HOST = process.env["DB_HOST"];
 const DB_UNAME = process.env["DB_UNAME"];
 const DB_NAME = process.env["DB_NAME"];
@@ -261,23 +261,14 @@ const saveRankingCacheOnExit = () => {
 // 3. IMPORTANT: Attach to Global Object so index.js can see it
 global.saveRankingCacheOnExit = saveRankingCacheOnExit;
 
-const isBotAllowed = (groupId) => {
-    return new Promise((resolve, reject) => {
-        const sql = "SELECT is_allow_bots FROM `groups` WHERE group_id = ?";
-
-        db.query(sql, [groupId], (err, results) => {
-            if (err) {
-                console.error("Error checking bot status:", err);
-                resolve(false);
-            } else {
-                if (results.length > 0) {
-                    resolve(!!results[0].is_allow_bots);
-                } else {
-                    resolve(false);
-                }
-            }
-        });
-    });
+const isBotAllowed = async (groupId) => {
+    try {
+        const settings = await getCachedGroupSettings(db, groupId);
+        return !!settings?.is_allow_bots;
+    } catch (err) {
+        console.error("Error checking bot status:", err);
+        return false;
+    }
 };
 
 function isBotOrFakeWeb(msg) {
@@ -1321,18 +1312,10 @@ async function handleMessage(AlexaInc, {
                         return false;
                     }
                     try {
-                        const query =
-                            `SELECT antinsfw, nsfw_a FROM \`groups\` WHERE group_id = ? AND antinsfw = TRUE`;
-                        const [results] = await db.promise().query(query, [msg.key.remoteJid]);
-
-                        if (results.length > 0) {
-                            const action = results[0].nsfw_a;
-
-
-                            return action;
+                        const settings = await getCachedGroupSettings(db, msg.key.remoteJid);
+                        if (settings && settings.antinsfw) {
+                            return settings.nsfw_a;
                         }
-
-
                         return false;
 
                     } catch (err) {
@@ -1366,16 +1349,10 @@ async function handleMessage(AlexaInc, {
                         return false;
                     }
                     try {
-                        const query =
-                            `SELECT antilink, link_a FROM \`groups\` WHERE group_id = ? AND antilink = TRUE`;
-                        const [results] = await db.promise().query(query, [msg.key.remoteJid]);
-                        if (results.length > 0) {
-                            const action = results[0].link_a;
-
-                            return action;
+                        const settings = await getCachedGroupSettings(db, msg.key.remoteJid);
+                        if (settings && settings.antilink) {
+                            return settings.link_a;
                         }
-
-                        // 10. Link was found, but antilink is OFF for this group
                         return false;
 
                     } catch (err) {
@@ -1651,7 +1628,7 @@ async function handleMessage(AlexaInc, {
                 } else if (firstWord.startsWith(".") || firstWord.startsWith("/") || firstWord.startsWith("\\")) {
 
 
-                    let command = firstWord.slice(1);; // Assign as command
+                    let command = firstWord.slice(1); // Assign as command
                     const botStatus = loadBotStatus();
 
                     // Check before executing commands
@@ -1673,54 +1650,42 @@ async function handleMessage(AlexaInc, {
                             if (!isGroup) return mess.group();
                             if (!isAdmins && !isOwner) return mess.admin();
 
-                            const sql = "SELECT * FROM `groups` WHERE group_id = ?";
-                            db.query(sql, [msg.key.remoteJid], async (err, results) => {
-                                if (err) {
-                                    console.error("Error fetching group config:", err);
-                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: "❌ Error fetching group configuration."
-                                    }, {
-                                        quoted: msg
-                                    });
-                                }
+                            const settings = await getCachedGroupSettings(db, msg.key.remoteJid) || {
+                                chatbot: 0,
+                                antilink: 0,
+                                link_a: 'delete',
+                                antinsfw: 0,
+                                nsfw_a: 'delete',
+                                is_allow_bots: 0,
+                                is_welcome: 0,
+                                isleft_w: 0
+                            };
 
-                                const settings = results.length > 0 ? results[0] : {
-                                    chatbot: 0,
-                                    antilink: 0,
-                                    link_a: 'delete',
-                                    antinsfw: 0,
-                                    nsfw_a: 'delete',
-                                    is_allow_bots: 0,
-                                    is_welcome: 0,
-                                    isleft_w: 0
-                                };
+                            const metadata = await getCachedGroupMetadata(AlexaInc, msg.key.remoteJid);
 
-                                const metadata = await getCachedGroupMetadata(AlexaInc, msg.key.remoteJid);
+                            let configText = `⚙️ *GROUP CONFIGURATION*\n\n`;
+                            configText += `📝 *Name:* ${metadata?.subject || 'Unknown'}\n`;
+                            configText += `🆔 *ID:* ${msg.key.remoteJid}\n`;
+                            configText += `👥 *Members:* ${participants.length}\n`;
+                            configText += `🤖 *Bot Allowed:* ${settings.is_allow_bots ? '✅' : '❌'}\n\n`;
 
-                                let configText = `⚙️ *GROUP CONFIGURATION*\n\n`;
-                                configText += `📝 *Name:* ${metadata?.subject || 'Unknown'}\n`;
-                                configText += `🆔 *ID:* ${msg.key.remoteJid}\n`;
-                                configText += `👥 *Members:* ${participants.length}\n`;
-                                configText += `🤖 *Bot Allowed:* ${settings.is_allow_bots ? '✅' : '❌'}\n\n`;
+                            configText += `🛡️ *SECURITY SETTINGS*\n`;
+                            configText += `🔗 *Antilink:* ${settings.antilink ? '✅' : '❌'} (${settings.link_a})\n`;
+                            configText += `🔞 *AntiNSFW:* ${settings.antinsfw ? '✅' : '❌'} (${settings.nsfw_a})\n\n`;
 
-                                configText += `🛡️ *SECURITY SETTINGS*\n`;
-                                configText += `🔗 *Antilink:* ${settings.antilink ? '✅' : '❌'} (${settings.link_a})\n`;
-                                configText += `🔞 *AntiNSFW:* ${settings.antinsfw ? '✅' : '❌'} (${settings.nsfw_a})\n\n`;
+                            configText += `💬 *BOT FEATURES*\n`;
+                            configText += `🤖 *Chatbot AI:* ${settings.chatbot ? '✅' : '❌'}\n`;
+                            configText += `👋 *Welcome:* ${settings.is_welcome ? '✅' : '❌'}\n`;
+                            configText += `🚪 *Leave/Kick:* ${settings.isleft_w ? '✅' : '❌'}\n\n`;
 
-                                configText += `💬 *BOT FEATURES*\n`;
-                                configText += `🤖 *Chatbot AI:* ${settings.chatbot ? '✅' : '❌'}\n`;
-                                configText += `👋 *Welcome:* ${settings.is_welcome ? '✅' : '❌'}\n`;
-                                configText += `🚪 *Leave/Kick:* ${settings.isleft_w ? '✅' : '❌'}\n\n`;
+                            configText += `👑 *WhatsApp Settings:*\n`;
+                            configText += `📢 *Announce only:* ${metadata?.announce ? 'Yes' : 'No'}\n`;
+                            configText += `🛠️ *Admin only edit:* ${metadata?.restrict ? 'Yes' : 'No'}\n`;
 
-                                configText += `👑 *WhatsApp Settings:*\n`;
-                                configText += `📢 *Announce only:* ${metadata?.announce ? 'Yes' : 'No'}\n`;
-                                configText += `🛠️ *Admin only edit:* ${metadata?.restrict ? 'Yes' : 'No'}\n`;
-
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: configText
-                                }, {
-                                    quoted: msg
-                                });
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: configText
+                            }, {
+                                quoted: msg
                             });
                             break;
                         }
@@ -4941,6 +4906,7 @@ Url: ${response[1].url}
                                         quoted: msg
                                     });
                                 } else {
+                                    clearSettingsCache(msg.key.remoteJid);
                                     const statusText = shouldAllow ? '✅ *allowed*' : '🚫 *prohibited*';
                                     return AlexaInc.sendMessage(msg.key.remoteJid, {
                                         text: `Other bots are now ${statusText} in this group.`
@@ -5009,6 +4975,7 @@ Url: ${response[1].url}
                                         return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to enable welcome.' });
                                     }
                                     await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Welcome feature has been enabled!' });
+                                    clearSettingsCache(msg.key.remoteJid);
                                 });
 
                             } else if (state === 'off') {
@@ -5025,6 +4992,7 @@ Url: ${response[1].url}
                                         return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to disable welcome.' });
                                     }
                                     await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Welcome feature has been disabled!' });
+                                    clearSettingsCache(msg.key.remoteJid);
                                 });
 
                             } else {
@@ -5058,6 +5026,7 @@ Url: ${response[1].url}
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
                                     text: `Welcome message updated successfully!\n\nNew Message:\n${text}`
                                 });
+                                clearSettingsCache(msg.key.remoteJid);
                             });
                             break;
                         }
@@ -5084,6 +5053,7 @@ Url: ${response[1].url}
                                         return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to enable goodbye feature.' });
                                     }
                                     await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Goodbye feature has been enabled!' });
+                                    clearSettingsCache(msg.key.remoteJid);
                                 });
 
                             } else if (state === 'off') {
@@ -5100,6 +5070,7 @@ Url: ${response[1].url}
                                         return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to disable goodbye feature.' });
                                     }
                                     await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Goodbye feature has been disabled!' });
+                                    clearSettingsCache(msg.key.remoteJid);
                                 });
 
                             } else {
@@ -5132,6 +5103,7 @@ Url: ${response[1].url}
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
                                     text: `Goodbye message updated successfully!\n\nNew Message:\n${text}`
                                 });
+                                clearSettingsCache(msg.key.remoteJid);
                             });
                             break;
                         }
@@ -5231,6 +5203,7 @@ Url: ${response[1].url}
                                 AlexaInc.sendMessage(msg.key.remoteJid, {
                                     text: 'chatbot ' + args[0] + ' successfully!'
                                 });
+                                clearSettingsCache(msg.key.remoteJid);
                             });
 
                             break;
@@ -5756,19 +5729,10 @@ from : @${visibleNumber}
                         // ✅ Not a group → run AI
                         runAI();
                     } else if (isReplyToBot) {
-                        // ✅ Group + Reply to Bot → Check if chatbot is enabled in DB
-                        const query = `
-                        SELECT chatbot FROM \`groups\` 
-                        WHERE group_id = ? AND chatbot = TRUE
-                    `;
-
-                        db.query(query, [groupId], async (err, results) => {
-                            if (err) {
-                                console.error('Error checking chatbot status:', err);
-                                return;
-                            }
-
-                            if (results.length > 0) {
+                        // ✅ Group + Reply to Bot → Check if chatbot is enabled in Cache
+                        try {
+                            const settings = await getCachedGroupSettings(db, groupId);
+                            if (settings && settings.chatbot) {
                                 const botStatus = loadBotStatus();
 
                                 // Check before executing commands
@@ -5785,7 +5749,9 @@ from : @${visibleNumber}
                                 // ❌ Group but chatbot disabled → skip
                                 console.log('Chatbot is disabled for this group.');
                             }
-                        });
+                        } catch (err) {
+                            console.error('Error checking chatbot status:', err);
+                        }
                     }
 
                     function runAI() {

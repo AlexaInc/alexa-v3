@@ -107,14 +107,13 @@ if (!fs.existsSync(STORE_DIR)) fs.mkdirSync(STORE_DIR);
 const msgRetryCounterCache = new NodeCache();
 const PORT = process.env.PORT || 8000;
 const dataFile = path.join(__dirname, 'sharedData.json');
-const si = require('systeminformation');
 const WebSocket = require('ws');
 const { default: axios } = require('axios');
 const { json } = require('stream/consumers');
 const logger = P({
     timestamp: () => `,"time":"${new Date().toJSON()}"`
 }, P.destination('./wa-logs.txt'));
-logger.level = 'debug';
+logger.level = 'info'; // Reduced from debug to save CPU/IO
 
 let restartHistory = JSON.parse(fs.readFileSync('./restarts.json', 'utf8'));
 /**
@@ -668,85 +667,82 @@ async function startWhatsAppConnection() {
 
             if (rawParticipants.includes(botNumber)) return;
 
-            // 2. Fetch Settings
-            const query = "SELECT * FROM `groups` WHERE group_id = ?";
-            db.query(query, [anu.id], async (err, result) => {
-                if (err || result.length === 0) return;
-                const settings = result[0];
+            const { getCachedGroupSettings } = require('./res/js/cacheHelper.js');
+            const settings = await getCachedGroupSettings(db, anu.id);
+            if (!settings) return;
 
-                // 3. Determine the EXACT Event Type
-                let eventType = 'unknown';
+            // 3. Determine the EXACT Event Type
+            let eventType = 'unknown';
 
-                if (anu.action === 'add') {
-                    eventType = 'welcome'; // Covers both "Join via Link" and "Added by Admin"
-                } else if (anu.action === 'remove') {
-                    // LOGIC: If the author IS the participant, they left. If not, they were kicked.
-                    if (anu.author === participantLid || anu.author === participantJid || anu.author === null) {
-                        eventType = 'leave';
-                    } else {
-                        eventType = 'kick';
-                    }
+            if (anu.action === 'add') {
+                eventType = 'welcome'; // Covers both "Join via Link" and "Added by Admin"
+            } else if (anu.action === 'remove') {
+                // LOGIC: If the author IS the participant, they left. If not, they were kicked.
+                if (anu.author === participantLid || anu.author === participantJid || anu.author === null) {
+                    eventType = 'leave';
+                } else {
+                    eventType = 'kick';
                 }
+            }
 
-                // 4. Toggle Checks (Stop if feature is disabled)
-                if (eventType === 'welcome' && !settings.is_welcome) return;
-                if ((eventType === 'leave' || eventType === 'kick') && !settings.isleft_w) return;
+            // 4. Toggle Checks (Stop if feature is disabled)
+            if (eventType === 'welcome' && !settings.is_welcome) return;
+            if ((eventType === 'leave' || eventType === 'kick') && !settings.isleft_w) return;
 
-                // --- Fetch Group Meta & DP ---
-                let groupMetadata;
-                try {
-                    clearGroupCache(anu.id); // Clear cache because participants changed
-                    groupMetadata = await getCachedGroupMetadata(AlexaInc, anu.id);
-                } catch (e) { return; }
+            // --- Fetch Group Meta & DP ---
+            let groupMetadata;
+            try {
+                clearGroupCache(anu.id); // Clear cache because participants changed
+                groupMetadata = await getCachedGroupMetadata(AlexaInc, anu.id);
+            } catch (e) { return; }
 
-                const groupName = groupMetadata.subject;
-                const groupDesc = groupMetadata.desc || 'No description available.';
-                let ppUrl;
-                try { ppUrl = await AlexaInc.profilePictureUrl(participantJid, 'image'); }
-                catch { ppUrl = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; }
-                const buffer = await getBuffer(ppUrl);
+            const groupName = groupMetadata.subject;
+            const groupDesc = groupMetadata.desc || 'No description available.';
+            let ppUrl;
+            try { ppUrl = await AlexaInc.profilePictureUrl(participantJid, 'image'); }
+            catch { ppUrl = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; }
+            const buffer = await getBuffer(ppUrl);
 
-                // --- Define Replacements ---
-                const userId = participantJid.split('@')[0];
-                const userId2 = participantLid.split('@')[0];
-                const mentionTag = `@${userId}`;
-                let userName = userId; // Default to number if name not found
+            // --- Define Replacements ---
+            const userId = participantJid.split('@')[0];
+            const userId2 = participantLid.split('@')[0];
+            const mentionTag = `@${userId}`;
+            let userName = userId; // Default to number if name not found
 
-                // 5. Select Message based on Event Type
-                let messageBody = '';
+            // 5. Select Message based on Event Type
+            let messageBody = '';
 
-                if (eventType === 'welcome') {
-                    // JOIN / ADD
-                    messageBody = (settings.wc_m && settings.wc_m !== 'default')
-                        ? settings.wc_m
-                        : 'Hi {mention}, Welcome to {gname}!\n\n{desc}';
+            if (eventType === 'welcome') {
+                // JOIN / ADD
+                messageBody = (settings.wc_m && settings.wc_m !== 'default')
+                    ? settings.wc_m
+                    : 'Hi {mention}, Welcome to {gname}!\n\n{desc}';
 
-                } else if (eventType === 'leave') {
-                    // LEFT VOLUNTARILY
-                    messageBody = (settings.left_m && settings.left_m !== 'default')
-                        ? settings.left_m
-                        : 'Goodbye {mention}, we will miss you from {gname}.';
+            } else if (eventType === 'leave') {
+                // LEFT VOLUNTARILY
+                messageBody = (settings.left_m && settings.left_m !== 'default')
+                    ? settings.left_m
+                    : 'Goodbye {mention}, we will miss you from {gname}.';
 
-                } else if (eventType === 'kick') {
-                    // REMOVED BY ADMIN (Fixed Message)
-                    messageBody = '⚠️ {mention} has been removed from the group by an admin.';
-                }
+            } else if (eventType === 'kick') {
+                // REMOVED BY ADMIN (Fixed Message)
+                messageBody = '⚠️ {mention} has been removed from the group by an admin.';
+            }
 
-                // --- Final Processing ---
-                const finalMsg = messageBody
-                    .replace(/{id}/g, userId2)
-                    .replace(/{number}/g, userId)
-                    .replace(/{mention}/g, mentionTag)
-                    .replace(/{user}/g, userName)
-                    .replace(/{gname}/g, groupName)
-                    .replace(/{desc}/g, groupDesc)
-                    .replace(/{gid}/g, anu.id);
+            // --- Final Processing ---
+            const finalMsg = messageBody
+                .replace(/{id}/g, userId2)
+                .replace(/{number}/g, userId)
+                .replace(/{mention}/g, mentionTag)
+                .replace(/{user}/g, userName)
+                .replace(/{gname}/g, groupName)
+                .replace(/{desc}/g, groupDesc)
+                .replace(/{gid}/g, anu.id);
 
-                await AlexaInc.sendMessage(anu.id, {
-                    image: buffer,
-                    caption: finalMsg,
-                    mentions: rawParticipants
-                });
+            await AlexaInc.sendMessage(anu.id, {
+                image: buffer,
+                caption: finalMsg,
+                mentions: rawParticipants
             });
         } catch (err) {
             console.error("Error in group-participants:", err);
@@ -855,11 +851,15 @@ function writeData(data) {
     fs.writeFileSync(dataFile, JSON.stringify(data));
 }
 
+let lastWrittenData = "";
 setInterval(() => {
     const data = { number: global.botPhoneNumber, status: global.connectionStatus };
-    writeData(data);
-    //console.log('Data written to shared file:', data);
-}, 5000); // Write data every 5 seconds
+    const stringData = JSON.stringify(data);
+    if (stringData !== lastWrittenData) {
+        writeData(data);
+        lastWrittenData = stringData;
+    }
+}, 5000); // Check status every 5 seconds, write only on change
 
 
 
