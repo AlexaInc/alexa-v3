@@ -361,6 +361,12 @@ const statusFile = path.join(__dirname, 'botstatus.json');
  */
 function loadBotStatus() {
     try {
+        if (!fs.existsSync(statusFile)) {
+            return {
+                underMaintenance: false,
+                message: 'Bot is running smoothly.'
+            };
+        }
         const data = fs.readFileSync(statusFile, 'utf-8');
         return JSON.parse(data);
     } catch (err) {
@@ -2208,7 +2214,7 @@ ${quotedid ? "Senderid:" + quotedid : ""}`
 
                             console.log(quotesendernumber);
                             usercontact = await loadUserByNumber(quotesendernumber);
-                            quotesendername = usercontact.name ? usercontact.name : quotesendernumber;
+                            quotesendername = (usercontact && usercontact.name) ? usercontact.name : quotesendernumber;
                             const id2getpp = quotedSender === 'me' ? `${botNumber}@s.whatsapp.net` :
                                 quotedSender
                             const dpurl = await getdpurl(AlexaInc, id2getpp);
