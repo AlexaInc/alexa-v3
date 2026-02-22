@@ -2016,7 +2016,8 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`.chatbot\` - .chatbot on/off/
 ┃ ➥ \`.antilink\` - .antilink on/off/remove/warn  
 ┃ ➥ \`.hidetag\` - .hidetag msg (mention all members)  
-┃ ➥ \`.antinsfw\` - Similar to antilink  
+┃ ➥ \`.antinsfw\` - Similar to antilink
+┃ ➥ \`.config\` - .config to check group setting status  
 ┃ ➥ \`.filter\` - /filter trigger to add filter 
 ┃ ➥ \`.stop\` - /stop trigger to stop filter  
 ┃ ➥ \`.filters\` - to get list of filters in group 
