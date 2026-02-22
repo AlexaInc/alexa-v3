@@ -1363,28 +1363,28 @@ async function handleMessage(AlexaInc, {
 
 
 
-                const greetingRegex = /\b(hi|hello)\b/i;
+                // const greetingRegex = /\b(hi|hello)\b/i;
 
-                if (greetingRegex.test(messageText)) {
+                // if (greetingRegex.test(messageText)) {
 
-                    try {
+                //     try {
 
-                        const audioBuffer = fs.readFileSync('./res/audio/welcome.ogg');
+                //         const audioBuffer = fs.readFileSync('./res/audio/welcome.ogg');
 
 
-                        await AlexaInc.sendMessage(msg.key.remoteJid, {
-                            audio: audioBuffer,
-                            mimetype: 'audio/mpeg',
-                            ptt: true
-                        }, {
-                            quoted: msg
-                        });
+                //         await AlexaInc.sendMessage(msg.key.remoteJid, {
+                //             audio: audioBuffer,
+                //             mimetype: 'audio/mpeg',
+                //             ptt: true
+                //         }, {
+                //             quoted: msg
+                //         });
 
-                    } catch (error) {
+                //     } catch (error) {
 
-                        console.error("Error sending welcome audio:", error);
-                    }
-                }
+                //         console.error("Error sending welcome audio:", error);
+                //     }
+                // }
 
 
                 const matchedFilter = await Filters.checkFilters(msg.key.remoteJid, messageText);
