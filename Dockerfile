@@ -56,7 +56,7 @@ COPY . .
 # Set global Node.js memory limit for Docker environment (approx 60% of 512MB)
 ENV NODE_OPTIONS="--max-old-space-size=300"
 
-EXPOSE 4001
+EXPOSE 7860
 
 # Run the manager script instead of the app directly
 CMD ["node", "app.js"]

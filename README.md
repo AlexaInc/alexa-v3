@@ -1,4 +1,14 @@
 
+---
+title: Alexa Bot
+emoji: 🤖
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 <h1 align="center">Alexa V3 WhatsApp Bot</h1>
 
 <p align="center"><img src="./res/img/alexa.png" alt="Alexa V3" width="300" ></p>

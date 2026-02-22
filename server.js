@@ -3,49 +3,49 @@ const app = express();
 const session = require('express-session');
 const WebSocket = require('ws');
 require('dotenv').config();
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 7860;
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const si = require('systeminformation');
-require('./whatsappState'); 
+require('./whatsappState');
 //const { botPhoneNumber, connectionStatus } = require('./index');
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const dataFile = path.join(__dirname, 'sharedData.json');
 
-const cors = require("cors");  
-const allowdorigins =["https://hansaka02.github.io","http://alexainc.github.io"]
-app.use(cors({ origin: "https://alexainc.github.io" })); 
+const cors = require("cors");
+const allowdorigins = ["https://hansaka02.github.io", "http://alexainc.github.io"]
+app.use(cors({ origin: "https://alexainc.github.io" }));
 // Setup session middleware
 app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false, httpOnly: false, maxAge: 60 * 60 * 1000 }
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false, httpOnly: false, maxAge: 60 * 60 * 1000 }
 }));
 const compression = require('compression');
 app.use(compression());
 // Check authentication
 function isAuthenticated(req, res, next) {
-    if (req.session.isLogged) {
-        return next();
-    } else if (req.headers.accept && req.headers.accept.includes('application/json')) {
-            return res.status(401).json({ success: false, message: "Unauthorized" });
-        } else {
-            return res.redirect('/login'); // Redirect non-API users to the login page
-        }
+  if (req.session.isLogged) {
+    return next();
+  } else if (req.headers.accept && req.headers.accept.includes('application/json')) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  } else {
+    return res.redirect('/login'); // Redirect non-API users to the login page
+  }
 }
 
 function readData() {
-  try {
-    const data = fs.readFileSync(dataFile, 'utf8');
-    return JSON.parse(data);
-  } catch (err) {
-    return null; // Return null if no data
-  }
+  try {
+    const data = fs.readFileSync(dataFile, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    return null; // Return null if no data
+  }
 }
 
 // Reads data every 5 seconds
@@ -54,11 +54,11 @@ function readData() {
 // Route to check the WhatsApp connection status
 // Route to get WhatsApp connection status
 app.get('/status', (req, res) => {
-    res.json({ status: readData().status || 'Offline' });
+  res.json({ status: readData().status || 'Offline' });
 });
 
 app.get('/get-phone-number', (req, res) => {
-res.json({ phoneNumber: readData().number });
+  res.json({ phoneNumber: readData().number });
 });
 
 
@@ -66,107 +66,107 @@ res.json({ phoneNumber: readData().number });
 
 // Login and logout APIs
 app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-        req.session.isLogged = true;
-        req.session.save();
-        console.log(`Admin logged in: ${username}`);
-        return res.json({ success: true });
-    }
-    console.log(`Failed login attempt: ${username}`);
-    res.status(401).json({ success: false, message: "Invalid credentials" });
+  const { username, password } = req.body;
+  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+    req.session.isLogged = true;
+    req.session.save();
+    console.log(`Admin logged in: ${username}`);
+    return res.json({ success: true });
+  }
+  console.log(`Failed login attempt: ${username}`);
+  res.status(401).json({ success: false, message: "Invalid credentials" });
 });
 
 app.post('/logout', (req, res) => {
-    console.log('Admin logged out');
-    req.session.destroy(() => res.json({ success: true }));
+  console.log('Admin logged out');
+  req.session.destroy(() => res.json({ success: true }));
 });
 
 
 
 // Route to check if user is logged in
 app.get('/is-logged-in', (req, res) => {
-    if (req.session.isLogged) {
-        res.json({ isLoggedIn: true });
-    } else {
-        res.json({ isLoggedIn: false });
-    }
+  if (req.session.isLogged) {
+    res.json({ isLoggedIn: true });
+  } else {
+    res.json({ isLoggedIn: false });
+  }
 });
 
 // Serve control panel
 app.get('/control', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'control.html'));
+  res.sendFile(path.join(__dirname, 'public', 'control.html'));
 });
 
 
 
 // Route to download users.json file
 app.get('/download-users-json', (req, res) => {
-    const filePath = path.join(__dirname, './users.json');  // Path to your users.json file
-    
-    // Check if the file exists
-    if (fs.existsSync(filePath)) {
-        res.download(filePath, 'users.json', (err) => {
-            if (err) {
-                res.status(500).json({ error: 'Failed to download the file' });
-            }
-        });
-    } else {
-        res.status(404).json({ error: 'File not found' });
-    }
+  const filePath = path.join(__dirname, './users.json');  // Path to your users.json file
+
+  // Check if the file exists
+  if (fs.existsSync(filePath)) {
+    res.download(filePath, 'users.json', (err) => {
+      if (err) {
+        res.status(500).json({ error: 'Failed to download the file' });
+      }
+    });
+  } else {
+    res.status(404).json({ error: 'File not found' });
+  }
 
 
 
 });
 
 app.get('/download-hangman-json', (req, res) => {
-    const filePath22 = path.join(__dirname, './hangman.json');
-    
+  const filePath22 = path.join(__dirname, './hangman.json');
 
-    if (fs.existsSync(filePath22)) {
-        res.download(filePath22, 'hangman.json', (err) => {
-            if (err) {
-                res.status(500).json({ error: 'Failed to download the file' });
-            }
-        });
-    } else {
-        res.status(404).json({ error: 'File not found' });
-    }
+
+  if (fs.existsSync(filePath22)) {
+    res.download(filePath22, 'hangman.json', (err) => {
+      if (err) {
+        res.status(500).json({ error: 'Failed to download the file' });
+      }
+    });
+  } else {
+    res.status(404).json({ error: 'File not found' });
+  }
 
 
 });
 
 // Serve login page
 app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.get('/sysstats', async (req, res) => {
-  try {
-    const cpuData = await si.currentLoad();
-    const memData = await si.mem();
-    const netData = await si.networkStats();
+  try {
+    const cpuData = await si.currentLoad();
+    const memData = await si.mem();
+    const netData = await si.networkStats();
 
-    // CPU usage in percentage (0-100)
-    const cpuUsage = cpuData.currentLoad;
+    // CPU usage in percentage (0-100)
+    const cpuUsage = cpuData.currentLoad;
 
-    // Memory usage in percentage (0-100)
-    const memUsage = (memData.used / memData.total) * 100;
+    // Memory usage in percentage (0-100)
+    const memUsage = (memData.used / memData.total) * 100;
 
-    // networkStats() returns an array (one element per network interface).
-    // We'll use the first interface (netData[0]) or you can sum them if needed.
-    const downloadSpeed = netData[0].rx_sec; // bytes/sec
-    const uploadSpeed   = netData[0].tx_sec; // bytes/sec
+    // networkStats() returns an array (one element per network interface).
+    // We'll use the first interface (netData[0]) or you can sum them if needed.
+    const downloadSpeed = netData[0].rx_sec; // bytes/sec
+    const uploadSpeed = netData[0].tx_sec; // bytes/sec
 
-    res.json({
-      cpu: cpuUsage,
-      memory: memUsage,
-      downloadSpeed,
-      uploadSpeed
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve system stats' });
-  }
+    res.json({
+      cpu: cpuUsage,
+      memory: memUsage,
+      downloadSpeed,
+      uploadSpeed
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve system stats' });
+  }
 });
 
 
@@ -211,41 +211,41 @@ server.on('upgrade', (request, socket, head) => {
 // This code is identical to your original, just attached to logWss
 // Your dashboard client must now connect to: ws://your-server-address/logs
 logWss.on('connection', (ws) => {
-    // Function to send latest logs from both index.js and server.js logs
-    const sendLogs = () => {
-        const indexLogFilePath = path.join(__dirname, 'logs/index.log');
-        const serverLogFilePath = path.join(__dirname, 'logs/server.log');
+  // Function to send latest logs from both index.js and server.js logs
+  const sendLogs = () => {
+    const indexLogFilePath = path.join(__dirname, 'logs/index.log');
+    const serverLogFilePath = path.join(__dirname, 'logs/server.log');
 
-        // Read index.js logs
-        fs.readFile(indexLogFilePath, 'utf8', (err, indexData) => {
-            if (err) {
-                console.error('Error reading index.js logs:', err);
-            } else {
-                ws.send(JSON.stringify({ type: 'index', logs: indexData.split('\n').slice(-100) }));
-            }
-        });
+    // Read index.js logs
+    fs.readFile(indexLogFilePath, 'utf8', (err, indexData) => {
+      if (err) {
+        console.error('Error reading index.js logs:', err);
+      } else {
+        ws.send(JSON.stringify({ type: 'index', logs: indexData.split('\n').slice(-100) }));
+      }
+    });
 
-        // Read server.js logs
-        fs.readFile(serverLogFilePath, 'utf8', (err, serverData) => {
-            if (err) {
-                console.error('Error reading server.js logs:', err);
-            } else {
-                ws.send(JSON.stringify({ type: 'server', logs: serverData.split('\n').slice(-100) }));
-            }
-        });
-    };
+    // Read server.js logs
+    fs.readFile(serverLogFilePath, 'utf8', (err, serverData) => {
+      if (err) {
+        console.error('Error reading server.js logs:', err);
+      } else {
+        ws.send(JSON.stringify({ type: 'server', logs: serverData.split('\n').slice(-100) }));
+      }
+    });
+  };
 
-    // Send logs every second
-    const logInterval = setInterval(sendLogs, 100);
+  // Send logs every second
+  const logInterval = setInterval(sendLogs, 100);
 
-    // Handle WebSocket close
-    ws.on('close', () => {
-        console.log('Log WebSocket Client Disconnected');
-        clearInterval(logInterval);
-    });
+  // Handle WebSocket close
+  ws.on('close', () => {
+    console.log('Log WebSocket Client Disconnected');
+    clearInterval(logInterval);
+  });
 
-    // Send logs immediately after connection
-    sendLogs();
+  // Send logs immediately after connection
+  sendLogs();
 });
 
 // --- 2. New Data Transfer Functionality (on /data-transfer) ---
@@ -258,7 +258,7 @@ dataTransferWss.on('connection', (ws) => {
     let data;
     try {
       // Ensure message is parsed as a string before JSON parsing
-      data = JSON.parse(message.toString()); 
+      data = JSON.parse(message.toString());
     } catch (e) {
       console.error('Failed to parse message or non-JSON message:', message.toString());
       return;
@@ -279,7 +279,7 @@ dataTransferWss.on('connection', (ws) => {
         ws.send(JSON.stringify({ type: 'status', message: 'Registration successful' }));
       }
     }
-    
+
     // 2. Handle Data Transfer
     // Client sends: { "type": "data", "targetId": "myApp2", "payload": { ... } }
     else if (data.type === 'data' && data.targetId && ws.id) {
@@ -299,10 +299,10 @@ dataTransferWss.on('connection', (ws) => {
         ws.send(JSON.stringify({ type: 'error', message: `Target ${data.targetId} not available` }));
       }
     }
-    
+
     // 3. Handle unregistered clients trying to send data
     else if (data.type === 'data' && !ws.id) {
-        ws.send(JSON.stringify({ type: 'error', message: 'Client not registered. Please register first.' }));
+      ws.send(JSON.stringify({ type: 'error', message: 'Client not registered. Please register first.' }));
     }
   });
 
@@ -315,7 +315,7 @@ dataTransferWss.on('connection', (ws) => {
       console.log('Unregistered data transfer client disconnected.');
     }
   });
-  
+
   ws.on('error', (error) => {
     console.error(`WebSocket error on client ${ws.id || '(unregistered)'}:`, error);
   });
@@ -331,76 +331,76 @@ app.use(express.json());
 // This is your webhook endpoint
 app.post('/github-webhook', async (req, res) => { // Made this async
 
-    // --- Signature is NOT VERIFIED ---
-    const event = req.headers['x-github-event'];
-    const payload = req.body;
+  // --- Signature is NOT VERIFIED ---
+  const event = req.headers['x-github-event'];
+  const payload = req.body;
 
-    // Check if it's a 'push' event
-    if (event === 'push') {
-        try {
-            const repo = payload.repository.name;
-            const pusher = payload.pusher.name;
-            const branch = payload.ref.split('/').pop();
-            const commits = payload.commits;
+  // Check if it's a 'push' event
+  if (event === 'push') {
+    try {
+      const repo = payload.repository.name;
+      const pusher = payload.pusher.name;
+      const branch = payload.ref.split('/').pop();
+      const commits = payload.commits;
 
-            // --- 1. Start building the message string ---
-            let message = `*📦 New Update to ${repo}*
+      // --- 1. Start building the message string ---
+      let message = `*📦 New Update to ${repo}*
 *Branch:* \`${branch}\`
 *By:* ${pusher}
 -----------------------------------`;
 
-            // --- 2. Add each commit to the string ---
-            if (commits.length > 0) {
-                commits.forEach((commit, index) => {
-                    const commitId = commit.id.substring(0, 7);
-                    const commitMessage = commit.message.split('\n')[0]; // First line only
-                    const author = commit.author.name;
+      // --- 2. Add each commit to the string ---
+      if (commits.length > 0) {
+        commits.forEach((commit, index) => {
+          const commitId = commit.id.substring(0, 7);
+          const commitMessage = commit.message.split('\n')[0]; // First line only
+          const author = commit.author.name;
 
-                    message += `\n\n*Commit ${index + 1} [ \`${commitId}\` ]*
+          message += `\n\n*Commit ${index + 1} [ \`${commitId}\` ]*
 *Author:* ${author}
 *Message:* _${commitMessage}_`;
-                });
-            } else {
-                message += "\n\n_No new commits in this push._";
-            }
-            
-            // --- 3. (FIXED) Send the message to the WebSocket client ---
-            // We find the client named "app1" in our 'clients' Map
-            const targetClient = clients.get("app1"); 
+        });
+      } else {
+        message += "\n\n_No new commits in this push._";
+      }
 
-            if (targetClient && targetClient.readyState === WebSocket.OPEN) {
-                // We send the data to that specific client
-                targetClient.send(JSON.stringify({
-                    type: 'data',
-                    from: 'github-webhook', // Let the receiver know who sent it
-                    payload: { message: message, value: 12345, event: 'gitpush' }
-                }));
-                console.log('[GitHub Webhook] Sent push data to WebSocket client "app1".');
-            } else {
-                console.warn('[GitHub Webhook] WebSocket client "app1" not found or not connected.');
-            }
+      // --- 3. (FIXED) Send the message to the WebSocket client ---
+      // We find the client named "app1" in our 'clients' Map
+      const targetClient = clients.get("app1");
 
-            // --- 4. Log the message to your console ---
-            console.log("--- Generated WhatsApp Message ---");
-            console.log(message);
-            console.log("----------------------------------");
+      if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+        // We send the data to that specific client
+        targetClient.send(JSON.stringify({
+          type: 'data',
+          from: 'github-webhook', // Let the receiver know who sent it
+          payload: { message: message, value: 12345, event: 'gitpush' }
+        }));
+        console.log('[GitHub Webhook] Sent push data to WebSocket client "app1".');
+      } else {
+        console.warn('[GitHub Webhook] WebSocket client "app1" not found or not connected.');
+      }
 
-            // --- 5. Send it via WhatsApp ---
-            // ... (Your commented-out code for Baileys) ...
+      // --- 4. Log the message to your console ---
+      console.log("--- Generated WhatsApp Message ---");
+      console.log(message);
+      console.log("----------------------------------");
 
-        } catch (e) {
-            console.error('[GitHub Webhook] Error processing push payload:', e.message);
-        }
-    } else {
-        console.log(`[GitHub Webhook] Received unhandled event: ${event}`);
+      // --- 5. Send it via WhatsApp ---
+      // ... (Your commented-out code for Baileys) ...
+
+    } catch (e) {
+      console.error('[GitHub Webhook] Error processing push payload:', e.message);
     }
+  } else {
+    console.log(`[GitHub Webhook] Received unhandled event: ${event}`);
+  }
 
-    // Send a 200 OK back to GitHub
-    res.status(200).send('Event received');
+  // Send a 200 OK back to GitHub
+  res.status(200).send('Event received');
 });
 
 //module.exports = app;
 // Start server
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
