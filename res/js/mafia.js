@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { getCachedGroupMetadata } = require('./cacheHelper.js');
 const games = {}; // key = sessionCode
 const POINTS_DB_PATH = './mafia_points.json';
 
@@ -19,7 +20,7 @@ try {
 function savePoints() {
     try {
         fs.writeFileSync(POINTS_DB_PATH, JSON.stringify(userPoints, null, 2));
-    } catch (err) {}
+    } catch (err) { }
 }
 
 function randomCode(len = 6) {
@@ -88,8 +89,7 @@ const Mafia = {
             return AlexaInc.sendMessage(msg.key.remoteJid, { text: "⚠️ Game already running!" });
         }
 
-        let groupMetadata = null;
-        try { groupMetadata = await AlexaInc.groupMetadata(msg.key.remoteJid); } catch (e) {}
+        const groupMetadata = await getCachedGroupMetadata(AlexaInc, msg.key.remoteJid);
 
         const groupName = groupMetadata?.subject || "this Group";
         const allMembers = groupMetadata?.participants ? groupMetadata.participants.map(p => p.id) : [];
@@ -371,7 +371,7 @@ const Mafia = {
         for (const d of potentialDeaths) {
             const victim = players[d.target];
             if (!victim) continue;
-            if (d.target === healedId) {} 
+            if (d.target === healedId) { }
             else if (victim.role === 'lucky' && Math.random() > 0.5) {
                 await safeSend(AlexaInc, victim.jid, { text: "🍀 You were attacked but survived!" });
             } else {
@@ -388,7 +388,7 @@ const Mafia = {
             if (targetId === lawyerClientId) result = "Civilian";
 
             if (detId) await safeSend(AlexaInc, detId, { text: `🔍 Result: ${players[targetId].name} is **${result}**` });
-            
+
             const sarge = Object.values(players).find(p => p.role === 'sergeant' && p.alive);
             if (sarge) await safeSend(AlexaInc, sarge.jid, { text: `🕵️ Detective checked ${players[targetId].name}: Result ${result}` });
         }

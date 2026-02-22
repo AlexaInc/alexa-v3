@@ -28,6 +28,19 @@ const { makeWASocket: WAConnection } = require('@hansaka02/baileys');
 const authPath = path.join(__dirname, 'auth5a');
 require('dotenv').config()
 const { handleHangman, checkInactiveGames } = require('./hangman.js');
+const { getCachedGroupMetadata, clearGroupCache } = require('./res/js/cacheHelper.js');
+
+// --- PROCESS ERROR HANDLERS ---
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+    // Connection Closed or Rate Limit errors shouldn't crash the bot
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception:', err);
+    // Optionally restart or keep running depending on error severity
+    // We let the bot try to keep running for Baileys/Network errors
+});
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
 const pino = require("pino");
@@ -681,7 +694,10 @@ async function startWhatsAppConnection() {
 
                 // --- Fetch Group Meta & DP ---
                 let groupMetadata;
-                try { groupMetadata = await AlexaInc.groupMetadata(anu.id); } catch (e) { return; }
+                try {
+                    clearGroupCache(anu.id); // Clear cache because participants changed
+                    groupMetadata = await getCachedGroupMetadata(AlexaInc, anu.id);
+                } catch (e) { return; }
 
                 const groupName = groupMetadata.subject;
                 const groupDesc = groupMetadata.desc || 'No description available.';

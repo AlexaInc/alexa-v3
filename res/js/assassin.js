@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { getCachedGroupMetadata } = require('./cacheHelper.js');
 const games = {}; // key = sessionCode
 const POINTS_DB_PATH = './assassin_points.json';
 
@@ -19,7 +20,7 @@ try {
 function savePoints() {
     try {
         fs.writeFileSync(POINTS_DB_PATH, JSON.stringify(userPoints, null, 2));
-    } catch (err) {}
+    } catch (err) { }
 }
 
 function randomCode(len = 6) {
@@ -78,12 +79,7 @@ const Assassin = {
         }
 
         // 1. Fetch Group Metadata (Name + Participants for Tagging)
-        let groupMetadata = null;
-        try {
-            groupMetadata = await AlexaInc.groupMetadata(msg.key.remoteJid);
-        } catch (e) {
-            console.log("Error fetching metadata:", e);
-        }
+        const groupMetadata = await getCachedGroupMetadata(AlexaInc, msg.key.remoteJid);
 
         const groupName = groupMetadata?.subject || "this Group";
         // Get all member IDs to tag them

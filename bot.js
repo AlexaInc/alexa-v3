@@ -141,6 +141,7 @@ const badwordceck = new badwordNext({
 const {
     mediafireDl
 } = require('./res/mediafire.js')
+const { getCachedGroupMetadata, clearGroupCache } = require('./res/js/cacheHelper.js');
 const DB_HOST = process.env["DB_HOST"];
 const DB_UNAME = process.env["DB_UNAME"];
 const DB_NAME = process.env["DB_NAME"];
@@ -998,7 +999,7 @@ async function handleMessage(AlexaInc, {
         const rank = (process.env.spc_nb || '').split(',');
         const isspc = rank.includes(senderabfff)
         const isGroup = msg.key.remoteJid.endsWith('@g.us');
-        const groupMetadata = isGroup ? await AlexaInc.groupMetadata(msg.key.remoteJid).catch(e => { }) : '';
+        const groupMetadata = isGroup ? await getCachedGroupMetadata(AlexaInc, msg.key.remoteJid) : null;
         const participants = isGroup ? groupMetadata?.participants || [] : [];
         const groupname = groupMetadata?.subject || null
         const groupAdmins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
