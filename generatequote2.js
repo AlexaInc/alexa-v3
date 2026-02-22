@@ -1,4 +1,31 @@
 const puppeteer = require('puppeteer');
+let sharedBrowser = null;
+
+async function getBrowser() {
+    if (sharedBrowser && sharedBrowser.connected) {
+        return sharedBrowser;
+    }
+
+    // Launch with memory-optimized flags
+    sharedBrowser = await puppeteer.launch({
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-gpu',
+            '--disable-dev-shm-usage', // Critical for low-memory Docker/Linux
+            '--disable-setuid-sandbox',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process' // Saves RAM on some setups
+        ]
+    });
+
+    sharedBrowser.on('disconnected', () => {
+        sharedBrowser = null;
+    });
+
+    return sharedBrowser;
+}
 // *** RESTORED: createCanvas, registerFont from 'canvas' ***
 const { createCanvas, registerFont } = require('canvas');
 const fs = require('fs');
@@ -120,12 +147,12 @@ async function createDummyAvatarBuffer(f, l, c, scale = 1) {
         </body></html>
     `;
 
-    // 4. Launch a *separate, minimal* Puppeteer instance to render it
-    let browser;
+    // 4. Launch a *shared* Puppeteer instance to render it
+    let page;
     let pngBuffer;
     try {
-        browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-gpu'] });
-        const page = await browser.newPage();
+        const browser = await getBrowser();
+        page = await browser.newPage();
         await page.setViewport({ width: avatarSize, height: avatarSize });
         await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' }); // Reverted from networkidle0
 
@@ -136,8 +163,8 @@ async function createDummyAvatarBuffer(f, l, c, scale = 1) {
         console.error("❌ Error creating dummy avatar with Puppeteer:", e.message);
         return null; // Fallback
     } finally {
-        if (browser) {
-            await browser.close();
+        if (page) {
+            await page.close();
         }
     }
 
@@ -629,7 +656,7 @@ async function createImage(firstName, lastName, customemojiid, message, nameColo
     const VIEWPORT_WIDTH = BODY_PADDING_HORIZONTAL + AVATAR_WIDTH + AVATAR_MARGIN_RIGHT + BUBBLE_TAIL_WIDTH + Math.max(ESTIMATED_MAX_NAME_WIDTH, DEFAULT_MESSAGE_MAX_WIDTH + BUBBLE_PADDING_HORIZONTAL) + (50 * scale); // Add extra buffer
     const VIEWPORT_HEIGHT = 1200 * scale; // Default height, will be cropped later
 
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-gpu', '--no-proxy-server'] });
+    const browser = await getBrowser();
     const page = await browser.newPage();
     await page.setViewport({ width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT });
     // Wait until dom is loaded (reverted from networkidle0)

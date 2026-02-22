@@ -1,8 +1,8 @@
 const NodeCache = require('node-cache');
 
-// stdTTL: 600 (10 minutes), maxKeys: 500 to bound memory usage
-const groupMetadataCache = new NodeCache({ stdTTL: 600, maxKeys: 500 });
-const groupSettingsCache = new NodeCache({ stdTTL: 600, maxKeys: 500 });
+// stdTTL: 300 (5 minutes), maxKeys: 150 to keep memory footprint small on 512MB RAM
+const groupMetadataCache = new NodeCache({ stdTTL: 300, maxKeys: 150 });
+const groupSettingsCache = new NodeCache({ stdTTL: 300, maxKeys: 150 });
 
 const pendingMetadataRequests = new Map();
 const pendingSettingsRequests = new Map();
