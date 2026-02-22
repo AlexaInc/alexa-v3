@@ -1669,6 +1669,61 @@ async function handleMessage(AlexaInc, {
 
                     // command handle
                     switch (command) {
+                        case "config": {
+                            if (!isGroup) return mess.group();
+                            if (!isAdmins && !isOwner) return mess.admin();
+
+                            const sql = "SELECT * FROM `groups` WHERE group_id = ?";
+                            db.query(sql, [msg.key.remoteJid], async (err, results) => {
+                                if (err) {
+                                    console.error("Error fetching group config:", err);
+                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                        text: "❌ Error fetching group configuration."
+                                    }, {
+                                        quoted: msg
+                                    });
+                                }
+
+                                const settings = results.length > 0 ? results[0] : {
+                                    chatbot: 0,
+                                    antilink: 0,
+                                    link_a: 'delete',
+                                    antinsfw: 0,
+                                    nsfw_a: 'delete',
+                                    is_allow_bots: 0,
+                                    is_welcome: 0,
+                                    isleft_w: 0
+                                };
+
+                                const metadata = await getCachedGroupMetadata(AlexaInc, msg.key.remoteJid);
+
+                                let configText = `⚙️ *GROUP CONFIGURATION*\n\n`;
+                                configText += `📝 *Name:* ${metadata?.subject || 'Unknown'}\n`;
+                                configText += `🆔 *ID:* ${msg.key.remoteJid}\n`;
+                                configText += `👥 *Members:* ${participants.length}\n`;
+                                configText += `🤖 *Bot Allowed:* ${settings.is_allow_bots ? '✅' : '❌'}\n\n`;
+
+                                configText += `🛡️ *SECURITY SETTINGS*\n`;
+                                configText += `🔗 *Antilink:* ${settings.antilink ? '✅' : '❌'} (${settings.link_a})\n`;
+                                configText += `🔞 *AntiNSFW:* ${settings.antinsfw ? '✅' : '❌'} (${settings.nsfw_a})\n\n`;
+
+                                configText += `💬 *BOT FEATURES*\n`;
+                                configText += `🤖 *Chatbot AI:* ${settings.chatbot ? '✅' : '❌'}\n`;
+                                configText += `👋 *Welcome:* ${settings.is_welcome ? '✅' : '❌'}\n`;
+                                configText += `🚪 *Leave/Kick:* ${settings.isleft_w ? '✅' : '❌'}\n\n`;
+
+                                configText += `👑 *WhatsApp Settings:*\n`;
+                                configText += `📢 *Announce only:* ${metadata?.announce ? 'Yes' : 'No'}\n`;
+                                configText += `🛠️ *Admin only edit:* ${metadata?.restrict ? 'Yes' : 'No'}\n`;
+
+                                AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    text: configText
+                                }, {
+                                    quoted: msg
+                                });
+                            });
+                            break;
+                        }
 
 
                         case "menu":
