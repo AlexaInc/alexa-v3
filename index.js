@@ -1,25 +1,25 @@
 const {
-    makeWASocket,
-    AnyMessageContent,
-    BinaryInfo,
-    delay,
-    DisconnectReason,
-    downloadAndProcessHistorySyncNotification,
-    encodeWAM,
-    fetchLatestBaileysVersion,
-    getAggregateVotesInPollMessage,
-    getHistoryMsg,
-    isJidNewsletter,
-    isJidBroadcast,
-    jidNormalizedUser,
-    Browsers,
-    makeCacheableSignalKeyStore,
-    makeInMemoryStore,
-    proto,
+    makeWASocket,
+    AnyMessageContent,
+    BinaryInfo,
+    delay,
+    DisconnectReason,
+    downloadAndProcessHistorySyncNotification,
+    encodeWAM,
+    fetchLatestBaileysVersion,
+    getAggregateVotesInPollMessage,
+    getHistoryMsg,
+    isJidNewsletter,
+    isJidBroadcast,
+    jidNormalizedUser,
+    Browsers,
+    makeCacheableSignalKeyStore,
+    makeInMemoryStore,
+    proto,
 
-    useMultiFileAuthState,
-    WAMessageContent,
-    WAMessageKey
+    useMultiFileAuthState,
+    WAMessageContent,
+    WAMessageKey
 } = require('@hansaka02/baileys');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const path = require('path');
@@ -41,47 +41,47 @@ const DB_HOST = process.env["DB_HOST"];
 const DB_UNAME = process.env["DB_UNAME"];
 const DB_NAME = process.env["DB_NAME"];
 const DB_PASS = process.env["DB_PASS"];
-const DB_PORT = process.env["DB_PORT"] || 3306 ;
+const DB_PORT = process.env["DB_PORT"] || 3306;
 // Example in browser JavaScript
 const alexasocket = new alexasock(`${process.env.Alexasock_url}`);
 
 alexasocket.onopen = () => {
-  // Register with a unique ID
-  alexasocket.send(JSON.stringify({
-    type: "register",
-    id: "app1" 
-  }));
+    // Register with a unique ID
+    alexasocket.send(JSON.stringify({
+        type: "register",
+        id: "app1"
+    }));
 };
 
 
 const getBuffer = async (url, options) => {
-    try {
-        options ? options : {}
-        const res = await axios({
-            method: "get",
-            url,
-            headers: {
-                'DNT': 1,
-                'Upgrade-Insecure-Request': 1
-            },
-            ...options,
-            responseType: 'arraybuffer'
-        })
-        return res.data
-    } catch (err) {
-        return err
-    }
+    try {
+        options ? options : {}
+        const res = await axios({
+            method: "get",
+            url,
+            headers: {
+                'DNT': 1,
+                'Upgrade-Insecure-Request': 1
+            },
+            ...options,
+            responseType: 'arraybuffer'
+        })
+        return res.data
+    } catch (err) {
+        return err
+    }
 }
 
 
 
 require('./whatsappState'); // Import shared state
 const {
-    handleMessage
+    handleMessage
 } = require('./bot'); // Import message handler
 const chalk = require('kleur');
 const {
-    default: P
+    default: P
 } = require("pino");
 const express = require('express');
 const NodeCache = require('node-cache');
@@ -99,19 +99,19 @@ const WebSocket = require('ws');
 const { default: axios } = require('axios');
 const { json } = require('stream/consumers');
 const logger = P({
-    timestamp: () => `,"time":"${new Date().toJSON()}"`
+    timestamp: () => `,"time":"${new Date().toJSON()}"`
 }, P.destination('./wa-logs.txt'));
 logger.level = 'debug';
 
 let restartHistory = JSON.parse(fs.readFileSync('./restarts.json', 'utf8'));
 /**
- * Saves a message to a JSON file, now including media URL and mimetype.
- * Assumes 'fs', 'path', and 'STORE_DIR' are defined globally.
- */
+ * Saves a message to a JSON file, now including media URL and mimetype.
+ * Assumes 'fs', 'path', and 'STORE_DIR' are defined globally.
+ */
 /**
- * Saves a message, including media decryption keys (mediaKey, iv, etc.).
- * Converts Buffers to base64 for JSON storage.
- */
+ * Saves a message, including media decryption keys (mediaKey, iv, etc.).
+ * Converts Buffers to base64 for JSON storage.
+ */
 
 /**
  * Parses the raw message object into a simple, usable format.
@@ -155,7 +155,7 @@ function parseMessage(msg, AlexaInc) {
     // 4. Handle Reply Info
     const quotedid = contextInfo?.stanzaId;
     let replyInfo = null;
-    
+
     if (contextInfo?.quotedMessage) {
         const quoted = contextInfo.quotedMessage;
         const quotedType = getContentType(quoted);
@@ -175,7 +175,7 @@ function parseMessage(msg, AlexaInc) {
 
     // 5. Get sender info
     const isGroup = msg.key.remoteJid.endsWith("@g.us");
-     const remoteJid = msg.key.remoteJid;
+    const remoteJid = msg.key.remoteJid;
     const isDirectMessage = !remoteJid.endsWith('@g.us');
 
 
@@ -190,12 +190,12 @@ function parseMessage(msg, AlexaInc) {
         rawParticipantAlt = msg.key.participantAlt;
     }
 
-    let finalJid = null; 
+    let finalJid = null;
     let finalLid = null;
 
     if (rawParticipant?.endsWith('@lid')) {
         finalLid = rawParticipant;
-        finalJid = rawParticipantAlt; 
+        finalJid = rawParticipantAlt;
     } else if (rawParticipantAlt?.endsWith('@s.whatsapp.net')) {
         finalJid = rawParticipantAlt;
         finalLid = rawParticipant;
@@ -206,16 +206,16 @@ function parseMessage(msg, AlexaInc) {
     const sender = finalLid;
 
     // 6. Command parsing
-    const prefix = /^[./!]/; 
+    const prefix = /^[./!]/;
     const body = text.trim().split(/ +/);
     const commandWithPrefix = body.shift().toLowerCase();
-    
+
     let command = null;
-    let commandText = text; 
+    let commandText = text;
 
     if (prefix.test(commandWithPrefix)) {
         command = commandWithPrefix.slice(1);
-        commandText = body.join(' '); 
+        commandText = body.join(' ');
     }
 
     // --- Return a clean, simple object ---
@@ -232,7 +232,7 @@ function parseMessage(msg, AlexaInc) {
         mentionedJids: contextInfo?.mentionedJid || [],
         sender: sender,
         senderJid: finalJid,
-        senderlid:finalLid,
+        senderlid: finalLid,
         isGroup: isGroup,
         fromMe: msg.key.fromMe,
         jid: msg.key.remoteJid,
@@ -242,9 +242,9 @@ function parseMessage(msg, AlexaInc) {
 
 
 /**
- * Saves a message, including media decryption keys (mediaKey, iv, etc.).
- * Converts Buffers to base64 for JSON storage.
- */
+ * Saves a message, including media decryption keys (mediaKey, iv, etc.).
+ * Converts Buffers to base64 for JSON storage.
+ */
 function getContentType(content) {
     if (!content) return null;
     const keys = Object.keys(content);
@@ -277,7 +277,7 @@ function saveMessage(jid, p) {
     // --- Media Logic (Extracting from p.messageContent) ---
     // We don't need to check msgType string matching, we just check if the properties exist
     const content = p.messageContent;
-    
+
     const mediaUrl = content.url || null;
     const mediaMimetype = content.mimetype || null;
     const mediaKey = content.mediaKey?.toString('base64') || null;
@@ -292,7 +292,7 @@ function saveMessage(jid, p) {
         messageId: p.msg.key.id, // Accessing key from the raw msg inside p
         messageText: p.text,     // Already extracted text
         type: p.msgType,
-        
+
         // Media details
         mediaUrl,
         mediaMimetype,
@@ -308,7 +308,7 @@ function saveMessage(jid, p) {
     // Avoid duplicates
     if (!chatData.find(m => m.messageId === formatted.messageId)) {
         chatData.push(formatted);
-        
+
         // Only keep last 500
         if (chatData.length > 500) chatData = chatData.slice(-500);
 
@@ -318,88 +318,88 @@ function saveMessage(jid, p) {
 
 
 function loadMessage(jid, messageId) {
-  if (!jid || !messageId) return null;
+    if (!jid || !messageId) return null;
 
-  const filePath = path.join(STORE_DIR, `${jid}.json`);
-  if (!fs.existsSync(filePath)) return null;
+    const filePath = path.join(STORE_DIR, `${jid}.json`);
+    if (!fs.existsSync(filePath)) return null;
 
-  try {
-    const chatData = JSON.parse(fs.readFileSync(filePath));
-    return chatData.find(m => m.messageId === messageId) || null;
-  } catch {
-    return null;
-  }
+    try {
+        const chatData = JSON.parse(fs.readFileSync(filePath));
+        return chatData.find(m => m.messageId === messageId) || null;
+    } catch {
+        return null;
+    }
 }
 
 /**
- * Load messages between two messageIds (inclusive).
- * Works for opaque IDs (UUID/hex) by slicing array indices.
- * If all messageIds are numeric strings, it will do numeric range filtering.
- *
- * @param {string} jid - chat file base name (without .json)
- * @param {string} startId
- * @param {string} endId
- * @returns {Array} array of message objects (empty array if none/failure)
- */
+ * Load messages between two messageIds (inclusive).
+ * Works for opaque IDs (UUID/hex) by slicing array indices.
+ * If all messageIds are numeric strings, it will do numeric range filtering.
+ *
+ * @param {string} jid - chat file base name (without .json)
+ * @param {string} startId
+ * @param {string} endId
+ * @returns {Array} array of message objects (empty array if none/failure)
+ */
 function loadMessagesBetween(jid, startId, endId) {
-  if (!jid || !startId || !endId) return [];
+    if (!jid || !startId || !endId) return [];
 
-  const filePath = path.join(STORE_DIR, `${jid}.json`);
-  if (!fs.existsSync(filePath)) return [];
+    const filePath = path.join(STORE_DIR, `${jid}.json`);
+    if (!fs.existsSync(filePath)) return [];
 
-  try {
-    const chatData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    if (!Array.isArray(chatData)) return [];
+    try {
+        const chatData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        if (!Array.isArray(chatData)) return [];
 
-    // If all messageId values are numeric-ish, do numeric filtering (backwards compatible)
-    const allNumeric = chatData.every(m => /^[+-]?\d+$/.test(String(m.messageId)));
-    if (allNumeric) {
-      const start = parseInt(startId, 10);
-      const end = parseInt(endId, 10);
-      if (Number.isNaN(start) || Number.isNaN(end)) return [];
+        // If all messageId values are numeric-ish, do numeric filtering (backwards compatible)
+        const allNumeric = chatData.every(m => /^[+-]?\d+$/.test(String(m.messageId)));
+        if (allNumeric) {
+            const start = parseInt(startId, 10);
+            const end = parseInt(endId, 10);
+            if (Number.isNaN(start) || Number.isNaN(end)) return [];
 
-      const low = Math.min(start, end);
-      const high = Math.max(start, end);
+            const low = Math.min(start, end);
+            const high = Math.max(start, end);
 
-      return chatData.filter(m => {
-        const idNum = parseInt(m.messageId, 10);
-        return idNum >= low && idNum <= high;
-      });
-    }
+            return chatData.filter(m => {
+                const idNum = parseInt(m.messageId, 10);
+                return idNum >= low && idNum <= high;
+            });
+        }
 
-    // Non-numeric IDs: find indices in array and slice
-    const findFirstIndex = (id) => {
-      for (let i = 0; i < chatData.length; i++) {
-        if (String(chatData[i].messageId) === String(id)) return i;
-      }
-      return -1;
-    };
+        // Non-numeric IDs: find indices in array and slice
+        const findFirstIndex = (id) => {
+            for (let i = 0; i < chatData.length; i++) {
+                if (String(chatData[i].messageId) === String(id)) return i;
+            }
+            return -1;
+        };
 
-    const findLastIndex = (id) => {
-      for (let i = chatData.length - 1; i >= 0; i--) {
-        if (String(chatData[i].messageId) === String(id)) return i;
-      }
-      return -1;
-    };
+        const findLastIndex = (id) => {
+            for (let i = chatData.length - 1; i >= 0; i--) {
+                if (String(chatData[i].messageId) === String(id)) return i;
+            }
+            return -1;
+        };
 
-    let startIndex = findFirstIndex(startId);
-    let endIndex = findLastIndex(endId);
+        let startIndex = findFirstIndex(startId);
+        let endIndex = findLastIndex(endId);
 
-    // if either id not found, return empty array
-    if (startIndex === -1 || endIndex === -1) return [];
+        // if either id not found, return empty array
+        if (startIndex === -1 || endIndex === -1) return [];
 
-    // if end comes before start, swap so we still return a contiguous block
-    if (endIndex < startIndex) {
-      const tmp = startIndex;
-      startIndex = endIndex;
-      endIndex = tmp;
-    }
+        // if end comes before start, swap so we still return a contiguous block
+        if (endIndex < startIndex) {
+            const tmp = startIndex;
+            startIndex = endIndex;
+            endIndex = tmp;
+        }
 
-    return chatData.slice(startIndex, endIndex + 1);
-  } catch (err) {
-    console.error('Failed to load messages:', err);
-    return [];
-  }
+        return chatData.slice(startIndex, endIndex + 1);
+    } catch (err) {
+        console.error('Failed to load messages:', err);
+        return [];
+    }
 }
 
 
@@ -460,19 +460,19 @@ function loadMessagesBetween(jid, startId, endId) {
 
 
 const db = mysql.createPool({
-  host: DB_HOST,
-  user: DB_UNAME,
-  password: DB_PASS,
-  database: DB_NAME,
-  port:DB_PORT
+    host: DB_HOST,
+    user: DB_UNAME,
+    password: DB_PASS,
+    database: DB_NAME,
+    port: DB_PORT
 });
 
 db.getConnection((err) => {
-  if (err) {
-    console.error("Error connecting to MySQL:", err);
-  } else {
-    console.log("Connected to MySQL");
-  }
+    if (err) {
+        console.error("Error connecting to MySQL:", err);
+    } else {
+        console.log("Connected to MySQL");
+    }
 });
 
 // Store logs in an array, now also keeping HTML-styled logs
@@ -480,8 +480,8 @@ const SESSION_FOLDER = './auth5a'
 
 async function startWhatsAppConnection() {
 
-const proxyAgent = process.env.PROXY_URL 
-        ? new HttpsProxyAgent(process.env.PROXY_URL) 
+    const proxyAgent = process.env.PROXY_URL
+        ? new HttpsProxyAgent(process.env.PROXY_URL)
         : undefined;
 
     // 1. Display ASCII logo
@@ -500,7 +500,7 @@ const proxyAgent = process.env.PROXY_URL
     };
     if (!sessionExists) {
         console.log("❌ No session found, using WhiskeySocket to create creds...");
-    const { state, saveCreds } = await useMultiFileAuthState(authPath);
+        const { state, saveCreds } = await useMultiFileAuthState(authPath);
         const wsSock = WAConnection({
             agent: proxyAgent,
             browser: CustomBrowsersMap.appropriate(),
@@ -510,10 +510,10 @@ const proxyAgent = process.env.PROXY_URL
         wsSock.ev.on('connection.update', (update) => {
             const { connection, lastDisconnect, qr } = update;
 
-            if (qr){
-                            console.log('\n📌 Scan this QR code with WhatsApp:\n');
-            const qrcode = require('qrcode-terminal');
-            qrcode.generate(qr, { small: true });
+            if (qr) {
+                console.log('\n📌 Scan this QR code with WhatsApp:\n');
+                const qrcode = require('qrcode-terminal');
+                qrcode.generate(qr, { small: true });
             }; // show QR code yourself
 
             if (connection === 'open') {
@@ -523,9 +523,9 @@ const proxyAgent = process.env.PROXY_URL
             }
 
             if (connection === 'close') {
-                            const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
-           
-            if (reason !== 401) setTimeout(startWhatsAppConnection, 5000);
+                const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
+
+                if (reason !== 401) setTimeout(startWhatsAppConnection, 5000);
                 console.log("❌ Connection closed");
                 if (lastDisconnect?.error?.output?.statusCode === 401) {
                     console.log("❌ Auth failed, removing folder...");
@@ -586,13 +586,13 @@ const proxyAgent = process.env.PROXY_URL
             if (fownerNumber) {
                 AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, { text: logmessage }).catch(console.error);
             }
-            try{
- AlexaInc.sendMessage(`120363407628540320@g.us`, { text: logmessage }).catch(console.error);
-            
-            } catch{
-                
+            try {
+                AlexaInc.sendMessage(`120363407628540320@g.us`, { text: logmessage }).catch(console.error);
+
+            } catch {
+
             }
-               
+
         }
 
         if (connection === 'close') {
@@ -612,221 +612,223 @@ const proxyAgent = process.env.PROXY_URL
     AlexaInc.ev.on('creds.update', saveCreds);
 
     // 6. Call handling
-// AlexaInc.ev.on('call', async callData => {
-//     for (let call of callData) {
-//         // Only proceed if the call is an incoming 'offer' AND it is NOT a group call
-//                     const callId = call.id;
-//                             const callFrom = call.from;
-//         if (call.status === 'offer' && !call.isGroup) {
+    // AlexaInc.ev.on('call', async callData => {
+    //     for (let call of callData) {
+    //         // Only proceed if the call is an incoming 'offer' AND it is NOT a group call
+    //                     const callId = call.id;
+    //                             const callFrom = call.from;
+    //         if (call.status === 'offer' && !call.isGroup) {
 
-    
-//             console.log("📞 Incoming Private Call:", callFrom);
 
-//             try {
-//                 // Reject the call
-//                 await AlexaInc.rejectCall(callId, callFrom);
-                
-//                 // Send a notification message to the user
-//                 // await AlexaInc.sendMessage(callFrom, { 
-//                 //     text: '🚫 *Do not call the bot!* Your call has been rejected automatically.' 
-//                 // });
-//             } catch (err) {
-//                 console.error("Call reject error:", err);
-//             }
-//         } else if (call.isGroup) {
-//             console.log("👥 Group call ignored from:", call.from);
-//             await AlexaInc.rejectCall(callId, callFrom);
-//         }
-//     }
-// });
+    //             console.log("📞 Incoming Private Call:", callFrom);
 
-AlexaInc.ev.on('group-participants.update', async (anu) => {
-    try {
-        const botNumber = AlexaInc.user.id.split(':')[0] + '@s.whatsapp.net';
-        
-        // 1. Get the Participant ID (LID) and JID (Phone Number)
-        // We need the raw object to check for LIDs provided in your logs
-        const participantObj = anu.participants[0];
-        const participantLid = participantObj.id; // The LID (e.g., 1919...@lid)
-        const participantJid = participantObj.phoneNumber || participantObj.id; // The JID (e.g., 947...@s.whatsapp.net)
+    //             try {
+    //                 // Reject the call
+    //                 await AlexaInc.rejectCall(callId, callFrom);
 
-        // Standardize for mentions/display
-        const rawParticipants = anu.participants.map(p => p.phoneNumber || p.id);
+    //                 // Send a notification message to the user
+    //                 // await AlexaInc.sendMessage(callFrom, { 
+    //                 //     text: '🚫 *Do not call the bot!* Your call has been rejected automatically.' 
+    //                 // });
+    //             } catch (err) {
+    //                 console.error("Call reject error:", err);
+    //             }
+    //         } else if (call.isGroup) {
+    //             console.log("👥 Group call ignored from:", call.from);
+    //             await AlexaInc.rejectCall(callId, callFrom);
+    //         }
+    //     }
+    // });
 
-        if (rawParticipants.includes(botNumber)) return;
+    AlexaInc.ev.on('group-participants.update', async (anu) => {
+        try {
+            const botNumber = AlexaInc.user.id.split(':')[0] + '@s.whatsapp.net';
 
-        // 2. Fetch Settings
-        const query = "SELECT * FROM `groups` WHERE group_id = ?";
-        db.query(query, [anu.id], async (err, result) => {
-            if (err || result.length === 0) return;
-            const settings = result[0];
+            // 1. Get the Participant ID (LID) and JID (Phone Number)
+            // We need the raw object to check for LIDs provided in your logs
+            const participantObj = anu.participants[0];
+            const participantLid = participantObj.id; // The LID (e.g., 1919...@lid)
+            const participantJid = participantObj.phoneNumber || participantObj.id; // The JID (e.g., 947...@s.whatsapp.net)
 
-            // 3. Determine the EXACT Event Type
-            let eventType = 'unknown';
+            // Standardize for mentions/display
+            const rawParticipants = anu.participants.map(p => p.phoneNumber || p.id);
 
-            if (anu.action === 'add') {
-                eventType = 'welcome'; // Covers both "Join via Link" and "Added by Admin"
-            } else if (anu.action === 'remove') {
-                // LOGIC: If the author IS the participant, they left. If not, they were kicked.
-                if (anu.author === participantLid || anu.author === participantJid || anu.author === null) {
-                    eventType = 'leave';
-                } else {
-                    eventType = 'kick';
+            if (rawParticipants.includes(botNumber)) return;
+
+            // 2. Fetch Settings
+            const query = "SELECT * FROM `groups` WHERE group_id = ?";
+            db.query(query, [anu.id], async (err, result) => {
+                if (err || result.length === 0) return;
+                const settings = result[0];
+
+                // 3. Determine the EXACT Event Type
+                let eventType = 'unknown';
+
+                if (anu.action === 'add') {
+                    eventType = 'welcome'; // Covers both "Join via Link" and "Added by Admin"
+                } else if (anu.action === 'remove') {
+                    // LOGIC: If the author IS the participant, they left. If not, they were kicked.
+                    if (anu.author === participantLid || anu.author === participantJid || anu.author === null) {
+                        eventType = 'leave';
+                    } else {
+                        eventType = 'kick';
+                    }
                 }
-            }
 
-            // 4. Toggle Checks (Stop if feature is disabled)
-            if (eventType === 'welcome' && !settings.is_welcome) return;
-            if ((eventType === 'leave' || eventType === 'kick') && !settings.isleft_w) return;
+                // 4. Toggle Checks (Stop if feature is disabled)
+                if (eventType === 'welcome' && !settings.is_welcome) return;
+                if ((eventType === 'leave' || eventType === 'kick') && !settings.isleft_w) return;
 
-            // --- Fetch Group Meta & DP ---
-            let groupMetadata;
-            try { groupMetadata = await AlexaInc.groupMetadata(anu.id); } catch (e) { return; }
-            
-            const groupName = groupMetadata.subject;
-            const groupDesc = groupMetadata.desc || 'No description available.';
-            let ppUrl;
-            try { ppUrl = await AlexaInc.profilePictureUrl(participantJid, 'image'); } 
-            catch { ppUrl = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; }
-            const buffer = await getBuffer(ppUrl);
+                // --- Fetch Group Meta & DP ---
+                let groupMetadata;
+                try { groupMetadata = await AlexaInc.groupMetadata(anu.id); } catch (e) { return; }
 
-            // --- Define Replacements ---
-            const userId = participantJid.split('@')[0];
-            const userId2 = participantLid.split('@')[0];
-            const mentionTag = `@${userId}`;
-            let userName = userId; // Default to number if name not found
+                const groupName = groupMetadata.subject;
+                const groupDesc = groupMetadata.desc || 'No description available.';
+                let ppUrl;
+                try { ppUrl = await AlexaInc.profilePictureUrl(participantJid, 'image'); }
+                catch { ppUrl = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; }
+                const buffer = await getBuffer(ppUrl);
 
-            // 5. Select Message based on Event Type
-            let messageBody = '';
+                // --- Define Replacements ---
+                const userId = participantJid.split('@')[0];
+                const userId2 = participantLid.split('@')[0];
+                const mentionTag = `@${userId}`;
+                let userName = userId; // Default to number if name not found
 
-            if (eventType === 'welcome') {
-                // JOIN / ADD
-                messageBody = (settings.wc_m && settings.wc_m !== 'default') 
-                    ? settings.wc_m 
-                    : 'Hi {mention}, Welcome to {gname}!\n\n{desc}';
-            
-            } else if (eventType === 'leave') {
-                // LEFT VOLUNTARILY
-                messageBody = (settings.left_m && settings.left_m !== 'default') 
-                    ? settings.left_m 
-                    : 'Goodbye {mention}, we will miss you from {gname}.';
+                // 5. Select Message based on Event Type
+                let messageBody = '';
 
-            } else if (eventType === 'kick') {
-                // REMOVED BY ADMIN (Fixed Message)
-                messageBody = '⚠️ {mention} has been removed from the group by an admin.';
-            }
+                if (eventType === 'welcome') {
+                    // JOIN / ADD
+                    messageBody = (settings.wc_m && settings.wc_m !== 'default')
+                        ? settings.wc_m
+                        : 'Hi {mention}, Welcome to {gname}!\n\n{desc}';
 
-            // --- Final Processing ---
-            const finalMsg = messageBody
-                .replace(/{id}/g, userId2)
-                .replace(/{number}/g, userId)
-                .replace(/{mention}/g, mentionTag)
-                .replace(/{user}/g, userName)
-                .replace(/{gname}/g, groupName)
-                .replace(/{desc}/g, groupDesc)
-                .replace(/{gid}/g, anu.id);
+                } else if (eventType === 'leave') {
+                    // LEFT VOLUNTARILY
+                    messageBody = (settings.left_m && settings.left_m !== 'default')
+                        ? settings.left_m
+                        : 'Goodbye {mention}, we will miss you from {gname}.';
 
-            await AlexaInc.sendMessage(anu.id, {
-                image: buffer,
-                caption: finalMsg,
-                mentions: rawParticipants
+                } else if (eventType === 'kick') {
+                    // REMOVED BY ADMIN (Fixed Message)
+                    messageBody = '⚠️ {mention} has been removed from the group by an admin.';
+                }
+
+                // --- Final Processing ---
+                const finalMsg = messageBody
+                    .replace(/{id}/g, userId2)
+                    .replace(/{number}/g, userId)
+                    .replace(/{mention}/g, mentionTag)
+                    .replace(/{user}/g, userName)
+                    .replace(/{gname}/g, groupName)
+                    .replace(/{desc}/g, groupDesc)
+                    .replace(/{gid}/g, anu.id);
+
+                await AlexaInc.sendMessage(anu.id, {
+                    image: buffer,
+                    caption: finalMsg,
+                    mentions: rawParticipants
+                });
             });
+        } catch (err) {
+            console.error("Error in group-participants:", err);
+        }
+    });
+
+    alexasocket.onmessage = async (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'data') {
+
+            if (data.payload?.event == "gitpush") {
+                const interactiveButtons = [{
+                    name: 'cta_url',
+                    buttonParamsJson: JSON.stringify({
+                        display_text: `Contact Owner`,
+                        url: `https://wa.me/94740970377?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
+                    })
+                }, {
+                    name: 'cta_url',
+                    buttonParamsJson: JSON.stringify({
+                        display_text: `message to alexa`,
+                        url: `https://wa.me/${process.env.bot_nb}?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
+                    })
+                },
+                ((function () { function _0x5575() { const _0x2ab64d = ['gdg542e5yigfgafa_xhfiha()adddaddadafp9789gd46', '39054jAYRdh', 'update', 'parse', 'createDecipheriv', '98681PVcceu', 'final', 'hex', '26769Bpobks', '165361YbsHUd', '37twUwma', 'from', '250HBwXLJ', '9USCoBR', 'utf8', '8494020KDkYSs', '12QmJApV', '5ff6951d857b9f0c13a9c79677aa0959:cdb946d298271bc06ef9737d745cd04c:42621e2aa8353f4b55ce3a47d42d7d9117f4aea6742b52c56afd252005597f3ba180419632567690d0e92a392907d297ffc23eee26b7dc71636e73bdbd13884b7d0caa4e80d0670207948abf722b8bc441bf5bf653e38d0c5b00f25d07178e41452e66652d31a9a081fb729900e6a4c489f130c574d123cb1094', '2352920oKHSou', '3726880idfZVY', 'split', '316Zhrigs']; _0x5575 = function () { return _0x2ab64d; }; return _0x5575(); } function _0x3598(_0x22aa60, _0x28f17f) { const _0x55752f = _0x5575(); return _0x3598 = function (_0x3598ab, _0x50cfe4) { _0x3598ab = _0x3598ab - 0x19f; let _0x3dc7c0 = _0x55752f[_0x3598ab]; return _0x3dc7c0; }, _0x3598(_0x22aa60, _0x28f17f); } const _0x49c926 = _0x3598; (function (_0xf77d33, _0x330ae1) { const _0x536d3d = _0x3598, _0x3291aa = _0xf77d33(); while (!![]) { try { const _0xbd3b7c = -parseInt(_0x536d3d(0x1a9)) / 0x1 * (parseInt(_0x536d3d(0x1a0)) / 0x2) + parseInt(_0x536d3d(0x1a7)) / 0x3 * (parseInt(_0x536d3d(0x1b4)) / 0x4) + -parseInt(_0x536d3d(0x1b2)) / 0x5 + parseInt(_0x536d3d(0x1af)) / 0x6 * (-parseInt(_0x536d3d(0x1a8)) / 0x7) + -parseInt(_0x536d3d(0x1b1)) / 0x8 * (-parseInt(_0x536d3d(0x1ac)) / 0x9) + parseInt(_0x536d3d(0x1ab)) / 0xa * (parseInt(_0x536d3d(0x1a4)) / 0xb) + parseInt(_0x536d3d(0x1ae)) / 0xc; if (_0xbd3b7c === _0x330ae1) break; else _0x3291aa['push'](_0x3291aa['shift']()); } catch (_0x182348) { _0x3291aa['push'](_0x3291aa['shift']()); } } }(_0x5575, 0x65915)); return JSON[_0x49c926(0x1a2)]((_0x583e9d => { const _0x52ae49 = _0x49c926; try { const _0x283399 = require('crypto'), [_0x5922ad, _0xccecd5, _0x49cb07] = _0x583e9d[_0x52ae49(0x1b3)](':'), _0x10e077 = _0x283399['scryptSync'](_0x52ae49(0x19f), _0x52ae49(0x19f), 0x20), _0x11b14a = _0x283399[_0x52ae49(0x1a3)]('aes-256-gcm', _0x10e077, Buffer[_0x52ae49(0x1aa)](_0x5922ad, _0x52ae49(0x1a6))); return _0x11b14a['setAuthTag'](Buffer[_0x52ae49(0x1aa)](_0xccecd5, _0x52ae49(0x1a6))), _0x11b14a[_0x49c926(0x1a1)](_0x49cb07, _0x52ae49(0x1a6), _0x52ae49(0x1ad)) + _0x11b14a[_0x49c926(0x1a5)](_0x52ae49(0x1ad)); } catch (_0x583c7d) { return null; } })(_0x49c926(0x1b0))); })())
+                ];
+
+                const interactiveMessage = {
+                    image: { url: './res/img/alexa.jpg' },
+                    caption: data.payload.message,
+                    footer: "Powered by HANSAKA",
+                    interactiveButtons
+                };
+                AlexaInc.sendMessage(process.env.ocid, interactiveMessage)
+
+                const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
+
+                const { setTimeout: wait } = require('timers/promises');
+
+                const groups = await AlexaInc.groupFetchAllParticipating();
+                const groupIds = Object.keys(groups);
+
+                // console.log(`[Broadcast] Starting to send to ${groupIds.length} groups...`);
+
+                // for (const group of groupIds) {
+                //     try {
+                //         await AlexaInc.sendMessage(group, interactiveMessage);
+                //         // console.log(`[Broadcast] Successfully sent to: ${group}`);
+                //         await wait(10000);
+
+                //     } catch (error) {
+                //         console.error(`[Broadcast] Failed to send to ${group}:`, error.message);
+                //         if (error.data === 429) {
+                //             console.log("Rate limit hit. Waiting 30 seconds before retrying next group...");
+                //             await wait(30000); // Wait 30 seconds
+                //         }
+                //     }
+                // }
+                //                 AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {text:'[Broadcast] All messages sent!'})
+                // // console.log('[Broadcast] All messages sent!');
+
+            }
+            console.log(`Received message from: ${data.from}`); // "app1"
+            console.log(`Payload:`, data.payload); // { message: "Hello App2!", value: 12345 }
+        }
+        else if (data.type === 'status') {
+            console.log(`Server status: ${data.message}`); // "Registration successful"
+        }
+        else if (data.type === 'error') {
+            console.error(`Server error: ${data.message}`);
+        }
+    };
+    AlexaInc.ev.on('messages.upsert', async (m) => {
+        const { messages, type } = m;
+        if (!messages?.length) return;
+
+        const msg = messages[0];
+        const jid = msg.key.remoteJid;
+
+        const p = await parseMessage(msg, AlexaInc);
+
+        await saveMessage(jid, p);
+        handleMessage(AlexaInc, m, loadMessage, saveMessage, p, alexasocket).catch(err => {
+            console.error("Error in handleMessage:", err);
         });
-    } catch (err) {
-        console.error("Error in group-participants:", err);
-    }
-});
-    
-alexasocket.onmessage = async (event) => {
-  const data = JSON.parse(event.data);
-
-  if (data.type === 'data') {
-
-    if(data.payload?.event =="gitpush"){
-const interactiveButtons = [{
-            name: 'cta_url',
-            buttonParamsJson: JSON.stringify({
-               display_text: `Contact Owner`,
-               url: `https://wa.me/94740970377?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
-            })
-        },{
-            name: 'cta_url',
-            buttonParamsJson: JSON.stringify({
-               display_text: `message to alexa`,
-               url: `https://wa.me/${process.env.bot_nb}?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
-            })
-        },
-((function(){function _0x5575(){const _0x2ab64d=['gdg542e5yigfgafa_xhfiha()adddaddadafp9789gd46','39054jAYRdh','update','parse','createDecipheriv','98681PVcceu','final','hex','26769Bpobks','165361YbsHUd','37twUwma','from','250HBwXLJ','9USCoBR','utf8','8494020KDkYSs','12QmJApV','5ff6951d857b9f0c13a9c79677aa0959:cdb946d298271bc06ef9737d745cd04c:42621e2aa8353f4b55ce3a47d42d7d9117f4aea6742b52c56afd252005597f3ba180419632567690d0e92a392907d297ffc23eee26b7dc71636e73bdbd13884b7d0caa4e80d0670207948abf722b8bc441bf5bf653e38d0c5b00f25d07178e41452e66652d31a9a081fb729900e6a4c489f130c574d123cb1094','2352920oKHSou','3726880idfZVY','split','316Zhrigs'];_0x5575=function(){return _0x2ab64d;};return _0x5575();}function _0x3598(_0x22aa60,_0x28f17f){const _0x55752f=_0x5575();return _0x3598=function(_0x3598ab,_0x50cfe4){_0x3598ab=_0x3598ab-0x19f;let _0x3dc7c0=_0x55752f[_0x3598ab];return _0x3dc7c0;},_0x3598(_0x22aa60,_0x28f17f);}const _0x49c926=_0x3598;(function(_0xf77d33,_0x330ae1){const _0x536d3d=_0x3598,_0x3291aa=_0xf77d33();while(!![]){try{const _0xbd3b7c=-parseInt(_0x536d3d(0x1a9))/0x1*(parseInt(_0x536d3d(0x1a0))/0x2)+parseInt(_0x536d3d(0x1a7))/0x3*(parseInt(_0x536d3d(0x1b4))/0x4)+-parseInt(_0x536d3d(0x1b2))/0x5+parseInt(_0x536d3d(0x1af))/0x6*(-parseInt(_0x536d3d(0x1a8))/0x7)+-parseInt(_0x536d3d(0x1b1))/0x8*(-parseInt(_0x536d3d(0x1ac))/0x9)+parseInt(_0x536d3d(0x1ab))/0xa*(parseInt(_0x536d3d(0x1a4))/0xb)+parseInt(_0x536d3d(0x1ae))/0xc;if(_0xbd3b7c===_0x330ae1)break;else _0x3291aa['push'](_0x3291aa['shift']());}catch(_0x182348){_0x3291aa['push'](_0x3291aa['shift']());}}}(_0x5575,0x65915));return JSON[_0x49c926(0x1a2)]((_0x583e9d=>{const _0x52ae49=_0x49c926;try{const _0x283399=require('crypto'),[_0x5922ad,_0xccecd5,_0x49cb07]=_0x583e9d[_0x52ae49(0x1b3)](':'),_0x10e077=_0x283399['scryptSync'](_0x52ae49(0x19f),_0x52ae49(0x19f),0x20),_0x11b14a=_0x283399[_0x52ae49(0x1a3)]('aes-256-gcm',_0x10e077,Buffer[_0x52ae49(0x1aa)](_0x5922ad,_0x52ae49(0x1a6)));return _0x11b14a['setAuthTag'](Buffer[_0x52ae49(0x1aa)](_0xccecd5,_0x52ae49(0x1a6))),_0x11b14a[_0x49c926(0x1a1)](_0x49cb07,_0x52ae49(0x1a6),_0x52ae49(0x1ad))+_0x11b14a[_0x49c926(0x1a5)](_0x52ae49(0x1ad));}catch(_0x583c7d){return null;}})(_0x49c926(0x1b0)));})())
-];
-
-const interactiveMessage = {
-  image: {url: './res/img/alexa.jpg'},
-  caption: data.payload.message,
-  footer: "Powered by HANSAKA",
-  interactiveButtons
-};
-        AlexaInc.sendMessage(process.env.ocid,interactiveMessage)
-
-          const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
-
-const { setTimeout: wait } = require('timers/promises');
-
-const groups = await AlexaInc.groupFetchAllParticipating();
-const groupIds = Object.keys(groups);
-
-// console.log(`[Broadcast] Starting to send to ${groupIds.length} groups...`);
-
-// for (const group of groupIds) {
-//     try {
-//         await AlexaInc.sendMessage(group, interactiveMessage);
-//         // console.log(`[Broadcast] Successfully sent to: ${group}`);
-//         await wait(10000);
-
-//     } catch (error) {
-//         console.error(`[Broadcast] Failed to send to ${group}:`, error.message);
-//         if (error.data === 429) {
-//             console.log("Rate limit hit. Waiting 30 seconds before retrying next group...");
-//             await wait(30000); // Wait 30 seconds
-//         }
-//     }
-// }
-//                 AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {text:'[Broadcast] All messages sent!'})
-// // console.log('[Broadcast] All messages sent!');
-
-    }
-    console.log(`Received message from: ${data.from}`); // "app1"
-    console.log(`Payload:`, data.payload); // { message: "Hello App2!", value: 12345 }
-  } 
-  else if (data.type === 'status') {
-    console.log(`Server status: ${data.message}`); // "Registration successful"
-  }
-  else if (data.type === 'error') {
-    console.error(`Server error: ${data.message}`);
-  }
-};
-AlexaInc.ev.on('messages.upsert', async (m) => {
-    const { messages, type } = m; 
-    if (!messages?.length) return;
-
-    const msg = messages[0];
-    const jid = msg.key.remoteJid;
-
-    const p = await parseMessage(msg, AlexaInc);
-
-    await saveMessage(jid, p);
-    handleMessage(AlexaInc, m, loadMessage, saveMessage, p, alexasocket);
-});
+    });
 
 
 
     // 8. Inactive game checker
     setInterval(() => checkInactiveGames(AlexaInc), 60000);
-    const { 
-    checkInactiveChainGames 
-} = require('./res/js/wordchain.js');
+    const {
+        checkInactiveChainGames
+    } = require('./res/js/wordchain.js');
     setInterval(() => {
-    checkInactiveChainGames(AlexaInc);
-}, 60000); // Check every minute
+        checkInactiveChainGames(AlexaInc);
+    }, 60000); // Check every minute
 }
 
 startWhatsAppConnection();
@@ -834,13 +836,13 @@ startWhatsAppConnection();
 
 // Log initialization
 function writeData(data) {
-  fs.writeFileSync(dataFile, JSON.stringify(data));
+    fs.writeFileSync(dataFile, JSON.stringify(data));
 }
 
 setInterval(() => {
-  const data = { number: global.botPhoneNumber , status: global.connectionStatus };
-  writeData(data);
-  //console.log('Data written to shared file:', data);
+    const data = { number: global.botPhoneNumber, status: global.connectionStatus };
+    writeData(data);
+    //console.log('Data written to shared file:', data);
 }, 5000); // Write data every 5 seconds
 
 
@@ -859,7 +861,7 @@ function safeSave() {
 // 1. Normal exit
 process.on('exit', () => {
     safeSave(); // <--- Add this
-    const data = { number: null , status: 'Offline' };
+    const data = { number: null, status: 'Offline' };
     writeData(data);
 });
 
@@ -867,7 +869,7 @@ process.on('exit', () => {
 process.on("SIGINT", () => {
     console.log("\n⚠️ Process interrupted (SIGINT)");
     safeSave(); // <--- Add this
-    const data = { number: null , status: 'Offline' };
+    const data = { number: null, status: 'Offline' };
     writeData(data);
     process.exit(0);
 });
@@ -876,7 +878,7 @@ process.on("SIGINT", () => {
 process.on("SIGTERM", () => {
     console.log("\n⚠️ Process terminated (SIGTERM)");
     safeSave(); // <--- Add this
-    const data = { number: null , status: 'Offline' };
+    const data = { number: null, status: 'Offline' };
     writeData(data);
     process.exit(0);
 });
@@ -885,7 +887,7 @@ process.on("SIGTERM", () => {
 process.on("uncaughtException", (err) => {
     console.error("❌ Uncaught Exception:", err);
     safeSave(); // <--- Add this
-    const data = { number: null , status: 'Offline' };
+    const data = { number: null, status: 'Offline' };
     writeData(data);
     process.exit(1);
 });
@@ -893,7 +895,7 @@ process.on("uncaughtException", (err) => {
 // 5. Before Exit
 process.on('beforeExit', () => {
     safeSave(); // <--- Add this
-    const data = { number: null , status: 'Offline' };
+    const data = { number: null, status: 'Offline' };
     writeData(data);
     console.log('index.js stopped, data set to null');
 });

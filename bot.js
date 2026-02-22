@@ -935,13 +935,7 @@ async function handleMessage(AlexaInc, {
     messages,
     type
 }, loadMessage, saveMessage, p, alexasocket) {
-
-
-    // const botNumber = await AlexaInc.user.id.split(':')[0];
-
-
-
-    if (type === 'notify') {
+    try {
         const msg = messages[0];
 
         const mess = {
@@ -6244,6 +6238,8 @@ ${summary}
             }
 
         }
+    } catch (e) {
+        console.error("❌ Critical Error in handleMessage:", e);
     }
 }
 
