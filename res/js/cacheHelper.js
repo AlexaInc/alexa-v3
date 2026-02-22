@@ -16,10 +16,25 @@ function setAlexaInstance(instance) {
 /**
  * Fetches group metadata with caching and request deduplication.
  */
-async function getCachedGroupMetadata(socket, jid) {
-    const AlexaInc = socket || alexaInstance;
-    if (!AlexaInc) {
-        console.warn(`[CacheHelper] No Alexa instance available for metadata fetch of ${jid}`);
+async function getCachedGroupMetadata(arg1, arg2) {
+    let jid, socket;
+
+    // Baileys calls it with (jid), my bot.js calls it with (socket, jid)
+    if (typeof arg1 === 'string') {
+        jid = arg1;
+        socket = arg2 || alexaInstance;
+    } else {
+        socket = arg1 || alexaInstance;
+        jid = arg2;
+    }
+
+    if (!jid) {
+        console.error('[CacheHelper] getCachedGroupMetadata called with undefined JID');
+        return null;
+    }
+
+    if (!socket) {
+        console.warn(`[CacheHelper] No socket available for metadata fetch of ${jid}`);
         return null;
     }
 
@@ -33,7 +48,7 @@ async function getCachedGroupMetadata(socket, jid) {
 
     const requestPromise = (async () => {
         try {
-            const metadata = await AlexaInc.groupMetadata(jid);
+            const metadata = await socket.groupMetadata(jid);
             if (metadata) {
                 groupMetadataCache.set(jid, metadata);
             }
@@ -54,6 +69,10 @@ async function getCachedGroupMetadata(socket, jid) {
  * Fetches group settings from MySQL with caching and deduplication.
  */
 async function getCachedGroupSettings(db, jid) {
+    if (!jid) {
+        console.error('[CacheHelper] getCachedGroupSettings called with undefined JID');
+        return null;
+    }
     const cached = groupSettingsCache.get(jid);
     if (cached) return cached;
 
