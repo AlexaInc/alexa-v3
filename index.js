@@ -22,6 +22,7 @@ const {
     WAMessageKey
 } = require('@hansaka02/baileys');
 const { HttpsProxyAgent } = require('https-proxy-agent');
+const { SocksProxyAgent } = require('socks-proxy-agent');
 const path = require('path');
 const { makeWASocket: WAConnection } = require('@hansaka02/baileys');
 ; // for first-time QR login
@@ -479,9 +480,18 @@ const SESSION_FOLDER = './auth5a'
 
 async function startWhatsAppConnection() {
 
-    const proxyAgent = process.env.PROXY_URL
-        ? new HttpsProxyAgent(process.env.PROXY_URL)
-        : undefined;
+    const proxyUrl = process.env.PROXY_URL;
+    let proxyAgent = undefined;
+
+    if (proxyUrl) {
+        if (proxyUrl.startsWith('socks')) {
+            proxyAgent = new SocksProxyAgent(proxyUrl);
+            console.log('✅ Using SOCKS Proxy for Baileys');
+        } else {
+            proxyAgent = new HttpsProxyAgent(proxyUrl);
+            console.log('✅ Using HTTPS Proxy for Baileys');
+        }
+    }
 
     // 1. Display ASCII logo
     fs.readFile('./res/ascii.txt', 'utf8', (err, data) => {
