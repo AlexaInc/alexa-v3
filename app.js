@@ -59,10 +59,15 @@ function logOutput(scriptName, type, data) {
 }
 
 function startApp(scriptName, onExit) {
-  const child = spawn('node', [scriptName]);
-  
+  const args = [scriptName];
+  // Add memory limit for the main index.js to prevent 512MB RAM overflow
+  if (scriptName === 'index.js') {
+    args.unshift('--max-old-space-size=250');
+  }
+  const child = spawn('node', args);
+
   // This will store any error output
-  let lastCrashReason = null; 
+  let lastCrashReason = null;
 
   // --- Buffers to store partial lines ---
   let stdoutBuffer = '';
@@ -74,12 +79,12 @@ function startApp(scriptName, onExit) {
     let boundary;
 
     while ((boundary = buffer.indexOf('\n')) !== -1) {
-      const line = buffer.substring(0, boundary).trim(); 
-      buffer = buffer.substring(boundary + 1);      
+      const line = buffer.substring(0, boundary).trim();
+      buffer = buffer.substring(boundary + 1);
 
       if (line) {
         // Log all output to its respective file
-        logOutput(scriptName, type, line); 
+        logOutput(scriptName, type, line);
 
         // --- Start of Error/Code Checking ---
         if (type === 'stderr:') {
@@ -89,7 +94,7 @@ function startApp(scriptName, onExit) {
           } else if (scriptName === 'index.js' && codeRegex.test(line)) {
             // Case 2: 3-digit code restart (like 428)
             // This is not a crash, so clear any pending crash reason
-            lastCrashReason = null; 
+            lastCrashReason = null;
             const code = parseInt(line, 10);
             if (!isNaN(code) && code !== 515) {
               restartIndex(code);
@@ -103,7 +108,7 @@ function startApp(scriptName, onExit) {
           // Case 4: 3-digit code restart from stdout
           if (scriptName === 'index.js' && codeRegex.test(line)) {
             // This is not a crash, so clear any pending crash reason
-            lastCrashReason = null; 
+            lastCrashReason = null;
             const code = parseInt(line, 10);
             if (!isNaN(code) && code !== 515) {
               restartIndex(code);
@@ -130,26 +135,26 @@ function startApp(scriptName, onExit) {
   function restartIndex(statusCode) {
     // This is a controlled restart, not a crash.
     // Clear any error we might have collected.
-    lastCrashReason = null; 
-    
+    lastCrashReason = null;
+
     saveRestartReason(`index.js: Detected status code ${statusCode}`);
 
     if (statusCode !== 515) {
       console.log(`Detected status code: ${statusCode}. Restarting index.js...`);
-      child.removeAllListeners(); 
-      child.kill(); 
+      child.removeAllListeners();
+      child.kill();
       child.on('exit', () => {
-        startApp('index.js', onExit); 
+        startApp('index.js', onExit);
       });
     } else {
       console.log(`Detected status code 515. Restarting index.js in 45 seconds...`);
       setTimeout(() => {
-        child.removeAllListeners(); 
-        child.kill(); 
+        child.removeAllListeners();
+        child.kill();
         child.on('exit', () => {
-          startApp('index.js', onExit); 
+          startApp('index.js', onExit);
         });
-      }, 45000); 
+      }, 45000);
     }
   }
 
@@ -165,9 +170,9 @@ function startApp(scriptName, onExit) {
       // Default message for other exits (e.g., code 0)
       restartReason = `Exited with code ${code} (restarting)`;
     }
-    
+
     // Clear the reason after using it
-    lastCrashReason = null; 
+    lastCrashReason = null;
 
     if (scriptName === 'index.js') {
       if (code === 515) {

@@ -92,7 +92,7 @@ const fs = require('fs');
 
 const STORE_DIR = "./store";
 if (!fs.existsSync(STORE_DIR)) fs.mkdirSync(STORE_DIR);
-const msgRetryCounterCache = new NodeCache();
+const msgRetryCounterCache = new NodeCache({ stdTTL: 3600, maxKeys: 1000 }); // 1 hour TTL
 const PORT = process.env.PORT || 8000;
 const dataFile = path.join(__dirname, 'sharedData.json');
 const WebSocket = require('ws');
@@ -557,7 +557,7 @@ async function startWhatsAppConnection() {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, P({ level: 'fatal' }))
         },
-        msgRetryCounterCache: new Map(),
+        msgRetryCounterCache,
         generateHighQualityLinkPreview: true,
         shouldIgnoreJid: isJidBroadcast,
         cachedGroupMetadata: getCachedGroupMetadata

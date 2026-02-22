@@ -657,38 +657,49 @@ async function createImage(firstName, lastName, customemojiid, message, nameColo
     const VIEWPORT_HEIGHT = 1200 * scale; // Default height, will be cropped later
 
     const browser = await getBrowser();
-    const page = await browser.newPage();
-    await page.setViewport({ width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT });
-    // Wait until dom is loaded (reverted from networkidle0)
-    await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+    let page;
+    try {
+        page = await browser.newPage();
+        await page.setViewport({ width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT });
+        // Wait until dom is loaded (reverted from networkidle0)
+        await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
-    // *** FIX: Smart function to dynamically set message max-width ***
-    await page.evaluate((defaultMessageWidth) => {
-        // Measure the whole name line now that it contains images/spans
-        const nameWidth = document.querySelector('.name-line')?.scrollWidth || 0;
+        // *** FIX: Smart function to dynamically set message max-width ***
+        await page.evaluate((defaultMessageWidth) => {
+            // Measure the whole name line now that it contains images/spans
+            const nameWidth = document.querySelector('.name-line')?.scrollWidth || 0;
 
-        const replySenderElement = document.querySelector('.reply-sender');
-        const replyWidth = replySenderElement?.scrollWidth || 0;
+            const replySenderElement = document.querySelector('.reply-sender');
+            const replyWidth = replySenderElement?.scrollWidth || 0;
 
-        // Content width is the wider of the name line or reply sender
-        const contentWidth = Math.max(nameWidth, replyWidth);
+            // Content width is the wider of the name line or reply sender
+            const contentWidth = Math.max(nameWidth, replyWidth);
 
-        // Message max-width is the wider of the content width or the default
-        const newMaxWidth = Math.max(contentWidth, defaultMessageWidth);
+            // Message max-width is the wider of the content width or the default
+            const newMaxWidth = Math.max(contentWidth, defaultMessageWidth);
 
-        const messageElement = document.querySelector('.message');
-        if (messageElement) {
-            messageElement.style.maxWidth = newMaxWidth + 'px';
+            const messageElement = document.querySelector('.message');
+            if (messageElement) {
+                messageElement.style.maxWidth = newMaxWidth + 'px';
+            }
+        }, DEFAULT_MESSAGE_MAX_WIDTH); // Pass only the default width
+
+        const element = await page.$('#capture');
+        const finalPngBuffer = await element.screenshot({ omitBackground: true });
+        return finalPngBuffer;
+    } catch (e) {
+        console.error("❌ Error in createImage Puppeteer task:", e.message);
+        return null;
+    } finally {
+        if (page) {
+            await page.close();
         }
-    }, DEFAULT_MESSAGE_MAX_WIDTH); // Pass only the default width
+    }
+}
 
-    const element = await page.$('#capture');
-    const finalPngBuffer = await element.screenshot({ omitBackground: true });
-    await browser.close();
-
-    // fs.writeFileSync('temp_quote.png', finalPngBuffer); // De-comment for debugging
-
-    // --- DYNAMIC SIZING WITH INVISIBLE BORDER ---
+async function exportQuote(firstName, lastName, customemojiid, message, nameColorId, inputImageBuffer, replySender, replyMessage, replysendercolor) {
+    const finalPngBuffer = await createImage(firstName, lastName, customemojiid, message, nameColorId, inputImageBuffer, replySender, replyMessage, replysendercolor);
+    if (!finalPngBuffer) return null;
     const stickerWidth = 2048;
 
     const scaledPngBuffer = await sharp(finalPngBuffer)
