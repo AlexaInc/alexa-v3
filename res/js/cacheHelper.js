@@ -7,10 +7,22 @@ const groupSettingsCache = new NodeCache({ stdTTL: 600, maxKeys: 500 });
 const pendingMetadataRequests = new Map();
 const pendingSettingsRequests = new Map();
 
+let alexaInstance = null;
+
+function setAlexaInstance(instance) {
+    alexaInstance = instance;
+}
+
 /**
  * Fetches group metadata with caching and request deduplication.
  */
-async function getCachedGroupMetadata(AlexaInc, jid) {
+async function getCachedGroupMetadata(socket, jid) {
+    const AlexaInc = socket || alexaInstance;
+    if (!AlexaInc) {
+        console.warn(`[CacheHelper] No Alexa instance available for metadata fetch of ${jid}`);
+        return null;
+    }
+
     const cached = groupMetadataCache.get(jid);
     if (cached) return cached;
 
@@ -89,5 +101,6 @@ module.exports = {
     getCachedGroupMetadata,
     getCachedGroupSettings,
     clearGroupCache,
-    clearSettingsCache
+    clearSettingsCache,
+    setAlexaInstance
 };

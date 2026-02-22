@@ -28,19 +28,7 @@ const { makeWASocket: WAConnection } = require('@hansaka02/baileys');
 const authPath = path.join(__dirname, 'auth5a');
 require('dotenv').config()
 const { handleHangman, checkInactiveGames } = require('./hangman.js');
-const { getCachedGroupMetadata, clearGroupCache } = require('./res/js/cacheHelper.js');
-
-// --- PROCESS ERROR HANDLERS ---
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-    // Connection Closed or Rate Limit errors shouldn't crash the bot
-});
-
-process.on('uncaughtException', (err) => {
-    console.error('❌ Uncaught Exception:', err);
-    // Optionally restart or keep running depending on error severity
-    // We let the bot try to keep running for Baileys/Network errors
-});
+const { getCachedGroupMetadata, clearGroupCache, setAlexaInstance } = require('./res/js/cacheHelper.js');
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
 const pino = require("pino");
@@ -109,7 +97,6 @@ const PORT = process.env.PORT || 8000;
 const dataFile = path.join(__dirname, 'sharedData.json');
 const WebSocket = require('ws');
 const { default: axios } = require('axios');
-const { json } = require('stream/consumers');
 const logger = P({
     timestamp: () => `,"time":"${new Date().toJSON()}"`
 }, P.destination('./wa-logs.txt'));
@@ -572,8 +559,12 @@ async function startWhatsAppConnection() {
         },
         msgRetryCounterCache: new Map(),
         generateHighQualityLinkPreview: true,
-        shouldIgnoreJid: isJidBroadcast
+        shouldIgnoreJid: isJidBroadcast,
+        cachedGroupMetadata: getCachedGroupMetadata
     });
+
+    // Update the singleton in cacheHelper for internal Baileys calls
+    setAlexaInstance(AlexaInc);
 
     // 5. QR & credentials handling
     AlexaInc.ev.on('connection.update', update => {
@@ -901,13 +892,20 @@ process.on("SIGTERM", () => {
 
 // 4. Unhandled error
 process.on("uncaughtException", (err) => {
-    console.error("❌ Uncaught Exception:", err);
-    safeSave(); // <--- Add this
-    const data = { number: null, status: 'Offline' };
-    writeData(data);
-    process.exit(1);
-});
+    // ❌ Ignore 'rate-overlimit' (429) errors from Baileys internals
+    // These are transient and shouldn't crash the entire bot.
+    if (err.output?.statusCode === 500 && err.data === 429) {
+        console.warn(`[Baileys Warning] Transient rate-overlimit (429) detected. Ignoring to prevent crash.`);
+        return;
+    }
 
+    console.error("❌ Uncaught Exception:", err);
+    saveRestartReason('index.js: ❌ Uncaught Exception: ' + (err.stack || err));
+
+    setTimeout(() => {
+        process.exit(1);
+    }, 1000);
+});
 // 5. Before Exit
 process.on('beforeExit', () => {
     safeSave(); // <--- Add this
