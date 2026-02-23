@@ -3,7 +3,7 @@ const app = express();
 const session = require('express-session');
 const WebSocket = require('ws');
 require('dotenv').config();
-const PORT = process.env.PORT || 7860;
+const PORT = process.env.PORT || 8000;
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
