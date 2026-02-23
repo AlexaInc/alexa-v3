@@ -86,47 +86,50 @@ class ProxyHelper {
         const originalHttpRequest = http.request;
         const originalHttpsRequest = https.request;
 
-        http.request = (options, callback) => {
-            let url;
-            if (typeof options === 'string') {
-                url = options;
-            } else if (options instanceof URL) {
-                url = options.toString();
-            } else {
-                const protocol = options.protocol || 'http:';
-                const host = options.hostname || options.host || 'localhost';
-                const path = options.path || '';
-                url = `${protocol}//${host}${path}`;
-            }
+        const wrapRequest = (originalConfig, defaultProtocol) => {
+            return (options, ...args) => {
+                let urlObj;
+                let requestOptions;
 
-            if (!this.shouldBypass(url)) {
-                if (typeof options === 'object' && !(options instanceof URL)) {
-                    options.agent = agent;
+                if (typeof options === 'string') {
+                    urlObj = new URL(options);
+                    requestOptions = {
+                        protocol: urlObj.protocol,
+                        hostname: urlObj.hostname,
+                        port: urlObj.port,
+                        path: urlObj.pathname + urlObj.search,
+                        hash: urlObj.hash,
+                    };
+                } else if (options instanceof URL) {
+                    urlObj = options;
+                    requestOptions = {
+                        protocol: urlObj.protocol,
+                        hostname: urlObj.hostname,
+                        port: urlObj.port,
+                        path: urlObj.pathname + urlObj.search,
+                    };
+                } else {
+                    requestOptions = { ...options };
+                    const protocol = requestOptions.protocol || defaultProtocol;
+                    const host = requestOptions.hostname || requestOptions.host || 'localhost';
+                    const path = requestOptions.path || '';
+                    try {
+                        urlObj = new URL(`${protocol}//${host}${path}`);
+                    } catch (e) {
+                        return originalConfig.call(null, options, ...args);
+                    }
                 }
-            }
-            return originalHttpRequest.call(http, options, callback);
+
+                if (!this.shouldBypass(urlObj.href)) {
+                    requestOptions.agent = agent;
+                }
+
+                return originalConfig.call(null, requestOptions, ...args);
+            };
         };
 
-        https.request = (options, callback) => {
-            let url;
-            if (typeof options === 'string') {
-                url = options;
-            } else if (options instanceof URL) {
-                url = options.toString();
-            } else {
-                const protocol = options.protocol || 'https:';
-                const host = options.hostname || options.host || 'localhost';
-                const path = options.path || '';
-                url = `${protocol}//${host}${path}`;
-            }
-
-            if (!this.shouldBypass(url)) {
-                if (typeof options === 'object' && !(options instanceof URL)) {
-                    options.agent = agent;
-                }
-            }
-            return originalHttpsRequest.call(https, options, callback);
-        };
+        http.request = wrapRequest(originalHttpRequest, 'http:');
+        https.request = wrapRequest(originalHttpsRequest, 'https:');
 
         console.log('✅ Global Node.js Proxy (HTTP/HTTPS) configured');
     }

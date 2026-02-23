@@ -45,15 +45,32 @@ const DB_NAME = process.env["DB_NAME"];
 const DB_PASS = process.env["DB_PASS"];
 const DB_PORT = process.env["DB_PORT"] || 3306;
 // Example in browser JavaScript
-const alexasocket = new alexasock(`${process.env.Alexasock_url}`);
+// Example in browser JavaScript
+function connectWebSocket() {
+    const socketUrl = process.env.Alexasock_url;
+    if (!socketUrl) return;
 
-alexasocket.onopen = () => {
-    // Register with a unique ID
-    alexasocket.send(JSON.stringify({
-        type: "register",
-        id: "app1"
-    }));
-};
+    const alexasocket = new alexasock(socketUrl);
+
+    alexasocket.onopen = () => {
+        console.log("✅ Dashboard WebSocket connected");
+        alexasocket.send(JSON.stringify({
+            type: "register",
+            id: "app1"
+        }));
+    };
+
+    alexasocket.onerror = (err) => {
+        console.warn(`⚠️ Dashboard WebSocket error (is server.js starting?): ${err.message}`);
+    };
+
+    alexasocket.onclose = () => {
+        console.log("ℹ️ Dashboard WebSocket closed. Retrying in 10s...");
+        setTimeout(connectWebSocket, 10000);
+    };
+}
+
+connectWebSocket();
 
 
 const getBuffer = async (url, options) => {
