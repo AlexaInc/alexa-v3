@@ -1,505 +1,275 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Panel</title>
-    <style>
-              * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        /* Navbar Styles */
-          /* Navbar Styles */
-.navbar {
-    width: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Black with 50% opacity */
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-}
-
-/* Navbar Text Color */
-.navbar h1 {
-    color: white;
-    margin-left: 20px;
-    font-size: 22px;
-}
-
-/* Login Button */
-.login-button {
-    background-color: white;
-    color: black;
-    padding: 8px 15px;
-    font-size: 16px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-right: 20px;
-}
-
-.login-button:hover {
-    background-color: #e0e0e0;
-}
-        #tabs {
-            margin: 50px 0;
-            margin-left: 30px;
-        }
-        #tabs button {
-            padding: 10px;
-            margin-right: 5px;
-            cursor: pointer;
-        }
-
-        /* Content Styles */
-        .logArea {
-            box-sizing: content-box;
-            border-color: black;
-            width: 100%;
-            height: 460px;
-            padding-left: 30;
-            font-family: monospace;
-            white-space: pre-wrap; /* Preserve line breaks */
-            overflow-y: scroll;
-            background-color: black;
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-top: 30px; /* To make space for the navbar */
-        }
-        .logArea p{
-          color: white;
-          margin: 0;
-        }
-
-        .log-entry {
-            margin-bottom: 10px;
-        }
-                .content {
-            margin-top: 100px;
-            
-        }
-
-            .h122 {
-      margin-bottom: 30px;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Panel | Alexa v3</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .dashboard-grid {
+      margin-top: 100px;
+      padding-bottom: 50px;
     }
-    .gauges {
+
+    .stats-header {
       display: flex;
-      flex-wrap: wrap;
-      gap: 50px;
-      justify-content: center;
-    }
-    .gauge {
-      width: 200px;
-      height: 120px;
-      position: relative;
-      text-align: center;
-    }
-    .gauge-label {
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    .usage-text {
-      position: absolute;
-      width: 100%;
-      top: 70px; /* Adjust if needed */
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-    }
-    svg {
-      width: 100%;
-      height: 100%;
-      overflow: visible;
-      display: block;
-      margin: 0 auto;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 2rem;
     }
 
-    line {
-  transition: none;
-}
-    h1{
-        padding-left:50px ;
+    .gauge-card {
+      text-align: center;
+      padding: 1.5rem;
+      position: relative;
     }
-    </style>
+
+    .gauge-svg {
+      width: 140px;
+      height: 140px;
+      transform: rotate(-90deg);
+    }
+
+    .gauge-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.05);
+      stroke-width: 10;
+    }
+
+    .gauge-progress {
+      fill: none;
+      stroke: var(--accent-color);
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 408;
+      /* 2 * PI * r (r=65) */
+      stroke-dashoffset: 408;
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .gauge-value {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .gauge-label {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    #download-section {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+  </style>
 </head>
+
 <body>
 
-    <!-- Navbar -->
-    <div class="navbar">
-        <h1 onclick="location.href='./';">Alexa v3</h1>
- <span> 
-          <button class="login-button" onclick="logout()">Logout</button>
-<button class="login-button" id="downloadButton">DUD</button>
-<button class="login-button" id="downloadButton2">DHD</button>
-</span>
+  <nav class="navbar scrolled">
+    <h1 onclick="location.href='./';">Alexa v3</h1>
+    <div class="nav-buttons">
+      <button class="btn btn-outline" onclick="logout()">Logout</button>
     </div>
-<div class="content">
+  </nav>
 
-<h1 class="h122">Systerm status</h1>
-  <div class="gauges">
-
-    <!-- ==================== CPU Gauge ==================== -->
-    <div class="gauge">
-      <svg viewBox="0 0 200 100">
-        <!-- 4 arcs (green, yellow, orange, red) with small gaps -->
-        <path id="cpuArcGreen"  fill="none" stroke="green"   stroke-width="20" />
-        <path id="cpuArcYellow" fill="none" stroke="yellow"  stroke-width="20" />
-        <path id="cpuArcOrange" fill="none" stroke="orange"  stroke-width="20" />
-        <path id="cpuArcRed"    fill="none" stroke="red"     stroke-width="20" />
-
-        <!-- Needle (center at 100,100, pointing left at 180°, right at 0°) -->
-        <line
-          id="cpuNeedle"
-          x1="100" y1="100"
-          x2="20"  y2="100"
-          stroke="black"
-          stroke-width="5"
-          stroke-linecap="round"
-          transform-origin="100 100"
-        />
-        <!-- Center pivot -->
-        <circle cx="100" cy="100" r="5" fill="black" />
-      </svg>
-      <div class="usage-text" id="cpuValue">0%</div>
-      <div class="gauge-label">CPU</div>
+  <main class="container dashboard-grid">
+    <div class="stats-header">
+      <div>
+        <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Command Center</h2>
+        <p style="color: var(--text-secondary);">Real-time system diagnostics and process logs.</p>
+      </div>
+      <div id="download-section">
+        <button class="btn btn-outline" id="downloadButton" style="font-size: 0.8rem;">📦 Users.json</button>
+        <button class="btn btn-outline" id="downloadButton2" style="font-size: 0.8rem;">🎮 Hangman.json</button>
+      </div>
     </div>
 
-    <!-- ==================== Memory Gauge ==================== -->
-    <div class="gauge">
-      <svg viewBox="0 0 200 100">
-        <path id="memArcGreen"  fill="none" stroke="green"   stroke-width="20" />
-        <path id="memArcYellow" fill="none" stroke="yellow"  stroke-width="20" />
-        <path id="memArcOrange" fill="none" stroke="orange"  stroke-width="20" />
-        <path id="memArcRed"    fill="none" stroke="red"     stroke-width="20" />
-
-        <line
-          id="memNeedle"
-          x1="100" y1="100"
-          x2="20"  y2="100"
-          stroke="black"
-          stroke-width="5"
-          stroke-linecap="round"
-          transform-origin="100 100"
-        />
-        <circle cx="100" cy="100" r="5" fill="black" />
-      </svg>
-      <div class="usage-text" id="memValue">0%</div>
-      <div class="gauge-label">Memory</div>
-    </div>
-
-    <!-- ==================== Download Gauge ==================== -->
-    <div class="gauge">
-      <svg viewBox="0 0 200 100">
-        <path id="dlArcGreen"  fill="none" stroke="green"   stroke-width="20" />
-        <path id="dlArcYellow" fill="none" stroke="yellow"  stroke-width="20" />
-        <path id="dlArcOrange" fill="none" stroke="orange"  stroke-width="20" />
-        <path id="dlArcRed"    fill="none" stroke="red"     stroke-width="20" />
-
-        <line
-          id="dlNeedle"
-          x1="100" y1="100"
-          x2="20"  y2="100"
-          stroke="black"
-          stroke-width="5"
-          stroke-linecap="round"
-          transform-origin="100 100"
-        />
-        <circle cx="100" cy="100" r="5" fill="black" />
-      </svg>
-      <div class="usage-text" id="dlValue">0 Mbps</div>
-      <div class="gauge-label">Download</div>
-    </div>
-
-    <!-- ==================== Upload Gauge ==================== -->
-    <div class="gauge">
-      <svg viewBox="0 0 200 100">
-        <path id="ulArcGreen"  fill="none" stroke="green"   stroke-width="20" />
-        <path id="ulArcYellow" fill="none" stroke="yellow"  stroke-width="20" />
-        <path id="ulArcOrange" fill="none" stroke="orange"  stroke-width="20" />
-        <path id="ulArcRed"    fill="none" stroke="red"     stroke-width="20" />
-
-        <line
-          id="ulNeedle"
-          x1="100" y1="100"
-          x2="20"  y2="100"
-          stroke="black"
-          stroke-width="5"
-          stroke-linecap="round"
-          transform-origin="100 100"
-        />
-        <circle cx="100" cy="100" r="5" fill="black" />
-      </svg>
-      <div class="usage-text" id="ulValue">0 Mbps</div>
-      <div class="gauge-label">Upload</div>
-    </div>
-
-  </div>
-        <div style="margin-top: 100px;">
-            <h1>System logs</h1>
-
-    <div id="tabs">
-        <button id="indexLogTab" onclick="switchLogTab('index')">Index Logs</button>
-        <button id="serverLogTab" onclick="switchLogTab('server')">Server Logs</button>
-    </div>
-
-    <div id="indexLogArea" class="logArea" style="display: none;"></div>
-    <div id="serverLogArea" class="logArea" style="display: none;"></div>
-
+    <div class="gauges-grid">
+      <div class="gauge-card glass card">
+        <div style="position: relative; display: inline-block;">
+          <svg class="gauge-svg" viewBox="0 0 140 140">
+            <circle class="gauge-bg" cx="70" cy="70" r="65"></circle>
+            <circle id="cpuGauge" class="gauge-progress" cx="70" cy="70" r="65"></circle>
+          </svg>
+          <div class="gauge-value" id="cpuValue">0%</div>
         </div>
-</div>
-    <script>
-       // Determine WebSocket protocol (ws: or wss:) based on page protocol (http: or https:)
-const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    
-// Construct the WebSocket URL using the page's host (e.g., "136.112.97.47:8000")
-const socketUrl = `${protocol}//${window.location.host}/logs`;
-  const socket = new WebSocket(socketUrl);
+        <div class="gauge-label">CPU Load</div>
+      </div>
 
-        // Handle incoming messages from the WebSocket server
-        socket.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            const logArea = data.type === 'index' ? document.getElementById('indexLogArea') : document.getElementById('serverLogArea');
-            
-            logArea.innerHTML = ""; // Clear previous logs
+      <div class="gauge-card glass card">
+        <div style="position: relative; display: inline-block;">
+          <svg class="gauge-svg" viewBox="0 0 140 140">
+            <circle class="gauge-bg" cx="70" cy="70" r="65"></circle>
+            <circle id="memGauge" class="gauge-progress" cx="70" cy="70" r="65"></circle>
+          </svg>
+          <div class="gauge-value" id="memValue">0%</div>
+        </div>
+        <div class="gauge-label">Memory</div>
+      </div>
 
-            data.logs.forEach(log => {
-                const logEntry = document.createElement('p');
-                logEntry.innerText = log;
-                logArea.appendChild(logEntry);
-            });
+      <div class="gauge-card glass card">
+        <div style="position: relative; display: inline-block;">
+          <svg class="gauge-svg" viewBox="0 0 140 140">
+            <circle class="gauge-bg" cx="70" cy="70" r="65"></circle>
+            <circle id="dlGauge" class="gauge-progress" cx="70" cy="70" r="65"></circle>
+          </svg>
+          <div class="gauge-value" id="dlValue" style="font-size: 1rem;">0 Mbps</div>
+        </div>
+        <div class="gauge-label">Download</div>
+      </div>
 
-            logArea.scrollTop = logArea.scrollHeight; // Auto-scroll to the latest log
-        };
+      <div class="gauge-card glass card">
+        <div style="position: relative; display: inline-block;">
+          <svg class="gauge-svg" viewBox="0 0 140 140">
+            <circle class="gauge-bg" cx="70" cy="70" r="65"></circle>
+            <circle id="ulGauge" class="gauge-progress" cx="70" cy="70" r="65"></circle>
+          </svg>
+          <div class="gauge-value" id="ulValue" style="font-size: 1rem;">0 Mbps</div>
+        </div>
+        <div class="gauge-label">Upload</div>
+      </div>
+    </div>
 
-        // Switch between logs
-        function switchLogTab(logType) {
-            const indexTab = document.getElementById('indexLogTab');
-            const serverTab = document.getElementById('serverLogTab');
-            const indexLogArea = document.getElementById('indexLogArea');
-            const serverLogArea = document.getElementById('serverLogArea');
+    <div class="log-container glass">
+      <div class="log-header">
+        <div class="log-tabs">
+          <button id="indexLogTab" class="active" onclick="switchLogTab('index')">index.js</button>
+          <button id="serverLogTab" onclick="switchLogTab('server')">server.js</button>
+        </div>
+        <div style="margin-left: auto; color: var(--text-secondary); font-size: 0.8rem; font-family: monospace;">
+          Live Streaming...
+        </div>
+      </div>
+      <div id="indexLogArea" class="log-area"></div>
+      <div id="serverLogArea" class="log-area" style="display: none;"></div>
+    </div>
+  </main>
 
-            if (logType === 'index') {
-                indexTab.style.backgroundColor = 'lightblue';
-                serverTab.style.backgroundColor = '';
-                indexLogArea.style.display = 'block';
-                serverLogArea.style.display = 'none';
-            } else {
-                serverTab.style.backgroundColor = 'lightblue';
-                indexTab.style.backgroundColor = '';
-                serverLogArea.style.display = 'block';
-                indexLogArea.style.display = 'none';
-            }
-        }
+  <script>
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socketUrl = `${protocol}//${window.location.host}/logs`;
+    const socket = new WebSocket(socketUrl);
 
-        // Default to showing index logs
-        switchLogTab('index');
-        // Check if user is authenticated by calling /is-logged-in
-        fetch('/is-logged-in')
-            .then(response => response.json())
-            .then(data => {
-                if (!data.isLoggedIn) {
-                    // If not logged in, redirect to login page
-                    window.location.href = '/login';
-                }
-            })
-            .catch(() => {
-                // If an error occurs (e.g., session expired), redirect to login page
-                window.location.href = '/login';
-            });
+    socket.onmessage = function (event) {
+      const data = JSON.parse(event.data);
+      const logType = data.type;
+      const logArea = logType === 'index' ? document.getElementById('indexLogArea') : document.getElementById('serverLogArea');
 
-        // Logout function
-        function logout() {
-            fetch('/logout', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.href = '/login'; // Redirect to login after logout
-                    } else {
-                        alert("Failed to logout.");
-                    }
-                })
-                .catch(error => {
-                    console.error("Logout error:", error);
-                    alert("An error occurred while logging out.");
-                });
-        }
+      logArea.innerHTML = "";
 
-        // Fetch logs every 5 seconds
-        
-
-          // -----------------------------
-    // 1) Helper functions for arcs (unchanged)
-    // -----------------------------
-    function polarToCartesian(cx, cy, r, angleDeg) {
-      const rad = (Math.PI / 180) * angleDeg;
-      return {
-        x: cx + r * Math.cos(rad),
-        y: cy - r * Math.sin(rad)
-      };
-    }
-
-    function describeArc(cx, cy, r, startAngle, endAngle) {
-      const start = polarToCartesian(cx, cy, r, startAngle);
-      const end = polarToCartesian(cx, cy, r, endAngle);
-      const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
-      return [
-        "M", start.x, start.y,
-        "A", r, r, 0, largeArcFlag, 1, end.x, end.y
-      ].join(" ");
-    }
-
-    function setGaugeArcs(prefix) {
-      // Define segments with small gaps (1° gap between segments)
-      document.getElementById(prefix + "ArcGreen")
-        .setAttribute("d", describeArc(100, 100, 80, 180, 136));
-      document.getElementById(prefix + "ArcYellow")
-        .setAttribute("d", describeArc(100, 100, 80, 135, 91));
-      document.getElementById(prefix + "ArcOrange")
-        .setAttribute("d", describeArc(100, 100, 80, 90, 46));
-      document.getElementById(prefix + "ArcRed")
-        .setAttribute("d", describeArc(100, 100, 80, 45, 0));
-    }
-
-    // Set arcs for each gauge
-    setGaugeArcs("cpu");
-    setGaugeArcs("mem");
-    setGaugeArcs("dl");
-    setGaugeArcs("ul");
-
-    // -----------------------------
-    // 2) Smooth analog needle animation using requestAnimationFrame
-    // -----------------------------
-    const gaugeKeys = ['cpu', 'mem', 'dl', 'ul'];
-    const gauges = {};
-
-    // Initialize gauge data for each gauge
-    gaugeKeys.forEach(key => {
-      gauges[key] = {
-        currentAngle: 0,
-        targetAngle: 0,
-        needle: document.getElementById(key + 'Needle'),
-        valueEl: document.getElementById(key + 'Value')
-      };
-    });
-
-    // Update target angle and display value for a gauge
-    function setGaugeTarget(key, usagePercent, displayText, maxUsage) {
-      const angle = (usagePercent / maxUsage) * 180;
-      gauges[key].targetAngle = angle;
-      gauges[key].valueEl.textContent = displayText;
-    }
-
-    // Animate all needles smoothly
-    function animateNeedles() {
-      gaugeKeys.forEach(key => {
-        // Smoothing: adjust factor (0.1 for slower, 0.2 for faster)
-        const diff = gauges[key].targetAngle - gauges[key].currentAngle;
-        gauges[key].currentAngle += diff * 0.1;
-        gauges[key].needle.style.transform = `rotate(${gauges[key].currentAngle}deg)`;
+      data.logs.forEach(log => {
+        const logEntry = document.createElement('div');
+        logEntry.className = `log-line ${logType}`;
+        logEntry.innerText = log;
+        logArea.appendChild(logEntry);
       });
-      requestAnimationFrame(animateNeedles);
-    }
-    // Start animation loop
-    animateNeedles();
 
-    // -----------------------------
-    // 3) Fetch system stats and update gauges
-    // -----------------------------
+      logArea.scrollTop = logArea.scrollHeight;
+    };
+
+    function switchLogTab(logType) {
+      const indexTab = document.getElementById('indexLogTab');
+      const serverTab = document.getElementById('serverLogTab');
+      const indexLogArea = document.getElementById('indexLogArea');
+      const serverLogArea = document.getElementById('serverLogArea');
+
+      if (logType === 'index') {
+        indexTab.classList.add('active');
+        serverTab.classList.remove('active');
+        indexLogArea.style.display = 'block';
+        serverLogArea.style.display = 'none';
+      } else {
+        serverTab.classList.add('active');
+        indexTab.classList.remove('active');
+        serverLogArea.style.display = 'block';
+        indexLogArea.style.display = 'none';
+      }
+    }
+
+    // Auth Check
+    fetch('/is-logged-in')
+      .then(response => response.json())
+      .then(data => {
+        if (!data.isLoggedIn) window.location.href = '/login';
+      })
+      .catch(() => window.location.href = '/login');
+
+    function logout() {
+      fetch('/logout', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) window.location.href = '/login';
+        });
+    }
+
+    // Gauge Control
+    const circ = 2 * Math.PI * 65;
+
+    function setCircleProgress(id, percent) {
+      const circle = document.getElementById(id);
+      const offset = circ - (percent / 100 * circ);
+      circle.style.strokeDashoffset = offset;
+    }
+
     async function fetchsysStats() {
       try {
         const response = await fetch('/sysstats');
         const data = await response.json();
 
-        // CPU usage (0–100)
+        // CPU
         const cpuVal = data.cpu.toFixed(0);
-        setGaugeTarget('cpu', cpuVal, cpuVal + '%', 100);
+        document.getElementById('cpuValue').textContent = cpuVal + '%';
+        setCircleProgress('cpuGauge', cpuVal);
 
-        // Memory usage (0–100)
+        // Memory
         const memVal = data.memory.toFixed(0);
-        setGaugeTarget('mem', memVal, memVal + '%', 100);
+        document.getElementById('memValue').textContent = memVal + '%';
+        setCircleProgress('memGauge', memVal);
 
-        // Download speed: bytes/sec -> Mbit/s
+        // Download
         let dlMbps = (data.downloadSpeed * 8) / 1_000_000;
         dlMbps = parseFloat(dlMbps.toFixed(2));
-        let dlPercent = (dlMbps / 100) * 100;  // gauge scale 0-100 Mbps
-        if (dlPercent > 100) dlPercent = 100;
-        setGaugeTarget('dl', dlPercent, dlMbps + ' Mbps', 100);
+        document.getElementById('dlValue').textContent = dlMbps + ' Mbps';
+        setCircleProgress('dlGauge', Math.min((dlMbps / 100) * 100, 100));
 
-        // Upload speed: bytes/sec -> Mbit/s
+        // Upload
         let ulMbps = (data.uploadSpeed * 8) / 1_000_000;
         ulMbps = parseFloat(ulMbps.toFixed(2));
-        let ulPercent = (ulMbps / 100) * 100;  // gauge scale 0-100 Mbps
-        if (ulPercent > 100) ulPercent = 100;
-        setGaugeTarget('ul', ulPercent, ulMbps + ' Mbps', 100);
+        document.getElementById('ulValue').textContent = ulMbps + ' Mbps';
+        setCircleProgress('ulGauge', Math.min((ulMbps / 100) * 100, 100));
 
       } catch (error) {
         console.error("Error fetching stats:", error);
       }
     }
 
-    // Poll for new stats every 500ms
-    setInterval(fetchsysStats, 100);
+    setInterval(fetchsysStats, 1000);
     fetchsysStats();
-        // When the download button is clicked
-        document.getElementById('downloadButton').addEventListener('click', function() {
-            // Make an HTTP GET request to download users.json
-            fetch('/download-users-json')
-                .then(response => {
-                    if (response.ok) {
-                        return response.blob();  // Get the file as a Blob
-                    } else {
-                        alert('Failed to download file');
-                    }
-                })
-                .then(blob => {
-                    // Create an anchor element to trigger the download
-                    const a = document.createElement('a');
-                    const url = window.URL.createObjectURL(blob);
-                    a.href = url;
-                    a.download = 'users.json'; // File name to save as
-                    a.click();
-                    window.URL.revokeObjectURL(url); // Clean up
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while downloading the file.');
-                });
-        });
 
+    // Download handlers
+    document.getElementById('downloadButton').addEventListener('click', () => downloadFile('/download-users-json', 'users.json'));
+    document.getElementById('downloadButton2').addEventListener('click', () => downloadFile('/download-hangman-json', 'hangman.json'));
 
-         document.getElementById('downloadButton2').addEventListener('click', function() {
-            // Make an HTTP GET request to download users.json
-            fetch('/download-hangman-json')
-                .then(response => {
-                    if (response.ok) {
-                        return response.blob();  // Get the file as a Blob
-                    } else {
-                        alert('Failed to download file');
-                    }
-                })
-                .then(blob => {
-                    // Create an anchor element to trigger the download
-                    const a = document.createElement('a');
-                    const url = window.URL.createObjectURL(blob);
-                    a.href = url;
-                    a.download = 'hangman.json'; // File name to save as
-                    a.click();
-                    window.URL.revokeObjectURL(url); // Clean up
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while downloading the file.');
-                });
-        });
-
-    </script>
+    function downloadFile(url, filename) {
+      fetch(url).then(res => res.blob()).then(blob => {
+        const a = document.createElement('a');
+        a.href = window.URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+      });
+    }
+  </script>
 </body>
+
 </html>

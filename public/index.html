@@ -1,188 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Bot - Baileys API</title>
+    <title>Alexa v3 | WhatsApp Bot Ecosystem</title>
 
-    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/rt2Br0AAAAASUVORK5CYII=" type="image/png">
-
-    <style>
-        /* Reset and Global Styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* Navbar Styles */
-        /* Navbar Styles */
-.navbar {
-    width: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Black with 50% opacity */
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-}
-
-/* Navbar Text Color */
-.navbar h1 {
-    color: white;
-    margin-left: 20px;
-    font-size: 22px;
-}
-
-/* Login Button */
-.login-button {
-    background-color: white;
-    color: black;
-    padding: 8px 15px;
-    font-size: 16px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-right: 20px;
-}
-
-.login-button:hover {
-    background-color: #e0e0e0;
-}
-
-
-        /* Page Content */
-        .content {
-            margin-top: 80px;
-            text-align: center;
-        }
-
-        h2 {
-            color: #25D366;
-            margin-bottom: 10px;
-        }
-
-        p {
-            font-size: 18px;
-        }
-
-        #status {
-            font-weight: bold;
-            color: red;
-        }
-
-        .image-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-        }
-
-        .image-container img {
-            max-width: 250px;
-            height: auto;
-            border-radius: 10px;
-        }
-
-        /* WhatsApp Button */
-        .whatsapp-button {
-            background-color: #25D366;
-            color: white;
-            font-size: 16px;
-            padding: 8px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background-color 0.3s ease;
-            display: inline-block;
-            width: auto;
-            max-width: 250px;
-        }
-
-        .whatsapp-button:hover {
-            background-color: #128C7E;
-        }
-
-        /* Footer */
-        .developer {
-            font-size: 14px;
-            color: #333;
-            margin-top: 20px;
-        }
-
-        .copyright {
-            font-size: 14px;
-            color: #888;
-            margin-top: auto;
-            padding: 10px 0;
-        }
-
-    </style>
+    <link rel="icon"
+        href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/rt2Br0AAAAASUVORK5CYII="
+        type="image/png">
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <!-- Navigation Bar -->
-    <div class="navbar">
+    <nav class="navbar" id="navbar">
         <h1 onclick="location.href='./';">Alexa v3</h1>
-        <button id="loginButton" class="login-button" onclick="window.location.href='login.html'">admin Login</button>
-    </div>
-
-    <div class="content">
-        <h2>Welcome to Alexa v3</h2>
-        <p>Powered by Baileys API</p>
-        <p>Status: <span id="status">Checking...</span></p>
-
-        <div class="image-container">
-            <img src="https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png" alt="Anime Girl">
+        <div class="nav-buttons">
+            <button id="loginButton" class="btn btn-outline" onclick="window.location.href='login.html'">Admin
+                Login</button>
         </div>
+    </nav>
 
-        <p>Message to bot</p>
-        <button class="whatsapp-button" onclick="sendMessage()">WhatsApp</button>
-    </div>
+    <main>
+        <!-- Hero Section -->
+        <section class="hero container">
+            <h2 class="animate-fade">Social Intelligence.<br><span style="color: var(--accent-color)">Refined.</span>
+            </h2>
+            <p class="animate-fade" style="animation-delay: 0.2s">A specialized ecosystem of high-performance automation
+                bots tailored for the next generation of social interaction.</p>
+
+            <div class="status-box glass animate-fade"
+                style="animation-delay: 0.4s; padding: 1.5rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                <div id="statusDot"
+                    style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--danger); box-shadow: 0 0 10px var(--danger);">
+                </div>
+                <span style="font-weight: 600; font-size: 1.1rem;">Status: <span id="status"
+                        style="color: var(--text-secondary)">Checking...</span></span>
+            </div>
+
+            <div class="animate-fade" style="animation-delay: 0.6s">
+                <button class="btn btn-primary" onclick="sendMessage()"
+                    style="padding: 1rem 3rem; font-size: 1.1rem;">Get Started on WhatsApp</button>
+            </div>
+        </section>
+
+        <!-- Featured Section -->
+        <section class="container" style="padding-bottom: 100px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <div class="card glass">
+                    <img src="https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png" alt="Alexa v3"
+                        style="width: 100%; height: 250px; object-fit: contain; margin-bottom: 1.5rem;">
+                    <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem;">Industry Leading</h3>
+                    <p style="color: var(--text-secondary);">Powerful utilities, advanced group management, and seamless
+                        media processing built for the core community.</p>
+                </div>
+                <div class="card glass">
+                    <div
+                        style="height: 250px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                        <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                            style="color: var(--accent-color)">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem;">Secure & Fast</h3>
+                    <p style="color: var(--text-secondary);">Built on the robust Baileys API with multi-layered
+                        encryption and optimized performance for high-traffic environments.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="container"
+        style="padding: 4rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+        <p style="color: var(--text-secondary);">&copy; 2026 Hansaka Rasanjana (AlexaInc). Built for the Decentralized
+            Social World.</p>
+        <p style="font-size: 0.85rem; color: #475569; margin-top: 0.5rem;">Developer: Hansaka</p>
+    </footer>
 
     <script>
+        // Navbar Scroll Effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
         async function checkStatus() {
             try {
-                const response = await fetch('/status'); // Endpoint to check bot status
+                const response = await fetch('/status');
                 const data = await response.json();
-                document.getElementById('status').textContent = data.status;
-                document.getElementById('status').style.color = data.status === "Online" ? "green" : "red";
+                const statusEl = document.getElementById('status');
+                const dot = document.getElementById('statusDot');
+
+                statusEl.textContent = data.status;
+                if (data.status === "Online") {
+                    statusEl.style.color = "var(--success)";
+                    dot.style.backgroundColor = "var(--success)";
+                    dot.style.boxShadow = "0 0 10px var(--success)";
+                } else {
+                    statusEl.style.color = "var(--danger)";
+                    dot.style.backgroundColor = "var(--danger)";
+                    dot.style.boxShadow = "0 0 10px var(--danger)";
+                }
             } catch (error) {
                 document.getElementById('status').textContent = "Offline";
             }
         }
 
         checkStatus();
-        setInterval(checkStatus, 5000); // Refresh status every 5 seconds
+        setInterval(checkStatus, 5000);
 
-        // Fetch the bot's phone number
         async function getPhoneNumber() {
             try {
-                const response = await fetch('/get-phone-number'); // Server endpoint to fetch phone number
+                const response = await fetch('/get-phone-number');
                 const data = await response.json();
                 return data.phoneNumber;
             } catch (error) {
-                console.error('Failed to fetch phone number:', error);
                 return null;
             }
         }
 
-        // Send WhatsApp message function
         async function sendMessage() {
             const phoneNumber = await getPhoneNumber();
             if (phoneNumber) {
@@ -194,37 +137,25 @@
             }
         }
 
-        // Function to check if the admin is logged in
         async function checkLoginStatus() {
             try {
-                const response = await fetch('/is-logged-in'); // API to check login status
+                const response = await fetch('/is-logged-in');
                 const data = await response.json();
-                
                 const loginButton = document.getElementById('loginButton');
                 if (data.isLoggedIn) {
-                    loginButton.textContent = 'Cpanel'; // Change button text if logged in
-                    loginButton.onclick = function() { window.location.href = '/control'; }; // Redirect to control panel
+                    loginButton.textContent = 'Control Panel';
+                    loginButton.onclick = function () { window.location.href = '/control'; };
                 } else {
-                    loginButton.textContent = 'Admin Login'; // Default button text
-                    loginButton.onclick = function() { window.location.href = 'login.html'; }; // Redirect to login page
+                    loginButton.textContent = 'Admin Login';
+                    loginButton.onclick = function () { window.location.href = 'login.html'; };
                 }
             } catch (error) {
                 console.error("Error checking login status:", error);
             }
         }
 
-        // Check login status when the page loads
         checkLoginStatus();
-
     </script>
-
-    <div class="developer">
-        <p>Developer: Hansaka</p>
-    </div>
-
-    <div class="copyright">
-        <p>&copy; 2025 AlexaInc Sri Lanka. All rights reserved.</p>
-    </div>
-
 </body>
+
 </html>

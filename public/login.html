@@ -1,93 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login</title>
+    <title>Admin Login | Alexa v3</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-              * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
+        .login-wrapper {
+            min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            height: 100vh;
-        }
-        .login-container {
-            background: white;
-            padding: 20px;/*
-            padding-right: 50px;
-            */border-radius: 10px;/*
-            padding-bottom: 20px;*/
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-            max-width: 300px;
-            margin: auto;
             align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
         }
-        input, button {
-            width: 100%;
-            margin-top: 10px;
-            padding: 10px;
-/*            margin-left: 10px;
-            margin-right: 10px;*/
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background-color: #25D366;
-            color: white;
-            border: none;
-            cursor: pointer;/*
-            margin-left: 10px;*/
-        }
-        button:hover {
-            background-color: #128C7E;
-        }
-        .navbar {
-    width: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Black with 50% opacity */
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-}
 
-/* Navbar Text Color */
-.navbar h1 {
-    color: white;
-    margin-left: 20px;
-    font-size: 22px;
-}
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 3rem 2.5rem;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
     </style>
 </head>
-<body>
-    <div class="navbar">
+
+<body style="background: linear-gradient(135deg, #020617 0%, #0f172a 100%);">
+
+    <nav class="navbar">
         <h1 onclick="location.href='./';">Alexa v3</h1>
-        <!--<button id="loginButton" class="login-button" onclick="window.location.href='login.html'">Login</button>--> 
-    </div>
-    <div class="login-container">
-        <h2>Admin Login</h2>
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <button onclick="login()">Login</button>
-        <p id="error-message" style="color: red; display: none;">Invalid credentials!</p>
+    </nav>
+
+    <div class="login-wrapper">
+        <div class="login-card glass animate-fade">
+            <h2 style="font-size: 2rem; margin-bottom: 0.5rem;">Welcome Back</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2.5rem;">Enter your credentials to access the command
+                center.</p>
+
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="admin">
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+
+            <button class="btn btn-primary" onclick="login()"
+                style="width: 100%; padding: 0.9rem; font-size: 1rem; margin-top: 1rem;">
+                Authorize Access
+            </button>
+
+            <p id="error-message" class="error-message">Invalid credentials. Please try again.</p>
+        </div>
     </div>
 
     <script>
         async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('error-message');
 
             try {
                 const response = await fetch('/login', {
@@ -100,29 +113,44 @@
                 if (data.success) {
                     window.location.href = '/control';
                 } else {
-                    document.getElementById('error-message').style.display = 'block';
+                    errorEl.style.display = 'block';
+                    // Shake effect
+                    const card = document.querySelector('.login-card');
+                    card.style.animation = 'none';
+                    card.offsetHeight; // trigger reflow
+                    card.style.animation = 'shake 0.4s ease';
                 }
             } catch (error) {
                 console.error('Login error:', error);
             }
         }
 
-                async function checkLoginStatus() {
+        async function checkLoginStatus() {
             try {
-                const response = await fetch('/is-logged-in'); // API to check login status
+                const response = await fetch('/is-logged-in');
                 const data = await response.json();
-                
-                const loginButton = document.getElementById('loginButton');
-                if (data.isLoggedIn) { window.location.href = '/control';  // Redirect to control panel
-                } 
+                if (data.isLoggedIn) {
+                    window.location.href = '/control';
+                }
             } catch (error) {
                 console.error("Error checking login status:", error);
             }
         }
 
-        // Check login status when the page loads
         checkLoginStatus();
-    </script>
 
+        // Add shake animation style
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-8px); }
+                50% { transform: translateX(8px); }
+                75% { transform: translateX(-8px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
+
 </html>
