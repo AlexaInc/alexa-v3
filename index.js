@@ -626,7 +626,7 @@ async function startWhatsAppConnection() {
     setAlexaInstance(AlexaInc);
 
     // 5. QR & credentials handling
-    AlexaInc.ev.on('connection.update', update => {
+    AlexaInc.ev.on('connection.update', async update => {
         const { connection, lastDisconnect, qr, isNewLogin } = update;
 
         if (qr) {
@@ -640,7 +640,17 @@ async function startWhatsAppConnection() {
             global.connectionStatus = global.botPhoneNumber ? 'Online' : 'Offline';
             console.log('✅ WhatsApp bot connected!');
 
-            // Send startup message to owner
+            // 1. Initialize Dashboard WebSocket
+            connectWebSocket(AlexaInc);
+
+            // 2. Fetch groups (now safe since connection is open)
+            try {
+                await AlexaInc.groupFetchAllParticipating();
+            } catch (e) {
+                console.error("Error fetching groups on startup:", e.message);
+            }
+
+            // 3. Send startup message to owner
             const fownerNumber = process.env["Owner_nb"]?.split(",")[0]?.trim();
             const lastLog = restartHistory?.[restartHistory.length - 1];
             const logmessage = `Your bot Alexa is ready!\nRestart id: ${lastLog?.id || 'N/A'} at ${lastLog?.timestamp || 'N/A'}\nReason: ${lastLog?.reason || 'Startup'}`;
@@ -650,11 +660,7 @@ async function startWhatsAppConnection() {
             }
             try {
                 AlexaInc.sendMessage(`120363407628540320@g.us`, { text: logmessage }).catch(console.error);
-
-            } catch {
-
-            }
-
+            } catch { }
         }
 
         if (connection === 'close') {
@@ -799,33 +805,6 @@ async function startWhatsAppConnection() {
         }
     });
 
-    connectWebSocket(AlexaInc);
-
-    const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
-
-    const { setTimeout: wait } = require('timers/promises');
-
-    const groups = await AlexaInc.groupFetchAllParticipating();
-    const groupIds = Object.keys(groups);
-
-    // console.log(`[Broadcast] Starting to send to ${groupIds.length} groups...`);
-
-    // for (const group of groupIds) {
-    //     try {
-    //         await AlexaInc.sendMessage(group, interactiveMessage);
-    //         // console.log(`[Broadcast] Successfully sent to: ${group}`);
-    //         await wait(10000);
-
-    //     } catch (error) {
-    //         console.error(`[Broadcast] Failed to send to ${group}:`, error.message);
-    //         if (error.data === 429) {
-    //             console.log("Rate limit hit. Waiting 30 seconds before retrying next group...");
-    //             await wait(30000); // Wait 30 seconds
-    //         }
-    //     }
-    // }
-    //                 AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {text:'[Broadcast] All messages sent!'})
-    // // console.log('[Broadcast] All messages sent!');
     AlexaInc.ev.on('messages.upsert', async (m) => {
         const { messages, type } = m;
         if (!messages?.length) return;
