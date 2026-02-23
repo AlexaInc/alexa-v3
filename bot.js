@@ -5724,7 +5724,7 @@ from : @${visibleNumber}
                     const groupId = msg.key.remoteJid;
 
                     const isReplyToBot = msg.message?.extendedTextMessage?.contextInfo?.participant === botJid || msg.message?.extendedTextMessage?.contextInfo?.participant === botLid;
-                    // console.log(msg.message);
+                    console.log(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid, botLid, isReplyToBot);
                     if (!isGroup) {
                         // ✅ Not a group → run AI
                         runAI();
