@@ -2930,9 +2930,9 @@ source - ${url}
                                 // console.log(replymsg)
                             } catch (error) {
                                 // This will catch API key errors or Google API failures
-                                console.error("A critical error occurred:", error.message);
+                                console.error("A critical error occurred:", error); // Log full error object
                                 AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'A critical error occurred:',
+                                    text: `A critical error occurred: ${error.message}\n\nStack: ${error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack'}`,
                                 }, {
                                     quoted: msg
                                 })

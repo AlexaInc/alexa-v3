@@ -23,12 +23,14 @@ const googleSearch = customsearch({
  */
 async function scrapeSite(url) {
   try {
+    console.log(`[DEBUG] Scraping: ${url}`);
     const { data: html } = await axios.get(url, {
       timeout: 7000,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
       }
     });
+    console.log(`[DEBUG] Scrape successful for ${url}`);
 
     const $ = cheerio.load(html);
     let firstParagraph = '';
@@ -62,12 +64,13 @@ async function scrapeSite(url) {
  */
 async function searchAndScrape(searchQuery) {
   try {
-    // 1. Search Google
+    console.log(`[DEBUG] Searching Google for: ${searchQuery}`);
     const response = await googleSearch.cse.list({
       cx: SEARCH_ENGINE_ID,
       q: searchQuery,
       num: 10,
     });
+    console.log(`[DEBUG] Google search returned ${response.data.items?.length || 0} items`);
 
     const searchResults = response.data.items;
     if (!searchResults || searchResults.length === 0) {
@@ -78,7 +81,7 @@ async function searchAndScrape(searchQuery) {
     const candidateLinks = searchResults
       .map(result => result.link)
       .filter(link => !link.includes('reddit.com'));
-      
+
     // 3. Loop and scrape until we have 5 good results
     const finalResults = [];
     for (const link of candidateLinks) {
@@ -86,7 +89,7 @@ async function searchAndScrape(searchQuery) {
 
       // Check if the result is valid (not an error)
       const isError = result.paragraph.startsWith('Error: Could not access') ||
-                      result.paragraph.startsWith('Could not find a suitable');
+        result.paragraph.startsWith('Could not find a suitable');
 
       if (!isError) {
         finalResults.push(result);
