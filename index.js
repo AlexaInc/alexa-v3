@@ -27,7 +27,13 @@ const path = require('path');
 const { makeWASocket: WAConnection } = require('@hansaka02/baileys');
 ; // for first-time QR login
 const authPath = path.join(__dirname, 'auth5a');
-require('dotenv').config()
+require('dotenv').config();
+const mysql = require("mysql2");
+const DB_HOST = process.env["DB_HOST"];
+const DB_UNAME = process.env["DB_UNAME"];
+const DB_NAME = process.env["DB_NAME"];
+const DB_PASS = process.env["DB_PASS"];
+const DB_PORT = process.env["DB_PORT"] || 3306;
 const { handleHangman, checkInactiveGames } = require('./hangman.js');
 const { getCachedGroupMetadata, clearGroupCache, setAlexaInstance } = require('./res/js/cacheHelper.js');
 // const Ai = require('./res/js/ollama')
