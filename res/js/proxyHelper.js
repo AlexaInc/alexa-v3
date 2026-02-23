@@ -11,7 +11,8 @@ const https = require('https');
 class ProxyHelper {
     constructor() {
         this.proxyUrl = process.env.PROXY_URL;
-        this.noProxy = (process.env.NO_PROXY || 'localhost,127.0.0.1,0.0.0.0').split(',');
+        const dbHost = process.env.DB_HOST || '';
+        this.noProxy = (process.env.NO_PROXY || 'localhost,127.0.0.1,::1,0.0.0.0,' + dbHost).split(',');
         this.agent = this._createAgent();
     }
 
@@ -86,17 +87,43 @@ class ProxyHelper {
         const originalHttpsRequest = https.request;
 
         http.request = (options, callback) => {
-            const url = options.protocol + '//' + (options.hostname || options.host) + (options.path || '');
+            let url;
+            if (typeof options === 'string') {
+                url = options;
+            } else if (options instanceof URL) {
+                url = options.toString();
+            } else {
+                const protocol = options.protocol || 'http:';
+                const host = options.hostname || options.host || 'localhost';
+                const path = options.path || '';
+                url = `${protocol}//${host}${path}`;
+            }
+
             if (!this.shouldBypass(url)) {
-                options.agent = agent;
+                if (typeof options === 'object' && !(options instanceof URL)) {
+                    options.agent = agent;
+                }
             }
             return originalHttpRequest.call(http, options, callback);
         };
 
         https.request = (options, callback) => {
-            const url = 'https://' + (options.hostname || options.host) + (options.path || '');
+            let url;
+            if (typeof options === 'string') {
+                url = options;
+            } else if (options instanceof URL) {
+                url = options.toString();
+            } else {
+                const protocol = options.protocol || 'https:';
+                const host = options.hostname || options.host || 'localhost';
+                const path = options.path || '';
+                url = `${protocol}//${host}${path}`;
+            }
+
             if (!this.shouldBypass(url)) {
-                options.agent = agent;
+                if (typeof options === 'object' && !(options instanceof URL)) {
+                    options.agent = agent;
+                }
             }
             return originalHttpsRequest.call(https, options, callback);
         };

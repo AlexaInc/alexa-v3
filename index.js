@@ -912,7 +912,6 @@ process.on("uncaughtException", (err) => {
     }
 
     console.error("❌ Uncaught Exception:", err);
-    saveRestartReason('index.js: ❌ Uncaught Exception: ' + (err.stack || err));
 
     setTimeout(() => {
         process.exit(1);
