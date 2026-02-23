@@ -1,6 +1,8 @@
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 const axios = require('axios');
+const http = require('http');
+const https = require('https');
 
 /**
  * Centrally manages proxy agents for the entire application.
@@ -32,7 +34,10 @@ class ProxyHelper {
         if (!urlStr) return true;
         try {
             const url = new URL(urlStr);
-            return this.noProxy.some(host => url.hostname.includes(host.trim()));
+            return this.noProxy.some(host => {
+                const trimmedHost = host.trim();
+                return url.hostname.includes(trimmedHost) || (trimmedHost.startsWith('.') && url.hostname.endsWith(trimmedHost));
+            });
         } catch (e) {
             return true;
         }
@@ -68,12 +73,42 @@ class ProxyHelper {
     }
 
     /**
+     * Overrides global http and https agents.
+     * WARNING: This may affect all outgoing requests in the process.
+     */
+    configureGlobal() {
+        if (!this.agent) return;
+
+        const agent = this.agent;
+
+        // Wrap original request methods to apply proxy selectively
+        const originalHttpRequest = http.request;
+        const originalHttpsRequest = https.request;
+
+        http.request = (options, callback) => {
+            const url = options.protocol + '//' + (options.hostname || options.host) + (options.path || '');
+            if (!this.shouldBypass(url)) {
+                options.agent = agent;
+            }
+            return originalHttpRequest.call(http, options, callback);
+        };
+
+        https.request = (options, callback) => {
+            const url = 'https://' + (options.hostname || options.host) + (options.path || '');
+            if (!this.shouldBypass(url)) {
+                options.agent = agent;
+            }
+            return originalHttpsRequest.call(https, options, callback);
+        };
+
+        console.log('✅ Global Node.js Proxy (HTTP/HTTPS) configured');
+    }
+
+    /**
      * Gets Puppeteer launch arguments for proxy.
      */
     getPuppeteerArgs() {
         if (!this.proxyUrl) return [];
-        // Note: Puppeteer --proxy-server doesn't support SOCKS directly in all versions 
-        // without protocol prefix, but Chromium generally handles socks5://...
         return [`--proxy-server=${this.proxyUrl}`];
     }
 }

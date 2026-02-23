@@ -100,6 +100,7 @@ const WebSocket = require('ws');
 const { default: axios } = require('axios');
 const proxyHelper = require('./res/js/proxyHelper');
 proxyHelper.configureAxios();
+proxyHelper.configureGlobal();
 const logger = P({
     timestamp: () => `,"time":"${new Date().toJSON()}"`
 }, P.destination('./wa-logs.txt'));
