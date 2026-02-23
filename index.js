@@ -103,7 +103,14 @@ const logger = P({
 }, P.destination('./wa-logs.txt'));
 logger.level = 'info'; // Reduced from debug to save CPU/IO
 
-let restartHistory = JSON.parse(fs.readFileSync('./restarts.json', 'utf8'));
+let restartHistory = [];
+try {
+    if (fs.existsSync('./restarts.json')) {
+        restartHistory = JSON.parse(fs.readFileSync('./restarts.json', 'utf8'));
+    }
+} catch (e) {
+    console.error('Error loading restarts.json:', e.message);
+}
 /**
  * Saves a message to a JSON file, now including media URL and mimetype.
  * Assumes 'fs', 'path', and 'STORE_DIR' are defined globally.
