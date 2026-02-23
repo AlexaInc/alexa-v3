@@ -3,11 +3,15 @@ on:
   push:
     branches: [main]
 
+# Add this block to fix the "Resource not accessible" error
+permissions:
+  deployments: write
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1. Start the Deployment in GitHub UI
       - name: Start GitHub Deployment
         uses: bobheadxi/deployments@v1
         id: deployment
@@ -16,7 +20,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           env: Production
 
-      # 2. Trigger the actual Rebuild on Hugging Face
       - name: Trigger HF Factory Reboot
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -25,7 +28,6 @@ jobs:
           -H "Authorization: Bearer $HF_TOKEN" \
           "https://huggingface.co/api/spaces/hansaka1/alexa/restart?factory=true"
 
-      # 3. Update the Deployment to "Success" and link the URL
       - name: Update Deployment Status
         uses: bobheadxi/deployments@v1
         if: always()
@@ -33,6 +35,7 @@ jobs:
           step: finish
           token: ${{ secrets.GITHUB_TOKEN }}
           status: ${{ job.status }}
-          env: ${{ steps.deployment.outputs.env }}
+          # Use the explicit string "Production" to avoid the "Input required" error
+          env: Production
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
           env_url: https://hansaka1-alexa.hf.space/
