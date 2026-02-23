@@ -1013,6 +1013,7 @@ async function handleMessage(AlexaInc, {
             ) :
             false;
         updateUser(msg, participants, groupname);
+        const isReplyToBot = areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid) || areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botLid);
 
 
         function formatUptime(uptime) {
@@ -5725,7 +5726,7 @@ from : @${visibleNumber}
                     const groupId = msg.key.remoteJid;
 
                     const isReplyToBot = areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid) || areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botLid);
-                    console.log(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid, jidNormalizedUser(botLid), isReplyToBot);
+                    // console.log(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid, jidNormalizedUser(botLid), isReplyToBot);
                     if (!isGroup) {
                         // ✅ Not a group → run AI
                         runAI();
