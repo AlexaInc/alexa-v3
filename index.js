@@ -98,6 +98,8 @@ const PORT = process.env.PORT || 8000;
 const dataFile = path.join(__dirname, 'sharedData.json');
 const WebSocket = require('ws');
 const { default: axios } = require('axios');
+const proxyHelper = require('./res/js/proxyHelper');
+proxyHelper.configureAxios();
 const logger = P({
     timestamp: () => `,"time":"${new Date().toJSON()}"`
 }, P.destination('./wa-logs.txt'));
@@ -487,17 +489,9 @@ const SESSION_FOLDER = './auth5a'
 
 async function startWhatsAppConnection() {
 
-    const proxyUrl = process.env.PROXY_URL;
-    let proxyAgent = undefined;
-
-    if (proxyUrl) {
-        if (proxyUrl.startsWith('socks')) {
-            proxyAgent = new SocksProxyAgent(proxyUrl);
-            console.log('✅ Using SOCKS Proxy for Baileys');
-        } else {
-            proxyAgent = new HttpsProxyAgent(proxyUrl);
-            console.log('✅ Using HTTPS Proxy for Baileys');
-        }
+    const proxyAgent = proxyHelper.agent;
+    if (proxyAgent) {
+        console.log(`✅ Using ${proxyHelper.proxyUrl.startsWith('socks') ? 'SOCKS' : 'HTTPS'} Proxy for Baileys (via proxyHelper)`);
     }
 
     // 1. Display ASCII logo

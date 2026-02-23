@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const proxyHelper = require('./res/js/proxyHelper');
 let sharedBrowser = null;
 
 async function getBrowser() {
@@ -12,11 +13,12 @@ async function getBrowser() {
         args: [
             '--no-sandbox',
             '--disable-gpu',
-            '--disable-dev-shm-usage', // Critical for low-memory Docker/Linux
+            '--disable-dev-shm-usage',
             '--disable-setuid-sandbox',
             '--no-first-run',
             '--no-zygote',
-            '--single-process' // Saves RAM on some setups
+            '--single-process',
+            ...proxyHelper.getPuppeteerArgs()
         ]
     });
 
