@@ -74,6 +74,7 @@ const {
     downloadMediaMessage,
     proto,
     jidNormalizedUser,
+    areJidsSameUser,
     prepareWAMessageMedia,
     getGroupMetadata,
     generateWAMessageFromContent,
@@ -5723,8 +5724,8 @@ from : @${visibleNumber}
                     /*****************   ai function for  language process  *****************/
                     const groupId = msg.key.remoteJid;
 
-                    const isReplyToBot = msg.message?.extendedTextMessage?.contextInfo?.participant === botJid || msg.message?.extendedTextMessage?.contextInfo?.participant === botLid;
-                    console.log(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid, botLid, isReplyToBot);
+                    const isReplyToBot = areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid) || areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botLid);
+                    console.log(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid, jidNormalizedUser(botLid), isReplyToBot);
                     if (!isGroup) {
                         // ✅ Not a group → run AI
                         runAI();
