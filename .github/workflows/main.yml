@@ -1,70 +1,16 @@
-name: Deploy Node.js Application
-
+name: Production Deploy to HF
 on:
   push:
-    branches:
-      - main  # Trigger deployment on push to the 'main' branch
+    branches: [main]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      # Step 1: Checkout the repository
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      # Step 2: Set up Node.js (version 20 in this case)
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-
-      # Step 3: Install dependencies for your application
-      - name: Install dependencies
-        run: |
-          npm install
-
-      # Step 4: Install system-level dependencies (e.g., ffmpeg, speedtest-cli, ngrok)
-      - name: Install system dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y software-properties-common speedtest-cli ffmpeg
-          sudo apt clean
-          sudo rm -rf /var/lib/apt/lists/*
-
   deploy:
     runs-on: ubuntu-latest
-    needs: build  # This makes the deployment job run after the build job
-
     steps:
-      # Step 1: Checkout the repository (again for deployment job)
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      # Step 2: Install system dependencies (ngrok included here)
-      - name: Install system dependencies
+      - name: Trigger HF Factory Reboot
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          sudo apt update
-          sudo apt install -y software-properties-common speedtest-cli ffmpeg
-          sudo apt clean
-          sudo rm -rf /var/lib/apt/lists/*
-          
-      # Step 3: Install ngrok (for public URL)
-      - name: Install ngrok
-        run: |
-          sudo apt-get install -y unzip
-          wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip
-          unzip ngrok-stable-linux-amd64.zip
-          sudo mv ngrok /usr/local/bin
-
-      # Step 4: Install dependencies (again to make sure everything is up to date)
-      - name: Install dependencies
-        run: |
-          npm install
-
-      # Step 5: Start the application
-      - name: Start application
-        run: |
-          # Start the application in the background
-          npm start 
+          curl -X POST \
+          -H "Authorization: Bearer $HF_TOKEN" \
+          "https://huggingface.co/api/spaces/hansaka1/alexa/restart?factory=true"
