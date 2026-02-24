@@ -49,11 +49,15 @@ function connectWebSocket(AlexaInc) {
     alexasocket = new alexasock(socketUrl);
 
     alexasocket.onopen = () => {
-        console.log("✅ Dashboard WebSocket connected");
-        alexasocket.send(JSON.stringify({
-            type: "register",
-            id: "app1"
-        }));
+        if (alexasocket.readyState === alexasock.OPEN) {
+            console.log("✅ Dashboard WebSocket connected");
+            alexasocket.send(JSON.stringify({
+                type: "register",
+                id: "app1"
+            }));
+        } else {
+            console.warn("⚠️ WebSocket onopen triggered but state is not OPEN:", alexasocket.readyState);
+        }
     };
 
     alexasocket.onmessage = async (event) => {

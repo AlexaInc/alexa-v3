@@ -81,11 +81,22 @@ async function getCachedGroupSettings(db, jid) {
     }
 
     const requestPromise = (async () => {
-        try {
-            const sql = "SELECT * FROM `groups` WHERE group_id = ?";
-            const [results] = await db.promise().query(sql, [jid]);
+        const fetchSettings = async (retry = true) => {
+            try {
+                const sql = "SELECT * FROM `groups` WHERE group_id = ?";
+                const [results] = await db.promise().query(sql, [jid]);
+                return results.length > 0 ? results[0] : null;
+            } catch (err) {
+                if (retry && (err.code === 'ECONNRESET' || err.code === 'PROTOCOL_CONNECTION_LOST')) {
+                    console.warn(`[CacheHelper] DB connection lost for ${jid}, retrying...`);
+                    return fetchSettings(false);
+                }
+                throw err;
+            }
+        };
 
-            const settings = results.length > 0 ? results[0] : null;
+        try {
+            const settings = await fetchSettings();
             if (settings) {
                 groupSettingsCache.set(jid, settings);
             }

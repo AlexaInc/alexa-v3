@@ -80,6 +80,27 @@ const {
     generateWAMessageFromContent,
     generateMessageID
 } = require('@hansaka02/baileys');
+
+/**
+ * Safely downloads a media message with error handling and retries.
+ */
+async function safeDownloadMedia(msg, type = "buffer", options = {}, fetchOptions = {}, retries = 2) {
+    for (let i = 0; i <= retries; i++) {
+        try {
+            const buffer = await downloadMediaMessage(msg, type, options, fetchOptions);
+            if (buffer) return buffer;
+        } catch (err) {
+            console.warn(`[MediaDownloader] Attempt ${i + 1} failed: ${err.message}`);
+            if (i === retries) {
+                console.error(`[MediaDownloader] All attempts failed for message ${msg.key.id}`);
+                return null;
+            }
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+    }
+    return null;
+}
+
 // 
 const {
     generateLinkPreview
@@ -5602,7 +5623,11 @@ from : @${visibleNumber}
                         }]
                     } else {
                         // Download the image as a buffer
-                        const buffer = await downloadMediaMessage(msg, "buffer", {}, {});
+                        const buffer = await safeDownloadMedia(msg, "buffer", {}, {});
+                        if (!buffer) {
+                            console.warn("Skipping image processing due to download failure.");
+                            return;
+                        }
 
 
 
@@ -6206,61 +6231,62 @@ ${summary}
             }
 
 
-            if (msg.message?.imageMessage) {
-                // Download the image as a buffer
-                const buffer = await downloadMediaMessage(msg, "buffer", {}, {});
-
-
-
-                // Convert buffer to Base64
-                const base64Image = buffer.toString("base64");
-                mesafesfb = [{
-                    type: "text",
-                    text: messageText
-                },
-                {
-                    type: "image_url",
-                    image_url: `data:image/jpeg;base64,${base64Image}`,
-                }
-                ]
-                lalala = [{
-                    image: buffer,
-                    caption: messageText
-                }]
-
-                if (userreportingstate[msg.key.remoteJid]?.step === "awaiting_ss") {
-                    const statep = userreportingstate[msg.key.remoteJid]
-                    const reportingfor = statep?.number.replace(/^\+/, '') + '@s.whatsapp.net';
-                    const ongrp = statep?.gid;
-                    console.log(statep)
-                    try {
-
-                        const result = await validStrengerss(lalala[0].image);
-
-                        if (result.valid) {
-                            console.log("✅ Success:", result.reason);
-                            await AlexaInc.groupParticipantsUpdate(ongrp, [reportingfor], 'remove').then(console.log)
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: "✅ User will remove!."
-                            });
-                            await AlexaInc.sendMessage(ongrp, {
-                                text: `✅ User ${reportingfor} will remove!. because he/she put dm without permission`
-                            });
-
-                        } else {
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: result.reason || result.error
-                            });
-
-                        }
-                        userreportingstate[msg.key.remoteJid] = {}
-                    } catch (e) {
-                        console.error("Main App Error:", e);
-                    }
-                }
-
-
+            // Download the image as a buffer
+            const buffer = await safeDownloadMedia(msg, "buffer", {}, {});
+            if (!buffer) {
+                console.warn("Skipping image processing due to download failure.");
+                return;
             }
+
+
+
+            // Convert buffer to Base64
+            const base64Image = buffer.toString("base64");
+            mesafesfb = [{
+                type: "text",
+                text: messageText
+            },
+            {
+                type: "image_url",
+                image_url: `data:image/jpeg;base64,${base64Image}`,
+            }
+            ]
+            lalala = [{
+                image: buffer,
+                caption: messageText
+            }]
+
+            if (userreportingstate[msg.key.remoteJid]?.step === "awaiting_ss") {
+                const statep = userreportingstate[msg.key.remoteJid]
+                const reportingfor = statep?.number.replace(/^\+/, '') + '@s.whatsapp.net';
+                const ongrp = statep?.gid;
+                console.log(statep)
+                try {
+
+                    const result = await validStrengerss(lalala[0].image);
+
+                    if (result.valid) {
+                        console.log("✅ Success:", result.reason);
+                        await AlexaInc.groupParticipantsUpdate(ongrp, [reportingfor], 'remove').then(console.log)
+                        await AlexaInc.sendMessage(msg.key.remoteJid, {
+                            text: "✅ User will remove!."
+                        });
+                        await AlexaInc.sendMessage(ongrp, {
+                            text: `✅ User ${reportingfor} will remove!. because he/she put dm without permission`
+                        });
+
+                    } else {
+                        await AlexaInc.sendMessage(msg.key.remoteJid, {
+                            text: result.reason || result.error
+                        });
+
+                    }
+                    userreportingstate[msg.key.remoteJid] = {}
+                } catch (e) {
+                    console.error("Main App Error:", e);
+                }
+            }
+
 
         }
     } catch (e) {
