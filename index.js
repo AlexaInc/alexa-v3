@@ -562,7 +562,7 @@ async function startWhatsAppConnection() {
     const APP_VERSION = '3.0.0';
 
     const CustomBrowsersMap = {
-        appropriate: () => [ORGANIZATION_NAME, APP_NAME, APP_VERSION]
+        appropriate: () => Browsers.ubuntu('Chrome')
     };
     if (!sessionExists) {
         console.log("❌ No session found, using WhiskeySocket to create creds...");
@@ -617,12 +617,12 @@ async function startWhatsAppConnection() {
     const AlexaInc = makeWASocket({
         version,
         agent: proxyAgent,
-        logger: P({ level: 'fatal' }),
+        logger: P({ level: 'warn' }), // Changed from fatal to see more info
         browser: CustomBrowsersMap.appropriate(),
-        printQRInTerminal: false, // handle QR manually
+        printQRInTerminal: false,
         auth: {
             creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, P({ level: 'fatal' }))
+            keys: makeCacheableSignalKeyStore(state.keys, P({ level: 'warn' }))
         },
         msgRetryCounterCache,
         generateHighQualityLinkPreview: true,
@@ -677,10 +677,14 @@ async function startWhatsAppConnection() {
         if (connection === 'close') {
             const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
             console.log('❌ Connection closed:', reason);
+            console.log('🔍 Full Disconnect Error:', JSON.stringify(lastDisconnect?.error, (key, value) => {
+                if (key === 'creds' || key === 'keys') return '[HIDDEN]';
+                return value;
+            }, 2));
 
-            // Special handling for 408 (Timeout) on Hugging Face
-            if (reason === 408 || reason === 'timed out') {
-                console.warn(`⚠️ Connection timeout (408) detected. Swapping proxy state and retrying...`);
+            // Special handling for 408 (Timeout) or ECONNRESET on Hugging Face
+            if (reason === 408 || reason === 'timed out' || reason?.includes('ECONNRESET')) {
+                console.warn(`⚠️ Network interference detected. Swapping proxy state and retrying...`);
                 shouldAttemptWithProxy = !shouldAttemptWithProxy;
                 setTimeout(startWhatsAppConnection, 2000);
             } else if (reason !== 401) {
