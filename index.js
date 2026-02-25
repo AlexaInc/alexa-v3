@@ -539,11 +539,15 @@ db.getConnection((err) => {
 // Store logs in an array, now also keeping HTML-styled logs
 const SESSION_FOLDER = './auth5a'
 
+let shouldAttemptWithProxy = false; // Toggle for Hugging Face connectivity issues
+
 async function startWhatsAppConnection() {
 
-    const proxyAgent = proxyHelper.agent;
+    const proxyAgent = shouldAttemptWithProxy ? proxyHelper.agent : null;
     if (proxyAgent) {
         console.log(`✅ Using ${proxyHelper.proxyUrl.startsWith('socks') ? 'SOCKS' : 'HTTPS'} Proxy for Baileys (via proxyHelper)`);
+    } else {
+        console.log("ℹ️ Connecting WITHOUT proxy (Attempting direct connection)...");
     }
 
     // 1. Display ASCII logo
@@ -623,7 +627,10 @@ async function startWhatsAppConnection() {
         msgRetryCounterCache,
         generateHighQualityLinkPreview: true,
         shouldIgnoreJid: isJidBroadcast,
-        cachedGroupMetadata: getCachedGroupMetadata
+        cachedGroupMetadata: getCachedGroupMetadata,
+        connectTimeoutMs: 60000,
+        keepAliveIntervalMs: 25000,
+        retryRequestDelayMs: 5000
     });
 
     // Update the singleton in cacheHelper for internal Baileys calls
@@ -671,8 +678,15 @@ async function startWhatsAppConnection() {
             const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
             console.log('❌ Connection closed:', reason);
 
-            // Retry if not a logout
-            if (reason !== 401) setTimeout(startWhatsAppConnection, 5000);
+            // Special handling for 408 (Timeout) on Hugging Face
+            if (reason === 408 || reason === 'timed out') {
+                console.warn(`⚠️ Connection timeout (408) detected. Swapping proxy state and retrying...`);
+                shouldAttemptWithProxy = !shouldAttemptWithProxy;
+                setTimeout(startWhatsAppConnection, 2000);
+            } else if (reason !== 401) {
+                // Regular retry for other reasons
+                setTimeout(startWhatsAppConnection, 5000);
+            }
         }
 
         if (isNewLogin) {
