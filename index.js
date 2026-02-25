@@ -539,15 +539,11 @@ db.getConnection((err) => {
 // Store logs in an array, now also keeping HTML-styled logs
 const SESSION_FOLDER = './auth5a'
 
-let shouldAttemptWithProxy = false; // Toggle for Hugging Face connectivity issues
-
 async function startWhatsAppConnection() {
 
-    const proxyAgent = shouldAttemptWithProxy ? proxyHelper.agent : null;
+    const proxyAgent = proxyHelper.agent;
     if (proxyAgent) {
         console.log(`✅ Using ${proxyHelper.proxyUrl.startsWith('socks') ? 'SOCKS' : 'HTTPS'} Proxy for Baileys (via proxyHelper)`);
-    } else {
-        console.log("ℹ️ Connecting WITHOUT proxy (Attempting direct connection)...");
     }
 
     // 1. Display ASCII logo
@@ -562,7 +558,7 @@ async function startWhatsAppConnection() {
     const APP_VERSION = '3.0.0';
 
     const CustomBrowsersMap = {
-        appropriate: () => Browsers.ubuntu('Chrome')
+        appropriate: () => [ORGANIZATION_NAME, APP_NAME, APP_VERSION]
     };
     if (!sessionExists) {
         console.log("❌ No session found, using WhiskeySocket to create creds...");
@@ -617,20 +613,17 @@ async function startWhatsAppConnection() {
     const AlexaInc = makeWASocket({
         version,
         agent: proxyAgent,
-        logger: P({ level: 'warn' }), // Changed from fatal to see more info
+        logger: P({ level: 'fatal' }),
         browser: CustomBrowsersMap.appropriate(),
-        printQRInTerminal: false,
+        printQRInTerminal: false, // handle QR manually
         auth: {
             creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, P({ level: 'warn' }))
+            keys: makeCacheableSignalKeyStore(state.keys, P({ level: 'fatal' }))
         },
         msgRetryCounterCache,
         generateHighQualityLinkPreview: true,
         shouldIgnoreJid: isJidBroadcast,
-        cachedGroupMetadata: getCachedGroupMetadata,
-        connectTimeoutMs: 60000,
-        keepAliveIntervalMs: 25000,
-        retryRequestDelayMs: 5000
+        cachedGroupMetadata: getCachedGroupMetadata
     });
 
     // Update the singleton in cacheHelper for internal Baileys calls
@@ -677,20 +670,9 @@ async function startWhatsAppConnection() {
         if (connection === 'close') {
             const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
             console.log('❌ Connection closed:', reason);
-            console.log('🔍 Full Disconnect Error:', JSON.stringify(lastDisconnect?.error, (key, value) => {
-                if (key === 'creds' || key === 'keys') return '[HIDDEN]';
-                return value;
-            }, 2));
 
-            // Special handling for 408 (Timeout) or ECONNRESET on Hugging Face
-            if (reason === 408 || reason === 'timed out' || reason?.includes('ECONNRESET')) {
-                console.warn(`⚠️ Network interference detected. Swapping proxy state and retrying...`);
-                shouldAttemptWithProxy = !shouldAttemptWithProxy;
-                setTimeout(startWhatsAppConnection, 2000);
-            } else if (reason !== 401) {
-                // Regular retry for other reasons
-                setTimeout(startWhatsAppConnection, 5000);
-            }
+            // Retry if not a logout
+            if (reason !== 401) setTimeout(startWhatsAppConnection, 5000);
         }
 
         if (isNewLogin) {
