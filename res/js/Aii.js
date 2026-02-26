@@ -71,7 +71,26 @@ function parseApiResponse(resp) {
 }
 
 /**
- * Main function to call AI with MySQL history management.
+ * Extracts memory updates from AI response if present.
+ * Expected format: @MEMORY: { "name": "...", "fav_subject": "..." }
+ */
+function extractMemories(reply) {
+    const match = reply.match(/@MEMORY:\s*(\{.*\})/);
+    if (match) {
+        try {
+            return {
+                updatedReply: reply.replace(match[0], '').trim(),
+                memories: JSON.parse(match[1])
+            };
+        } catch (e) {
+            console.error('Error parsing memory update:', e);
+        }
+    }
+    return { updatedReply: reply, memories: null };
+}
+
+/**
+ * Main function to call AI with MySQL history and memory management.
  * @param {object} db - MySQL connection/pool
  * @param {string} thread_id_name - Name of the user
  * @param {string} message - User message (string or object for multimodal)
@@ -79,25 +98,32 @@ function parseApiResponse(resp) {
  * @param {function} callback - Callback (err, reply)
  */
 async function ai(db, thread_id_name, message, thread_id, callback) {
-    const query1 = 'SELECT `conventions` FROM `conversation_history` WHERE `id` = ?';
+    // Queries for history and memories
+    const queryHistory = 'SELECT `conventions` FROM `conversation_history` WHERE `id` = ?';
+    const queryMemories = 'SELECT `memory_data` FROM `user_memories` WHERE `id` = ?';
 
-    db.execute(query1, [thread_id], async (err, results) => {
-        if (err) {
-            console.error('Error fetching conversations:', err);
-            return callback('Database error', null);
-        }
+    try {
+        // Fetch both history and memories
+        const [historyResults] = await db.promise().execute(queryHistory, [thread_id]);
+        const [memoryResults] = await db.promise().execute(queryMemories, [thread_id]);
 
         let conversations = [];
-        if (results.length > 0) {
+        if (historyResults.length > 0) {
             try {
-                const abc = results[0].conventions;
-                if (typeof abc === 'string') {
-                    conversations = JSON.parse(abc);
-                } else if (Array.isArray(abc)) {
-                    conversations = abc || [];
-                }
+                const abc = historyResults[0].conventions;
+                conversations = typeof abc === 'string' ? JSON.parse(abc) : (abc || []);
             } catch (e) {
-                console.error('Error parsing conventions data:', e);
+                console.error('Error parsing history:', e);
+            }
+        }
+
+        let userMemories = {};
+        if (memoryResults.length > 0) {
+            try {
+                const mem = memoryResults[0].memory_data;
+                userMemories = typeof mem === 'string' ? JSON.parse(mem) : (mem || {});
+            } catch (e) {
+                console.error('Error parsing memories:', e);
             }
         }
 
@@ -105,14 +131,21 @@ async function ai(db, thread_id_name, message, thread_id, callback) {
         const newUserMessage = { role: 'user', content: message };
         conversations.push(newUserMessage);
 
-        // Keep last 12 messages for context
-        let historyForApi = conversations.length > 12 ? conversations.slice(-12) : [...conversations];
+        // Limit conversation history
+        let historyForApi = conversations.slice(-12);
 
-        // Prepare full prompt with dynamic name in system header if needed
-        const systemHeader = [...DEFAULT_SYSTEM];
-        systemHeader[0].content += `\n\n users name is always ${thread_id_name}. until user say its not his/her name`;
+        // Construct System Prompt
+        const systemPrompt = { ...DEFAULT_SYSTEM[0] };
+        let memoryString = `Important details about this user (name, interests, etc.):\n- User's reported name is ${thread_id_name}.`;
 
-        const apiHistory = [...systemHeader, ...historyForApi];
+        for (const [key, value] of Object.entries(userMemories)) {
+            memoryString += `\n- ${key}: ${value}`;
+        }
+
+        systemPrompt.content += `\n\n${memoryString}\n\n`;
+        systemPrompt.content += `INSTRUCTION: If you learn something new and important about the user (e.g., their real name, favorite food, location, hobbies), append a hidden update at the end of your response in this EXACT format: @MEMORY: {"key": "value"}. Do not mention this format to the user.`;
+
+        const apiHistory = [systemPrompt, ...historyForApi];
 
         const form = new FormData();
         form.append('chat_style', 'chat');
@@ -123,44 +156,44 @@ async function ai(db, thread_id_name, message, thread_id, callback) {
 
         const headers = { 'api-key': API_KEY, ...form.getHeaders() };
 
-        try {
-            const resp = await axios.post(API_URL, form, { headers, timeout: 20000 });
-            let originalReply = parseApiResponse(resp);
+        const resp = await axios.post(API_URL, form, { headers, timeout: 25000 });
+        const rawReply = parseApiResponse(resp);
 
-            // Apply denial fixes
-            const userText = typeof message === 'string' ? message : (Array.isArray(message) ? message.find(m => m.type === 'text')?.text || '' : '');
-            let finalReply = fixBotDenials(originalReply, userText);
+        // Handle denials and extract memories
+        const userText = typeof message === 'string' ? message : (Array.isArray(message) ? message.find(m => m.type === 'text')?.text || '' : '');
+        let { updatedReply, memories: newMemories } = extractMemories(rawReply);
+        let finalReply = fixBotDenials(updatedReply, userText);
 
-            const newAssistantMessage = { role: 'assistant', content: finalReply };
-            conversations.push(newAssistantMessage);
+        // Update history
+        const newAssistantMessage = { role: 'assistant', content: finalReply };
+        conversations.push(newAssistantMessage);
+        const pushedHistory = JSON.stringify(conversations);
 
-            const pushed = JSON.stringify(conversations);
+        // Update memories if found
+        if (newMemories) {
+            userMemories = { ...userMemories, ...newMemories };
+            const pushedMemories = JSON.stringify(userMemories);
 
-            if (results.length > 0) {
-                const query2 = 'UPDATE `conversation_history` SET `conventions` = ? WHERE `id` = ?';
-                db.execute(query2, [pushed, thread_id], (updateErr) => {
-                    if (updateErr) {
-                        console.error('Error updating conversation:', updateErr);
-                        return callback('Error updating conversation', null);
-                    }
-                    callback(null, finalReply);
-                });
+            if (memoryResults.length > 0) {
+                await db.promise().execute('UPDATE `user_memories` SET `memory_data` = ? WHERE `id` = ?', [pushedMemories, thread_id]);
             } else {
-                const query3 = 'INSERT INTO `conversation_history`(`id`, `conventions`) VALUES (?, ?)';
-                db.execute(query3, [thread_id, pushed], (insertErr) => {
-                    if (insertErr) {
-                        console.error('Error inserting conversation:', insertErr);
-                        return callback('Error inserting conversation', null);
-                    }
-                    callback(null, finalReply);
-                });
+                await db.promise().execute('INSERT INTO `user_memories` (`id`, `memory_data`) VALUES (?, ?)', [thread_id, pushedMemories]);
             }
-
-        } catch (apiErr) {
-            console.error("❌ Error calling AI API:", apiErr.message);
-            callback(apiErr.message, null);
         }
-    });
+
+        // Save History
+        if (historyResults.length > 0) {
+            await db.promise().execute('UPDATE `conversation_history` SET `conventions` = ? WHERE `id` = ?', [pushedHistory, thread_id]);
+        } else {
+            await db.promise().execute('INSERT INTO `conversation_history` (`id`, `conventions`) VALUES (?, ?)', [thread_id, pushedHistory]);
+        }
+
+        callback(null, finalReply);
+
+    } catch (err) {
+        console.error("❌ Error in AI Process:", err.message);
+        callback(err.message, null);
+    }
 }
 
 module.exports = ai;

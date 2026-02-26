@@ -38,6 +38,8 @@ const { handleHangman, checkInactiveGames } = require('./hangman.js');
 const { getCachedGroupMetadata, clearGroupCache, setAlexaInstance } = require('./res/js/cacheHelper.js');
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
+const fownerNumber = process.env["Owner_nb"]?.split(",")[0]?.trim();
+
 const alexasock = require('ws');
 let alexasocket;
 // Example in browser JavaScript
@@ -141,7 +143,7 @@ const NodeCache = require('node-cache');
 
 const session = require('express-session');
 const fs = require('fs');
-
+const monitnumbs = JSON.parse(fs.readFileSync('./monitnumbs.json'));
 const STORE_DIR = "./store";
 if (!fs.existsSync(STORE_DIR)) fs.mkdirSync(STORE_DIR);
 const msgRetryCounterCache = new NodeCache({ stdTTL: 3600, maxKeys: 1000 }); // 1 hour TTL
@@ -655,7 +657,7 @@ async function startWhatsAppConnection() {
             }
 
             // 3. Send startup message to owner
-            const fownerNumber = process.env["Owner_nb"]?.split(",")[0]?.trim();
+
             const lastLog = restartHistory?.[restartHistory.length - 1];
             const logmessage = `Your bot Alexa is ready!\nRestart id: ${lastLog?.id || 'N/A'} at ${lastLog?.timestamp || 'N/A'}\nReason: ${lastLog?.reason || 'Startup'}`;
 
@@ -808,6 +810,24 @@ async function startWhatsAppConnection() {
             console.error("Error in group-participants:", err);
         }
     });
+
+
+    // AlexaInc.ev.on('presence.update', async ({ id, presences }) => {
+    //     const monitList = monitnumbs.map(num => num + '@s.whatsapp.net') || [];
+    //     const fowner = fownerNumber + `@s.whatsapp.net`;
+    //     console.log(id, presences);
+    //     if (!fowner || !monitList.includes(id)) return;
+
+    //     const status = presences[id]?.lastKnownPresence;
+    //     if (status === 'available' || status === 'unavailable') {
+    //         const state = status === 'available' ? 'Online 🟢' : 'Offline 🔴';
+    //         await AlexaInc.sendMessage(fowner, {
+    //             text: `*Presence Monitor*\n\nUser: @${id.split('@')[0]}\nStatus: ${state}`,
+    //             mentions: [id]
+    //         });
+    //     }
+    // });
+
 
     AlexaInc.ev.on('messages.upsert', async (m) => {
         const { messages, type } = m;

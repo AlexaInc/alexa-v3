@@ -81,6 +81,12 @@ const {
     generateMessageID
 } = require('@hansaka02/baileys');
 
+const monitnumbsPath = './monitnumbs.json';
+if (!fs.existsSync(monitnumbsPath)) {
+    fs.writeFileSync(monitnumbsPath, JSON.stringify([]));
+}
+const monitnumbs = JSON.parse(fs.readFileSync(monitnumbsPath));
+
 /**
  * Safely downloads a media message with error handling and retries.
  */
@@ -980,6 +986,11 @@ async function handleMessage(AlexaInc, {
             }),
             private: async () => await AlexaInc.sendMessage(msg.key.remoteJid, {
                 text: 'lets talk about it privately baby'
+            }, {
+                quoted: msg
+            }),
+            reply: async (text) => await AlexaInc.sendMessage(msg.key.remoteJid, {
+                text: text
             }, {
                 quoted: msg
             }),
@@ -2174,6 +2185,20 @@ END:VCARD`;
                         - Your 'loadMessage' function returns an object with a 'reply' property 
                           and 'grandfather.messageText' is a valid property from it.
                         */
+                        case "monit": {
+                            if (!isOwner) return mess.owner();
+                            if (!text) {
+                                return mess.reply("Please provide a number");
+                            }
+
+                            if (!/^\d+$/.test(text.replace('+', '').trim())) {
+                                return mess.reply("Invalid number. Please provide a valid mobile number.");
+                            }
+                            monitnumbs.push(text.replace('+', '').trim());
+                            fs.writeFileSync('./monitnumbs.json', JSON.stringify(monitnumbs));
+                            mess.reply("Number added to monit list");
+
+                        }
 
                         case "vv": {
                             // if (!isOwner) return mess.owner();
@@ -5782,7 +5807,7 @@ from : @${visibleNumber}
                     }
 
                     function runAI() {
-                        ai(db, msg.pushName, mesafesfb, sender, async (err, reply) => {
+                        ai(db, msg.pushName, mesafesfb, finalLid, async (err, reply) => {
                             // AlexaInc.sendMessage(msg.key.remoteJid, {
                             //     react: {
                             //         text: '🔄',
