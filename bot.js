@@ -133,21 +133,21 @@ const {
 const generatequote = require('./generatequote2.js')
 const chalk = require('kleur');
 const TEMP_DIR = path.join(__dirname, 'temp');
-const {
-    getVideoInfo,
-    getFormats,
-    getBestFormats,
-    getDownloadStream,
-    downloadBestMergedToFile,
-    downloadSingleFormatToFile,
-    downloadAudioAsMp3,
-    findVideoFormat,
-    downloadAudioAsOgg,
-    downloadSingleFormatToBuffer,
-    downloadAudioAsMp3ToBuffer,
+// const {
+//     getVideoInfo,
+//     getFormats,
+//     getBestFormats,
+//     getDownloadStream,
+//     downloadBestMergedToFile,
+//     downloadSingleFormatToFile,
+//     downloadAudioAsMp3,
+//     findVideoFormat,
+//     downloadAudioAsOgg,
+//     downloadSingleFormatToBuffer,
+//     downloadAudioAsMp3ToBuffer,
 
-    downloadQualityToBuffer, // <-- NEW FUNCTION ADDED
-} = require('./res/js/ytHelper.js')
+//     downloadQualityToBuffer, // <-- NEW FUNCTION ADDED
+// } = require('./res/js/ytHelper.js')
 const ai = require('./res/js/Aii.js');
 const {
     OpenAI
