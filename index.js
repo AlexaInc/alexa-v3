@@ -596,12 +596,24 @@ async function startWhatsAppConnection() {
 
             if (connection === 'close') {
                 const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
+                console.log("❌ Connection closed:", reason);
 
-                if (reason !== 401) setTimeout(startWhatsAppConnection, 5000);
-                console.log("❌ Connection closed");
+                if (lastDisconnect?.error) {
+                    console.error('🔍 Detailed Initial Connection Error:', {
+                        message: lastDisconnect.error.message,
+                        stack: lastDisconnect.error.stack,
+                        statusCode: lastDisconnect.error.output?.statusCode
+                    });
+                }
+
+                if (reason !== 401) {
+                    console.log('🔄 Retrying initial connection in 5s...');
+                    setTimeout(startWhatsAppConnection, 5000);
+                }
+
                 if (lastDisconnect?.error?.output?.statusCode === 401) {
                     console.log("❌ Auth failed, removing folder...");
-                    fs.rmSync(authFolder, { recursive: true, force: true });
+                    fs.rmSync(authPath, { recursive: true, force: true });
                     startWhatsAppConnection();
                 }
             }
