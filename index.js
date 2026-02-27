@@ -627,7 +627,8 @@ async function startWhatsAppConnection() {
     // 2. Fetch auth and Baileys version
     const { state, saveCreds } = await useMultiFileAuthState(authPath);
     const { version, isLatest } = await fetchLatestBaileysVersion();
-    console.log(`using WA v${version.join('.')}, isLatest: ${isLatest}`);
+    console.log(`🚀 Using WA v${version.join('.')}, isLatest: ${isLatest}`);
+    if (proxyAgent) console.log('✅ Passing proxy agent to makeWASocket');
 
 
 

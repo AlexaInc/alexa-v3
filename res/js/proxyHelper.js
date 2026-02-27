@@ -17,7 +17,22 @@ class ProxyHelper {
 
         // New configuration options
         this.rejectUnauthorized = process.env.PROXY_REJECT_UNAUTHORIZED !== 'false';
-        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '10000', 10);
+        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '15000', 10);
+
+        // --- CRITICAL: Add proxy host itself to noProxy to prevent infinite recursion ---
+        if (this.proxyUrl) {
+            try {
+                const proxyHost = new URL(this.proxyUrl).hostname;
+                if (!this.noProxy.some(h => h.trim() === proxyHost)) {
+                    this.noProxy.push(proxyHost);
+                }
+            } catch (e) {
+                console.error('⚠️ Could not parse PROXY_URL for bypass:', e.message);
+            }
+        }
+
+        console.log(`ℹ️ Proxy System: rejectUnauthorized=${this.rejectUnauthorized}, timeout=${this.timeout}`);
+        console.log(`ℹ️ Proxy Bypass Hosts: ${this.noProxy.join(', ')}`);
 
         this.agent = this._createAgent();
     }
