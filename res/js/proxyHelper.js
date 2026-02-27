@@ -18,6 +18,7 @@ class ProxyHelper {
         // New configuration options
         this.rejectUnauthorized = process.env.PROXY_REJECT_UNAUTHORIZED !== 'false';
         this.timeout = parseInt(process.env.PROXY_TIMEOUT || '15000', 10);
+        this.disableGlobal = process.env.PROXY_DISABLE_GLOBAL === 'false';
 
         // --- CRITICAL: Add proxy host itself to noProxy to prevent infinite recursion ---
         if (this.proxyUrl) {
@@ -43,12 +44,19 @@ class ProxyHelper {
         const options = {
             keepAlive: true,
             timeout: this.timeout,
-            rejectUnauthorized: this.rejectUnauthorized
+            rejectUnauthorized: this.rejectUnauthorized,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Accept': '*/*',
+                'Proxy-Connection': 'keep-alive'
+            }
         };
 
         if (this.proxyUrl.startsWith('socks')) {
+            console.log(`🚀 Initializing SOCKS Proxy Agent: ${this.proxyUrl}`);
             return new SocksProxyAgent(this.proxyUrl, options);
         } else {
+            console.log(`🚀 Initializing HTTPS Proxy Agent: ${this.proxyUrl}`);
             return new HttpsProxyAgent(this.proxyUrl, options);
         }
     }
@@ -77,7 +85,13 @@ class ProxyHelper {
      * @returns {object|null}
      */
     getAgent(urlStr) {
-        if (!this.agent || this.shouldBypass(urlStr)) return null;
+        if (!this.agent) return null;
+        const bypass = this.shouldBypass(urlStr);
+        if (bypass) {
+            // console.log(`[Proxy] Bypassing: ${urlStr}`);
+            return null;
+        }
+        console.log(`[Proxy] Proxying: ${urlStr}`);
         return this.agent;
     }
 
@@ -105,7 +119,10 @@ class ProxyHelper {
      * WARNING: This may affect all outgoing requests in the process.
      */
     configureGlobal() {
-        if (!this.agent) return;
+        if (!this.agent || this.disableGlobal) {
+            if (this.disableGlobal) console.log('ℹ️ Global Node.js Proxy override is DISABLED via PROXY_DISABLE_GLOBAL');
+            return;
+        }
 
         const agent = this.agent;
 
