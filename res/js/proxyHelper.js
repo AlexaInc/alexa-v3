@@ -17,7 +17,7 @@ class ProxyHelper {
 
         // New configuration options
         this.rejectUnauthorized = process.env.PROXY_REJECT_UNAUTHORIZED !== 'false';
-        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '15000', 10);
+        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '30000', 10);
         this.disableGlobal = process.env.PROXY_DISABLE_GLOBAL === 'false';
 
         // --- CRITICAL: Add proxy host itself to noProxy to prevent infinite recursion ---
