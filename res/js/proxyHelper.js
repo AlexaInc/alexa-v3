@@ -13,16 +13,27 @@ class ProxyHelper {
         this.proxyUrl = process.env.PROXY_URL;
         const dbHost = process.env.DB_HOST || '';
         this.noProxy = (process.env.NO_PROXY || 'localhost,127.0.0.1,::1,0.0.0.0,' + dbHost).split(',');
+
+        // New configuration options
+        this.rejectUnauthorized = process.env.PROXY_REJECT_UNAUTHORIZED !== 'false';
+        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '10000', 10);
+
         this.agent = this._createAgent();
     }
 
     _createAgent() {
         if (!this.proxyUrl) return null;
 
+        const options = {
+            keepAlive: true,
+            timeout: this.timeout,
+            rejectUnauthorized: this.rejectUnauthorized
+        };
+
         if (this.proxyUrl.startsWith('socks')) {
-            return new SocksProxyAgent(this.proxyUrl);
+            return new SocksProxyAgent(this.proxyUrl, options);
         } else {
-            return new HttpsProxyAgent(this.proxyUrl);
+            return new HttpsProxyAgent(this.proxyUrl, options);
         }
     }
 

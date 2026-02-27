@@ -673,8 +673,19 @@ async function startWhatsAppConnection() {
             const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
             console.log('❌ Connection closed:', reason);
 
+            if (lastDisconnect?.error) {
+                console.error('🔍 Detailed Connection Error:', {
+                    message: lastDisconnect.error.message,
+                    stack: lastDisconnect.error.stack,
+                    statusCode: lastDisconnect.error.output?.statusCode
+                });
+            }
+
             // Retry if not a logout
-            if (reason !== 401) setTimeout(startWhatsAppConnection, 5000);
+            if (reason !== 401) {
+                console.log('🔄 Retrying connection in 5s...');
+                setTimeout(startWhatsAppConnection, 5000);
+            }
         }
 
         if (isNewLogin) {
