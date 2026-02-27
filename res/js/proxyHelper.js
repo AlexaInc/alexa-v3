@@ -12,13 +12,17 @@ const net = require('net');
 class ProxyHelper {
     constructor() {
         this.proxyUrl = process.env.PROXY_URL;
-        const dbHost = process.env.DB_HOST || '';
-        this.noProxy = (process.env.NO_PROXY || 'localhost,127.0.0.1,::1,0.0.0.0,' + dbHost).split(',');
-
         // New configuration options
         this.rejectUnauthorized = process.env.PROXY_REJECT_UNAUTHORIZED !== 'false';
-        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '30000', 10);
+        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '60000', 10);
         this.disableGlobal = process.env.PROXY_DISABLE_GLOBAL === 'false';
+
+        // Default bypasses + user provided + Aiven
+        const defaultBypass = ['localhost', '127.0.0.1', '::1', '0.0.0.0', '.aivencloud.com'];
+        const userBypass = (process.env.NO_PROXY || '').split(',').map(h => h.trim()).filter(Boolean);
+        const dbHost = process.env.DB_HOST || '';
+
+        this.noProxy = [...new Set([...defaultBypass, ...userBypass, dbHost])];
 
         // --- CRITICAL: Add proxy host itself to noProxy to prevent infinite recursion ---
         if (this.proxyUrl) {
@@ -70,9 +74,22 @@ class ProxyHelper {
         if (!urlStr) return true;
         try {
             const url = new URL(urlStr);
+            const hostname = url.hostname.toLowerCase();
+
             return this.noProxy.some(host => {
-                const trimmedHost = host.trim();
-                return url.hostname.includes(trimmedHost) || (trimmedHost.startsWith('.') && url.hostname.endsWith(trimmedHost));
+                const h = host.trim().toLowerCase();
+                if (!h) return false;
+
+                // Direct match
+                if (hostname === h) return true;
+
+                // Wildcard/Domain match (e.g. .host.com matching sub.host.com)
+                if (h.startsWith('.') && hostname.endsWith(h)) return true;
+
+                // Basic contains match for common domains (safety fallback)
+                if (h.includes('.') && hostname.includes(h)) return true;
+
+                return false;
             });
         } catch (e) {
             return true;
