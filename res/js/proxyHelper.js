@@ -3,6 +3,7 @@ const { SocksProxyAgent } = require('socks-proxy-agent');
 const axios = require('axios');
 const http = require('http');
 const https = require('https');
+const net = require('net');
 
 /**
  * Centrally manages proxy agents for the entire application.
@@ -143,6 +144,50 @@ class ProxyHelper {
         https.request = wrapRequest(originalHttpsRequest, 'https:');
 
         console.log('✅ Global Node.js Proxy (HTTP/HTTPS) configured');
+    }
+
+    /**
+     * Checks TCP connectivity to the proxy server.
+     * @returns {Promise<boolean>}
+     */
+    async checkProxyConnectivity() {
+        if (!this.proxyUrl) return true;
+
+        try {
+            const url = new URL(this.proxyUrl);
+            const host = url.hostname;
+            const port = url.port || (url.protocol === 'https:' ? 443 : 80);
+
+            console.log(`🔍 Testing Proxy Connectivity to ${host}:${port}...`);
+
+            return new Promise((resolve) => {
+                const socket = new net.Socket();
+                socket.setTimeout(this.timeout);
+
+                socket.on('connect', () => {
+                    console.log('✅ Proxy is REACHABLE');
+                    socket.destroy();
+                    resolve(true);
+                });
+
+                socket.on('timeout', () => {
+                    console.error(`❌ Proxy connection TIMEOUT (${this.timeout}ms). Firewall might be blocking port ${port}.`);
+                    socket.destroy();
+                    resolve(false);
+                });
+
+                socket.on('error', (err) => {
+                    console.error(`❌ Proxy connection FAILED: ${err.message}`);
+                    socket.destroy();
+                    resolve(false);
+                });
+
+                socket.connect(port, host);
+            });
+        } catch (e) {
+            console.error('❌ Invalid Proxy URL:', e.message);
+            return false;
+        }
     }
 
     /**

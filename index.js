@@ -546,6 +546,14 @@ async function startWhatsAppConnection() {
     const proxyAgent = proxyHelper.agent;
     if (proxyAgent) {
         console.log(`✅ Using ${proxyHelper.proxyUrl.startsWith('socks') ? 'SOCKS' : 'HTTPS'} Proxy for Baileys (via proxyHelper)`);
+
+        // --- Pre-connection Proxy Check ---
+        const isProxyReachable = await proxyHelper.checkProxyConnectivity();
+        if (!isProxyReachable) {
+            console.log('⚠️ Proxy is unreachable. Waiting 10s before retry...');
+            setTimeout(startWhatsAppConnection, 10000);
+            return;
+        }
     }
 
     // 1. Display ASCII logo
