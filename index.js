@@ -647,7 +647,7 @@ async function startWhatsAppConnection() {
         generateHighQualityLinkPreview: true,
         shouldIgnoreJid: isJidBroadcast,
         cachedGroupMetadata: getCachedGroupMetadata,
-        connectTimeoutMs: 60000,
+        connectTimeoutMs: 90000,
         defaultQueryTimeoutMs: 60000,
         keepAliveIntervalMs: 10000
     });

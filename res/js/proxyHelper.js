@@ -1,9 +1,11 @@
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 const axios = require('axios');
-const http = require('http');
-const https = require('https');
-const net = require('net');
+const http = require('node:http');
+const https = require('node:https');
+const net = require('node:net');
+const tls = require('node:tls');
+const { URL } = require('url');
 
 /**
  * Centrally manages proxy agents for the entire application.
@@ -45,10 +47,25 @@ class ProxyHelper {
     _createAgent() {
         if (!this.proxyUrl) return null;
 
+        let finalProxyUrl = this.proxyUrl;
+
+        // Auto-upgrade to https if port is 443 and protocol is http
+        // (Since port 443 is almost always SSL on modern proxies)
+        try {
+            const url = new URL(this.proxyUrl);
+            if (url.port === '443' && url.protocol === 'http:') {
+                console.log('⚠️ Warning: Port 443 detected with http protocol. Upgrading to https:// internally.');
+                url.protocol = 'https:';
+                finalProxyUrl = url.href;
+            }
+        } catch (e) { }
+
         const options = {
             keepAlive: true,
             timeout: this.timeout,
             rejectUnauthorized: this.rejectUnauthorized,
+            // Try to avoid SNI issues by setting servername to null if connecting to IP
+            servername: undefined,
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
                 'Accept': '*/*',
@@ -56,12 +73,12 @@ class ProxyHelper {
             }
         };
 
-        if (this.proxyUrl.startsWith('socks')) {
-            console.log(`🚀 Initializing SOCKS Proxy Agent: ${this.proxyUrl}`);
-            return new SocksProxyAgent(this.proxyUrl, options);
+        if (finalProxyUrl.startsWith('socks')) {
+            console.log(`🚀 Initializing SOCKS Proxy Agent: ${finalProxyUrl}`);
+            return new SocksProxyAgent(finalProxyUrl, options);
         } else {
-            console.log(`🚀 Initializing HTTPS Proxy Agent: ${this.proxyUrl}`);
-            return new HttpsProxyAgent(this.proxyUrl, options);
+            console.log(`🚀 Initializing HTTPS Proxy Agent: ${finalProxyUrl}`);
+            return new HttpsProxyAgent(finalProxyUrl, options);
         }
     }
 
@@ -205,33 +222,50 @@ class ProxyHelper {
         try {
             const url = new URL(this.proxyUrl);
             const host = url.hostname;
-            const port = url.port || (url.protocol === 'https:' ? 443 : 80);
+            const port = parseInt(url.port || (url.protocol === 'https:' ? '443' : '80'), 10);
+            const isHttps = url.protocol === 'https:';
 
-            console.log(`🔍 Testing Proxy Connectivity to ${host}:${port}...`);
+            console.log(`🔍 Testing Proxy Connectivity to ${host}:${port} (${url.protocol.replace(':', '').toUpperCase()})...`);
 
             return new Promise((resolve) => {
-                const socket = new net.Socket();
-                socket.setTimeout(this.timeout);
-
-                socket.on('connect', () => {
-                    console.log('✅ Proxy is REACHABLE');
-                    socket.destroy();
-                    resolve(true);
-                });
-
-                socket.on('timeout', () => {
-                    console.error(`❌ Proxy connection TIMEOUT (${this.timeout}ms). Firewall might be blocking port ${port}.`);
-                    socket.destroy();
+                let socket;
+                const timeoutId = setTimeout(() => {
+                    console.error(`❌ Proxy connection TIMEOUT (30s). Firewall might be blocking port ${port}.`);
+                    if (socket) socket.destroy();
                     resolve(false);
-                });
+                }, 30000);
+
+                if (isHttps) {
+                    socket = tls.connect({
+                        host: host,
+                        port: port,
+                        rejectUnauthorized: false, // Don't fail check due to self-signed
+                        timeout: 15000
+                    }, () => {
+                        clearTimeout(timeoutId);
+                        console.log(`✅ Proxy is REACHABLE (TLS handshake success)`);
+                        socket.end();
+                        resolve(true);
+                    });
+                } else {
+                    socket = net.connect({
+                        host: host,
+                        port: port,
+                        timeout: 15000
+                    }, () => {
+                        clearTimeout(timeoutId);
+                        console.log(`✅ Proxy is REACHABLE (TCP connected)`);
+                        socket.end();
+                        resolve(true);
+                    });
+                }
 
                 socket.on('error', (err) => {
-                    console.error(`❌ Proxy connection FAILED: ${err.message}`);
+                    clearTimeout(timeoutId);
+                    console.error(`❌ Proxy is UNREACHABLE: ${err.message}`);
                     socket.destroy();
                     resolve(false);
                 });
-
-                socket.connect(port, host);
             });
         } catch (e) {
             console.error('❌ Invalid Proxy URL:', e.message);
