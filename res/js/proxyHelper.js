@@ -49,16 +49,7 @@ class ProxyHelper {
 
         let finalProxyUrl = this.proxyUrl;
 
-        // Auto-upgrade to https if port is 443 and protocol is http
-        // (Since port 443 is almost always SSL on modern proxies)
-        try {
-            const url = new URL(this.proxyUrl);
-            if (url.port === '443' && url.protocol === 'http:') {
-                console.log('⚠️ Warning: Port 443 detected with http protocol. Upgrading to https:// internally.');
-                url.protocol = 'https:';
-                finalProxyUrl = url.href;
-            }
-        } catch (e) { }
+        // Removing auto-upgrade logic as it can cause EPROTO errors if the proxy is plain HTTP on port 443
 
         const options = {
             keepAlive: true,
@@ -74,10 +65,10 @@ class ProxyHelper {
         };
 
         if (finalProxyUrl.startsWith('socks')) {
-            console.log(`🚀 Initializing SOCKS Proxy Agent: ${finalProxyUrl}`);
+            console.log(`🚀 Proxy System: Initializing SOCKS Proxy Agent for ${finalProxyUrl.split('@').pop()}`);
             return new SocksProxyAgent(finalProxyUrl, options);
         } else {
-            console.log(`🚀 Initializing HTTPS Proxy Agent: ${finalProxyUrl}`);
+            console.log(`🚀 Proxy System: Initializing HTTPS Proxy Agent for ${finalProxyUrl.split('@').pop()}`);
             return new HttpsProxyAgent(finalProxyUrl, options);
         }
     }

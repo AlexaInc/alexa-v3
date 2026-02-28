@@ -48,7 +48,7 @@ function connectWebSocket(AlexaInc) {
     const socketUrl = process.env.Alexasock_url;
     if (!socketUrl) return;
 
-    alexasocket = new alexasock(socketUrl);
+    alexasocket = new alexasock(socketUrl, { agent: proxyHelper.getAgent(socketUrl) });
 
     alexasocket.onopen = () => {
         if (alexasocket.readyState === alexasock.OPEN) {
@@ -626,7 +626,7 @@ async function startWhatsAppConnection() {
     console.log("✅ Session exists, start normal Baileys connection...");
     // 2. Fetch auth and Baileys version
     const { state, saveCreds } = await useMultiFileAuthState(authPath);
-    const { version, isLatest } = await fetchLatestBaileysVersion();
+    const { version, isLatest } = await fetchLatestBaileysVersion({ agent: proxyAgent }).catch(() => fetchLatestBaileysVersion());
     console.log(`🚀 Using WA v${version.join('.')}, isLatest: ${isLatest}`);
     if (proxyAgent) console.log('✅ Passing proxy agent to makeWASocket');
 
@@ -647,9 +647,9 @@ async function startWhatsAppConnection() {
         generateHighQualityLinkPreview: true,
         shouldIgnoreJid: isJidBroadcast,
         cachedGroupMetadata: getCachedGroupMetadata,
-        connectTimeoutMs: 90000,
-        defaultQueryTimeoutMs: 60000,
-        keepAliveIntervalMs: 10000
+        connectTimeoutMs: 120000,
+        defaultQueryTimeoutMs: 90000,
+        keepAliveIntervalMs: 5000
     });
 
     // Update the singleton in cacheHelper for internal Baileys calls
