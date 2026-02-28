@@ -225,8 +225,16 @@ function startXray() {
   }
 
   const xray = spawn('xray', ['-c', configPath]);
-  xray.stdout.on('data', (data) => console.log(`[Xray] ${data.toString().trim()}`));
-  xray.stderr.on('data', (data) => console.error(`[Xray Error] ${data.toString().trim()}`));
+
+  xray.stdout.on('data', (data) => {
+    const msg = data.toString().trim();
+    if (msg) console.log(`[Xray] ${msg}`);
+  });
+
+  xray.stderr.on('data', (data) => {
+    const msg = data.toString().trim();
+    if (msg) console.error(`[Xray Error] ${msg}`);
+  });
 
   xray.on('exit', (code) => {
     console.log(`❌ Xray sidecar exited with code ${code}. Restarting in 5s...`);

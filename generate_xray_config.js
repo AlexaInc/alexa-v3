@@ -57,10 +57,10 @@ function generateConfig() {
                 settings: {
                     vnext: [{
                         address: url.hostname,
-                        port: parseInt(url.port),
+                        port: parseInt(url.port) || 443,
                         users: [{
                             id: uuid,
-                            encryption: params.encryption || "none"
+                            encryption: "none"
                         }]
                     }]
                 },
@@ -68,7 +68,10 @@ function generateConfig() {
                     network: params.type || "tcp",
                     security: params.security || "none",
                     tlsSettings: params.security === "tls" ? { allowInsecure: true } : undefined,
-                    wsSettings: params.type === "ws" ? { path: params.path, headers: { Host: params.host } } : undefined
+                    wsSettings: params.type === "ws" ? {
+                        path: params.path || "/",
+                        headers: params.host ? { Host: params.host } : undefined
+                    } : undefined
                 }
             });
         } catch (e) {
@@ -83,7 +86,7 @@ function generateConfig() {
     if (outbounds.length === 0) return;
 
     const fullConfig = {
-        log: { loglevel: "warning" },
+        log: { loglevel: "info" },
         dns: {
             servers: ["1.1.1.1", "8.8.8.8", "https+local://1.1.1.1/dns-query"],
             queryStrategy: "UseIP"
