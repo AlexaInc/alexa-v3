@@ -192,7 +192,7 @@ function generateConfig() {
         policy: {
             levels: {
                 "0": {
-                    "handshake": 30,
+                    "handshake": 60,
                     "connIdle": 300,
                     "uplinkOnly": 1,
                     "downlinkOnly": 1,

@@ -57,8 +57,8 @@ class ProxyHelper {
         const isLocalSidecar = finalProxyUrl.includes('127.0.0.1:10808');
 
         if (isSupported && !isLocalSidecar) {
-            console.log(`🚀 Proxy System: Protocol detected. Routing through local Xray sidecar (127.0.0.1:10809) ...`);
-            finalProxyUrl = 'http://127.0.0.1:10809'; // Use HTTP inbound for better Node.js compatibility
+            console.log(`🚀 Proxy System: Protocol detected. Routing through local Xray sidecar (127.0.0.1:10808) via remote DNS (socks5h)...`);
+            finalProxyUrl = 'socks5h://127.0.0.1:10808';
         }
 
         const options = {
