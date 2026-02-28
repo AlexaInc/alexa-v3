@@ -17,8 +17,8 @@ class ProxyHelper {
         // New configuration options
         // Default to false for proxy rejectUnauthorized to be more compatible
         this.rejectUnauthorized = process.env.PROXY_REJECT_UNAUTHORIZED === 'true';
-        // Increase default timeout to 120s for HF
-        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '120000', 10);
+        // Increase default timeout to 300s for HF (was 120s)
+        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '300000', 10);
         this.disableGlobal = process.env.PROXY_DISABLE_GLOBAL === 'false';
 
         // Default bypasses + user provided + Aiven
@@ -238,7 +238,7 @@ class ProxyHelper {
             // Phase 2: Tunnel Check (Minimal)
             try {
                 // Use a fresh axios instance to avoid interceptor recursion
-                const testAxios = axios.create({ timeout: 15000 });
+                const testAxios = axios.create({ timeout: 30000 });
                 console.log('📡 Verifying HTTPS tunnel (google.com)...');
                 await testAxios.get('https://www.google.com', {
                     httpsAgent: this.agent,

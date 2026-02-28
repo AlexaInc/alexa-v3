@@ -141,8 +141,9 @@ function generateConfig() {
         try {
             const url = new URL(proxyUrl);
             const auth = url.username ? { user: url.username, pass: url.password } : null;
+            const isHttps = url.protocol === 'https:';
 
-            console.log(`ℹ️ Parsing HTTP for sidecar: ${url.hostname}:${url.port}`);
+            console.log(`ℹ️ Parsing ${isHttps ? 'HTTPS' : 'HTTP'} for sidecar: ${url.hostname}:${url.port}`);
 
             outbounds.push({
                 protocol: "http",
@@ -153,10 +154,17 @@ function generateConfig() {
                         port: parseInt(url.port),
                         users: auth ? [auth] : []
                     }]
-                }
+                },
+                streamSettings: isHttps ? {
+                    security: "tls",
+                    tlsSettings: {
+                        allowInsecure: true,
+                        serverName: url.hostname
+                    }
+                } : undefined
             });
         } catch (e) {
-            console.error('❌ Failed to parse HTTP URL:', e.message);
+            console.error('❌ Failed to parse HTTP/HTTPS URL:', e.message);
         }
     }
     else {
