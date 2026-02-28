@@ -59,6 +59,7 @@ function generateConfig() {
                     } : undefined,
                     wsSettings: params.type === "ws" ? {
                         path: params.path || "/",
+                        host: params.host || hostname,
                         headers: {
                             Host: params.host || hostname // ALWAYS provide a Host header
                         }
@@ -70,8 +71,8 @@ function generateConfig() {
                     }
                 },
                 mux: {
-                    enabled: true,
-                    concurrency: 8
+                    enabled: false,
+                    concurrency: -1
                 }
             });
         } catch (e) {
@@ -102,10 +103,10 @@ function generateConfig() {
                     network: data.net || "tcp",
                     security: data.tls === "tls" ? "tls" : "none",
                     tlsSettings: data.tls === "tls" ? { allowInsecure: true } : undefined,
-                    wsSettings: data.net === "ws" ? { path: data.path, headers: { Host: data.host || data.add } } : undefined,
+                    wsSettings: data.net === "ws" ? { path: data.path, host: data.host || data.add, headers: { Host: data.host || data.add } } : undefined,
                     sockopt: { tcpKeepAliveInterval: 5 }
                 },
-                mux: { enabled: true, concurrency: 8 }
+                mux: { enabled: false, concurrency: -1 }
             });
         } catch (e) {
             console.error('❌ Failed to parse VMess URL:', e.message);
@@ -155,13 +156,18 @@ function generateConfig() {
                         users: auth ? [auth] : []
                     }]
                 },
-                streamSettings: isHttps ? {
-                    security: "tls",
-                    tlsSettings: {
+                streamSettings: {
+                    network: "tcp",
+                    security: isHttps ? "tls" : "none",
+                    tlsSettings: isHttps ? {
                         allowInsecure: true,
                         serverName: url.hostname
+                    } : undefined,
+                    sockopt: {
+                        tcpKeepAliveInterval: 5,
+                        tcpFastOpen: true
                     }
-                } : undefined
+                }
             });
         } catch (e) {
             console.error('❌ Failed to parse HTTP/HTTPS URL:', e.message);
@@ -172,6 +178,11 @@ function generateConfig() {
     }
 
     if (outbounds.length === 0) return;
+
+    // --- CRITICAL: Disable Mux for sensitive WhatsApp streams & Increase Timeout ---
+    outbounds.forEach(o => {
+        o.mux = { enabled: false };
+    });
 
     const fullConfig = {
         log: { loglevel: "info" },
@@ -200,7 +211,7 @@ function generateConfig() {
         policy: {
             levels: {
                 "0": {
-                    "handshake": 60,
+                    "handshake": 120, // Increased to 2 minutes for slow HF handshakes
                     "connIdle": 300,
                     "uplinkOnly": 1,
                     "downlinkOnly": 1,
