@@ -60,7 +60,7 @@ function generateConfig() {
                         port: parseInt(url.port) || 443,
                         users: [{
                             id: uuid,
-                            encryption: params.encryption || "none",
+                            encryption: "none",
                             flow: params.flow || ""
                         }]
                     }]
@@ -78,7 +78,7 @@ function generateConfig() {
                     } : undefined,
                     wsSettings: params.type === "ws" ? {
                         path: params.path || "/",
-                        headers: (params.host || url.hostname) ? { Host: params.host || url.hostname } : undefined
+                        headers: params.host ? { Host: params.host } : undefined
                     } : undefined
                 }
             });
@@ -114,6 +114,17 @@ function generateConfig() {
             }
         }],
         outbounds: outbounds,
+        policy: {
+            levels: {
+                "0": {
+                    "handshake": 10,
+                    "connIdle": 300,
+                    "uplinkOnly": 1,
+                    "downlinkOnly": 1,
+                    "bufferSize": 10240
+                }
+            }
+        },
         routing: {
             domainStrategy: "AsIs",
             rules: [
