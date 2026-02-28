@@ -215,6 +215,20 @@ function startXray() {
     console.log('ℹ️ V2Ray/Xray: Generating fresh config from PROXY_URL...');
     const { execSync } = require('child_process');
     execSync('node generate_xray_config.js', { stdio: 'inherit', env: process.env });
+
+    // Log sanitized config for debugging
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      const sanitizedOutbounds = config.outbounds.map(o => {
+        if (o.settings && o.settings.vnext) {
+          o.settings.vnext.forEach(vn => {
+            vn.users.forEach(u => u.id = "********");
+          });
+        }
+        return o;
+      });
+      console.log('📄 Generated Xray Outbounds:', JSON.stringify(sanitizedOutbounds, null, 2));
+    }
   } catch (e) {
     console.error('❌ V2Ray/Xray: Failed to generate config:', e.message);
   }

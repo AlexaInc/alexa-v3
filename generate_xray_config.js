@@ -60,17 +60,25 @@ function generateConfig() {
                         port: parseInt(url.port) || 443,
                         users: [{
                             id: uuid,
-                            encryption: "none"
+                            encryption: params.encryption || "none",
+                            flow: params.flow || ""
                         }]
                     }]
                 },
                 streamSettings: {
                     network: params.type || "tcp",
                     security: params.security || "none",
-                    tlsSettings: params.security === "tls" ? { allowInsecure: true } : undefined,
+                    tlsSettings: (params.security === "tls" || params.security === "reality") ? {
+                        allowInsecure: true,
+                        serverName: params.sni || url.hostname,
+                        publicKey: params.pbk || "",
+                        fingerprint: params.fp || "chrome",
+                        shortId: params.sid || "",
+                        spiderX: params.spx || ""
+                    } : undefined,
                     wsSettings: params.type === "ws" ? {
                         path: params.path || "/",
-                        headers: params.host ? { Host: params.host } : undefined
+                        headers: (params.host || url.hostname) ? { Host: params.host || url.hostname } : undefined
                     } : undefined
                 }
             });
