@@ -60,9 +60,9 @@ function logOutput(scriptName, type, data) {
 
 function startApp(scriptName, onExit) {
   const args = [scriptName];
-  // Add memory limit for the main index.js to prevent 512MB RAM overflow
+  // Leverage 16GB RAM by increasing child memory limit to 4GB
   if (scriptName === 'index.js') {
-    args.unshift('--max-old-space-size=250');
+    args.unshift('--max-old-space-size=4096');
   }
   const child = spawn('node', args);
 
@@ -192,6 +192,54 @@ function startApp(scriptName, onExit) {
     if (onExit) onExit();
   });
 }
+
+// --- New Section: V2Ray/Xray Support ---
+function startXray() {
+  const proxyUrl = process.env.PROXY_URL || '';
+  const protocols = ['vmess://', 'vless://', 'ss://', 'trojan://'];
+  const isV2Ray = protocols.some(p => proxyUrl.startsWith(p));
+
+  if (!isV2Ray) return;
+
+  console.log(`🚀 V2Ray/Xray: Advanced protocol detected. Starting local sidecar...`);
+
+  // Create a minimal config for Xray
+  // NOTE: This is a placeholder for a more complex parser if needed
+  // For now, we assume the user might have provided a full config path 
+  // or we need to generate one. 
+  // Since parsing vmess/vless URLs reliably in JS without a library is hard,
+  // we will at least try to start the binary if a config exists or warn the user.
+
+  const configPath = path.join(__dirname, 'xray_config.json');
+
+  // Try to generate config automatically if it doesn't exist
+  if (!fs.existsSync(configPath)) {
+    try {
+      console.log('ℹ️ V2Ray/Xray: Generating config from PROXY_URL...');
+      const { execSync } = require('child_process');
+      execSync('node generate_xray_config.js', { stdio: 'inherit' });
+    } catch (e) {
+      console.error('❌ V2Ray/Xray: Failed to generate config:', e.message);
+    }
+  }
+
+  if (!fs.existsSync(configPath)) {
+    console.warn('⚠️ V2Ray/Xray: xray_config.json not found. Manual configuration required.');
+    return;
+  }
+
+  const xray = spawn('xray', ['-c', configPath]);
+  xray.stdout.on('data', (data) => console.log(`[Xray] ${data.toString().trim()}`));
+  xray.stderr.on('data', (data) => console.error(`[Xray Error] ${data.toString().trim()}`));
+
+  xray.on('exit', (code) => {
+    console.log(`❌ Xray sidecar exited with code ${code}. Restarting in 5s...`);
+    setTimeout(startXray, 5000);
+  });
+}
+
+// Start sidecar if needed
+startXray();
 
 // --- Load history at the very start ---
 loadRestartHistory();

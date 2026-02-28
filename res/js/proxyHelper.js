@@ -15,8 +15,10 @@ class ProxyHelper {
     constructor() {
         this.proxyUrl = process.env.PROXY_URL;
         // New configuration options
-        this.rejectUnauthorized = process.env.PROXY_REJECT_UNAUTHORIZED !== 'false';
-        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '60000', 10);
+        // Default to false for proxy rejectUnauthorized to be more compatible
+        this.rejectUnauthorized = process.env.PROXY_REJECT_UNAUTHORIZED === 'true';
+        // Increase default timeout to 120s for HF
+        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '120000', 10);
         this.disableGlobal = process.env.PROXY_DISABLE_GLOBAL === 'false';
 
         // Default bypasses + user provided + Aiven
@@ -39,7 +41,7 @@ class ProxyHelper {
         }
 
         console.log(`ℹ️ Proxy System: rejectUnauthorized=${this.rejectUnauthorized}, timeout=${this.timeout}`);
-        console.log(`ℹ️ Proxy Bypass Hosts: ${this.noProxy.join(', ')}`);
+        // console.log(`ℹ️ Proxy Bypass Hosts: ${this.noProxy.join(', ')}`);
 
         this.agent = this._createAgent();
     }
@@ -49,19 +51,21 @@ class ProxyHelper {
 
         let finalProxyUrl = this.proxyUrl;
 
-        // Removing auto-upgrade logic as it can cause EPROTO errors if the proxy is plain HTTP on port 443
+        // V2Ray/Xray Handling: Redirect advanced protocols to local sidecar
+        const advancedProtocols = ['vmess://', 'vless://', 'ss://', 'trojan://'];
+        const isAdvanced = advancedProtocols.some(p => finalProxyUrl.startsWith(p));
+
+        if (isAdvanced) {
+            console.log(`🚀 Proxy System: V2Ray protocol detected. Routing to local Xray sidecar (127.0.0.1:10808)`);
+            finalProxyUrl = 'socks5://127.0.0.1:10808';
+        }
 
         const options = {
             keepAlive: true,
             timeout: this.timeout,
             rejectUnauthorized: this.rejectUnauthorized,
-            // Try to avoid SNI issues by setting servername to null if connecting to IP
-            servername: undefined,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-                'Accept': '*/*',
-                'Proxy-Connection': 'keep-alive'
-            }
+            // Try to avoid SNI issues
+            servername: undefined
         };
 
         if (finalProxyUrl.startsWith('socks')) {
@@ -116,7 +120,7 @@ class ProxyHelper {
             // console.log(`[Proxy] Bypassing: ${urlStr}`);
             return null;
         }
-        console.log(`[Proxy] Proxying: ${urlStr}`);
+        // console.log(`[Proxy] Proxying: ${urlStr}`);
         return this.agent;
     }
 
@@ -204,7 +208,7 @@ class ProxyHelper {
     }
 
     /**
-     * Checks TCP connectivity to the proxy server.
+     * Checks full connectivity through the proxy.
      * @returns {Promise<boolean>}
      */
     async checkProxyConnectivity() {
@@ -214,52 +218,42 @@ class ProxyHelper {
             const url = new URL(this.proxyUrl);
             const host = url.hostname;
             const port = parseInt(url.port || (url.protocol === 'https:' ? '443' : '80'), 10);
-            const isHttps = url.protocol === 'https:';
 
-            console.log(`🔍 Testing Proxy Connectivity to ${host}:${port} (${url.protocol.replace(':', '').toUpperCase()})...`);
+            console.log(`🔍 Testing Proxy Tunnel to ${host}:${port}...`);
 
-            return new Promise((resolve) => {
-                let socket;
-                const timeoutId = setTimeout(() => {
-                    console.error(`❌ Proxy connection TIMEOUT (30s). Firewall might be blocking port ${port}.`);
-                    if (socket) socket.destroy();
-                    resolve(false);
-                }, 30000);
-
-                if (isHttps) {
-                    socket = tls.connect({
-                        host: host,
-                        port: port,
-                        rejectUnauthorized: false, // Don't fail check due to self-signed
-                        timeout: 15000
-                    }, () => {
-                        clearTimeout(timeoutId);
-                        console.log(`✅ Proxy is REACHABLE (TLS handshake success)`);
-                        socket.end();
-                        resolve(true);
-                    });
-                } else {
-                    socket = net.connect({
-                        host: host,
-                        port: port,
-                        timeout: 15000
-                    }, () => {
-                        clearTimeout(timeoutId);
-                        console.log(`✅ Proxy is REACHABLE (TCP connected)`);
-                        socket.end();
-                        resolve(true);
-                    });
-                }
-
-                socket.on('error', (err) => {
-                    clearTimeout(timeoutId);
-                    console.error(`❌ Proxy is UNREACHABLE: ${err.message}`);
-                    socket.destroy();
-                    resolve(false);
+            // Phase 1: TCP Check
+            const tcpOk = await new Promise((resolve) => {
+                const s = net.connect({ host, port, timeout: 5000 }, () => {
+                    s.end();
+                    resolve(true);
                 });
+                s.on('error', () => resolve(false));
             });
+
+            if (!tcpOk) {
+                console.error('❌ Proxy is UNREACHABLE (TCP failed). HF might be blocking this IP/Port.');
+                return false;
+            }
+            console.log('✅ Proxy TCP connection ok.');
+
+            // Phase 2: Tunnel Check (Minimal)
+            try {
+                // Use a fresh axios instance to avoid interceptor recursion
+                const testAxios = axios.create({ timeout: 15000 });
+                console.log('📡 Verifying HTTPS tunnel (google.com)...');
+                await testAxios.get('https://www.google.com', {
+                    httpsAgent: this.agent,
+                    proxy: false // Don't use axios default proxy
+                });
+                console.log('✅ Proxy Tunnel is WORKING!');
+                return true;
+            } catch (err) {
+                console.error(`⚠️ Proxy Tunnel VERIFICATION FAILED: ${err.message}`);
+                console.log('ℹ️ Bot will still attempt connection, but failure is likely.');
+                return true; // Don't block startup, but warn
+            }
         } catch (e) {
-            console.error('❌ Invalid Proxy URL:', e.message);
+            console.error('❌ Invalid Proxy Configuration:', e.message);
             return false;
         }
     }

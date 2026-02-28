@@ -48,7 +48,7 @@ function connectWebSocket(AlexaInc) {
     const socketUrl = process.env.Alexasock_url;
     if (!socketUrl) return;
 
-    alexasocket = new alexasock(socketUrl, { agent: proxyHelper.getAgent(socketUrl) });
+    alexasocket = new alexasock(socketUrl);
 
     alexasocket.onopen = () => {
         if (alexasocket.readyState === alexasock.OPEN) {
@@ -545,7 +545,8 @@ async function startWhatsAppConnection() {
 
     const proxyAgent = proxyHelper.agent;
     if (proxyAgent) {
-        console.log(`✅ Using ${proxyHelper.proxyUrl.startsWith('socks') ? 'SOCKS' : 'HTTPS'} Proxy for Baileys (via proxyHelper)`);
+        const sanitizedProxy = proxyHelper.proxyUrl.replace(/:([^:@]+)@/, ':****@');
+        console.log(`✅ Using Proxy for Baileys: ${sanitizedProxy.split('@').pop()} (timeout=${proxyHelper.timeout}ms)`);
 
         // --- Pre-connection Proxy Check ---
         const isProxyReachable = await proxyHelper.checkProxyConnectivity();
@@ -628,7 +629,7 @@ async function startWhatsAppConnection() {
     const { state, saveCreds } = await useMultiFileAuthState(authPath);
     const { version, isLatest } = await fetchLatestBaileysVersion({ agent: proxyAgent }).catch(() => fetchLatestBaileysVersion());
     console.log(`🚀 Using WA v${version.join('.')}, isLatest: ${isLatest}`);
-    if (proxyAgent) console.log('✅ Passing proxy agent to makeWASocket');
+    if (proxyAgent) console.log(`✅ Passing proxy agent (timeout=${proxyHelper.timeout}ms) to makeWASocket`);
 
 
 

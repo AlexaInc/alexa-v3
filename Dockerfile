@@ -35,9 +35,17 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-0 \
     fonts-liberation \
     ca-certificates \
+    curl \
+    unzip \
     && fc-cache -f -v \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Xray-core for VMess/VLESS/Shadowsocks support
+RUN curl -L https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip -o xray.zip \
+    && unzip xray.zip xray -d /usr/local/bin/ \
+    && chmod +x /usr/local/bin/xray \
+    && rm xray.zip
 
 WORKDIR /api
 
@@ -53,8 +61,8 @@ RUN npm rebuild canvas sharp --force
 # Copy the rest of your app
 COPY . .
 
-# Set global Node.js memory limit for Docker environment (approx 60% of 512MB)
-ENV NODE_OPTIONS="--max-old-space-size=300"
+# Set global Node.js memory limit for 16GB RAM environment (8GB limit)
+ENV NODE_OPTIONS="--max-old-space-size=8192"
 
 EXPOSE 8000
 
