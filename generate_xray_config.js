@@ -84,17 +84,41 @@ function generateConfig() {
 
     const fullConfig = {
         log: { loglevel: "warning" },
+        dns: {
+            servers: ["1.1.1.1", "8.8.8.8", "https+local://1.1.1.1/dns-query"],
+            queryStrategy: "UseIP"
+        },
         inbounds: [{
             port: 10808,
             protocol: "socks",
             settings: {
                 auth: "noauth",
-                udp: true
+                udp: true,
+                ip: "127.0.0.1"
             },
-            sniffing: { enabled: true, destOverride: ["http", "tls"] }
+            sniffing: {
+                enabled: true,
+                destOverride: ["http", "tls", "quic"],
+                metadataOnly: false
+            }
         }],
-        outbounds: outbounds
+        outbounds: outbounds,
+        routing: {
+            domainStrategy: "AsIs",
+            rules: [
+                {
+                    type: "field",
+                    outboundTag: "outbound-main",
+                    network: "tcp,udp"
+                }
+            ]
+        }
     };
+
+    // Ensure outbounds have a tag for routing
+    if (fullConfig.outbounds.length > 0) {
+        fullConfig.outbounds[0].tag = "outbound-main";
+    }
 
     const configPath = path.join(__dirname, 'xray_config.json');
     fs.writeFileSync(configPath, JSON.stringify(fullConfig, null, 2));

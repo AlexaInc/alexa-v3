@@ -203,28 +203,24 @@ function startXray() {
 
   console.log(`🚀 V2Ray/Xray: Advanced protocol detected. Starting local sidecar...`);
 
-  // Create a minimal config for Xray
-  // NOTE: This is a placeholder for a more complex parser if needed
-  // For now, we assume the user might have provided a full config path 
-  // or we need to generate one. 
-  // Since parsing vmess/vless URLs reliably in JS without a library is hard,
-  // we will at least try to start the binary if a config exists or warn the user.
+  console.log(`🚀 V2Ray/Xray: Advanced protocol detected. Preparing local sidecar...`);
 
   const configPath = path.join(__dirname, 'xray_config.json');
 
-  // Try to generate config automatically if it doesn't exist
-  if (!fs.existsSync(configPath)) {
-    try {
-      console.log('ℹ️ V2Ray/Xray: Generating config from PROXY_URL...');
-      const { execSync } = require('child_process');
-      execSync('node generate_xray_config.js', { stdio: 'inherit' });
-    } catch (e) {
-      console.error('❌ V2Ray/Xray: Failed to generate config:', e.message);
+  // Always regenerate config to ensure environment changes are picked up
+  try {
+    if (fs.existsSync(configPath)) {
+      fs.unlinkSync(configPath);
     }
+    console.log('ℹ️ V2Ray/Xray: Generating fresh config from PROXY_URL...');
+    const { execSync } = require('child_process');
+    execSync('node generate_xray_config.js', { stdio: 'inherit', env: process.env });
+  } catch (e) {
+    console.error('❌ V2Ray/Xray: Failed to generate config:', e.message);
   }
 
   if (!fs.existsSync(configPath)) {
-    console.warn('⚠️ V2Ray/Xray: xray_config.json not found. Manual configuration required.');
+    console.warn('⚠️ V2Ray/Xray: xray_config.json missing. Manual configuration fallback...');
     return;
   }
 

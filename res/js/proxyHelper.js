@@ -56,8 +56,8 @@ class ProxyHelper {
         const isAdvanced = advancedProtocols.some(p => finalProxyUrl.startsWith(p));
 
         if (isAdvanced) {
-            console.log(`🚀 Proxy System: V2Ray protocol detected. Routing to local Xray sidecar (127.0.0.1:10808)`);
-            finalProxyUrl = 'socks5://127.0.0.1:10808';
+            console.log(`🚀 Proxy System: V2Ray protocol detected. Routing to local Xray sidecar (127.0.0.1:10808) via remote DNS (socks5h)`);
+            finalProxyUrl = 'socks5h://127.0.0.1:10808';
         }
 
         const options = {
