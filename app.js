@@ -201,9 +201,11 @@ function startXray() {
 
   if (!isV2Ray) return;
 
-  console.log(`🚀 V2Ray/Xray: Advanced protocol detected. Starting local sidecar...`);
-
   console.log(`🚀 V2Ray/Xray: Advanced protocol detected. Preparing local sidecar...`);
+
+  // Log sanitized PROXY_URL for debugging
+  const sanitizedUrl = proxyUrl.replace(/:([^@]+)@/, ':********@');
+  console.log(`ℹ️ V2Ray/Xray: Detecting protocol from ${sanitizedUrl.split('?')[0]}...`);
 
   const configPath = path.join(__dirname, 'xray_config.json');
 

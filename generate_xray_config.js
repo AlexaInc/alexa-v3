@@ -6,16 +6,79 @@ const { URL } = require('url');
  * Utility to generate xray_config.json from PROXY_URL (VMess/VLESS/SS/Trojan).
  * This is a simplified generator for common configurations.
  */
+/**
+ * Utility to generate xray_config.json from PROXY_URL (VMess/VLESS/SS/Trojan).
+ */
 function generateConfig() {
-    const proxyUrl = process.env.PROXY_URL || '';
-    if (!proxyUrl) {
+    const rawProxyUrl = process.env.PROXY_URL || '';
+    if (!rawProxyUrl) {
         console.error('❌ No PROXY_URL provided.');
         return;
     }
 
+    // Sanitize URL (remove fragments/comments)
+    const proxyUrl = rawProxyUrl.split('#')[0].trim();
     let outbounds = [];
 
-    if (proxyUrl.startsWith('vmess://')) {
+    if (proxyUrl.startsWith('vless://')) {
+        try {
+            // Robust Regex for VLESS: vless://uuid@host:port?params
+            const vlessMatch = proxyUrl.match(/^vless:\/\/([^@]+)@([^:]+):(\d+)(.*)$/i);
+            if (!vlessMatch) throw new Error('Invalid VLESS format');
+
+            const [_, uuid, hostname, port, query] = vlessMatch;
+            const searchParams = new URLSearchParams(query);
+            const params = Object.fromEntries(searchParams.entries());
+
+            console.log(`ℹ️ Parsing VLESS for sidecar: ${hostname}:${port} (network=${params.type || 'tcp'})`);
+
+            outbounds.push({
+                protocol: "vless",
+                tag: "outbound-main",
+                settings: {
+                    vnext: [{
+                        address: hostname,
+                        port: parseInt(port),
+                        users: [{
+                            id: uuid,
+                            encryption: "none",
+                            flow: params.flow || ""
+                        }]
+                    }]
+                },
+                streamSettings: {
+                    network: params.type || "tcp",
+                    security: params.security || "none",
+                    tlsSettings: (params.security === "tls" || params.security === "reality") ? {
+                        allowInsecure: true,
+                        serverName: params.sni || hostname,
+                        publicKey: params.pbk || "",
+                        fingerprint: params.fp || "chrome",
+                        shortId: params.sid || "",
+                        spiderX: params.spx || ""
+                    } : undefined,
+                    wsSettings: params.type === "ws" ? {
+                        path: params.path || "/",
+                        headers: {
+                            Host: params.host || hostname // ALWAYS provide a Host header
+                        }
+                    } : undefined,
+                    sockopt: {
+                        mark: 0,
+                        tcpFastOpen: true,
+                        tcpKeepAliveInterval: 5
+                    }
+                },
+                mux: {
+                    enabled: true,
+                    concurrency: 8
+                }
+            });
+        } catch (e) {
+            console.error('❌ Failed to parse VLESS URL:', e.message);
+        }
+    }
+    else if (proxyUrl.startsWith('vmess://')) {
         try {
             const raw = proxyUrl.replace('vmess://', '');
             const data = JSON.parse(Buffer.from(raw, 'base64').toString());
@@ -23,6 +86,7 @@ function generateConfig() {
 
             outbounds.push({
                 protocol: "vmess",
+                tag: "outbound-main",
                 settings: {
                     vnext: [{
                         address: data.add,
@@ -38,52 +102,13 @@ function generateConfig() {
                     network: data.net || "tcp",
                     security: data.tls === "tls" ? "tls" : "none",
                     tlsSettings: data.tls === "tls" ? { allowInsecure: true } : undefined,
-                    wsSettings: data.net === "ws" ? { path: data.path, headers: { Host: data.host } } : undefined
-                }
+                    wsSettings: data.net === "ws" ? { path: data.path, headers: { Host: data.host || data.add } } : undefined,
+                    sockopt: { tcpKeepAliveInterval: 5 }
+                },
+                mux: { enabled: true, concurrency: 8 }
             });
         } catch (e) {
             console.error('❌ Failed to parse VMess URL:', e.message);
-        }
-    }
-    else if (proxyUrl.startsWith('vless://')) {
-        try {
-            const url = new URL(proxyUrl);
-            const uuid = url.username;
-            const params = Object.fromEntries(url.searchParams.entries());
-            console.log(`ℹ️ Parsing VLESS: ${url.hostname}`);
-
-            outbounds.push({
-                protocol: "vless",
-                settings: {
-                    vnext: [{
-                        address: url.hostname,
-                        port: parseInt(url.port) || 443,
-                        users: [{
-                            id: uuid,
-                            encryption: "none",
-                            flow: params.flow || ""
-                        }]
-                    }]
-                },
-                streamSettings: {
-                    network: params.type || "tcp",
-                    security: params.security || "none",
-                    tlsSettings: (params.security === "tls" || params.security === "reality") ? {
-                        allowInsecure: true,
-                        serverName: params.sni || url.hostname,
-                        publicKey: params.pbk || "",
-                        fingerprint: params.fp || "chrome",
-                        shortId: params.sid || "",
-                        spiderX: params.spx || ""
-                    } : undefined,
-                    wsSettings: params.type === "ws" ? {
-                        path: params.path || "/",
-                        headers: params.host ? { Host: params.host } : undefined
-                    } : undefined
-                }
-            });
-        } catch (e) {
-            console.error('❌ Failed to parse VLESS URL:', e.message);
         }
     }
     else {
@@ -117,7 +142,7 @@ function generateConfig() {
         policy: {
             levels: {
                 "0": {
-                    "handshake": 10,
+                    "handshake": 30,
                     "connIdle": 300,
                     "uplinkOnly": 1,
                     "downlinkOnly": 1,
@@ -136,11 +161,6 @@ function generateConfig() {
             ]
         }
     };
-
-    // Ensure outbounds have a tag for routing
-    if (fullConfig.outbounds.length > 0) {
-        fullConfig.outbounds[0].tag = "outbound-main";
-    }
 
     const configPath = path.join(__dirname, 'xray_config.json');
     fs.writeFileSync(configPath, JSON.stringify(fullConfig, null, 2));
