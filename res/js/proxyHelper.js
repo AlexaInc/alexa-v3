@@ -51,21 +51,20 @@ class ProxyHelper {
 
         let finalProxyUrl = this.proxyUrl;
 
-        // V2Ray/Xray Handling: Redirect advanced protocols to local sidecar
-        const advancedProtocols = ['vmess://', 'vless://', 'ss://', 'trojan://'];
-        const isAdvanced = advancedProtocols.some(p => finalProxyUrl.startsWith(p));
+        // Universal Xray Sidecar Handling: Redirect all supported proxies to local sidecar
+        const supportedProtocols = ['vmess://', 'vless://', 'ss://', 'trojan://', 'socks', 'http'];
+        const isSupported = supportedProtocols.some(p => finalProxyUrl.startsWith(p));
+        const isLocalSidecar = finalProxyUrl.includes('127.0.0.1:10808');
 
-        if (isAdvanced) {
-            console.log(`🚀 Proxy System: V2Ray protocol detected. Routing to local Xray sidecar (127.0.0.1:10808) via remote DNS (socks5h)`);
-            finalProxyUrl = 'socks5h://127.0.0.1:10808';
+        if (isSupported && !isLocalSidecar) {
+            console.log(`🚀 Proxy System: Protocol detected. Routing through local Xray sidecar (127.0.0.1:10809) ...`);
+            finalProxyUrl = 'http://127.0.0.1:10809'; // Use HTTP inbound for better Node.js compatibility
         }
 
         const options = {
             keepAlive: true,
             timeout: this.timeout,
-            rejectUnauthorized: this.rejectUnauthorized,
-            // Try to avoid SNI issues
-            servername: undefined
+            rejectUnauthorized: false, // Force false for maximum compatibility
         };
 
         if (finalProxyUrl.startsWith('socks')) {

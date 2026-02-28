@@ -648,9 +648,9 @@ async function startWhatsAppConnection() {
         generateHighQualityLinkPreview: true,
         shouldIgnoreJid: isJidBroadcast,
         cachedGroupMetadata: getCachedGroupMetadata,
-        connectTimeoutMs: 180000,
+        connectTimeoutMs: 300000,
         defaultQueryTimeoutMs: 180000,
-        keepAliveIntervalMs: 10000
+        keepAliveIntervalMs: 5000
     });
 
     // Update the singleton in cacheHelper for internal Baileys calls

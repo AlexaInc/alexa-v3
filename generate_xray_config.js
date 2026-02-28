@@ -111,9 +111,56 @@ function generateConfig() {
             console.error('❌ Failed to parse VMess URL:', e.message);
         }
     }
+    else if (proxyUrl.startsWith('socks')) {
+        try {
+            const url = new URL(proxyUrl);
+            const auth = url.username ? { user: url.username, pass: url.password } : null;
+
+            console.log(`ℹ️ Parsing SOCKS for sidecar: ${url.hostname}:${url.port}`);
+
+            outbounds.push({
+                protocol: "socks",
+                tag: "outbound-main",
+                settings: {
+                    servers: [{
+                        address: url.hostname,
+                        port: parseInt(url.port),
+                        users: auth ? [auth] : []
+                    }]
+                },
+                streamSettings: {
+                    network: "tcp",
+                    sockopt: { tcpKeepAliveInterval: 5 }
+                }
+            });
+        } catch (e) {
+            console.error('❌ Failed to parse SOCKS URL:', e.message);
+        }
+    }
+    else if (proxyUrl.startsWith('http')) {
+        try {
+            const url = new URL(proxyUrl);
+            const auth = url.username ? { user: url.username, pass: url.password } : null;
+
+            console.log(`ℹ️ Parsing HTTP for sidecar: ${url.hostname}:${url.port}`);
+
+            outbounds.push({
+                protocol: "http",
+                tag: "outbound-main",
+                settings: {
+                    servers: [{
+                        address: url.hostname,
+                        port: parseInt(url.port),
+                        users: auth ? [auth] : []
+                    }]
+                }
+            });
+        } catch (e) {
+            console.error('❌ Failed to parse HTTP URL:', e.message);
+        }
+    }
     else {
-        console.error('❌ Unsupported or non-V2Ray protocol.');
-        return;
+        console.error('❌ Unsupported or unknown proxy protocol. Sidecar might not start correctly.');
     }
 
     if (outbounds.length === 0) return;
@@ -121,23 +168,26 @@ function generateConfig() {
     const fullConfig = {
         log: { loglevel: "info" },
         dns: {
-            servers: ["1.1.1.1", "8.8.8.8", "https+local://1.1.1.1/dns-query"],
+            servers: [
+                "https+local://1.1.1.1/dns-query",
+                "https+local://8.8.8.8/dns-query"
+            ],
             queryStrategy: "UseIP"
         },
-        inbounds: [{
-            port: 10808,
-            protocol: "socks",
-            settings: {
-                auth: "noauth",
-                udp: true,
-                ip: "127.0.0.1"
+        inbounds: [
+            {
+                port: 10808,
+                protocol: "socks",
+                settings: { auth: "noauth", udp: true, ip: "127.0.0.1" },
+                sniffing: { enabled: true, destOverride: ["http", "tls"], metadataOnly: true }
             },
-            sniffing: {
-                enabled: true,
-                destOverride: ["http", "tls", "quic"],
-                metadataOnly: false
+            {
+                port: 10809,
+                protocol: "http",
+                settings: { auth: "noauth", ip: "127.0.0.1" },
+                sniffing: { enabled: true, destOverride: ["http", "tls"], metadataOnly: true }
             }
-        }],
+        ],
         outbounds: outbounds,
         policy: {
             levels: {

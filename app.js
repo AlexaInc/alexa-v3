@@ -196,7 +196,7 @@ function startApp(scriptName, onExit) {
 // --- New Section: V2Ray/Xray Support ---
 function startXray() {
   const proxyUrl = process.env.PROXY_URL || '';
-  const protocols = ['vmess://', 'vless://', 'ss://', 'trojan://'];
+  const protocols = ['vmess://', 'vless://', 'ss://', 'trojan://', 'socks', 'http'];
   const isV2Ray = protocols.some(p => proxyUrl.startsWith(p));
 
   if (!isV2Ray) return;
