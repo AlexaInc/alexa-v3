@@ -112,67 +112,6 @@ function generateConfig() {
             console.error('❌ Failed to parse VMess URL:', e.message);
         }
     }
-    else if (proxyUrl.startsWith('socks')) {
-        try {
-            const url = new URL(proxyUrl);
-            const auth = url.username ? { user: url.username, pass: url.password } : null;
-
-            console.log(`ℹ️ Parsing SOCKS for sidecar: ${url.hostname}:${url.port}`);
-
-            outbounds.push({
-                protocol: "socks",
-                tag: "outbound-main",
-                settings: {
-                    servers: [{
-                        address: url.hostname,
-                        port: parseInt(url.port),
-                        users: auth ? [auth] : []
-                    }]
-                },
-                streamSettings: {
-                    network: "tcp",
-                    sockopt: { tcpKeepAliveInterval: 5 }
-                }
-            });
-        } catch (e) {
-            console.error('❌ Failed to parse SOCKS URL:', e.message);
-        }
-    }
-    else if (proxyUrl.startsWith('http')) {
-        try {
-            const url = new URL(proxyUrl);
-            const auth = url.username ? { user: url.username, pass: url.password } : null;
-            const isHttps = url.protocol === 'https:';
-
-            console.log(`ℹ️ Parsing ${isHttps ? 'HTTPS' : 'HTTP'} for sidecar: ${url.hostname}:${url.port}`);
-
-            outbounds.push({
-                protocol: "http",
-                tag: "outbound-main",
-                settings: {
-                    servers: [{
-                        address: url.hostname,
-                        port: parseInt(url.port),
-                        users: auth ? [auth] : []
-                    }]
-                },
-                streamSettings: {
-                    network: "tcp",
-                    security: isHttps ? "tls" : "none",
-                    tlsSettings: isHttps ? {
-                        allowInsecure: true,
-                        serverName: url.hostname
-                    } : undefined,
-                    sockopt: {
-                        tcpKeepAliveInterval: 5,
-                        tcpFastOpen: true
-                    }
-                }
-            });
-        } catch (e) {
-            console.error('❌ Failed to parse HTTP/HTTPS URL:', e.message);
-        }
-    }
     else {
         console.error('❌ Unsupported or unknown proxy protocol. Sidecar might not start correctly.');
     }

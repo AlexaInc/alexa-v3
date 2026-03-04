@@ -17,8 +17,8 @@ class ProxyHelper {
         // New configuration options
         // Default to false for proxy rejectUnauthorized to be more compatible
         this.rejectUnauthorized = process.env.PROXY_REJECT_UNAUTHORIZED === 'true';
-        // Increase default timeout to 300s for HF (was 120s)
-        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '300000', 10);
+        // Use default timeout (60s) or user specified
+        this.timeout = parseInt(process.env.PROXY_TIMEOUT || '60000', 10);
         this.disableGlobal = process.env.PROXY_DISABLE_GLOBAL === 'false';
 
         // Default bypasses + user provided + Aiven
@@ -51,13 +51,13 @@ class ProxyHelper {
 
         let finalProxyUrl = this.proxyUrl;
 
-        // Universal Xray Sidecar Handling: Redirect all supported proxies to local sidecar
-        const supportedProtocols = ['vmess://', 'vless://', 'ss://', 'trojan://', 'socks', 'http'];
+        // Universal Xray Sidecar Handling: Redirect supported proxies (VLESS, VMess, SS, Trojan)
+        const supportedProtocols = ['vmess://', 'vless://', 'ss://', 'trojan://'];
         const isSupported = supportedProtocols.some(p => finalProxyUrl.startsWith(p));
         const isLocalSidecar = finalProxyUrl.includes('127.0.0.1:10808');
 
         if (isSupported && !isLocalSidecar) {
-            console.log(`🚀 Proxy System: Protocol detected. Routing through local Xray sidecar (127.0.0.1:10808) via remote DNS (socks5h)...`);
+            console.log(`🚀 Proxy System: V2Ray protocol detected. Routing through local Xray sidecar (127.0.0.1:10808)...`);
             finalProxyUrl = 'socks5h://127.0.0.1:10808';
         }
 
