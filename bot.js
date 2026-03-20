@@ -2,7 +2,53 @@ const fs = require('fs-extra');
 const yth2 = require('./res/js/y2mate.js'); // Import downloadVideo from ytdl file
 const USER_DATA_FILE = './users.json';
 const fetchnews = require('./res/news');
-const yts = require('yt-search');
+const yts = async (query) => {
+    try {
+        const response = await fetch("https://hansaka1-ytdl.hf.space/search", {
+            "headers": {
+                "accept": "*/*",
+                "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+                "content-type": "application/json",
+                "priority": "u=1, i",
+                "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": "\"Windows\"",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "sec-fetch-storage-access": "none"
+            },
+            "referrer": "https://hansaka1-ytdl.hf.space/",
+            "body": JSON.stringify({
+                query: query
+            }),
+            "method": "POST",
+            "mode": "cors",
+            "credentials": "omit"
+        });
+        const data = await response.json();
+        return {
+            videos: (data.results || []).map(v => ({
+                title: v.title,
+                url: `https://www.youtube.com/watch?v=${v.videoId}`,
+                videoId: v.videoId,
+                timestamp: v.duration,
+                duration: {
+                    timestamp: v.duration
+                },
+                author: {
+                    name: v.channelName
+                },
+                thumbnail: v.thumbnail[0]?.url
+            }))
+        };
+    } catch (err) {
+        console.error("Youtube Search API error:", err);
+        return {
+            videos: []
+        };
+    }
+};
 const mumaker = require('mumaker');
 const { parsePhoneNumberFromString } = require("libphonenumber-js");
 const battlearena = require("./res/js/battlearena.js");
