@@ -12,20 +12,31 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    # GitHub Actions runner එක ඇතුළේ dependencies install කරගන්න (RAM ප්‍රශ්න එන්නේ නෑ)
+    - name: Install Dependencies Locally
+      run: npm install --production --legacy-peer-deps
+
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.9.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+    # දැන් node_modules සමඟම files ටික VM එකට යවමු
     - name: Sync files to VM
       env:
         HOST: ${{ secrets.VM_HOST }}
         USER: ${{ secrets.VM_USER }}
       run: |
         ssh -o StrictHostKeyChecking=no $USER@$HOST "mkdir -p /home/ubuntu/alexa-v3"
-        rsync -avz -e "ssh -o StrictHostKeyChecking=no" --exclude 'node_modules' --exclude '.git' ./ $USER@$HOST:/home/ubuntu/alexa-v3/
+        rsync -avz -e "ssh -o StrictHostKeyChecking=no" --exclude '.git' ./ $USER@$HOST:/home/ubuntu/alexa-v3/
 
-    - name: Install dependencies and Run
+    # Server එකේ දැන් කරන්න තියෙන්නේ app එක restart කරන එක විතරයි
+    - name: Restart App via Screen
       env:
         HOST: ${{ secrets.VM_HOST }}
         USER: ${{ secrets.VM_USER }}
@@ -33,10 +44,6 @@ jobs:
         ssh -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
           cd /home/ubuntu/alexa-v3
           
-          # Dependencies install කිරීම (--legacy-peer-deps සමඟ)
-          npm install --production --legacy-peer-deps
-
-          # Screen එකෙන් app එක run කිරීම
           screen -S alexa-app -X quit || true
           pkill -f "node app.js" || true
           screen -d -m -S alexa-app node app.js
