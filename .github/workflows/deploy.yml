@@ -17,7 +17,7 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Deploy and Restart
+    - name: Deploy and Run
       env:
         HOST: ${{ secrets.VM_HOST }}
         USER: ${{ secrets.VM_USER }}
@@ -25,6 +25,9 @@ jobs:
         ssh -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
           cd /home/ubuntu/alexa-v3
           git pull origin main
-          npm install --legacy-peer-deps --production
-          node app.js
+          npm install --production
+          
+          # කලින් run වෙන node process එකක් thiyenwanm stop කරලා, අලුතින් background එකේ run කරන්න
+          pkill -f "node app.js" || true
+          nohup node app.js > app.log 2>&1 &
         EOF
