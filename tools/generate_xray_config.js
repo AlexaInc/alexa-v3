@@ -1,3 +1,4 @@
+require('../src/config'); // load .env FIRST (in order)
 const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
@@ -170,7 +171,7 @@ function generateConfig() {
         }
     };
 
-    const configPath = path.join(__dirname, 'xray_config.json');
+    const configPath = path.join(__dirname, '..', 'xray_config.json');
     fs.writeFileSync(configPath, JSON.stringify(fullConfig, null, 2));
     console.log(`✅ xray_config.json generated at ${configPath}`);
 }

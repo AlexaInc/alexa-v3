@@ -4,7 +4,7 @@ const path = require('path');
 
 // 1. Create the *base* directory path
 // This goes up two levels (out of 'src', out of 'bot'), then into 'filters'
-const dbDirectory = path.join(__dirname, '..', '..', 'filters');
+const dbDirectory = path.join(__dirname, '..', '..', '..', 'filters');
 
 /**
  * Gets the specific JSON file path for a group

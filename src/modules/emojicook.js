@@ -4,7 +4,7 @@ const axios = require('axios');
 // --- 1. Get the API key from process.env ---
 
 // -------------------------------------------
-require('dotenv').config();
+require('../config'); // load .env FIRST (in order)
 const clientKey = 'emoji_kitchen_funbox';
 const collection = 'emoji_kitchen_v6';
 const baseURL = 'https://tenor.googleapis.com/v2/featured';

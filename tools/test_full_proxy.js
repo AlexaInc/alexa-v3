@@ -1,6 +1,6 @@
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const axios = require('axios');
-require('dotenv').config();
+require('../src/config'); // load .env FIRST (in order)
 
 const proxyUrl = process.env.PROXY_URL || 'http://31.59.20.176:6754'; // Fallback to log's IP if env is empty
 console.log(`🧪 Testing Proxy: ${proxyUrl}`);

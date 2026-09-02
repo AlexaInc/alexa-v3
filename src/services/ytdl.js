@@ -21,7 +21,7 @@ async function downloadVideo(vidid) {
 
         // Define the video path where we want to save it
         const videoFileName = `${vidid}.mp3`;
-        const videoFilePath = path.join(__dirname, '../temp', videoFileName);
+        const videoFilePath = path.join(__dirname, '../../temp', videoFileName);
 
         // Save the video file to the filesystem
         fs.writeFileSync(videoFilePath, videoResponse.data);

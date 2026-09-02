@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { getCachedGroupMetadata } = require('./cacheHelper.js');
 const games = {}; // key = sessionCode
-const POINTS_DB_PATH = './mafia_points.json';
+const POINTS_DB_PATH = './data/mafia_points.json';
 
 // ⚙️ CONFIGURATION
 const REGISTRATION_TIME = 120000; // 2 minutes

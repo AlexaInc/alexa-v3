@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
-const proxyHelper = require('./res/js/proxyHelper');
+require('../config'); // load .env FIRST (in order)
+const proxyHelper = require('./proxyHelper');
 let sharedBrowser = null;
 
 async function getBrowser() {

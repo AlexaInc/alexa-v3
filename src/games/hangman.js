@@ -3,8 +3,8 @@ const fs = require('fs');
 // --- 1. CONFIGURATION & CONSTANTS ---
 // (You can change these values)
 
-const LEADERBOARD_FILE = './leaderboard.json'; // Path to save scores
-const FILE_PATH = './words.txt';              // Path to your word list
+const LEADERBOARD_FILE = './data/leaderboard.json'; // Path to save scores
+const FILE_PATH = './data/words.txt';              // Path to your word list
 const MAX_WRONG_GUESSES = 6;                  // Max body parts
 const MAX_PLAYERS = 10;                       // Max players per game
 const INACTIVITY_TIMEOUT_MS = 1000 * 60 * 5;  // 5 minutes

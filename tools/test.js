@@ -1,5 +1,5 @@
 // test.js
-const dl = require('./res/js/ytHelper2');
+const dl = require('../src/modules/ytHelper2');
 
 (async () => {
     const url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';

@@ -9,7 +9,7 @@ auth5a/
 *.log
 .DS_Store
 
-# --- ADD THESE NEW LINES ---
+# --- Runtime state / caches (recreated on start) ---
 
 # Baileys session files (NEVER COMMIT THIS)
 baileys_auth_info/
@@ -26,24 +26,24 @@ msgstore.json
 1234.webp
 pp.jpg
 sticker.png
-res/img/alexaold\ .jpeg
+assets/img/alexaold\ .jpeg
 
-# Specific source files to ignore
-123.js
-test_media_fix.js
-test_proxy.js
-test_web_debug.js
-aaa.md
-reply.js
-migrate.js
-test.js
-restart.json
-package-lock.json
+# Local scratch dir (cookies, etc. — never commit credentials)
+.local/
+
+# Cookies / credential files (leaked YouTube cookies were committed before!)
+**/cookies.txt
+
+# Generated proxy config (contains proxy credentials)
+xray_config.json
+
+# Bot log files
+wa-logs.txt
+test_out.txt
 
 botstatus.json
 downloads/
 quizzes/
-res/js/cookies.txt
 temp/
 ex.js
 shipping/

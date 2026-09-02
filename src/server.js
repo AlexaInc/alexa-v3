@@ -1,27 +1,29 @@
+require('./config'); // load .env FIRST (in order) before anything reads process.env
+const config = require('./config');
 const express = require('express');
 const app = express();
 const session = require('express-session');
 const WebSocket = require('ws');
-require('dotenv').config();
-const PORT = process.env.PORT || 8000;
+const PORT = config.PORT;
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const si = require('systeminformation');
-require('./whatsappState');
+require('./state/whatsappState');
 //const { botPhoneNumber, connectionStatus } = require('./index');
-app.use(express.static('public'));
-app.use(express.json());
+app.use(express.static(path.join(__dirname, '..', 'public')));
+// Keep the RAW body around so the GitHub webhook can verify its HMAC signature.
+app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: true }));
-const dataFile = path.join(__dirname, 'sharedData.json');
+const dataFile = path.join(__dirname, '..', 'data', 'sharedData.json');
 
 const cors = require("cors");
 const allowdorigins = ["https://hansaka02.github.io", "http://alexainc.github.io"]
 app.use(cors({ origin: "https://alexainc.github.io" }));
 // Setup session middleware
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: config.SESSION_SECRET || 'alexa-change-me-set-SESSION_SECRET',
   resave: false,
   saveUninitialized: true,
   cookie: { secure: false, httpOnly: false, maxAge: 60 * 60 * 1000 }
@@ -55,7 +57,7 @@ function readData() {
 // Route to get WhatsApp connection status
 // Route to check the WhatsApp connection status
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 app.get('/status', (req, res) => {
@@ -71,8 +73,19 @@ app.get('/get-phone-number', (req, res) => {
 
 // Login and logout APIs
 app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+  const { username, password } = req.body || {};
+  // Reject when admin credentials are not configured — previously
+  // `undefined === undefined` let anyone in with an empty payload.
+  if (!config.ADMIN_USERNAME || !config.ADMIN_PASSWORD) {
+    console.error('❌ /login rejected: ADMIN_USERNAME/ADMIN_PASSWORD are not set');
+    return res.status(503).json({ success: false, message: 'Admin login not configured' });
+  }
+  if (typeof username !== 'string' || typeof password !== 'string') {
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
+  // Compare hashed values (constant length, timing-safe comparison).
+  const hash = (v) => crypto.createHash('sha256').update(v).digest();
+  if (hash(username).equals(hash(config.ADMIN_USERNAME)) && hash(password).equals(hash(config.ADMIN_PASSWORD))) {
     req.session.isLogged = true;
     req.session.save();
     console.log(`Admin logged in: ${username}`);
@@ -100,14 +113,14 @@ app.get('/is-logged-in', (req, res) => {
 
 // Serve control panel
 app.get('/control', isAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'control.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'control.html'));
 });
 
 
 
 // Route to download users.json file
 app.get('/download-users-json', (req, res) => {
-  const filePath = path.join(__dirname, './users.json');  // Path to your users.json file
+  const filePath = path.join(__dirname, '..', 'data', 'users.json');  // Path to your users.json file
 
   // Check if the file exists
   if (fs.existsSync(filePath)) {
@@ -125,7 +138,7 @@ app.get('/download-users-json', (req, res) => {
 });
 
 app.get('/download-hangman-json', (req, res) => {
-  const filePath22 = path.join(__dirname, './hangman.json');
+  const filePath22 = path.join(__dirname, '..', 'data', 'hangman.json');
 
 
   if (fs.existsSync(filePath22)) {
@@ -143,7 +156,7 @@ app.get('/download-hangman-json', (req, res) => {
 
 // Serve login page
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
 });
 
 app.get('/sysstats', async (req, res) => {
@@ -218,8 +231,8 @@ server.on('upgrade', (request, socket, head) => {
 logWss.on('connection', (ws) => {
   // Function to send latest logs from both index.js and server.js logs
   const sendLogs = () => {
-    const indexLogFilePath = path.join(__dirname, 'logs/index.log');
-    const serverLogFilePath = path.join(__dirname, 'logs/server.log');
+    const indexLogFilePath = path.join(__dirname, '..', 'logs', 'index.log');
+    const serverLogFilePath = path.join(__dirname, '..', 'logs', 'server.log');
 
     // Read index.js logs
     fs.readFile(indexLogFilePath, 'utf8', (err, indexData) => {
@@ -327,7 +340,7 @@ dataTransferWss.on('connection', (ws) => {
 });
 // --- MODIFICATION END ---
 
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET; // The secret you put in GitHub
+// WEBHOOK_SECRET is read from config (see /github-webhook handler below).
 
 // Use bodyParser to get the raw body for signature verification
 app.use(express.json());
@@ -336,7 +349,22 @@ app.use(express.json());
 // This is your webhook endpoint
 app.post('/github-webhook', async (req, res) => { // Made this async
 
-  // --- Signature is NOT VERIFIED ---
+  // Verify GitHub's HMAC signature when WEBHOOK_SECRET is configured.
+  // Without it, anyone who can reach this port could forge a "push" event.
+  if (config.WEBHOOK_SECRET) {
+    const expected = 'sha256=' + crypto
+      .createHmac('sha256', config.WEBHOOK_SECRET)
+      .update(req.rawBody || Buffer.from(''))
+      .digest('hex');
+    const given = req.headers['x-hub-signature-256'] || '';
+    if (!given || given.length !== expected.length ||
+        !crypto.timingSafeEqual(Buffer.from(given), Buffer.from(expected))) {
+      console.warn('[GitHub Webhook] Invalid or missing signature — rejected.');
+      return res.status(403).send('Invalid signature');
+    }
+  } else {
+    console.warn('[GitHub Webhook] WEBHOOK_SECRET not set — signature NOT verified. Anyone can trigger this endpoint.');
+  }
   const event = req.headers['x-github-event'];
   const payload = req.body;
 

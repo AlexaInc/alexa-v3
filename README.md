@@ -11,7 +11,7 @@ pinned: false
 
 <h1 align="center">Alexa V3 WhatsApp Bot</h1>
 
-<p align="center"><img src="./res/img/alexa.png" alt="Alexa V3" width="300" ></p>
+<p align="center"><img src="./assets/img/alexa.png" alt="Alexa V3" width="300" ></p>
 
 
 
@@ -67,7 +67,31 @@ CREATE TABLE IF NOT EXISTS `tasks` (
 ```
 
 
+## 📁 Project Structure
+
+```
+alexa-v3/
+├── app.js                  # entry: spawns & supervises src/server.js + src/index.js
+├── env_dummy               # .env template — copy to .env and fill in
+├── src/
+│   ├── config.js           # loads .env ONCE, FIRST (single source of truth)
+│   ├── index.js            # WhatsApp (Baileys) connection
+│   ├── bot.js              # command handlers
+│   ├── server.js           # web control panel (express)
+│   ├── state/              # shared runtime state
+│   ├── games/              # hangman
+│   ├── services/           # proxy, websearch, ytdl, mediafire, news, quotes
+│   └── modules/            # feature modules (games, filters, downloads, ...)
+├── tools/                  # standalone scripts (ai.js, xray generator, tests)
+├── data/                   # JSON state stores (users, hangman, battles, ...)
+├── assets/                 # images, audio, static content
+└── public/                 # control panel frontend
+```
+
 ## 🔧 Environment Variables
+
+`src/config.js` loads the environment in one place, in order — every entry
+point requires it first.
 
 If you are using a local deployment (VPS or Replit), create a `.env` file in the root directory. If you are using a PaaS (like Koyeb or Railway), set these as environment variables in your service configuration.
 

@@ -1,10 +1,14 @@
+require('../config'); // load .env FIRST (in order)
 const axios = require('axios');
 const FormData = require('form-data');
 const mysql = require('mysql2');
 
 // --- API Configuration ---
+// SECURITY: the DeepAI key used to be hardcoded in this file and is now
+// considered leaked — rotate it on deepai.org and put the NEW key in .env
+// (DEEPAI_API_KEY). The old value is NOT kept in the source anymore.
 const API_URL = 'https://api.deepai.org/hacking_is_a_serious_crime';
-const API_KEY = 'tryit-84439558844-162c0c5e2e8dc7aa5d86d15a2a8df781';
+const API_KEY = process.env.DEEPAI_API_KEY;
 
 // --- History Configuration ---
 const DEFAULT_SYSTEM = [
@@ -98,6 +102,11 @@ function extractMemories(reply) {
  * @param {function} callback - Callback (err, reply)
  */
 async function ai(db, thread_id_name, message, thread_id, callback) {
+    if (!API_KEY) {
+        console.error('❌ Aii.js: DEEPAI_API_KEY is not set in the environment. AI replies disabled until you set it (see env_dummy).');
+        return callback('DEEPAI_API_KEY not configured', null);
+    }
+
     // Queries for history and memories
     const queryHistory = 'SELECT `conventions` FROM `conversation_history` WHERE `id` = ?';
     const queryMemories = 'SELECT `memory_data` FROM `user_memories` WHERE `id` = ?';
