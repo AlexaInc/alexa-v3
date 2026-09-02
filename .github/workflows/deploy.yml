@@ -17,17 +17,35 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Deploy and Run
+    - name: Deploy and Run via Screen
       env:
         HOST: ${{ secrets.VM_HOST }}
         USER: ${{ secrets.VM_USER }}
       run: |
         ssh -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
-          cd /home/ubuntu/alexa-v3
-          git pull origin main
-          npm install --production
+          # 1. කලින් .env file එක safe තැනකට copy කරගන්න
+          if [ -f /home/ubuntu/alexa-v3/.env ]; then
+            cp /home/ubuntu/alexa-v3/.env /home/ubuntu/.env.backup
+          fi
+
+          # 2. Folder එක delete කරලා අලුතින් clone කරගන්න
+          cd /home/ubuntu
+          rm -rf alexa-v3
+          git clone https://github.com/OYAGE_GITHUB_USERNAME/OYAGE_REPO_NAME.git alexa-v3
           
-          # කලින් run වෙන node process එකක් thiyenwanm stop කරලා, අලුතින් background එකේ run කරන්න
+          # 3. .env file එක ආයെත් alexa-v3 folder එකට දාන්න
+          if [ -f /home/ubuntu/.env.backup ]; then
+            mv /home/ubuntu/.env.backup /home/ubuntu/alexa-v3/.env
+          fi
+
+          # 4. Dependencies install කිරීම සහ Screen එකෙන් app එක run කිරීම
+          cd /home/ubuntu/alexa-v3
+          npm install --production
+
+          # පැරණි screen session එකක් හෝ node process එකක් තිබේ නම් අයින් කරන්න
+          screen -S alexa-app -X quit || true
           pkill -f "node app.js" || true
-          nohup node app.js > app.log 2>&1 &
+
+          # අලුත් screen session එකක් හදලා ඒක ඇතුළේ app එක run කරන්න
+          screen -d -m -S alexa-app node app.js
         EOF
