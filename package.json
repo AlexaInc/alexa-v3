@@ -2,7 +2,7 @@
     "name": "alexa-v2",
     "version": "1.2.3",
     "description": "by hansaka",
-    "main": "index.js",
+    "main": "app.js",
     "scripts": {
         "test": "sudo systemctl start mariadb && sudo systemctl status mariadb",
         "start": "node app"

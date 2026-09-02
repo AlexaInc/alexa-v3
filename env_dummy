@@ -1,21 +1,58 @@
+# env_dummy — template for your .env file
+# -----------------------------------------------------------------------------
+# Copy this file to `.env` in the repo root and fill in the values:
+#     cp env_dummy .env
+#
+# src/config.js loads .env exactly once, first, in every process — so every
+# variable below is available in the correct order everywhere.
+# Real environment variables (Docker/GAE/PM2/PaaS) always override .env.
+# -----------------------------------------------------------------------------
 
-ADMIN_PASSWORD=you can set any
+# ── Web admin panel (src/server.js) ─────────────────────────────────────────
 ADMIN_USERNAME=you can set any
-CHAT_MODEL=get from openrouter
+ADMIN_PASSWORD=you can set any
+SESSION_SECRET=use a strong random text without spaces
+WEBHOOK_SECRET=recommended: GitHub webhook HMAC secret (else webhook is unverified)
+PORT=8000
+
+# ── MySQL database (index.js, bot.js) ───────────────────────────────────────
 DB_HOST=
 DB_NAME=
 DB_PASS=
-DB_PORT=
+DB_PORT=3306
 DB_UNAME=
-NIGHTAPI_AUTH=get from nightapi
+
+# ── WhatsApp bot / owners ───────────────────────────────────────────────────
+bot_nb=
+Owner_nb=
+Owner_id=
+spc_nb=
+ocid=
+Alexasock_url=
+
+# ── AI / content APIs ───────────────────────────────────────────────────────
+CHAT_MODEL=get from openrouter
+OPENROUTER_TOKEN=get from openrouter (used by tools/ai.js)
 OPENROUTER_TOKEN1=get from openrouter
 OPENROUTER_TOKEN2=get from openrouter
 OPENROUTER_TOKEN3=get from openrouter
 OPENROUTER_TOKEN4=get from openrouter
-Owner_nb=
-Owner_id=
-SESSION_SECRET=
-WEBSOCKET_URL=
-bot_nb=
+NIGHTAPI_AUTH=get from nightapi
+TENOR_API_KEY=get from tenor.com
+DEEPAI_API_KEY=get from deepai.org (the old hardcoded key leaked — use a rotated one)
+
+# ── Google Custom Search (src/services/websearch.js) ────────────────────────
 GOOGLE_API_KEY=
 GOOGLESEARCH_ENGINE_ID=
+
+# ── Proxy / V2Ray Xray sidecar (app.js, src/services/proxyHelper.js) ────────
+PROXY_URL=
+PROXY_REJECT_UNAUTHORIZED=false
+PROXY_TIMEOUT=60000
+PROXY_DISABLE_GLOBAL=false
+NO_PROXY=
+
+# ── Legacy ──────────────────────────────────────────────────────────────────
+mongo_url=
+WEBSOCKET_URL=
+HUGING_FACE=

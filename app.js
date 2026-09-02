@@ -1,3 +1,4 @@
+require('./src/config'); // load .env FIRST (in order) before anything reads process.env
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -5,7 +6,7 @@ const { spawn } = require('child_process');
 const logDir = './logs';
 const indexLogFile = path.join(logDir, 'index.log');
 const serverLogFile = path.join(logDir, 'server.log');
-const restartLogFile = path.join(__dirname, 'restarts.json'); // <-- New: JSON log file path
+const restartLogFile = path.join(__dirname, 'data', 'restarts.json'); // <-- New: JSON log file path
 
 let restartHistory = []; // <-- New: To store restart reasons
 
@@ -50,9 +51,9 @@ const codeRegex = /^[0-9]{3}$/; // Strictly matches only 3-digit numbers
 
 function logOutput(scriptName, type, data) {
   const timestampedData = `${new Date().toISOString()} - ${type}\n ${data}`;
-  if (scriptName === 'index.js') {
+  if (scriptName === 'src/index.js') {
     fs.appendFileSync(indexLogFile, `${data}\n`);
-  } else if (scriptName === 'server.js') {
+  } else if (scriptName === 'src/server.js') {
     fs.appendFileSync(serverLogFile, `${data}\n`);
   }
   console.log(timestampedData);
@@ -61,7 +62,7 @@ function logOutput(scriptName, type, data) {
 function startApp(scriptName, onExit) {
   const args = [scriptName];
   // Leverage 16GB RAM by increasing child memory limit to 4GB
-  if (scriptName === 'index.js') {
+  if (scriptName === 'src/index.js') {
     args.unshift('--max-old-space-size=4096');
   }
   const child = spawn('node', args);
@@ -91,7 +92,7 @@ function startApp(scriptName, onExit) {
           if (line.includes('UNCAUGHT_CRASH::')) {
             // Case 1: High-priority runtime crash
             lastCrashReason = line.split('UNCAUGHT_CRASH::')[1] || 'Unknown crash reason';
-          } else if (scriptName === 'index.js' && codeRegex.test(line)) {
+          } else if (scriptName === 'src/index.js' && codeRegex.test(line)) {
             // Case 2: 3-digit code restart (like 428)
             // This is not a crash, so clear any pending crash reason
             lastCrashReason = null;
@@ -106,7 +107,7 @@ function startApp(scriptName, onExit) {
           }
         } else if (type === 'stdout:') {
           // Case 4: 3-digit code restart from stdout
-          if (scriptName === 'index.js' && codeRegex.test(line)) {
+          if (scriptName === 'src/index.js' && codeRegex.test(line)) {
             // This is not a crash, so clear any pending crash reason
             lastCrashReason = null;
             const code = parseInt(line, 10);
@@ -174,7 +175,7 @@ function startApp(scriptName, onExit) {
     // Clear the reason after using it
     lastCrashReason = null;
 
-    if (scriptName === 'index.js') {
+    if (scriptName === 'src/index.js') {
       if (code === 515) {
         console.log('index.js exited with code 515. Not restarting.');
         saveRestartReason(`index.js: Exited with 515 (no restart)`);
@@ -216,7 +217,7 @@ function startXray() {
     }
     console.log('ℹ️ V2Ray/Xray: Generating fresh config from PROXY_URL...');
     const { execSync } = require('child_process');
-    execSync('node generate_xray_config.js', { stdio: 'inherit', env: process.env });
+    execSync('node tools/generate_xray_config.js', { stdio: 'inherit', env: process.env });
 
     // Log sanitized config for debugging
     if (fs.existsSync(configPath)) {
@@ -265,8 +266,8 @@ startXray();
 loadRestartHistory();
 
 // Start both scripts
-startApp('server.js');
-startApp('index.js');
+startApp('src/server.js');
+startApp('src/index.js');
 
 const logsDir = path.join(__dirname, "logs");
 

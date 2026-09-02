@@ -1,7 +1,7 @@
 const { customsearch } = require('@googleapis/customsearch');
 const axios = require('axios');
 const cheerio = require('cheerio');
-require('dotenv').config();
+require('../config'); // load .env FIRST (in order)
 
 // --- CONFIGURATION ---
 const API_KEY = process.env.GOOGLE_API_KEY;

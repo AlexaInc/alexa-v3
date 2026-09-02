@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const filePath = path.join(__dirname, 'store', 'userscontact.json');
+const filePath = path.join(__dirname, '..', '..', 'data', 'userscontact.json');
 
 // === Ensure store folder exists ===
 if (!fs.existsSync(path.dirname(filePath))) {

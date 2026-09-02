@@ -1,5 +1,5 @@
+require('../src/config'); // load .env FIRST (in order)
 const { OpenAI } = require("openai");
-require('dotenv').config();
 
 const token = process.env["OPENROUTER_TOKEN"];
   const client = new OpenAI({

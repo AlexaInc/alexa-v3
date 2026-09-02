@@ -1,4 +1,4 @@
-const websearch_query = require('./res/web/web.js');
+const websearch_query = require('../src/services/websearch');
 
 (async () => {
     try {

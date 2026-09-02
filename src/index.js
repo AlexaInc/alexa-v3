@@ -1,3 +1,4 @@
+require('./config'); // load .env FIRST (in order) before anything reads process.env
 const {
     makeWASocket,
     AnyMessageContent,
@@ -26,16 +27,15 @@ const { SocksProxyAgent } = require('socks-proxy-agent');
 const path = require('path');
 const { makeWASocket: WAConnection } = require('@hansaka02/baileys');
 ; // for first-time QR login
-const authPath = path.join(__dirname, 'auth5a');
-require('dotenv').config();
+const authPath = path.join(__dirname, '..', 'auth5a');
 const mysql = require("mysql2");
 const DB_HOST = process.env["DB_HOST"];
 const DB_UNAME = process.env["DB_UNAME"];
 const DB_NAME = process.env["DB_NAME"];
 const DB_PASS = process.env["DB_PASS"];
 const DB_PORT = process.env["DB_PORT"] || 3306;
-const { handleHangman, checkInactiveGames } = require('./hangman.js');
-const { getCachedGroupMetadata, clearGroupCache, setAlexaInstance } = require('./res/js/cacheHelper.js');
+const { handleHangman, checkInactiveGames } = require('./games/hangman.js');
+const { getCachedGroupMetadata, clearGroupCache, setAlexaInstance } = require('./modules/cacheHelper.js');
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
 const fownerNumber = process.env["Owner_nb"]?.split(",")[0]?.trim();
@@ -85,7 +85,7 @@ function connectWebSocket(AlexaInc) {
                     ];
 
                     const interactiveMessage = {
-                        image: { url: './res/img/alexa.jpg' },
+                        image: { url: './assets/img/alexa.jpg' },
                         caption: data.payload.message,
                         footer: "Powered by HANSAKA",
                         interactiveButtons
@@ -130,7 +130,7 @@ const getBuffer = async (url, options) => {
 
 
 
-require('./whatsappState'); // Import shared state
+require('./state/whatsappState'); // Import shared state
 const {
     handleMessage
 } = require('./bot'); // Import message handler
@@ -143,15 +143,15 @@ const NodeCache = require('node-cache');
 
 const session = require('express-session');
 const fs = require('fs');
-const monitnumbs = JSON.parse(fs.readFileSync('./monitnumbs.json'));
-const STORE_DIR = "./store";
+const monitnumbs = JSON.parse(fs.readFileSync('./data/monitnumbs.json'));
+const STORE_DIR = "./data/store";
 if (!fs.existsSync(STORE_DIR)) fs.mkdirSync(STORE_DIR);
 const msgRetryCounterCache = new NodeCache({ stdTTL: 3600, maxKeys: 1000 }); // 1 hour TTL
 const PORT = process.env.PORT || 8000;
-const dataFile = path.join(__dirname, 'sharedData.json');
+const dataFile = path.join(__dirname, '..', 'data', 'sharedData.json');
 const WebSocket = require('ws');
 const { default: axios } = require('axios');
-const proxyHelper = require('./res/js/proxyHelper');
+const proxyHelper = require('./services/proxyHelper');
 proxyHelper.configureAxios();
 proxyHelper.configureGlobal();
 const logger = P({
@@ -558,7 +558,7 @@ async function startWhatsAppConnection() {
     }
 
     // 1. Display ASCII logo
-    fs.readFile('./res/ascii.txt', 'utf8', (err, data) => {
+    fs.readFile('./assets/ascii.txt', 'utf8', (err, data) => {
         if (err) return console.error('Error reading ASCII:', err);
         console.log(data);
     });
@@ -765,7 +765,7 @@ async function startWhatsAppConnection() {
 
             if (rawParticipants.includes(botNumber)) return;
 
-            const { getCachedGroupSettings } = require('./res/js/cacheHelper.js');
+            const { getCachedGroupSettings } = require('./modules/cacheHelper.js');
             const settings = await getCachedGroupSettings(db, anu.id);
             if (!settings) return;
 
@@ -886,7 +886,7 @@ async function startWhatsAppConnection() {
     setInterval(() => checkInactiveGames(AlexaInc), 60000);
     const {
         checkInactiveChainGames
-    } = require('./res/js/wordchain.js');
+    } = require('./modules/wordchain.js');
     setInterval(() => {
         checkInactiveChainGames(AlexaInc);
     }, 60000); // Check every minute

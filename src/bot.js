@@ -1,7 +1,8 @@
+require('./config'); // load .env FIRST (in order) before anything reads process.env
 const fs = require('fs-extra');
-const yth2 = require('./res/js/y2mate.js'); // Import downloadVideo from ytdl file
-const USER_DATA_FILE = './users.json';
-const fetchnews = require('./res/news');
+const yth2 = require('./modules/y2mate.js'); // Import downloadVideo from ytdl file
+const USER_DATA_FILE = './data/users.json';
+const fetchnews = require('./services/news');
 const yts = async (query) => {
     try {
         const response = await fetch("https://hansaka1-ytdl.hf.space/search", {
@@ -51,17 +52,17 @@ const yts = async (query) => {
 };
 const mumaker = require('mumaker');
 const { parsePhoneNumberFromString } = require("libphonenumber-js");
-const battlearena = require("./res/js/battlearena.js");
-const weatherof = require('./res/js/weather.js')
-const Assassin = require('./res/js/assassin.js');
-const { validStrengerss } = require("./res/js/validStrengerss.js");
+const battlearena = require("./modules/battlearena.js");
+const weatherof = require('./modules/weather.js')
+const Assassin = require('./modules/assassin.js');
+const { validStrengerss } = require("./modules/validStrengerss.js");
 const {
     handleHangman,
     checkInactiveGames
-} = require('./hangman.js');
+} = require('./games/hangman.js');
 const fsp = require('fs').promises;
-const fonts = require('./res/js/fonts.js')
-const hangmanFile = "./hangman.json";
+const fonts = require('./modules/fonts.js')
+const hangmanFile = "./data/hangman.json";
 const {
     v4: uuidv4
 } = require('uuid');
@@ -72,30 +73,30 @@ const {
     handleStopChain,
     handleChainGuess,
     checkInactiveChainGames
-} = require('./res/js/wordchain.js');
-const mafiaGame = require('./res/js/mafia.js')
-const QUIZ_STORAGE_DIR = './quizzes';
+} = require('./modules/wordchain.js');
+const mafiaGame = require('./modules/mafia.js')
+const QUIZ_STORAGE_DIR = './data/quizzes';
 const {
     promisify
 } = require('util');
 const validator = require('validator');
-const viewOnce = require('./res/js/vv.js')
+const viewOnce = require('./modules/vv.js')
 const {
     exec
 } = require('child_process');
-// const yth2 = require('./res/js/ytHelper2');
+// const yth2 = require('./modules/ytHelper2');
 const {
     muteCommand,
     unmuteCommand
-} = require('./res/js/mute.js')
+} = require('./modules/mute.js')
 const {
     warnUser,
     checkWarns,
     removeWarn
-} = require('./res/js/warn.js')
+} = require('./modules/warn.js')
 const {
     getEmojicook
-} = require('./res/js/emojicook.js');
+} = require('./modules/emojicook.js');
 const {
     Primbon
 } = require('scrape-primbon')
@@ -105,12 +106,12 @@ const execAsync = promisify(exec);
 if (!fs.existsSync(QUIZ_STORAGE_DIR)) {
     fs.mkdirSync(QUIZ_STORAGE_DIR);
 }
-const questionsFile = './dailyQuestions.json';
-const QresponsesFile = './dailyqresp.json';
+const questionsFile = './data/dailyQuestions.json';
+const QresponsesFile = './data/dailyqresp.json';
 const upadestatusstate = {};
 const userreportingstate = {};
 const path = require('path');
-const quizManager = require('./res/js/quizManager.js');
+const quizManager = require('./modules/quizManager.js');
 const FilterManager = require('filtermatics');
 const si = require('os');
 const shippingflder = 'shipping'
@@ -127,7 +128,7 @@ const {
     generateMessageID
 } = require('@hansaka02/baileys');
 
-const monitnumbsPath = './monitnumbs.json';
+const monitnumbsPath = './data/monitnumbs.json';
 if (!fs.existsSync(monitnumbsPath)) {
     fs.writeFileSync(monitnumbsPath, JSON.stringify([]));
 }
@@ -161,12 +162,12 @@ const {
 //const { Button, ButtonMessage } = require('@hansaka02/baileys').WA_MESSAGE_TYPE;
 const {
     fileutc
-} = require('./res/js/fu.js');
+} = require('./modules/fu.js');
 const {
     runSpeedTest
-} = require('./res/js/speed_test.js')
+} = require('./modules/speed_test.js')
 const FormData = require('form-data');
-const websearch_query = require('./res/web/web.js')
+const websearch_query = require('./services/websearch.js')
 const {
     updateUser,
     loadUserByNumber,
@@ -175,10 +176,10 @@ const {
     loadAllPrivateChats,
     readUsersFile,
     saveUsersjsonnn
-} = require('./store/userscontact.js');
-const generatequote = require('./generatequote2.js')
+} = require('./modules/userscontact.js');
+const generatequote = require('./services/quoteGenerator.js')
 const chalk = require('kleur');
-const TEMP_DIR = path.join(__dirname, 'temp');
+const TEMP_DIR = path.join(__dirname, '..', 'temp');
 // const {
 //     getVideoInfo,
 //     getFormats,
@@ -193,12 +194,11 @@ const TEMP_DIR = path.join(__dirname, 'temp');
 //     downloadAudioAsMp3ToBuffer,
 
 //     downloadQualityToBuffer, // <-- NEW FUNCTION ADDED
-// } = require('./res/js/ytHelper.js')
-const ai = require('./res/js/Aii.js');
+// } = require('./modules/ytHelper.js')
+const ai = require('./modules/Aii.js');
 const {
     OpenAI
 } = require("openai");
-require('dotenv').config();
 const mysql = require("mysql2");
 const mongo_url = process.env.mongo_url;
 const Filters = new FilterManager({
@@ -214,8 +214,8 @@ const badwordceck = new badwordNext({
 
 const {
     mediafireDl
-} = require('./res/mediafire.js')
-const { getCachedGroupMetadata, clearGroupCache, getCachedGroupSettings, clearSettingsCache } = require('./res/js/cacheHelper.js');
+} = require('./services/mediafire.js')
+const { getCachedGroupMetadata, clearGroupCache, getCachedGroupSettings, clearSettingsCache } = require('./modules/cacheHelper.js');
 const DB_HOST = process.env["DB_HOST"];
 const DB_UNAME = process.env["DB_UNAME"];
 const DB_NAME = process.env["DB_NAME"];
@@ -223,7 +223,7 @@ const DB_PASS = process.env["DB_PASS"];
 const DB_PORT = process.env["DB_PORT"] || 3306;
 const {
     isUrl
-} = require('./res/js/func')
+} = require('./modules/func')
 const hngmnwrds = [
     "apple", "banana", "mountain", "ocean", "computer", "city", "dog", "cat", "book",
     "window", "coffee", "phone", "table", "chair", "cloud", "rain", "snow", "butterfly",
@@ -419,7 +419,7 @@ async function startCustomQuiz(AlexaInc, jid, quizId) {
     }
 }
 
-const statusFile = path.join(__dirname, 'botstatus.json');
+const statusFile = path.join(__dirname, '..', 'data', 'botstatus.json');
 
 /**
  * Load the current bot status
@@ -1449,7 +1449,7 @@ async function handleMessage(AlexaInc, {
 
                 //     try {
 
-                //         const audioBuffer = fs.readFileSync('./res/audio/welcome.ogg');
+                //         const audioBuffer = fs.readFileSync('./assets/audio/welcome.ogg');
 
 
                 //         await AlexaInc.sendMessage(msg.key.remoteJid, {
@@ -1915,7 +1915,7 @@ async function handleMessage(AlexaInc, {
 
                             const interactiveMessage = {
                                 image: {
-                                    url: './res/img/alexa.jpg'
+                                    url: './assets/img/alexa.jpg'
                                 },
                                 caption: menu,
                                 footer: "Powered by HANSAKA",
@@ -1924,7 +1924,7 @@ async function handleMessage(AlexaInc, {
 
                             try {
                                 // 1. Read your audio file into a buffer
-                                // const audioBuffer = fs.readFileSync('./res/audio/menu.ogg');
+                                // const audioBuffer = fs.readFileSync('./assets/audio/menu.ogg');
 
                                 // // 2. Send the buffer directly in the 'audio' property
                                 // const res = await AlexaInc.sendMessage(msg.key.remoteJid, {
@@ -2160,7 +2160,7 @@ ${menus}
                             // send or return menu
                             AlexaInc.sendMessage(msg.key.remoteJid, {
                                 image: {
-                                    url: './res/img/alexa.jpg'
+                                    url: './assets/img/alexa.jpg'
                                 },
                                 caption: fmenu
                             }, {
@@ -2737,8 +2737,8 @@ ${quotedid ? "Senderid:" + quotedid : ""}`
                                 if (isVideo) {
                                     // --- Video Processing (MP4/GIF/WEBM → animated WEBP) ---
 
-                                    const inputPath = path.join(__dirname, `video_${Date.now()}.mp4`);
-                                    const outputPath = path.join(__dirname, `sticker_${Date.now()}.webp`);
+                                    const inputPath = path.join(__dirname, '..', `video_${Date.now()}.mp4`);
+                                    const outputPath = path.join(__dirname, '..', `sticker_${Date.now()}.webp`);
 
                                     // write video buffer to temp file
                                     fs.writeFileSync(inputPath, mediaBuffer);
@@ -3058,7 +3058,7 @@ source - ${url}
       `
                                 AlexaInc.sendMessage(msg.key.remoteJid, {
                                     image: {
-                                        url: './res/img/unnamed.jpeg'
+                                        url: './assets/img/unnamed.jpeg'
                                     },
                                     caption: repmasga
                                 }, {
@@ -3793,7 +3793,7 @@ Duration : ${formatTime(details.durationInSeconds)}
                                 .then(function (response) {
                                     const imageUrl = response.data.content.url;
                                     const imagesavepath = `./temp/${response.data.content.id}`;
-                                    const writer = fs.createWriteStream(path.join(__dirname, imagesavepath));
+                                    const writer = fs.createWriteStream(path.join(__dirname, '..', imagesavepath));
 
                                     axios({
                                         url: imageUrl,
@@ -3994,7 +3994,7 @@ Duration : ${formatTime(details.durationInSeconds)}
                                 '🍌 : 🍌 : 🍌 *You Win👑*'
                             ]
                             const dripslot = sotoy[Math.floor(Math.random() * sotoy.length)]
-                            let datane = fs.readFileSync('./res/nothing.js')
+                            let datane = fs.readFileSync('./assets/nothing.json')
                             jsonData = JSON.parse(datane)
                             randIndex = Math.floor(Math.random() * jsonData.length)
                             randKey = jsonData[randIndex];
@@ -4410,7 +4410,7 @@ Url: ${response[1].url}
   `
                                 AlexaInc.sendMessage(msg.key.remoteJid, {
                                     image: {
-                                        url: './res/img/news.jpeg'
+                                        url: './assets/img/news.jpeg'
                                     },
                                     caption: message2send
                                 }, {
@@ -6073,7 +6073,7 @@ from : @${visibleNumber}
 
                                         const interactiveMessage = {
                                             image: {
-                                                url: './res/img/alexa.jpg'
+                                                url: './assets/img/alexa.jpg'
                                             },
                                             caption: menu,
                                             footer: "Powered by HANSAKA",
@@ -6170,7 +6170,7 @@ ${summary}
                                                 // Send the weather information to the user
                                                 AlexaInc.sendMessage(msg.key.remoteJid, {
                                                     image: {
-                                                        url: './res/img/unnamed.jpeg'
+                                                        url: './assets/img/unnamed.jpeg'
                                                     },
                                                     caption: repmsg
                                                 }, {

@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 // --- 1. CONFIGURATION ---
-const DICTIONARY_FILE = './dictionary.txt';
+const DICTIONARY_FILE = './data/dictionary.txt';
 const JOIN_TIME_MS = 60 * 1000;       // 60 Seconds to join
 const INACTIVITY_MS = 5 * 60 * 1000;  // 5 Minutes max idle time
 
