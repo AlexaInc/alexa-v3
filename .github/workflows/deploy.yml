@@ -1,0 +1,30 @@
+name: Deploy to Oracle VM
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Deploy and Restart
+      env:
+        HOST: ${{ secrets.VM_HOST }}
+        USER: ${{ secrets.VM_USER }}
+      run: |
+        ssh -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+          cd /home/ubuntu/alexa-v3
+          git pull origin main
+          npm install --legacy-peer-deps --production
+          node app.js
+        EOF
