@@ -31,7 +31,7 @@ jobs:
           # 2. Folder එක delete කරලා අලුතින් clone කරගන්න
           cd /home/ubuntu
           rm -rf alexa-v3
-          git clone https://github.com/OYAGE_GITHUB_USERNAME/OYAGE_REPO_NAME.git alexa-v3
+          git clone https://github.com/AlexaInc/alexa-v3.git alexa-v3
           
           # 3. .env file එක ආයെත් alexa-v3 folder එකට දාන්න
           if [ -f /home/ubuntu/.env.backup ]; then
