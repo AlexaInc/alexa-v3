@@ -96,7 +96,7 @@ const config = {
   TENOR_API_KEY: str(env.TENOR_API_KEY),
   /** DeepAI API key used by src/modules/Aii.js. */
   DEEPAI_API_KEY: str(env.DEEPAI_API_KEY),
-
+  POSTGRES_URL: str(env.POSTGRES_URL),
   // ── Google Custom Search (src/services/websearch.js) ────────────────
   GOOGLE_API_KEY: str(env.GOOGLE_API_KEY),
   GOOGLESEARCH_ENGINE_ID: str(env.GOOGLESEARCH_ENGINE_ID),

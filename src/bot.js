@@ -5680,10 +5680,12 @@ from : @${visibleNumber}
 
 
                     let mesafesfb;
+                    let msgfai;
 
                     let lalala;
                     if (msg.message?.videoMessage) {
                         mesafesfb = messageText;
+                        msgfai = messageText;
                         const buffer = await downloadMediaMessage(msg, "buffer", {}, {});
                         lalala = [{
                             video: buffer,
@@ -5691,6 +5693,7 @@ from : @${visibleNumber}
                         }]
                     } else if (!msg.message?.imageMessage) {
                         mesafesfb = messageText;
+                        msgfai = messageText;
                         lalala = [{
                             text: messageText
                         }]
@@ -5706,6 +5709,7 @@ from : @${visibleNumber}
 
                         // Convert buffer to Base64
                         const base64Image = buffer.toString("base64");
+                        msgfai ={text:messageText,files:[buffer]}
                         mesafesfb = [{
                             type: "text",
                             text: messageText
@@ -5855,7 +5859,7 @@ from : @${visibleNumber}
                     }
 
                     function runAI() {
-                        ai(mesafesfb,finalLid,FinalGid,msg.pushName, async (err, reply) => {
+                        ai(msgfai,finalLid,FinalGid,msg.pushName, async (err, reply) => {
 
                             // AlexaInc.sendMessage(msg.key.remoteJid, {
                             //     react: {
