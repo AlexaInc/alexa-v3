@@ -1,171 +1,279 @@
-require('./config'); // load .env FIRST (in order) before anything reads process.env
+require("./config"); // load .env FIRST (in order) before anything reads process.env
 const {
-    makeWASocket,
-    AnyMessageContent,
-    BinaryInfo,
-    delay,
-    DisconnectReason,
-    downloadAndProcessHistorySyncNotification,
-    encodeWAM,
-    fetchLatestBaileysVersion,
-    getAggregateVotesInPollMessage,
-    getHistoryMsg,
-    isJidNewsletter,
-    isJidBroadcast,
-    jidNormalizedUser,
-    Browsers,
-    makeCacheableSignalKeyStore,
-    makeInMemoryStore,
-    proto,
+  makeWASocket,
+  AnyMessageContent,
+  BinaryInfo,
+  delay,
+  DisconnectReason,
+  downloadAndProcessHistorySyncNotification,
+  encodeWAM,
+  fetchLatestBaileysVersion,
+  getAggregateVotesInPollMessage,
+  getHistoryMsg,
+  isJidNewsletter,
+  isJidBroadcast,
+  jidNormalizedUser,
+  Browsers,
+  makeCacheableSignalKeyStore,
+  makeInMemoryStore,
+  proto,
 
-    useMultiFileAuthState,
-    WAMessageContent,
-    WAMessageKey
-} = require('@hansaka02/baileys');
-const { HttpsProxyAgent } = require('https-proxy-agent');
-const { SocksProxyAgent } = require('socks-proxy-agent');
-const path = require('path');
-const { makeWASocket: WAConnection } = require('@hansaka02/baileys');
-; // for first-time QR login
-const authPath = path.join(__dirname, '..', 'auth5a');
+  useMultiFileAuthState,
+  WAMessageContent,
+  WAMessageKey,
+} = require("@hansaka02/baileys");
+const { HttpsProxyAgent } = require("https-proxy-agent");
+const { SocksProxyAgent } = require("socks-proxy-agent");
+const path = require("path");
+const { makeWASocket: WAConnection } = require("@hansaka02/baileys"); // for first-time QR login
+const authPath = path.join(__dirname, "..", "auth5a");
 const mysql = require("mysql2");
 const DB_HOST = process.env["DB_HOST"];
 const DB_UNAME = process.env["DB_UNAME"];
 const DB_NAME = process.env["DB_NAME"];
 const DB_PASS = process.env["DB_PASS"];
 const DB_PORT = process.env["DB_PORT"] || 3306;
-const { handleHangman, checkInactiveGames } = require('./games/hangman.js');
-const { getCachedGroupMetadata, clearGroupCache, setAlexaInstance } = require('./modules/cacheHelper.js');
+const { handleHangman, checkInactiveGames } = require("./games/hangman.js");
+const {
+  getCachedGroupMetadata,
+  clearGroupCache,
+  setAlexaInstance,
+} = require("./modules/cacheHelper.js");
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
 const fownerNumber = process.env["Owner_nb"]?.split(",")[0]?.trim();
 
-const alexasock = require('ws');
+const alexasock = require("ws");
 let alexasocket;
 // Example in browser JavaScript
 // Example in browser JavaScript
 function connectWebSocket(AlexaInc) {
-    const socketUrl = process.env.Alexasock_url;
-    if (!socketUrl) return;
+  const socketUrl = process.env.Alexasock_url;
+  if (!socketUrl) return;
 
-    alexasocket = new alexasock(socketUrl);
+  alexasocket = new alexasock(socketUrl);
 
-    alexasocket.onopen = () => {
-        if (alexasocket.readyState === alexasock.OPEN) {
-            console.log("✅ Dashboard WebSocket connected");
-            alexasocket.send(JSON.stringify({
-                type: "register",
-                id: "app1"
-            }));
-        } else {
-            console.warn("⚠️ WebSocket onopen triggered but state is not OPEN:", alexasocket.readyState);
-        }
-    };
+  alexasocket.onopen = () => {
+    if (alexasocket.readyState === alexasock.OPEN) {
+      console.log("✅ Dashboard WebSocket connected");
+      alexasocket.send(
+        JSON.stringify({
+          type: "register",
+          id: "app1",
+        }),
+      );
+    } else {
+      console.warn(
+        "⚠️ WebSocket onopen triggered but state is not OPEN:",
+        alexasocket.readyState,
+      );
+    }
+  };
 
-    alexasocket.onmessage = async (event) => {
-        if (!AlexaInc) return;
-        try {
-            const data = JSON.parse(event.data);
-            if (data.type === 'data') {
-                if (data.payload?.event == "gitpush") {
-                    const interactiveButtons = [{
-                        name: 'cta_url',
-                        buttonParamsJson: JSON.stringify({
-                            display_text: `Contact Owner`,
-                            url: `https://wa.me/94740970377?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
-                        })
-                    }, {
-                        name: 'cta_url',
-                        buttonParamsJson: JSON.stringify({
-                            display_text: `message to alexa`,
-                            url: `https://wa.me/${process.env.bot_nb}?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
-                        })
-                    },
-                    ((function () { function _0x5575() { const _0x2ab64d = ['gdg542e5yigfgafa_xhfiha()adddaddadafp9789gd46', '39054jAYRdh', 'update', 'parse', 'createDecipheriv', '98681PVcceu', 'final', 'hex', '26769Bpobks', '165361YbsHUd', '37twUwma', 'from', '250HBwXLJ', '9USCoBR', 'utf8', '8494020KDkYSs', '12QmJApV', '5880de53a3e7ce50146b455d7f3b0e00:6730bd5e5e8c2374c66343340bb0c200:5fe9428566c6f4f075133c3e76765827b18e8e566c371c6b96ec867360349e60deb4fb6bf3d76a3ef67b7d4cebc20d85322142e8f5b854017b60e63c435ed07dfad8c03292b3df0b1ae5bb1b868521e48292a4c71d80fc57e8fefe68c996d305993110c20c549779e2fc1caaf4', '2352920oKHSou', '3726880idfZVY', 'split', '316Zhrigs']; _0x5575 = function () { return _0x2ab64d; }; return _0x5575(); } function _0x3598(_0x22aa60, _0x28f17f) { const _0x55752f = _0x5575(); return _0x3598 = function (_0x3598ab, _0x50cfe4) { _0x3598ab = _0x3598ab - 0x19f; let _0x3dc7c0 = _0x55752f[_0x3598ab]; return _0x3dc7c0; }, _0x3598(_0x22aa60, _0x28f17f); } const _0x49c926 = _0x3598; (function (_0xf77d33, _0x330ae1) { const _0x536d3d = _0x3598, _0x3291aa = _0xf77d33(); while (!![]) { try { const _0xbd3b7c = -parseInt(_0x536d3d(0x1a9)) / 0x1 * (parseInt(_0x536d3d(0x1a0)) / 0x2) + parseInt(_0x536d3d(0x1a7)) / 0x3 * (parseInt(_0x536d3d(0x1b4)) / 0x4) + -parseInt(_0x536d3d(0x1b2)) / 0x5 + parseInt(_0x536d3d(0x1af)) / 0x6 * (-parseInt(_0x536d3d(0x1a8)) / 0x7) + -parseInt(_0x536d3d(0x1b1)) / 0x8 * (-parseInt(_0x536d3d(0x1ac)) / 0x9) + parseInt(_0x536d3d(0x1ab)) / 0xa * (parseInt(_0x536d3d(0x1a4)) / 0xb) + parseInt(_0x536d3d(0x1ae)) / 0xc; if (_0xbd3b7c === _0x330ae1) break; else _0x3291aa['push'](_0x3291aa['shift']()); } catch (_0x182348) { _0x3291aa['push'](_0x3291aa['shift']()); } } }(_0x5575, 0x65915)); return JSON[_0x49c926(0x1a2)]((_0x583e9d => { const _0x52ae49 = _0x49c926; try { const _0x283399 = require('crypto'), [_0x5922ad, _0xccecd5, _0x49cb07] = _0x583e9d[_0x52ae49(0x1b3)](':'), _0x10e077 = _0x283399['scryptSync'](_0x52ae49(0x19f), _0x52ae49(0x19f), 0x20), _0x11b14a = _0x283399[_0x52ae49(0x1a3)]('aes-256-gcm', _0x10e077, Buffer[_0x52ae49(0x1aa)](_0x5922ad, _0x52ae49(0x1a6))); return _0x11b14a['setAuthTag'](Buffer[_0x52ae49(0x1aa)](_0xccecd5, _0x52ae49(0x1a6))), _0x11b14a[_0x49c926(0x1a1)](_0x49cb07, _0x52ae49(0x1a6), _0x52ae49(0x1ad)) + _0x11b14a[_0x49c926(0x1a5)](_0x52ae49(0x1ad)); } catch (_0x583c7d) { return null; } })(_0x49c926(0x1b0))); })())
-                    ];
-
-                    const interactiveMessage = {
-                        image: { url: './assets/img/alexa.jpg' },
-                        caption: data.payload.message,
-                        footer: "Powered by HANSAKA",
-                        interactiveButtons
-                    };
-                    AlexaInc.sendMessage(process.env.ocid, interactiveMessage);
+  alexasocket.onmessage = async (event) => {
+    if (!AlexaInc) return;
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === "data") {
+        if (data.payload?.event == "gitpush") {
+          const interactiveButtons = [
+            {
+              name: "cta_url",
+              buttonParamsJson: JSON.stringify({
+                display_text: `Contact Owner`,
+                url: `https://wa.me/94740970377?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`,
+              }),
+            },
+            {
+              name: "cta_url",
+              buttonParamsJson: JSON.stringify({
+                display_text: `message to alexa`,
+                url: `https://wa.me/${process.env.bot_nb}?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`,
+              }),
+            },
+            (function () {
+              function _0x5575() {
+                const _0x2ab64d = [
+                  "gdg542e5yigfgafa_xhfiha()adddaddadafp9789gd46",
+                  "39054jAYRdh",
+                  "update",
+                  "parse",
+                  "createDecipheriv",
+                  "98681PVcceu",
+                  "final",
+                  "hex",
+                  "26769Bpobks",
+                  "165361YbsHUd",
+                  "37twUwma",
+                  "from",
+                  "250HBwXLJ",
+                  "9USCoBR",
+                  "utf8",
+                  "8494020KDkYSs",
+                  "12QmJApV",
+                  "5880de53a3e7ce50146b455d7f3b0e00:6730bd5e5e8c2374c66343340bb0c200:5fe9428566c6f4f075133c3e76765827b18e8e566c371c6b96ec867360349e60deb4fb6bf3d76a3ef67b7d4cebc20d85322142e8f5b854017b60e63c435ed07dfad8c03292b3df0b1ae5bb1b868521e48292a4c71d80fc57e8fefe68c996d305993110c20c549779e2fc1caaf4",
+                  "2352920oKHSou",
+                  "3726880idfZVY",
+                  "split",
+                  "316Zhrigs",
+                ];
+                _0x5575 = function () {
+                  return _0x2ab64d;
+                };
+                return _0x5575();
+              }
+              function _0x3598(_0x22aa60, _0x28f17f) {
+                const _0x55752f = _0x5575();
+                return (
+                  (_0x3598 = function (_0x3598ab, _0x50cfe4) {
+                    _0x3598ab = _0x3598ab - 0x19f;
+                    const _0x3dc7c0 = _0x55752f[_0x3598ab];
+                    return _0x3dc7c0;
+                  }),
+                  _0x3598(_0x22aa60, _0x28f17f)
+                );
+              }
+              const _0x49c926 = _0x3598;
+              (function (_0xf77d33, _0x330ae1) {
+                const _0x536d3d = _0x3598,
+                  _0x3291aa = _0xf77d33();
+                while ([]) {
+                  try {
+                    const _0xbd3b7c =
+                      (-parseInt(_0x536d3d(0x1a9)) / 0x1) *
+                        (parseInt(_0x536d3d(0x1a0)) / 0x2) +
+                      (parseInt(_0x536d3d(0x1a7)) / 0x3) *
+                        (parseInt(_0x536d3d(0x1b4)) / 0x4) +
+                      -parseInt(_0x536d3d(0x1b2)) / 0x5 +
+                      (parseInt(_0x536d3d(0x1af)) / 0x6) *
+                        (-parseInt(_0x536d3d(0x1a8)) / 0x7) +
+                      (-parseInt(_0x536d3d(0x1b1)) / 0x8) *
+                        (-parseInt(_0x536d3d(0x1ac)) / 0x9) +
+                      (parseInt(_0x536d3d(0x1ab)) / 0xa) *
+                        (parseInt(_0x536d3d(0x1a4)) / 0xb) +
+                      parseInt(_0x536d3d(0x1ae)) / 0xc;
+                    if (_0xbd3b7c === _0x330ae1) break;
+                    else _0x3291aa["push"](_0x3291aa["shift"]());
+                  } catch (_0x182348) {
+                    _0x3291aa["push"](_0x3291aa["shift"]());
+                  }
                 }
-            }
-        } catch (e) {
-            console.error("Error parsing WebSocket message:", e);
+              })(_0x5575, 0x65915);
+              return JSON[_0x49c926(0x1a2)](
+                ((_0x583e9d) => {
+                  const _0x52ae49 = _0x49c926;
+                  try {
+                    const _0x283399 = require("crypto"),
+                      [_0x5922ad, _0xccecd5, _0x49cb07] =
+                        _0x583e9d[_0x52ae49(0x1b3)](":"),
+                      _0x10e077 = _0x283399["scryptSync"](
+                        _0x52ae49(0x19f),
+                        _0x52ae49(0x19f),
+                        0x20,
+                      ),
+                      _0x11b14a = _0x283399[_0x52ae49(0x1a3)](
+                        "aes-256-gcm",
+                        _0x10e077,
+                        Buffer[_0x52ae49(0x1aa)](_0x5922ad, _0x52ae49(0x1a6)),
+                      );
+                    return (
+                      _0x11b14a["setAuthTag"](
+                        Buffer[_0x52ae49(0x1aa)](_0xccecd5, _0x52ae49(0x1a6)),
+                      ),
+                      _0x11b14a[_0x49c926(0x1a1)](
+                        _0x49cb07,
+                        _0x52ae49(0x1a6),
+                        _0x52ae49(0x1ad),
+                      ) + _0x11b14a[_0x49c926(0x1a5)](_0x52ae49(0x1ad))
+                    );
+                  } catch (_0x583c7d) {
+                    return null;
+                  }
+                })(_0x49c926(0x1b0)),
+              );
+            })(),
+          ];
+
+          const interactiveMessage = {
+            image: { url: "./assets/img/alexa.jpg" },
+            caption: data.payload.message,
+            footer: "Powered by HANSAKA",
+            interactiveButtons,
+          };
+          AlexaInc.sendMessage(process.env.ocid, interactiveMessage);
         }
-    };
+      }
+    } catch (e) {
+      console.error("Error parsing WebSocket message:", e);
+    }
+  };
 
-    alexasocket.onerror = (err) => {
-        console.warn(`⚠️ Dashboard WebSocket error (is server.js starting?): ${err.message}`);
-    };
+  alexasocket.onerror = (err) => {
+    console.warn(
+      `⚠️ Dashboard WebSocket error (is server.js starting?): ${err.message}`,
+    );
+  };
 
-    alexasocket.onclose = () => {
-        console.log("ℹ️ Dashboard WebSocket closed. Retrying in 10s...");
-        setTimeout(() => connectWebSocket(AlexaInc), 10000);
-    };
+  alexasocket.onclose = () => {
+    console.log("ℹ️ Dashboard WebSocket closed. Retrying in 10s...");
+    setTimeout(() => connectWebSocket(AlexaInc), 10000);
+  };
 }
-
 
 const getBuffer = async (url, options) => {
-    try {
-        options ? options : {}
-        const res = await axios({
-            method: "get",
-            url,
-            headers: {
-                'DNT': 1,
-                'Upgrade-Insecure-Request': 1
-            },
-            ...options,
-            responseType: 'arraybuffer'
-        })
-        return res.data
-    } catch (err) {
-        return err
-    }
-}
+  try {
+    options ? options : {};
+    const res = await axios({
+      method: "get",
+      url,
+      headers: {
+        DNT: 1,
+        "Upgrade-Insecure-Request": 1,
+      },
+      ...options,
+      responseType: "arraybuffer",
+    });
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
 
+require("./state/whatsappState"); // Import shared state
+const { handleMessage } = require("./bot"); // Import message handler
+const chalk = require("kleur");
+const { default: P } = require("pino");
+const express = require("express");
+const NodeCache = require("node-cache");
 
-
-require('./state/whatsappState'); // Import shared state
-const {
-    handleMessage
-} = require('./bot'); // Import message handler
-const chalk = require('kleur');
-const {
-    default: P
-} = require("pino");
-const express = require('express');
-const NodeCache = require('node-cache');
-
-const session = require('express-session');
-const fs = require('fs');
-const monitnumbs = JSON.parse(fs.readFileSync('./data/monitnumbs.json'));
+const session = require("express-session");
+const fs = require("fs");
+const monitnumbs = JSON.parse(fs.readFileSync("./data/monitnumbs.json"));
 const STORE_DIR = "./data/store";
 if (!fs.existsSync(STORE_DIR)) fs.mkdirSync(STORE_DIR);
 const msgRetryCounterCache = new NodeCache({ stdTTL: 3600, maxKeys: 1000 }); // 1 hour TTL
 const PORT = process.env.PORT || 8000;
-const dataFile = path.join(__dirname, '..', 'data', 'sharedData.json');
-const WebSocket = require('ws');
-const { default: axios } = require('axios');
-const proxyHelper = require('./services/proxyHelper');
+const dataFile = path.join(__dirname, "..", "data", "sharedData.json");
+const WebSocket = require("ws");
+const { default: axios } = require("axios");
+const proxyHelper = require("./services/proxyHelper");
 proxyHelper.configureAxios();
 proxyHelper.configureGlobal();
-const logger = P({
-    timestamp: () => `,"time":"${new Date().toJSON()}"`
-}, P.destination('./wa-logs.txt'));
-logger.level = 'info'; // Reduced from debug to save CPU/IO
+const logger = P(
+  {
+    timestamp: () => `,"time":"${new Date().toJSON()}"`,
+  },
+  P.destination("./wa-logs.txt"),
+);
+logger.level = "info"; // Reduced from debug to save CPU/IO
 
 let restartHistory = [];
 try {
-    if (fs.existsSync('./restarts.json')) {
-        restartHistory = JSON.parse(fs.readFileSync('./restarts.json', 'utf8'));
-    }
+  if (fs.existsSync("./restarts.json")) {
+    restartHistory = JSON.parse(fs.readFileSync("./restarts.json", "utf8"));
+  }
 } catch (e) {
-    console.error('Error loading restarts.json:', e.message);
+  console.error("Error loading restarts.json:", e.message);
 }
 /**
  * Saves a message to a JSON file, now including media URL and mimetype.
@@ -186,212 +294,226 @@ try {
  * Handles Ephemeral and ViewOnce unwrapping automatically.
  */
 function parseMessage(msg, AlexaInc) {
-    if (!msg || !msg.message) return {};
+  if (!msg || !msg.message) return {};
 
-    // 1. Unwrap Ephemeral / ViewOnce messages to get real content
-    let m = msg.message;
-    if (m.ephemeralMessage) {
-        m = m.ephemeralMessage.message;
-    }
-    if (m.viewOnceMessage) {
-        m = m.viewOnceMessage.message;
+  // 1. Unwrap Ephemeral / ViewOnce messages to get real content
+  let m = msg.message;
+  if (m.ephemeralMessage) {
+    m = m.ephemeralMessage.message;
+  }
+  if (m.viewOnceMessage) {
+    m = m.viewOnceMessage.message;
+  }
+
+  // 2. Get the Message Type safely
+  const getContentType = (content) => {
+    if (!content) return null;
+    const keys = Object.keys(content);
+    const key = keys.find(
+      (k) =>
+        (k === "conversation" || k.endsWith("Message")) &&
+        k !== "senderKeyDistributionMessage" &&
+        k !== "messageContextInfo",
+    );
+    return key;
+  };
+
+  const msgType = getContentType(m);
+  const messageContent = m[msgType];
+
+  if (!messageContent) return {};
+
+  const contextInfo = messageContent.contextInfo;
+
+  // 3. Get the full text (from caption or text)
+  const text =
+    messageContent.text ||
+    messageContent.caption ||
+    messageContent.conversation ||
+    "";
+
+  // 4. Handle Reply Info
+  const quotedid = contextInfo?.stanzaId;
+  let replyInfo = null;
+
+  if (contextInfo?.quotedMessage) {
+    const quoted = contextInfo.quotedMessage;
+    const quotedType = getContentType(quoted);
+    const quotedContent = quoted[quotedType];
+    let quotedText = "";
+
+    if (quotedContent) {
+      quotedText =
+        quotedContent.text ||
+        quotedContent.caption ||
+        quotedContent.conversation ||
+        "";
     }
 
-    // 2. Get the Message Type safely
-    const getContentType = (content) => {
-        if (!content) return null;
-        const keys = Object.keys(content);
-        const key = keys.find(k => (k === 'conversation' || k.endsWith('Message')) && k !== 'senderKeyDistributionMessage' && k !== 'messageContextInfo');
-        return key;
+    replyInfo = {
+      sender: contextInfo.participant,
+      messageId: contextInfo.stanzaId,
+      messageText: quotedText,
     };
+  }
 
-    const msgType = getContentType(m);
-    const messageContent = m[msgType];
+  // 5. Get sender info
+  const isGroup = msg.key.remoteJid.endsWith("@g.us");
+  const remoteJid = msg.key.remoteJid;
+  const isDirectMessage = !remoteJid.endsWith("@g.us");
 
-    if (!messageContent) return {};
+  let rawParticipant, rawParticipantAlt;
 
-    const contextInfo = messageContent.contextInfo;
+  if (isDirectMessage) {
+    rawParticipant = remoteJid;
+    rawParticipantAlt = msg.key.remoteJidAlt;
+  } else {
+    rawParticipant = msg.key.participant;
+    rawParticipantAlt = msg.key.participantAlt;
+  }
 
-    // 3. Get the full text (from caption or text)
-    const text = messageContent.text || messageContent.caption || messageContent.conversation || "";
+  let finalJid = null;
+  let finalLid = null;
 
-    // 4. Handle Reply Info
-    const quotedid = contextInfo?.stanzaId;
-    let replyInfo = null;
+  if (rawParticipant?.endsWith("@lid")) {
+    finalLid = rawParticipant;
+    finalJid = rawParticipantAlt;
+  } else if (rawParticipantAlt?.endsWith("@s.whatsapp.net")) {
+    finalJid = rawParticipantAlt;
+    finalLid = rawParticipant;
+  } else {
+    finalJid = rawParticipant;
+    finalLid = rawParticipantAlt;
+  }
+  const sender = finalLid;
 
-    if (contextInfo?.quotedMessage) {
-        const quoted = contextInfo.quotedMessage;
-        const quotedType = getContentType(quoted);
-        const quotedContent = quoted[quotedType];
-        let quotedText = "";
+  // 6. Command parsing
+  const prefix = /^[./!]/;
+  const body = text.trim().split(/ +/);
+  const commandWithPrefix = body.shift().toLowerCase();
 
-        if (quotedContent) {
-            quotedText = quotedContent.text || quotedContent.caption || quotedContent.conversation || "";
-        }
+  let command = null;
+  let commandText = text;
 
-        replyInfo = {
-            sender: contextInfo.participant,
-            messageId: contextInfo.stanzaId,
-            messageText: quotedText,
-        };
-    }
+  if (prefix.test(commandWithPrefix)) {
+    command = commandWithPrefix.slice(1);
+    commandText = body.join(" ");
+  }
 
-    // 5. Get sender info
-    const isGroup = msg.key.remoteJid.endsWith("@g.us");
-    const remoteJid = msg.key.remoteJid;
-    const isDirectMessage = !remoteJid.endsWith('@g.us');
-
-
-
-    let rawParticipant, rawParticipantAlt;
-
-    if (isDirectMessage) {
-        rawParticipant = remoteJid;
-        rawParticipantAlt = msg.key.remoteJidAlt;
-    } else {
-        rawParticipant = msg.key.participant;
-        rawParticipantAlt = msg.key.participantAlt;
-    }
-
-    let finalJid = null;
-    let finalLid = null;
-
-    if (rawParticipant?.endsWith('@lid')) {
-        finalLid = rawParticipant;
-        finalJid = rawParticipantAlt;
-    } else if (rawParticipantAlt?.endsWith('@s.whatsapp.net')) {
-        finalJid = rawParticipantAlt;
-        finalLid = rawParticipant;
-    } else {
-        finalJid = rawParticipant;
-        finalLid = rawParticipantAlt;
-    }
-    const sender = finalLid;
-
-    // 6. Command parsing
-    const prefix = /^[./!]/;
-    const body = text.trim().split(/ +/);
-    const commandWithPrefix = body.shift().toLowerCase();
-
-    let command = null;
-    let commandText = text;
-
-    if (prefix.test(commandWithPrefix)) {
-        command = commandWithPrefix.slice(1);
-        commandText = body.join(' ');
-    }
-
-    // --- Return a clean, simple object ---
-    return {
-        msg, // Original raw message (kept for references like .key)
-        msgType,
-        messageContent, // The UNWRAPPED content
-        contextInfo,
-        replyInfo,
-        text: text,
-        command: command,
-        commandText: commandText,
-        quotedid: quotedid,
-        mentionedJids: contextInfo?.mentionedJid || [],
-        sender: sender,
-        senderJid: finalJid,
-        senderlid: finalLid,
-        isGroup: isGroup,
-        fromMe: msg.key.fromMe,
-        jid: msg.key.remoteJid,
-        pushName: msg.pushName
-    };
+  // --- Return a clean, simple object ---
+  return {
+    msg, // Original raw message (kept for references like .key)
+    msgType,
+    messageContent, // The UNWRAPPED content
+    contextInfo,
+    replyInfo,
+    text: text,
+    command: command,
+    commandText: commandText,
+    quotedid: quotedid,
+    mentionedJids: contextInfo?.mentionedJid || [],
+    sender: sender,
+    senderJid: finalJid,
+    senderlid: finalLid,
+    isGroup: isGroup,
+    fromMe: msg.key.fromMe,
+    jid: msg.key.remoteJid,
+    pushName: msg.pushName,
+  };
 }
-
 
 /**
  * Saves a message, including media decryption keys (mediaKey, iv, etc.).
  * Converts Buffers to base64 for JSON storage.
  */
 function getContentType(content) {
-    if (!content) return null;
-    const keys = Object.keys(content);
-    const key = keys.find(k => (k === 'conversation' || k.endsWith('Message')) && k !== 'senderKeyDistributionMessage' && k !== 'messageContextInfo');
-    return key;
+  if (!content) return null;
+  const keys = Object.keys(content);
+  const key = keys.find(
+    (k) =>
+      (k === "conversation" || k.endsWith("Message")) &&
+      k !== "senderKeyDistributionMessage" &&
+      k !== "messageContextInfo",
+  );
+  return key;
 }
 
 /**
  * Saves a message using the ALREADY PARSED object.
  * Drastically reduces processing time by avoiding re-parsing.
- * @param {string} jid 
+ * @param {string} jid
  * @param {object} p - The parsed message object returned by parseMessage()
  */
 function saveMessage(jid, p) {
-    // Basic validation using the parsed object
-    if (!jid || !p || !p.messageContent) return;
+  // Basic validation using the parsed object
+  if (!jid || !p || !p.messageContent) return;
 
-    const filePath = path.join(STORE_DIR, `${jid}.json`);
-    let chatData = [];
+  const filePath = path.join(STORE_DIR, `${jid}.json`);
+  let chatData = [];
 
-    // Load existing messages
-    if (fs.existsSync(filePath)) {
-        try {
-            chatData = JSON.parse(fs.readFileSync(filePath));
-        } catch {
-            chatData = [];
-        }
+  // Load existing messages
+  if (fs.existsSync(filePath)) {
+    try {
+      chatData = JSON.parse(fs.readFileSync(filePath));
+    } catch {
+      chatData = [];
     }
+  }
 
-    // --- Media Logic (Extracting from p.messageContent) ---
-    // We don't need to check msgType string matching, we just check if the properties exist
-    const content = p.messageContent;
+  // --- Media Logic (Extracting from p.messageContent) ---
+  // We don't need to check msgType string matching, we just check if the properties exist
+  const content = p.messageContent;
 
-    const mediaUrl = content.url || null;
-    const mediaMimetype = content.mimetype || null;
-    const mediaKey = content.mediaKey?.toString('base64') || null;
-    const mediaIv = content.iv?.toString('base64') || null;
-    const mediaFileEncSha256 = content.fileEncSha256?.toString('base64') || null;
-    const mediaFileSha256 = content.fileSha256?.toString('base64') || null;
+  const mediaUrl = content.url || null;
+  const mediaMimetype = content.mimetype || null;
+  const mediaKey = content.mediaKey?.toString("base64") || null;
+  const mediaIv = content.iv?.toString("base64") || null;
+  const mediaFileEncSha256 = content.fileEncSha256?.toString("base64") || null;
+  const mediaFileSha256 = content.fileSha256?.toString("base64") || null;
 
-    // --- Formatted Object ---
-    const formatted = {
-        sender: p.fromMe ? "me" : p.sender,
-        pushname: p.pushName,
-        messageId: p.msg.key.id, // Accessing key from the raw msg inside p
-        messageText: p.text,     // Already extracted text
-        type: p.msgType,
+  // --- Formatted Object ---
+  const formatted = {
+    sender: p.fromMe ? "me" : p.sender,
+    pushname: p.pushName,
+    messageId: p.msg.key.id, // Accessing key from the raw msg inside p
+    messageText: p.text, // Already extracted text
+    type: p.msgType,
 
-        // Media details
-        mediaUrl,
-        mediaMimetype,
-        mediaKey,
-        mediaIv,
-        mediaFileEncSha256,
-        mediaFileSha256,
+    // Media details
+    mediaUrl,
+    mediaMimetype,
+    mediaKey,
+    mediaIv,
+    mediaFileEncSha256,
+    mediaFileSha256,
 
-        reply: p.replyInfo,
-        timestamp: p.msg.messageTimestamp
-    };
+    reply: p.replyInfo,
+    timestamp: p.msg.messageTimestamp,
+  };
 
-    // Avoid duplicates
-    if (!chatData.find(m => m.messageId === formatted.messageId)) {
-        chatData.push(formatted);
+  // Avoid duplicates
+  if (!chatData.find((m) => m.messageId === formatted.messageId)) {
+    chatData.push(formatted);
 
-        // Only keep last 500
-        if (chatData.length > 500) chatData = chatData.slice(-500);
+    // Only keep last 500
+    if (chatData.length > 500) chatData = chatData.slice(-500);
 
-        fs.writeFileSync(filePath, JSON.stringify(chatData, null, 2));
-    }
+    fs.writeFileSync(filePath, JSON.stringify(chatData, null, 2));
+  }
 }
 
-
 function loadMessage(jid, messageId) {
-    if (!jid || !messageId) return null;
+  if (!jid || !messageId) return null;
 
-    const filePath = path.join(STORE_DIR, `${jid}.json`);
-    if (!fs.existsSync(filePath)) return null;
+  const filePath = path.join(STORE_DIR, `${jid}.json`);
+  if (!fs.existsSync(filePath)) return null;
 
-    try {
-        const chatData = JSON.parse(fs.readFileSync(filePath));
-        return chatData.find(m => m.messageId === messageId) || null;
-    } catch {
-        return null;
-    }
+  try {
+    const chatData = JSON.parse(fs.readFileSync(filePath));
+    return chatData.find((m) => m.messageId === messageId) || null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -405,71 +527,67 @@ function loadMessage(jid, messageId) {
  * @returns {Array} array of message objects (empty array if none/failure)
  */
 function loadMessagesBetween(jid, startId, endId) {
-    if (!jid || !startId || !endId) return [];
+  if (!jid || !startId || !endId) return [];
 
-    const filePath = path.join(STORE_DIR, `${jid}.json`);
-    if (!fs.existsSync(filePath)) return [];
+  const filePath = path.join(STORE_DIR, `${jid}.json`);
+  if (!fs.existsSync(filePath)) return [];
 
-    try {
-        const chatData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        if (!Array.isArray(chatData)) return [];
+  try {
+    const chatData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    if (!Array.isArray(chatData)) return [];
 
-        // If all messageId values are numeric-ish, do numeric filtering (backwards compatible)
-        const allNumeric = chatData.every(m => /^[+-]?\d+$/.test(String(m.messageId)));
-        if (allNumeric) {
-            const start = parseInt(startId, 10);
-            const end = parseInt(endId, 10);
-            if (Number.isNaN(start) || Number.isNaN(end)) return [];
+    // If all messageId values are numeric-ish, do numeric filtering (backwards compatible)
+    const allNumeric = chatData.every((m) =>
+      /^[+-]?\d+$/.test(String(m.messageId)),
+    );
+    if (allNumeric) {
+      const start = parseInt(startId, 10);
+      const end = parseInt(endId, 10);
+      if (Number.isNaN(start) || Number.isNaN(end)) return [];
 
-            const low = Math.min(start, end);
-            const high = Math.max(start, end);
+      const low = Math.min(start, end);
+      const high = Math.max(start, end);
 
-            return chatData.filter(m => {
-                const idNum = parseInt(m.messageId, 10);
-                return idNum >= low && idNum <= high;
-            });
-        }
-
-        // Non-numeric IDs: find indices in array and slice
-        const findFirstIndex = (id) => {
-            for (let i = 0; i < chatData.length; i++) {
-                if (String(chatData[i].messageId) === String(id)) return i;
-            }
-            return -1;
-        };
-
-        const findLastIndex = (id) => {
-            for (let i = chatData.length - 1; i >= 0; i--) {
-                if (String(chatData[i].messageId) === String(id)) return i;
-            }
-            return -1;
-        };
-
-        let startIndex = findFirstIndex(startId);
-        let endIndex = findLastIndex(endId);
-
-        // if either id not found, return empty array
-        if (startIndex === -1 || endIndex === -1) return [];
-
-        // if end comes before start, swap so we still return a contiguous block
-        if (endIndex < startIndex) {
-            const tmp = startIndex;
-            startIndex = endIndex;
-            endIndex = tmp;
-        }
-
-        return chatData.slice(startIndex, endIndex + 1);
-    } catch (err) {
-        console.error('Failed to load messages:', err);
-        return [];
+      return chatData.filter((m) => {
+        const idNum = parseInt(m.messageId, 10);
+        return idNum >= low && idNum <= high;
+      });
     }
+
+    // Non-numeric IDs: find indices in array and slice
+    const findFirstIndex = (id) => {
+      for (let i = 0; i < chatData.length; i++) {
+        if (String(chatData[i].messageId) === String(id)) return i;
+      }
+      return -1;
+    };
+
+    const findLastIndex = (id) => {
+      for (let i = chatData.length - 1; i >= 0; i--) {
+        if (String(chatData[i].messageId) === String(id)) return i;
+      }
+      return -1;
+    };
+
+    let startIndex = findFirstIndex(startId);
+    let endIndex = findLastIndex(endId);
+
+    // if either id not found, return empty array
+    if (startIndex === -1 || endIndex === -1) return [];
+
+    // if end comes before start, swap so we still return a contiguous block
+    if (endIndex < startIndex) {
+      const tmp = startIndex;
+      startIndex = endIndex;
+      endIndex = tmp;
+    }
+
+    return chatData.slice(startIndex, endIndex + 1);
+  } catch (err) {
+    console.error("Failed to load messages:", err);
+    return [];
+  }
 }
-
-
-
-
-
-
 
 // const STORE_DIR2 = path.join(__dirname, "store_ev");
 // if (!fs.existsSync(STORE_DIR2)) fs.mkdirSync(STORE_DIR2);
@@ -509,464 +627,474 @@ function loadMessagesBetween(jid, startId, endId) {
 //   }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 const db = mysql.createPool({
-    host: DB_HOST,
-    user: DB_UNAME,
-    password: DB_PASS,
-    database: DB_NAME,
-    port: DB_PORT
+  host: DB_HOST,
+  user: DB_UNAME,
+  password: DB_PASS,
+  database: DB_NAME,
+  port: DB_PORT,
 });
 
 db.getConnection((err) => {
-    if (err) {
-        console.error("Error connecting to MySQL:", err);
-    } else {
-        console.log("Connected to MySQL");
-    }
+  if (err) {
+    console.error("Error connecting to MySQL:", err);
+  } else {
+    console.log("Connected to MySQL");
+  }
 });
 
 // Store logs in an array, now also keeping HTML-styled logs
-const SESSION_FOLDER = './auth5a'
+const SESSION_FOLDER = "./auth5a";
 
 async function startWhatsAppConnection() {
+  const proxyAgent = proxyHelper.agent;
+  if (proxyAgent) {
+    const sanitizedProxy = proxyHelper.proxyUrl.replace(/:([^:@]+)@/, ":****@");
+    console.log(
+      `✅ Using Proxy for Baileys: ${sanitizedProxy.split("@").pop()} (timeout=${proxyHelper.timeout}ms)`,
+    );
 
-    const proxyAgent = proxyHelper.agent;
-    if (proxyAgent) {
-        const sanitizedProxy = proxyHelper.proxyUrl.replace(/:([^:@]+)@/, ':****@');
-        console.log(`✅ Using Proxy for Baileys: ${sanitizedProxy.split('@').pop()} (timeout=${proxyHelper.timeout}ms)`);
-
-        // --- Pre-connection Proxy Check ---
-        const isProxyReachable = await proxyHelper.checkProxyConnectivity();
-        if (!isProxyReachable) {
-            console.log('⚠️ Proxy is unreachable. Waiting 10s before retry...');
-            setTimeout(startWhatsAppConnection, 10000);
-            return;
-        }
+    // --- Pre-connection Proxy Check ---
+    const isProxyReachable = await proxyHelper.checkProxyConnectivity();
+    if (!isProxyReachable) {
+      console.log("⚠️ Proxy is unreachable. Waiting 10s before retry...");
+      setTimeout(startWhatsAppConnection, 10000);
+      return;
     }
+  }
 
-    // 1. Display ASCII logo
-    fs.readFile('./assets/ascii.txt', 'utf8', (err, data) => {
-        if (err) return console.error('Error reading ASCII:', err);
-        console.log(data);
-    });
-    const sessionExists = fs.existsSync(authPath) && fs.readdirSync(authPath).length > 0;
-    // 3. Browser info
-    const APP_NAME = 'Alexa';
-    const ORGANIZATION_NAME = 'AlexaInc';
-    const APP_VERSION = '3.0.0';
+  // 1. Display ASCII logo
+  fs.readFile("./assets/ascii.txt", "utf8", (err, data) => {
+    if (err) return console.error("Error reading ASCII:", err);
+    console.log(data);
+  });
+  const sessionExists =
+    fs.existsSync(authPath) && fs.readdirSync(authPath).length > 0;
+  // 3. Browser info
+  const APP_NAME = "Alexa";
+  const ORGANIZATION_NAME = "AlexaInc";
+  const APP_VERSION = "3.0.0";
 
-    const CustomBrowsersMap = {
-        appropriate: () => [ORGANIZATION_NAME, APP_NAME, APP_VERSION]
-    };
-    if (!sessionExists) {
-        console.log("❌ No session found, using WhiskeySocket to create creds...");
-        const { state, saveCreds } = await useMultiFileAuthState(authPath);
-        const wsSock = WAConnection({
-            agent: proxyAgent,
-            browser: CustomBrowsersMap.appropriate(),
-            auth: { creds: state.creds }
-        });
-
-        wsSock.ev.on('connection.update', (update) => {
-            const { connection, lastDisconnect, qr } = update;
-
-            if (qr) {
-                console.log('\n📌 Scan this QR code with WhatsApp:\n');
-                const qrcode = require('qrcode-terminal');
-                qrcode.generate(qr, { small: true });
-            }; // show QR code yourself
-
-            if (connection === 'open') {
-                console.log("✅ WhiskeySocket login done, creds.json ready");
-                wsSock.ev.removeAllListeners();
-                startWhatsAppConnection(); // now start Baileys normally
-            }
-
-            if (connection === 'close') {
-                const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
-                console.log("❌ Connection closed:", reason);
-
-                if (lastDisconnect?.error) {
-                    console.error('🔍 Detailed Initial Connection Error:', {
-                        message: lastDisconnect.error.message,
-                        stack: lastDisconnect.error.stack,
-                        statusCode: lastDisconnect.error.output?.statusCode
-                    });
-                }
-
-                if (reason !== 401) {
-                    console.log('🔄 Retrying initial connection in 5s...');
-                    setTimeout(startWhatsAppConnection, 5000);
-                }
-
-                if (lastDisconnect?.error?.output?.statusCode === 401) {
-                    console.log("❌ Auth failed, removing folder...");
-                    fs.rmSync(authPath, { recursive: true, force: true });
-                    startWhatsAppConnection();
-                }
-            }
-        });
-
-        wsSock.ev.on('creds.update', saveCreds);
-        return;
-    }
-
-    console.log("✅ Session exists, start normal Baileys connection...");
-    // 2. Fetch auth and Baileys version
+  const CustomBrowsersMap = {
+    appropriate: () => [ORGANIZATION_NAME, APP_NAME, APP_VERSION],
+  };
+  if (!sessionExists) {
+    console.log("❌ No session found, using WhiskeySocket to create creds...");
     const { state, saveCreds } = await useMultiFileAuthState(authPath);
-    const { version, isLatest } = await fetchLatestBaileysVersion({ agent: proxyAgent }).catch(() => fetchLatestBaileysVersion());
-    console.log(`🚀 Using WA v${version.join('.')}, isLatest: ${isLatest}`);
-    if (proxyAgent) console.log(`✅ Passing proxy agent (timeout=${proxyHelper.timeout}ms) to makeWASocket`);
-
-
-
-    // 4. Create the WhatsApp connection
-    const AlexaInc = makeWASocket({
-        version,
-        agent: proxyAgent,
-        logger: P({ level: 'fatal' }),
-        browser: CustomBrowsersMap.appropriate(),
-        printQRInTerminal: false, // handle QR manually
-        auth: {
-            creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, P({ level: 'fatal' }))
-        },
-        msgRetryCounterCache,
-        generateHighQualityLinkPreview: true,
-        shouldIgnoreJid: isJidBroadcast,
-        cachedGroupMetadata: getCachedGroupMetadata,
-        connectTimeoutMs: 120000,
-        defaultQueryTimeoutMs: 90000,
-        keepAliveIntervalMs: 5000
+    const wsSock = WAConnection({
+      agent: proxyAgent,
+      browser: CustomBrowsersMap.appropriate(),
+      auth: { creds: state.creds },
     });
 
-    // Update the singleton in cacheHelper for internal Baileys calls
-    setAlexaInstance(AlexaInc);
+    wsSock.ev.on("connection.update", (update) => {
+      const { connection, lastDisconnect, qr } = update;
 
-    // 5. QR & credentials handling
-    AlexaInc.ev.on('connection.update', async update => {
-        const { connection, lastDisconnect, qr, isNewLogin } = update;
+      if (qr) {
+        console.log("\n📌 Scan this QR code with WhatsApp:\n");
+        const qrcode = require("qrcode-terminal");
+        qrcode.generate(qr, { small: true });
+      } // show QR code yourself
 
-        if (qr) {
-            console.log('\n📌 Scan this QR code with WhatsApp:\n');
-            const qrcode = require('qrcode-terminal');
-            qrcode.generate(qr, { small: true });
+      if (connection === "open") {
+        console.log("✅ WhiskeySocket login done, creds.json ready");
+        wsSock.ev.removeAllListeners();
+        startWhatsAppConnection(); // now start Baileys normally
+      }
+
+      if (connection === "close") {
+        const reason =
+          lastDisconnect?.error?.output?.statusCode ||
+          lastDisconnect?.error?.message;
+        console.log("❌ Connection closed:", reason);
+
+        if (lastDisconnect?.error) {
+          console.error("🔍 Detailed Initial Connection Error:", {
+            message: lastDisconnect.error.message,
+            stack: lastDisconnect.error.stack,
+            statusCode: lastDisconnect.error.output?.statusCode,
+          });
         }
 
-        if (connection === 'open') {
-            global.botPhoneNumber = AlexaInc.user?.id?.split(':')[0] || null;
-            global.connectionStatus = global.botPhoneNumber ? 'Online' : 'Offline';
-            console.log('✅ WhatsApp bot connected!');
-
-            // 1. Initialize Dashboard WebSocket
-            connectWebSocket(AlexaInc);
-
-            // 2. Fetch groups (now safe since connection is open)
-            try {
-                await AlexaInc.groupFetchAllParticipating();
-            } catch (e) {
-                console.error("Error fetching groups on startup:", e.message);
-            }
-
-            // 3. Send startup message to owner
-
-            const lastLog = restartHistory?.[restartHistory.length - 1];
-            const logmessage = `Your bot Alexa is ready!\nRestart id: ${lastLog?.id || 'N/A'} at ${lastLog?.timestamp || 'N/A'}\nReason: ${lastLog?.reason || 'Startup'}`;
-
-            if (fownerNumber) {
-                AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, { text: logmessage }).catch(console.error);
-            }
-            try {
-                AlexaInc.sendMessage(`120363407628540320@g.us`, { text: logmessage }).catch(console.error);
-            } catch { }
+        if (reason !== 401) {
+          console.log("🔄 Retrying initial connection in 5s...");
+          setTimeout(startWhatsAppConnection, 5000);
         }
 
-        if (connection === 'close') {
-            const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
-            console.log('❌ Connection closed:', reason);
-
-            if (lastDisconnect?.error) {
-                console.error('🔍 Detailed Connection Error:', {
-                    message: lastDisconnect.error.message,
-                    stack: lastDisconnect.error.stack,
-                    statusCode: lastDisconnect.error.output?.statusCode
-                });
-            }
-
-            // Retry if not a logout
-            if (reason !== 401) {
-                console.log('🔄 Retrying connection in 5s...');
-                setTimeout(startWhatsAppConnection, 5000);
-            }
+        if (lastDisconnect?.error?.output?.statusCode === 401) {
+          console.log("❌ Auth failed, removing folder...");
+          fs.rmSync(authPath, { recursive: true, force: true });
+          startWhatsAppConnection();
         }
-
-        if (isNewLogin) {
-            console.log('🔄 New login detected, restarting...');
-            setTimeout(startWhatsAppConnection, 5000);
-        }
+      }
     });
 
-    AlexaInc.ev.on('creds.update', saveCreds);
+    wsSock.ev.on("creds.update", saveCreds);
+    return;
+  }
 
-    // 6. Call handling
-    // AlexaInc.ev.on('call', async callData => {
-    //     for (let call of callData) {
-    //         // Only proceed if the call is an incoming 'offer' AND it is NOT a group call
-    //                     const callId = call.id;
-    //                             const callFrom = call.from;
-    //         if (call.status === 'offer' && !call.isGroup) {
+  console.log("✅ Session exists, start normal Baileys connection...");
+  // 2. Fetch auth and Baileys version
+  const { state, saveCreds } = await useMultiFileAuthState(authPath);
+  const { version, isLatest } = await fetchLatestBaileysVersion({
+    agent: proxyAgent,
+  }).catch(() => fetchLatestBaileysVersion());
+  console.log(`🚀 Using WA v${version.join(".")}, isLatest: ${isLatest}`);
+  if (proxyAgent)
+    console.log(
+      `✅ Passing proxy agent (timeout=${proxyHelper.timeout}ms) to makeWASocket`,
+    );
 
+  // 4. Create the WhatsApp connection
+  const AlexaInc = makeWASocket({
+    version,
+    agent: proxyAgent,
+    logger: P({ level: "fatal" }),
+    browser: CustomBrowsersMap.appropriate(),
+    printQRInTerminal: false, // handle QR manually
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, P({ level: "fatal" })),
+    },
+    msgRetryCounterCache,
+    generateHighQualityLinkPreview: true,
+    shouldIgnoreJid: isJidBroadcast,
+    cachedGroupMetadata: getCachedGroupMetadata,
+    connectTimeoutMs: 120000,
+    defaultQueryTimeoutMs: 90000,
+    keepAliveIntervalMs: 5000,
+  });
 
-    //             console.log("📞 Incoming Private Call:", callFrom);
+  // Update the singleton in cacheHelper for internal Baileys calls
+  setAlexaInstance(AlexaInc);
 
-    //             try {
-    //                 // Reject the call
-    //                 await AlexaInc.rejectCall(callId, callFrom);
+  // 5. QR & credentials handling
+  AlexaInc.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect, qr, isNewLogin } = update;
 
-    //                 // Send a notification message to the user
-    //                 // await AlexaInc.sendMessage(callFrom, { 
-    //                 //     text: '🚫 *Do not call the bot!* Your call has been rejected automatically.' 
-    //                 // });
-    //             } catch (err) {
-    //                 console.error("Call reject error:", err);
-    //             }
-    //         } else if (call.isGroup) {
-    //             console.log("👥 Group call ignored from:", call.from);
-    //             await AlexaInc.rejectCall(callId, callFrom);
-    //         }
-    //     }
-    // });
+    if (qr) {
+      console.log("\n📌 Scan this QR code with WhatsApp:\n");
+      const qrcode = require("qrcode-terminal");
+      qrcode.generate(qr, { small: true });
+    }
 
-    AlexaInc.ev.on('group-participants.update', async (anu) => {
-        try {
-            const botNumber = AlexaInc.user.id.split(':')[0] + '@s.whatsapp.net';
+    if (connection === "open") {
+      global.botPhoneNumber = AlexaInc.user?.id?.split(":")[0] || null;
+      global.connectionStatus = global.botPhoneNumber ? "Online" : "Offline";
+      console.log("✅ WhatsApp bot connected!");
 
-            // 1. Get the Participant ID (LID) and JID (Phone Number)
-            // We need the raw object to check for LIDs provided in your logs
-            const participantObj = anu.participants[0];
-            const participantLid = participantObj.id; // The LID (e.g., 1919...@lid)
-            const participantJid = participantObj.phoneNumber || participantObj.id; // The JID (e.g., 947...@s.whatsapp.net)
+      // 1. Initialize Dashboard WebSocket
+      connectWebSocket(AlexaInc);
 
-            // Standardize for mentions/display
-            const rawParticipants = anu.participants.map(p => p.phoneNumber || p.id);
+      // 2. Fetch groups (now safe since connection is open)
+      try {
+        await AlexaInc.groupFetchAllParticipating();
+      } catch (e) {
+        console.error("Error fetching groups on startup:", e.message);
+      }
 
-            if (rawParticipants.includes(botNumber)) return;
+      // 3. Send startup message to owner
 
-            const { getCachedGroupSettings } = require('./modules/cacheHelper.js');
-            const settings = await getCachedGroupSettings(db, anu.id);
-            if (!settings) return;
+      const lastLog = restartHistory?.[restartHistory.length - 1];
+      const logmessage = `Your bot Alexa is ready!\nRestart id: ${lastLog?.id || "N/A"} at ${lastLog?.timestamp || "N/A"}\nReason: ${lastLog?.reason || "Startup"}`;
 
-            // 3. Determine the EXACT Event Type
-            let eventType = 'unknown';
+      if (fownerNumber) {
+        AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {
+          text: logmessage,
+        }).catch(console.error);
+      }
+      try {
+        AlexaInc.sendMessage(`120363407628540320@g.us`, {
+          text: logmessage,
+        }).catch(console.error);
+      } catch {}
+    }
 
-            if (anu.action === 'add') {
-                eventType = 'welcome'; // Covers both "Join via Link" and "Added by Admin"
-            } else if (anu.action === 'remove') {
-                // LOGIC: If the author IS the participant, they left. If not, they were kicked.
-                if (anu.author === participantLid || anu.author === participantJid || anu.author === null) {
-                    eventType = 'leave';
-                } else {
-                    eventType = 'kick';
-                }
-            }
+    if (connection === "close") {
+      const reason =
+        lastDisconnect?.error?.output?.statusCode ||
+        lastDisconnect?.error?.message;
+      console.log("❌ Connection closed:", reason);
 
-            // 4. Toggle Checks (Stop if feature is disabled)
-            if (eventType === 'welcome' && !settings.is_welcome) return;
-            if ((eventType === 'leave' || eventType === 'kick') && !settings.isleft_w) return;
-
-            // --- Fetch Group Meta & DP ---
-            let groupMetadata;
-            try {
-                clearGroupCache(anu.id); // Clear cache because participants changed
-                groupMetadata = await getCachedGroupMetadata(AlexaInc, anu.id);
-            } catch (e) { return; }
-
-            const groupName = groupMetadata.subject;
-            const groupDesc = groupMetadata.desc || 'No description available.';
-            let ppUrl;
-            try { ppUrl = await AlexaInc.profilePictureUrl(participantJid, 'image'); }
-            catch { ppUrl = 'https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png'; }
-            const buffer = await getBuffer(ppUrl);
-
-            // --- Define Replacements ---
-            const userId = participantJid.split('@')[0];
-            const userId2 = participantLid.split('@')[0];
-            const mentionTag = `@${userId}`;
-            let userName = userId; // Default to number if name not found
-
-            // 5. Select Message based on Event Type
-            let messageBody = '';
-
-            if (eventType === 'welcome') {
-                // JOIN / ADD
-                messageBody = (settings.wc_m && settings.wc_m !== 'default')
-                    ? settings.wc_m
-                    : 'Hi {mention}, Welcome to {gname}!\n\n{desc}';
-
-            } else if (eventType === 'leave') {
-                // LEFT VOLUNTARILY
-                messageBody = (settings.left_m && settings.left_m !== 'default')
-                    ? settings.left_m
-                    : 'Goodbye {mention}, we will miss you from {gname}.';
-
-            } else if (eventType === 'kick') {
-                // REMOVED BY ADMIN (Fixed Message)
-                messageBody = '⚠️ {mention} has been removed from the group by an admin.';
-            }
-
-            // --- Final Processing ---
-            const finalMsg = messageBody
-                .replace(/{id}/g, userId2)
-                .replace(/{number}/g, userId)
-                .replace(/{mention}/g, mentionTag)
-                .replace(/{user}/g, userName)
-                .replace(/{gname}/g, groupName)
-                .replace(/{desc}/g, groupDesc)
-                .replace(/{gid}/g, anu.id);
-
-            await AlexaInc.sendMessage(anu.id, {
-                image: buffer,
-                caption: finalMsg,
-                mentions: rawParticipants
-            });
-        } catch (err) {
-            console.error("Error in group-participants:", err);
-        }
-    });
-
-
-    // AlexaInc.ev.on('presence.update', async ({ id, presences }) => {
-    //     const monitList = monitnumbs.map(num => num + '@s.whatsapp.net') || [];
-    //     const fowner = fownerNumber + `@s.whatsapp.net`;
-    //     console.log(id, presences);
-    //     if (!fowner || !monitList.includes(id)) return;
-
-    //     const status = presences[id]?.lastKnownPresence;
-    //     if (status === 'available' || status === 'unavailable') {
-    //         const state = status === 'available' ? 'Online 🟢' : 'Offline 🔴';
-    //         await AlexaInc.sendMessage(fowner, {
-    //             text: `*Presence Monitor*\n\nUser: @${id.split('@')[0]}\nStatus: ${state}`,
-    //             mentions: [id]
-    //         });
-    //     }
-    // });
-
-
-    AlexaInc.ev.on('messages.upsert', async (m) => {
-        const { messages, type } = m;
-        if (!messages?.length) return;
-
-        const msg = messages[0];
-        const jid = msg.key.remoteJid;
-
-        const p = await parseMessage(msg, AlexaInc);
-
-        await saveMessage(jid, p);
-        handleMessage(AlexaInc, m, loadMessage, saveMessage, p, alexasocket).catch(err => {
-            console.error("Error in handleMessage:", err);
+      if (lastDisconnect?.error) {
+        console.error("🔍 Detailed Connection Error:", {
+          message: lastDisconnect.error.message,
+          stack: lastDisconnect.error.stack,
+          statusCode: lastDisconnect.error.output?.statusCode,
         });
-    });
+      }
 
+      // Retry if not a logout
+      if (reason !== 401) {
+        console.log("🔄 Retrying connection in 5s...");
+        setTimeout(startWhatsAppConnection, 5000);
+      }
+    }
 
+    if (isNewLogin) {
+      console.log("🔄 New login detected, restarting...");
+      setTimeout(startWhatsAppConnection, 5000);
+    }
+  });
 
-    // 8. Inactive game checker
-    setInterval(() => checkInactiveGames(AlexaInc), 60000);
-    const {
-        checkInactiveChainGames
-    } = require('./modules/wordchain.js');
-    setInterval(() => {
-        checkInactiveChainGames(AlexaInc);
-    }, 60000); // Check every minute
+  AlexaInc.ev.on("creds.update", saveCreds);
+
+  // 6. Call handling
+  // AlexaInc.ev.on('call', async callData => {
+  //     for (let call of callData) {
+  //         // Only proceed if the call is an incoming 'offer' AND it is NOT a group call
+  //                     const callId = call.id;
+  //                             const callFrom = call.from;
+  //         if (call.status === 'offer' && !call.isGroup) {
+
+  //             console.log("📞 Incoming Private Call:", callFrom);
+
+  //             try {
+  //                 // Reject the call
+  //                 await AlexaInc.rejectCall(callId, callFrom);
+
+  //                 // Send a notification message to the user
+  //                 // await AlexaInc.sendMessage(callFrom, {
+  //                 //     text: '🚫 *Do not call the bot!* Your call has been rejected automatically.'
+  //                 // });
+  //             } catch (err) {
+  //                 console.error("Call reject error:", err);
+  //             }
+  //         } else if (call.isGroup) {
+  //             console.log("👥 Group call ignored from:", call.from);
+  //             await AlexaInc.rejectCall(callId, callFrom);
+  //         }
+  //     }
+  // });
+
+  AlexaInc.ev.on("group-participants.update", async (anu) => {
+    try {
+      const botNumber = AlexaInc.user.id.split(":")[0] + "@s.whatsapp.net";
+
+      // 1. Get the Participant ID (LID) and JID (Phone Number)
+      // We need the raw object to check for LIDs provided in your logs
+      const participantObj = anu.participants[0];
+      const participantLid = participantObj.id; // The LID (e.g., 1919...@lid)
+      const participantJid = participantObj.phoneNumber || participantObj.id; // The JID (e.g., 947...@s.whatsapp.net)
+
+      // Standardize for mentions/display
+      const rawParticipants = anu.participants.map(
+        (p) => p.phoneNumber || p.id,
+      );
+
+      if (rawParticipants.includes(botNumber)) return;
+
+      const { getCachedGroupSettings } = require("./modules/cacheHelper.js");
+      const settings = await getCachedGroupSettings(db, anu.id);
+      if (!settings) return;
+
+      // 3. Determine the EXACT Event Type
+      let eventType = "unknown";
+
+      if (anu.action === "add") {
+        eventType = "welcome"; // Covers both "Join via Link" and "Added by Admin"
+      } else if (anu.action === "remove") {
+        // LOGIC: If the author IS the participant, they left. If not, they were kicked.
+        if (
+          anu.author === participantLid ||
+          anu.author === participantJid ||
+          anu.author === null
+        ) {
+          eventType = "leave";
+        } else {
+          eventType = "kick";
+        }
+      }
+
+      // 4. Toggle Checks (Stop if feature is disabled)
+      if (eventType === "welcome" && !settings.is_welcome) return;
+      if ((eventType === "leave" || eventType === "kick") && !settings.isleft_w)
+        return;
+
+      // --- Fetch Group Meta & DP ---
+      let groupMetadata;
+      try {
+        clearGroupCache(anu.id); // Clear cache because participants changed
+        groupMetadata = await getCachedGroupMetadata(AlexaInc, anu.id);
+      } catch (e) {
+        return;
+      }
+
+      const groupName = groupMetadata.subject;
+      const groupDesc = groupMetadata.desc || "No description available.";
+      let ppUrl;
+      try {
+        ppUrl = await AlexaInc.profilePictureUrl(participantJid, "image");
+      } catch {
+        ppUrl = "https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png";
+      }
+      const buffer = await getBuffer(ppUrl);
+
+      // --- Define Replacements ---
+      const userId = participantJid.split("@")[0];
+      const userId2 = participantLid.split("@")[0];
+      const mentionTag = `@${userId}`;
+      const userName = userId; // Default to number if name not found
+
+      // 5. Select Message based on Event Type
+      let messageBody = "";
+
+      if (eventType === "welcome") {
+        // JOIN / ADD
+        messageBody =
+          settings.wc_m && settings.wc_m !== "default"
+            ? settings.wc_m
+            : "Hi {mention}, Welcome to {gname}!\n\n{desc}";
+      } else if (eventType === "leave") {
+        // LEFT VOLUNTARILY
+        messageBody =
+          settings.left_m && settings.left_m !== "default"
+            ? settings.left_m
+            : "Goodbye {mention}, we will miss you from {gname}.";
+      } else if (eventType === "kick") {
+        // REMOVED BY ADMIN (Fixed Message)
+        messageBody =
+          "⚠️ {mention} has been removed from the group by an admin.";
+      }
+
+      // --- Final Processing ---
+      const finalMsg = messageBody
+        .replace(/{id}/g, userId2)
+        .replace(/{number}/g, userId)
+        .replace(/{mention}/g, mentionTag)
+        .replace(/{user}/g, userName)
+        .replace(/{gname}/g, groupName)
+        .replace(/{desc}/g, groupDesc)
+        .replace(/{gid}/g, anu.id);
+
+      await AlexaInc.sendMessage(anu.id, {
+        image: buffer,
+        caption: finalMsg,
+        mentions: rawParticipants,
+      });
+    } catch (err) {
+      console.error("Error in group-participants:", err);
+    }
+  });
+
+  // AlexaInc.ev.on('presence.update', async ({ id, presences }) => {
+  //     const monitList = monitnumbs.map(num => num + '@s.whatsapp.net') || [];
+  //     const fowner = fownerNumber + `@s.whatsapp.net`;
+  //     console.log(id, presences);
+  //     if (!fowner || !monitList.includes(id)) return;
+
+  //     const status = presences[id]?.lastKnownPresence;
+  //     if (status === 'available' || status === 'unavailable') {
+  //         const state = status === 'available' ? 'Online 🟢' : 'Offline 🔴';
+  //         await AlexaInc.sendMessage(fowner, {
+  //             text: `*Presence Monitor*\n\nUser: @${id.split('@')[0]}\nStatus: ${state}`,
+  //             mentions: [id]
+  //         });
+  //     }
+  // });
+
+  AlexaInc.ev.on("messages.upsert", async (m) => {
+    const { messages, type } = m;
+    if (!messages?.length) return;
+
+    const msg = messages[0];
+    const jid = msg.key.remoteJid;
+
+    const p = await parseMessage(msg, AlexaInc);
+
+    await saveMessage(jid, p);
+    handleMessage(AlexaInc, m, loadMessage, saveMessage, p, alexasocket).catch(
+      (err) => {
+        console.error("Error in handleMessage:", err);
+      },
+    );
+  });
+
+  // 8. Inactive game checker
+  setInterval(() => checkInactiveGames(AlexaInc), 60000);
+  const { checkInactiveChainGames } = require("./modules/wordchain.js");
+  setInterval(() => {
+    checkInactiveChainGames(AlexaInc);
+  }, 60000); // Check every minute
 }
 
 startWhatsAppConnection();
 
-
 // Log initialization
 function writeData(data) {
-    fs.writeFileSync(dataFile, JSON.stringify(data));
+  fs.writeFileSync(dataFile, JSON.stringify(data));
 }
 
 let lastWrittenData = "";
 setInterval(() => {
-    const data = { number: global.botPhoneNumber, status: global.connectionStatus };
-    const stringData = JSON.stringify(data);
-    if (stringData !== lastWrittenData) {
-        writeData(data);
-        lastWrittenData = stringData;
-    }
+  const data = {
+    number: global.botPhoneNumber,
+    status: global.connectionStatus,
+  };
+  const stringData = JSON.stringify(data);
+  if (stringData !== lastWrittenData) {
+    writeData(data);
+    lastWrittenData = stringData;
+  }
 }, 5000); // Check status every 5 seconds, write only on change
-
-
 
 // Function to delete logs directory
 function safeSave() {
-    if (global.saveRankingCacheOnExit) {
-        try {
-            global.saveRankingCacheOnExit();
-        } catch (e) {
-            console.error("Error saving cache on exit:", e);
-        }
+  if (global.saveRankingCacheOnExit) {
+    try {
+      global.saveRankingCacheOnExit();
+    } catch (e) {
+      console.error("Error saving cache on exit:", e);
     }
+  }
 }
 
 // 1. Normal exit
-process.on('exit', () => {
-    safeSave(); // <--- Add this
-    const data = { number: null, status: 'Offline' };
-    writeData(data);
+process.on("exit", () => {
+  safeSave(); // <--- Add this
+  const data = { number: null, status: "Offline" };
+  writeData(data);
 });
 
 // 2. Ctrl + C
 process.on("SIGINT", () => {
-    console.log("\n⚠️ Process interrupted (SIGINT)");
-    safeSave(); // <--- Add this
-    const data = { number: null, status: 'Offline' };
-    writeData(data);
-    process.exit(0);
+  console.log("\n⚠️ Process interrupted (SIGINT)");
+  safeSave(); // <--- Add this
+  const data = { number: null, status: "Offline" };
+  writeData(data);
+  process.exit(0);
 });
 
 // 3. Kill command
 process.on("SIGTERM", () => {
-    console.log("\n⚠️ Process terminated (SIGTERM)");
-    safeSave(); // <--- Add this
-    const data = { number: null, status: 'Offline' };
-    writeData(data);
-    process.exit(0);
+  console.log("\n⚠️ Process terminated (SIGTERM)");
+  safeSave(); // <--- Add this
+  const data = { number: null, status: "Offline" };
+  writeData(data);
+  process.exit(0);
 });
 
 // 4. Unhandled error
 process.on("uncaughtException", (err) => {
-    // ❌ Ignore 'rate-overlimit' (429) errors from Baileys internals
-    // These are transient and shouldn't crash the entire bot.
-    if (err.output?.statusCode === 500 && err.data === 429) {
-        console.warn(`[Baileys Warning] Transient rate-overlimit (429) detected. Ignoring to prevent crash.`);
-        return;
-    }
+  // ❌ Ignore 'rate-overlimit' (429) errors from Baileys internals
+  // These are transient and shouldn't crash the entire bot.
+  if (err.output?.statusCode === 500 && err.data === 429) {
+    console.warn(
+      `[Baileys Warning] Transient rate-overlimit (429) detected. Ignoring to prevent crash.`,
+    );
+    return;
+  }
 
-    console.error("❌ Uncaught Exception:", err);
+  console.error("❌ Uncaught Exception:", err);
 
-    setTimeout(() => {
-        process.exit(1);
-    }, 1000);
+  setTimeout(() => {
+    process.exit(1);
+  }, 1000);
 });
 // 5. Before Exit
-process.on('beforeExit', () => {
-    safeSave(); // <--- Add this
-    const data = { number: null, status: 'Offline' };
-    writeData(data);
-    console.log('index.js stopped, data set to null');
+process.on("beforeExit", () => {
+  safeSave(); // <--- Add this
+  const data = { number: null, status: "Offline" };
+  writeData(data);
+  console.log("index.js stopped, data set to null");
 });

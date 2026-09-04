@@ -6,15 +6,14 @@ const { spawn } = require('child_process');
 const logDir = './logs';
 const indexLogFile = path.join(logDir, 'index.log');
 const serverLogFile = path.join(logDir, 'server.log');
-const restartLogFile = path.join(__dirname, 'data', 'restarts.json'); // <-- New: JSON log file path
+const restartLogFile = path.join(__dirname, 'data', 'restarts.json');
 
-let restartHistory = []; // <-- New: To store restart reasons
+let restartHistory = [];
 
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
 }
 
-// --- New Function: Load Restart History ---
 function loadRestartHistory() {
   if (fs.existsSync(restartLogFile)) {
     try {
@@ -30,7 +29,6 @@ function loadRestartHistory() {
   }
 }
 
-// --- New Function: Save Restart Reason ---
 function saveRestartReason(reasonString) {
   const newEntry = {
     id: restartHistory.length + 1,
@@ -39,7 +37,6 @@ function saveRestartReason(reasonString) {
   };
   restartHistory.push(newEntry);
   try {
-    // Write the entire history back to the file
     fs.writeFileSync(restartLogFile, JSON.stringify(restartHistory, null, 2));
     console.log(`📝 Saved restart reason: ${reasonString}`);
   } catch (err) {
@@ -47,81 +44,75 @@ function saveRestartReason(reasonString) {
   }
 }
 
-const codeRegex = /^[0-9]{3}$/; // Strictly matches only 3-digit numbers
+const codeRegex = /^[0-9]{3}$/;
 
 function logOutput(scriptName, type, data) {
-  const timestampedData = `${new Date().toISOString()} - ${type}\n ${data}`;
+  // Save raw log to file
   if (scriptName === 'src/index.js') {
     fs.appendFileSync(indexLogFile, `${data}\n`);
   } else if (scriptName === 'src/server.js') {
     fs.appendFileSync(serverLogFile, `${data}\n`);
   }
-  console.log(timestampedData);
+
+  // Check if line contains terminal QR code block characters
+  const isQrLine = /[█▀▄\u2580-\u258F]/.test(data);
+
+  if (isQrLine) {
+    // Print QR code lines directly to console without timestamp interference or extra newlines
+    process.stdout.write(`${data}\n`);
+  } else {
+    // Standard log output on a single line
+    console.log(`[${new Date().toISOString()}] [${type}] ${data}`);
+  }
 }
 
 function startApp(scriptName, onExit) {
   const args = [scriptName];
-  // Leverage 16GB RAM by increasing child memory limit to 4GB
   if (scriptName === 'src/index.js') {
     args.unshift('--max-old-space-size=4096');
   }
   const child = spawn('node', args);
 
-  // This will store any error output
   let lastCrashReason = null;
-
-  // --- Buffers to store partial lines ---
   let stdoutBuffer = '';
   let stderrBuffer = '';
 
-  // This function processes the stream, finds complete lines, and logs them
   function processStream(dataChunk, buffer, type) {
-    buffer += dataChunk.toString(); // Add new data to our leftover buffer
+    buffer += dataChunk.toString();
     let boundary;
 
     while ((boundary = buffer.indexOf('\n')) !== -1) {
-      const line = buffer.substring(0, boundary).trim();
+      // FIX: Preserve leading/trailing spaces for QR codes, only strip carriage returns (\r)
+      const line = buffer.substring(0, boundary).replace(/\r$/, '');
       buffer = buffer.substring(boundary + 1);
 
       if (line) {
-        // Log all output to its respective file
         logOutput(scriptName, type, line);
 
-        // --- Start of Error/Code Checking ---
+        const cleanLine = line.trim();
+
         if (type === 'stderr:') {
-          if (line.includes('UNCAUGHT_CRASH::')) {
-            // Case 1: High-priority runtime crash
-            lastCrashReason = line.split('UNCAUGHT_CRASH::')[1] || 'Unknown crash reason';
-          } else if (scriptName === 'src/index.js' && codeRegex.test(line)) {
-            // Case 2: 3-digit code restart (like 428)
-            // This is not a crash, so clear any pending crash reason
+          if (cleanLine.includes('UNCAUGHT_CRASH::')) {
+            lastCrashReason = cleanLine.split('UNCAUGHT_CRASH::')[1] || 'Unknown crash reason';
+          } else if (scriptName === 'src/index.js' && codeRegex.test(cleanLine)) {
             lastCrashReason = null;
-            const code = parseInt(line, 10);
+            const code = parseInt(cleanLine, 10);
             if (!isNaN(code) && code !== 515) {
               restartIndex(code);
             }
-          } else if (!line.startsWith('Node.js v')) {
-            // Case 3: Generic stderr (like a module-load crash)
-            // Append it to build the full stack trace
-            lastCrashReason = (lastCrashReason || '') + line + '\n';
+          } else if (!cleanLine.startsWith('Node.js v')) {
+            lastCrashReason = (lastCrashReason || '') + cleanLine + '\n';
           }
         } else if (type === 'stdout:') {
-          // Case 4: 3-digit code restart from stdout
-          if (scriptName === 'src/index.js' && codeRegex.test(line)) {
-            // This is not a crash, so clear any pending crash reason
+          if (scriptName === 'src/index.js' && codeRegex.test(cleanLine)) {
             lastCrashReason = null;
-            const code = parseInt(line, 10);
-            if (!isNaN(code) && code !== 515) {
-              restartIndex(code);
-            } else {
-              restartIndex(code);
-            }
+            const code = parseInt(cleanLine, 10);
+            restartIndex(code);
           }
         }
-        // --- End of Error/Code Checking ---
       }
     }
-    return buffer; // Return leftover part for the next chunk
+    return buffer;
   }
 
   child.stdout.on('data', (data) => {
@@ -132,12 +123,8 @@ function startApp(scriptName, onExit) {
     stderrBuffer = processStream(data, stderrBuffer, 'stderr:');
   });
 
-  // --- MODIFIED: restartIndex must clear the crash reason ---
   function restartIndex(statusCode) {
-    // This is a controlled restart, not a crash.
-    // Clear any error we might have collected.
     lastCrashReason = null;
-
     saveRestartReason(`index.js: Detected status code ${statusCode}`);
 
     if (statusCode !== 515) {
@@ -145,7 +132,7 @@ function startApp(scriptName, onExit) {
       child.removeAllListeners();
       child.kill();
       child.on('exit', () => {
-        startApp('index.js', onExit);
+        startApp('src/index.js', onExit);
       });
     } else {
       console.log(`Detected status code 515. Restarting index.js in 45 seconds...`);
@@ -153,26 +140,22 @@ function startApp(scriptName, onExit) {
         child.removeAllListeners();
         child.kill();
         child.on('exit', () => {
-          startApp('index.js', onExit);
+          startApp('src/index.js', onExit);
         });
       }, 45000);
     }
   }
 
-  // --- MODIFIED: exit handler now uses the crash reason ---
   child.on('exit', (code) => {
     console.log(`${scriptName} exited with code ${code}`);
 
     let restartReason;
-    // Check if the exit was a crash (code 1) AND we collected a reason
     if (lastCrashReason && code === 1) {
       restartReason = lastCrashReason;
     } else {
-      // Default message for other exits (e.g., code 0)
       restartReason = `Exited with code ${code} (restarting)`;
     }
 
-    // Clear the reason after using it
     lastCrashReason = null;
 
     if (scriptName === 'src/index.js') {
@@ -181,20 +164,18 @@ function startApp(scriptName, onExit) {
         saveRestartReason(`index.js: Exited with 515 (no restart)`);
       } else {
         console.log('index.js exited. Restarting...');
-        // Save the detailed reason (e.g., the full stack trace)
         saveRestartReason(`index.js: ${restartReason}`);
-        startApp('index.js', onExit);
+        startApp('src/index.js', onExit);
       }
     } else {
       console.log('server.js exited. Restarting...');
       saveRestartReason(`server.js: ${restartReason}`);
-      startApp('server.js', onExit);
+      startApp('src/server.js', onExit);
     }
     if (onExit) onExit();
   });
 }
 
-// --- New Section: V2Ray/Xray Support ---
 function startXray() {
   const proxyUrl = process.env.PROXY_URL || '';
   const protocols = ['vmess://', 'vless://', 'ss://', 'trojan://'];
@@ -204,13 +185,11 @@ function startXray() {
 
   console.log(`🚀 V2Ray/Xray: Advanced protocol detected. Preparing local sidecar...`);
 
-  // Log sanitized PROXY_URL for debugging
   const sanitizedUrl = proxyUrl.replace(/:([^@]+)@/, ':********@');
   console.log(`ℹ️ V2Ray/Xray: Detecting protocol from ${sanitizedUrl.split('?')[0]}...`);
 
   const configPath = path.join(__dirname, 'xray_config.json');
 
-  // Always regenerate config to ensure environment changes are picked up
   try {
     if (fs.existsSync(configPath)) {
       fs.unlinkSync(configPath);
@@ -219,7 +198,6 @@ function startXray() {
     const { execSync } = require('child_process');
     execSync('node tools/generate_xray_config.js', { stdio: 'inherit', env: process.env });
 
-    // Log sanitized config for debugging
     if (fs.existsSync(configPath)) {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       const sanitizedOutbounds = config.outbounds.map(o => {
@@ -259,20 +237,14 @@ function startXray() {
   });
 }
 
-// Start sidecar if needed
 startXray();
-
-// --- Load history at the very start ---
 loadRestartHistory();
 
-// Start both scripts
 startApp('src/server.js');
 startApp('src/index.js');
 
 const logsDir = path.join(__dirname, "logs");
 
-// Your existing cleanup function. This is fine because it targets `logsDir`
-// and we placed `restarts.json` in `__dirname` (the root).
 function deleteLogsDir() {
   if (fs.existsSync(logsDir)) {
     fs.rmSync(logsDir, { recursive: true, force: true });

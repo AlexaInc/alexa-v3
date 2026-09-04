@@ -11,13 +11,13 @@
     "license": "ISC",
     "dependencies": {
         "@googleapis/customsearch": "^6.0.0",
-        "@gradio/client": "^2.0.2",
-        "@hansaka02/baileys": "github:Itsukichann/Baileys",
+        "@gradio/client": "^2.5.1",
+        "@hansaka02/baileys": "github:alexainc/baileys-mod",
         "ascii-art": "^2.8.5",
         "axios": "^1.13.1",
         "bad-words-next": "^3.1.1",
         "body-parser": "^2.2.1",
-        "canvas": "^3.2.0",
+        "canvas": "npm:@napi-rs/canvas@^0.1.6",
         "cheerio": "^1.1.2",
         "cloudinary": "^2.5.1",
         "compression": "^1.8.1",
@@ -29,7 +29,6 @@
         "form-data": "^4.0.2",
         "fs-extra": "^11.3.0",
         "https-proxy-agent": "^7.0.6",
-        "install": "^0.13.0",
         "jimp": "^0.22.12",
         "jsdom": "^27.4.0",
         "kleur": "^4.1.5",
@@ -63,5 +62,8 @@
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",
         "prettier": "^3.6.2"
+    },
+    "overrides": {
+        "canvas": "npm:@napi-rs/canvas@^0.1.6"
     }
 }

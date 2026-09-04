@@ -1112,14 +1112,16 @@ async function handleMessage(AlexaInc, {
 
 
 
-        let rawParticipant, rawParticipantAlt;
+        let rawParticipant, rawParticipantAlt,FinalGid;
 
         if (isDirectMessage) {
             rawParticipant = remoteJid;
             rawParticipantAlt = msg.key.remoteJidAlt;
+            FinalGid = null;
         } else {
             rawParticipant = msg.key.participant;
             rawParticipantAlt = msg.key.participantAlt;
+            FinalGid = msg.key.remoteJid;
         }
 
         let finalJid = null;
@@ -2204,12 +2206,12 @@ Speed test results
                             const vcard = `BEGIN:VCARD
 VERSION:3.0
 FN:Hansaka
-TEL;TYPE=celltype=VOICE;waid=94740970377:+94 74 0970 377
+TEL;TYPE=celltype=VOICE;waid=94766045156:+94 76 6045 156
 TEL;TYPE=celltype=VOICE;waid=94763545014:+94 76 3545 014
 END:VCARD`;
                             await AlexaInc.sendMessage(msg.key.remoteJid, {
                                 contacts: {
-                                    displayName: 'Jeff',
+                                    displayName: 'Hansaka',
                                     contacts: [{
                                         vcard
                                     }]
@@ -5853,7 +5855,8 @@ from : @${visibleNumber}
                     }
 
                     function runAI() {
-                        ai(db, msg.pushName, mesafesfb, finalLid, async (err, reply) => {
+                        ai(mesafesfb,finalLid,FinalGid,msg.pushName, async (err, reply) => {
+
                             // AlexaInc.sendMessage(msg.key.remoteJid, {
                             //     react: {
                             //         text: '🔄',
