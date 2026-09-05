@@ -633,6 +633,8 @@ const db = mysql.createPool({
   password: DB_PASS,
   database: DB_NAME,
   port: DB_PORT,
+  enableKeepAlive: true, // Keeps TCP connection alive
+  keepAliveInitialDelay: 10000,
 });
 
 db.getConnection((err) => {
@@ -642,6 +644,16 @@ db.getConnection((err) => {
     console.log("Connected to MySQL");
   }
 });
+
+setInterval(() => {
+  db.query("SELECT 1", (err) => {
+    if (err) {
+      console.error("Keep-alive ping failed:", err);
+    } else {
+      console.log("Aiven DB pinged successfully.");
+    }
+  });
+}, 300000);
 
 // Store logs in an array, now also keeping HTML-styled logs
 const SESSION_FOLDER = "./auth5a";
