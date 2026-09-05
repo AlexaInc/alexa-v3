@@ -112,6 +112,8 @@ DB_UNAME=<your database username>
 DB_NAME=<your database name>
 DB_PASS=<your database password>
 DB_PORT=<your database port>
+# MongoDB for custom quiz packs (like alexatg — /setquiz and /quiz <id> use this)
+QUIZ_MONGO_URI=<your mongodb uri, e.g. mongodb+srv://user:pass@cluster0.xxxx.mongodb.net/alexa>
 # Web Interface (Optional)
 ADMIN_USERNAME=<username for web interface>
 ADMIN_PASSWORD=<password for web interface>
