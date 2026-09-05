@@ -1,27 +1,32 @@
 /**
- * y2mate.js — talks directly to the backend that y2mate's frame uses (cnv.cx),
- * no Hugging Face proxy in between.
+ * y2mate-hf.js — YouTube downloader via your hosted relays (Project Shield on
+ * Hugging Face, with Deno Deploy as automatic fallback).
  *
- * Flow (same as https://frame.y2meta-uk.com/wwwindex.php):
- *   1. GET  https://cnv.cx/v2/sanity/key?id=<videoId>      -> { key }
- *   2. POST https://cnv.cx/v2/converter  (form-urlencoded, header "key") -> { url, filename }
- *   3. GET  <url>  (tunnel) with the same Origin/Referer     -> binary
+ * Relay endpoints (same on both):
+ *   POST <base>/get-info  { url }          -> metadata JSON   (HF only)
+ *   POST <base>/convert   { url, type }    -> { url, filename, video_id }
+ *   POST <base>/download  { url, type }    -> streams mp3/mp4
  *
- * Exports: getInfo(url), yta(url) -> mp3 Buffer, ytv(url) -> mp4 Buffer
+ * Exports: getInfo(url), yta(url) -> mp3 Buffer, ytv(url) -> mp4 Buffer,
+ *          ytWithMeta(url, type) -> { buffer, filename, videoId }
+ *
+ * Env (optional):
+ *   YTDL_RELAYS="https://a/api/ytdl,https://b"   comma-separated, tried in order
+ *   YTDL_RELAY_KEY=<secret>                      sent as x-relay-key
  */
 const fetch = require("node-fetch");
 
-const FRAME_ORIGIN = "https://frame.y2meta-uk.com";
-const CNV = "https://cnv.cx/v2";
+const RELAYS = (
+  process.env.YTDL_RELAYS ||
+  "https://stopcasl-stopca.hf.space/api/ytdl,https://cold-lemming-3841.alexainc.deno.net"
+)
+  .split(",")
+  .map((s) => s.trim().replace(/\/$/, ""))
+  .filter(Boolean);
 
-const commonHeaders = {
-  accept: "*/*",
-  "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
-  Origin: FRAME_ORIGIN,
-  Referer: FRAME_ORIGIN + "/",
-  "User-Agent":
-    "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
-};
+const RELAY_KEY = process.env.YTDL_RELAY_KEY || "";
+const UA =
+  "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
 
 const ytIdRegex =
   /(?:http(?:s|):\/\/|)(?:(?:www\.|m\.|)youtube(?:\-nocookie|)\.com\/(?:shorts\/|live\/)?(?:watch\?.*(?:|\&)v=|embed\/|v\/)?|youtu\.be\/)([-_0-9A-Za-z]{11})/;
@@ -42,6 +47,31 @@ function parseDuration(iso) {
   return (h ? h + ":" : "") + mm + ":" + String(s).padStart(2, "0");
 }
 
+function headers() {
+  const h = {
+    "content-type": "application/json",
+    accept: "*/*",
+    "User-Agent": UA,
+  };
+  if (RELAY_KEY) h["x-relay-key"] = RELAY_KEY;
+  return h;
+}
+
+// Remember relays that reported a Cloudflare block so we skip them for a while.
+const blockedUntil = new Map();
+const BLOCK_TTL = 30 * 60 * 1000;
+const isBlockedMsg = (s) =>
+  /cloudflare|blocked|Attention Required/i.test(String(s));
+
+async function post(base, path, body, timeout) {
+  return fetch(`${base}${path}`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(body),
+    timeout,
+  });
+}
+
 /**
  * Get Video Metadata (JSON)
  * { status, title, thumbnail, video_id, duration, channel }
@@ -49,22 +79,27 @@ function parseDuration(iso) {
 async function getInfo(url) {
   const videoId = getVideoId(url);
 
-  // Primary: mattw proxy of the YouTube Data API (gives duration)
+  // 1) relay /get-info (Project Shield route)
+  for (const base of RELAYS) {
+    try {
+      const r = await post(base, "/get-info", { url }, 10000);
+      if (r.ok) return await r.json();
+    } catch (_) {}
+  }
+
+  // 2) direct: mattw proxy of the YouTube Data API
   try {
     const r = await fetch(
       `https://ytapi.apps.mattw.io/v3/videos?key=foo1&part=snippet%2CcontentDetails&id=${videoId}`,
       {
-        headers: {
-          Referer: "https://mattw.io/",
-          "User-Agent": commonHeaders["User-Agent"],
-        },
+        headers: { Referer: "https://mattw.io/", "User-Agent": UA },
         timeout: 8000,
       },
     );
     const j = await r.json();
     if (j.items && j.items.length) {
-      const it = j.items[0];
-      const t = it.snippet.thumbnails;
+      const it = j.items[0],
+        t = it.snippet.thumbnails;
       return {
         status: "success",
         title: it.snippet.title,
@@ -76,11 +111,11 @@ async function getInfo(url) {
     }
   } catch (_) {}
 
-  // Fallback: YouTube oEmbed (what y2mate's frame itself uses; no duration)
+  // 3) direct: YouTube oEmbed
   try {
     const r = await fetch(
       `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
-      { headers: { "User-Agent": commonHeaders["User-Agent"] }, timeout: 8000 },
+      { headers: { "User-Agent": UA }, timeout: 8000 },
     );
     if (r.ok) {
       const j = await r.json();
@@ -105,77 +140,66 @@ async function getInfo(url) {
   };
 }
 
-async function getKey(videoId) {
-  const r = await fetch(`${CNV}/sanity/key?id=${videoId}`, {
-    headers: { ...commonHeaders, "content-type": "application/json" },
-    timeout: 10000,
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok || !j.key)
-    throw new Error(`Key API error ${r.status}: ${JSON.stringify(j)}`);
-  return j.key;
-}
-
 /**
- * Ask cnv.cx to convert; returns { url, filename }
+ * Ask a relay to convert; returns { url, filename, videoId, base }
+ * Tries relays in order, skipping ones recently seen as Cloudflare-blocked.
  */
-async function convert(
-  videoId,
-  format,
-  { videoQuality = "720", audioBitrate = "128" } = {},
-) {
-  const key = await getKey(videoId);
-  const body = new URLSearchParams({
-    link: `https://youtu.be/${videoId}`,
-    format,
-    audioBitrate,
-    videoQuality,
-    filenameStyle: "pretty",
-    vCodec: "h264",
-  });
-  const r = await fetch(`${CNV}/converter`, {
-    method: "POST",
-    headers: {
-      ...commonHeaders,
-      key,
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: body.toString(),
-    timeout: 120000,
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok || !j.url)
-    throw new Error(`Converter error ${r.status}: ${JSON.stringify(j)}`);
-  return { url: j.url, filename: j.filename || `${videoId}.${format}` };
-}
-
-/**
- * Direct Buffer Downloader
- * @param {string} url YouTube URL
- * @param {"audio"|"video"} type
- * @param {object} [opts] { videoQuality: "1080"|"720"|"360"|..., audioBitrate: "128"|"320" }
- */
-async function yt(url, type = "audio", opts = {}) {
+async function convert(url, type = "audio") {
   const videoId = getVideoId(url);
-  const format = type === "video" ? "mp4" : "mp3";
-  const { url: dl } = await convert(videoId, format, opts);
-
-  // Tunnel returns 403 without the frame Origin/Referer
-  const r = await fetch(dl, { headers: commonHeaders, timeout: 0 });
-  if (!r.ok) throw new Error(`Download failed with status: ${r.status}`);
-  return await r.buffer();
+  const errors = [];
+  for (const base of RELAYS) {
+    if ((blockedUntil.get(base) || 0) > Date.now()) continue;
+    try {
+      const r = await post(base, "/convert", { url, type }, 120000);
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.url)
+        return {
+          url: j.url,
+          filename:
+            j.filename || `${videoId}.${type === "video" ? "mp4" : "mp3"}`,
+          videoId,
+          base,
+        };
+      const msg = j.error || `HTTP ${r.status}`;
+      errors.push(`${base}: ${msg}`);
+      if (isBlockedMsg(msg)) {
+        console.warn(
+          `[y2mate] ${base} is Cloudflare-blocked, skipping for 30 min`,
+        );
+        blockedUntil.set(base, Date.now() + BLOCK_TTL);
+      }
+    } catch (e) {
+      errors.push(`${base}: ${e.message}`);
+    }
+  }
+  throw new Error("All relays failed:\n  " + errors.join("\n  "));
 }
 
 /**
- * Like yt() but also returns the filename: { buffer, filename, videoId }
+ * Download via relay. Returns { buffer, filename, videoId }
  */
-async function ytWithMeta(url, type = "audio", opts = {}) {
-  const videoId = getVideoId(url);
-  const format = type === "video" ? "mp4" : "mp3";
-  const { url: dl, filename } = await convert(videoId, format, opts);
-  const r = await fetch(dl, { headers: commonHeaders, timeout: 0 });
-  if (!r.ok) throw new Error(`Download failed with status: ${r.status}`);
-  return { buffer: await r.buffer(), filename, videoId };
+async function ytWithMeta(url, type = "audio") {
+  const conv = await convert(url, type);
+
+  // Prefer streaming through the relay that just did the conversion
+  // (tunnel host is also Cloudflare-gated, so direct fetch from a blocked IP fails).
+  const r = await post(conv.base, "/download", { url, type }, 0);
+  if (r.ok)
+    return {
+      buffer: await r.buffer(),
+      filename: conv.filename,
+      videoId: conv.videoId,
+    };
+
+  let msg = `Relay download failed: ${r.status}`;
+  try {
+    msg += " " + (await r.json()).error;
+  } catch (_) {}
+  throw new Error(msg);
+}
+
+async function yt(url, type) {
+  return (await ytWithMeta(url, type)).buffer;
 }
 
 module.exports = {
@@ -184,11 +208,11 @@ module.exports = {
   convert,
   ytWithMeta,
   /** Returns raw MP3 Buffer */
-  async yta(url, opts) {
-    return await yt(url, "audio", opts);
+  async yta(url) {
+    return await yt(url, "audio");
   },
   /** Returns raw MP4 Buffer */
-  async ytv(url, opts) {
-    return await yt(url, "video", opts);
+  async ytv(url) {
+    return await yt(url, "video");
   },
 };
