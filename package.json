@@ -36,6 +36,7 @@
         "libphonenumber-js": "^1.12.34",
         "link-preview-js": "^3.0.14",
         "moment-timezone": "^0.5.47",
+        "mongoose": "^9.9.5",
         "mumaker": "^2.0.0",
         "mysql2": "^3.12.0",
         "node-cache": "^5.1.2",
