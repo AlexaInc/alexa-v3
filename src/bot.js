@@ -5662,6 +5662,7 @@ from : @${visibleNumber}
 
 
                         default: {
+                            if (command.startsWith('ansq')) break;
                             const rep = `
     Invalid Command used 
     to view command list send .menu or /menu
