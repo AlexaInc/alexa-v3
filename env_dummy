@@ -22,6 +22,13 @@ DB_PASS=
 DB_PORT=3306
 DB_UNAME=
 
+# ── MongoDB: custom quiz storage (src/services/getcostomquiz.js) ────────────
+# Quiz packs created with /setquiz are saved here instead of data/quizzes/*.json
+# (same setup as AlexaInc/alexatg: its own cluster, collection "quizzes").
+# Leave empty to disable /setquiz + /quiz — the bot then replies that custom
+# quizzes are not available instead of crashing at startup.
+QUIZ_MONGO_URI=
+
 # ── WhatsApp bot / owners ───────────────────────────────────────────────────
 bot_nb=
 Owner_nb=

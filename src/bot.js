@@ -75,7 +75,8 @@ const {
     checkInactiveChainGames
 } = require('./modules/wordchain.js');
 const mafiaGame = require('./modules/mafia.js')
-const QUIZ_STORAGE_DIR = './data/quizzes';
+// Custom quiz packs are stored in MongoDB (like alexatg) instead of ./data/quizzes/*.json
+const { getCustomQuizModel } = require('./services/getcostomquiz.js');
 const {
     promisify
 } = require('util');
@@ -102,10 +103,6 @@ const {
 } = require('scrape-primbon')
 const primbon = new Primbon()
 const execAsync = promisify(exec);
-// Ensure the directory exists when the bot starts
-if (!fs.existsSync(QUIZ_STORAGE_DIR)) {
-    fs.mkdirSync(QUIZ_STORAGE_DIR);
-}
 const questionsFile = './data/dailyQuestions.json';
 const QresponsesFile = './data/dailyqresp.json';
 const upadestatusstate = {};
@@ -384,20 +381,31 @@ function isBotOrFakeWeb(msg) {
 
 
 async function startCustomQuiz(AlexaInc, jid, quizId) {
-    const filePath = `${QUIZ_STORAGE_DIR}/${quizId}.json`;
+    const CustomQuizModel = getCustomQuizModel();
 
-    if (!fs.existsSync(filePath)) {
+    if (!CustomQuizModel) {
         return AlexaInc.sendMessage(jid, {
-            text: `❌ Quiz ID *${quizId}* not found.`
+            text: `❌ Custom quizzes are not available (DB not connected).`
         });
     }
 
     try {
-        const customQuestions = await fs.readJson(filePath);
+        // Load the quiz pack from MongoDB (.lean() -> plain JSON, exactly like the old file)
+        const quizDoc = await CustomQuizModel.findOne({
+            quizId
+        }).lean();
+
+        if (!quizDoc) {
+            return AlexaInc.sendMessage(jid, {
+                text: `❌ Quiz ID *${quizId}* not found.`
+            });
+        }
+
+        const customQuestions = quizDoc.questions;
 
         if (!isValidQuizFormat(customQuestions)) {
             return AlexaInc.sendMessage(jid, {
-                text: `❌ Quiz ID *${quizId}* is corrupt or invalid. Please check the file.`
+                text: `❌ Quiz ID *${quizId}* is corrupt or invalid. Please check the quiz data.`
             });
         }
 
@@ -5793,10 +5801,28 @@ from : @${visibleNumber}
                                 });
                             }
 
-                            // Generate ID and save
+                            // Generate ID and save it to MongoDB (like alexatg) instead of ./data/quizzes/<id>.json
                             const quizId = uuidv4();
-                            const filePath = `${QUIZ_STORAGE_DIR}/${quizId}.json`;
-                            await fs.writeJson(filePath, quizData);
+                            const CustomQuizModel = getCustomQuizModel();
+
+                            if (!CustomQuizModel) {
+                                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    text: "❌ Custom quizzes are not available (DB not connected)."
+                                });
+                            }
+
+                            try {
+                                await new CustomQuizModel({
+                                    quizId,
+                                    creatorId: msg.key.remoteJid,
+                                    questions: quizData
+                                }).save();
+                            } catch (err) {
+                                console.error("Error saving custom quiz:", err.message);
+                                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    text: "❌ Quiz setup failed: Could not save the quiz to the database."
+                                });
+                            }
 
                             // Construct the copyable command for the user
                             const quizCommand = `/quiz ${quizId}`;
