@@ -272,7 +272,7 @@ function toIdentity(userId) {
 // ---------------------------------------------------------------------------
 
 /**
- * Main AI function — same signature as the old Gradio implementation.
+ * Main AI function —
  *
  * @param {string|{text:string, files:Array}} message
  * @param {string|string[]|{id:string,lid?:string,phone?:string}} userId

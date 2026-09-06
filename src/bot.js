@@ -3072,6 +3072,22 @@ source - ${url}
                             break;
                         }
 
+                        case'nsfw':{
+                            // not  done yet
+                            const result =await ai.detectNsfw('h');
+                            console.log(result);
+                            break;
+                        }
+                        case'summerize':{
+                            if (!text) return  mess.reply('provide text to generate')
+                            try {
+                                const result = await ai.summarizeText(text);
+                                console.log(result);
+                            }catch (e) {
+                                AlexaInc.sendMessage(msg.key.remoteJid, {text:e.message})
+                            }
+                                break;
+                            }
                         case 'weather': {
                             if (!text) {
                                 AlexaInc.sendMessage(msg.key.remoteJid, {
