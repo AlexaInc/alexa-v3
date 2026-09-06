@@ -1973,7 +1973,7 @@ async function handleMessage(AlexaInc, {
                         case "menu_sfw":
                         case "menu_games": {
                             if (command == "menu_owner" && !isOwner) return mess.owner();
-                            if (command == "menu_owner" && !isOwner) return mess.private();
+                            if (command == "menu_owner" && isGroup) return mess.private();
                             const respomm = command.split('_')[1];
                             AlexaInc.sendMessage(msg.key.remoteJid, {
                                 delete: msg.key
@@ -1981,165 +1981,172 @@ async function handleMessage(AlexaInc, {
                             let menus;
                             if (respomm === 'tm') {
                                 menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃            🖼 *Text formatting Commands:*           
+┃            🖼 *TextMaker — 18 Styles*           
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃ ➥ \`metallic\`
-┃ ➥ \`ice\`
-┃ ➥ \`snow\`
-┃ ➥ \`impressive\`
-┃ ➥ \`matrix\`
-┃ ➥ \`light\`
-┃ ➥ \`neon\`
-┃ ➥ \`devil\`
-┃ ➥ \`purple\`
-┃ ➥ \`thunder\`
-┃ ➥ \`leaves\`
-┃ ➥ \`1917\`
-┃ ➥ \`arena\`
-┃ ➥ \`hacker\`
-┃ ➥ \`sand\`
-┃ ➥ \`blackpink\`
-┃ ➥ \`glitch\`
-┃ ➥ \`fire\``;
+┃ ➥ \`metallic\`  ➥ \`ice\`        ➥ \`snow\`
+┃ ➥ \`impressive\` ➥ \`matrix\`    ➥ \`light\`
+┃ ➥ \`neon\`       ➥ \`devil\`      ➥ \`purple\`
+┃ ➥ \`thunder\`    ➥ \`leaves\`    ➥ \`1917\`
+┃ ➥ \`arena\`      ➥ \`hacker\`    ➥ \`sand\`
+┃ ➥ \`blackpink\`  ➥ \`glitch\`    ➥ \`fire\`
+┃
+┃ *Usage:* \`.metallic <text>\` etc.`;
                             } else if (respomm === 'owner') {
                                 menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃            🖼 *Owner menu*           
+┃            👑 *Owner Menu*           
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃ ➥ \`metallic\`
-┃ ➥ \`ice\`
-┃ ➥ \`snow\`
-┃ ➥ \`impressive\`
-┃ ➥ \`matrix\`
-┃ ➥ \`light\`
-┃ ➥ \`neon\`
-┃ ➥ \`devil\`
-┃ ➥ \`purple\`
-┃ ➥ \`thunder\`
-┃ ➥ \`leaves\`
-┃ ➥ \`1917\`
-┃ ➥ \`arena\`
-┃ ➥ \`hacker\`
-┃ ➥ \`sand\`
-┃ ➥ \`blackpink\`
-┃ ➥ \`glitch\`
-┃ ➥ \`fire\``;
+┃ ➥ \`.cabout <text>\` - Set bot about
+┃ ➥ \`.monit <number>\` - Monitor online
+┃ ➥ \`.status\` - Set status (await content)
+┃ ➥ \`.totg\` - Reply view-once → save (reply)
+┃ ➥ \`.listpc\` - List private chats
+┃ ➥ \`.listgc\` - List groups
+┃ ➥ \`.getcontacts\` - Sync group contacts
+┃ ➥ \`.botst\` - Show bot status
+┃ ➥ \`.maintain on/off\` - Maintenance
+┃ ➥ \`.topadder\` - Top adders (group)
+┃ ➥ \`.join <link>\` - Join group
+┃ ➥ \`.leave\` - Leave group
+┃ ➥ \`.invite 94xx\` - Invite via link
+┃ ➥ \`.setqst <json>\` - Set daily Q
+┃ ➥ \`.setquiz\` - Set quiz JSON (DM)
+┃ ➥ \`.addtask\`/\`.listtask\`/\`.completetask\`/\`.restarttask\``;
                             } else
-                                if (respomm === 'util') {
-                                    menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+                            if (respomm === 'util') {
+                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃               🛠 *Utility Commands:*                
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃ ➥ \`.menu\` - Get this menu  
-┃ ➥ \`.ping\` - Check bot status  
-┃ ➥ \`.weather\` <city> - Get weather info  
-┃ ➥ \`.news\` - Get latest news  
-┃ ➥ \`.owner\` - Chat with Owner`;
-                                } else if (respomm === 'sticker') {
-                                    menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`.menu\` / \`.alive\` - Main menu (buttons)
+┃ ➥ \`.ping\` - Check latency
+┃ ➥ \`.owner\` - Contact owner
+┃ ➥ \`.weather <city>\` - Weather
+┃ ➥ \`.news\` - Latest news
+┃ ➥ \`.id\` - Group / Your LID/JID
+┃ ➥ \`.vv\` - Reveal view-once
+┃ ➥ \`.q\` - Quote → sticker (reply)
+┃ ➥ \`.config\` - Group settings
+┃ ➥ \`.rank\` / \`.myrank\` - Your rank
+┃ ➥ \`.ranking\` / \`.global\` / \`.daily\` / \`.weekly\` - Leaderboards
+┃ ➥ \`.topadder\` - Top inviters`;
+                            } else if (respomm === 'sticker') {
+                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃            🖼 *Sticker & Image Commands:*           
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃ ➥ \`.sticker\` - Convert image to sticker  
-┃ ➥ \`.emojimix\` - mix two emojies 
-┃ ➥ \`.q\` - Convert message to sticker`;
-                                } else if (respomm === 'web') {
-                                    menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`.sticker\` - Image/video → sticker (reply/caption)
+┃ ➥ \`.emojimix 💔+😗\` - Mix 2 emojis
+┃ ➥ \`.q\` - Reply to msg → sticker`;
+                            } else if (respomm === 'web') {
+                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃           🌐 *Web & Search Commands:*              
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃ ➥ \`.web\` - Search on the web  
-┃ ➥ \`.browse\` - Search on the web  
-┃ ➥ \`.search\` - Search on the web`;
-                                } else if (respomm === 'svm') {
-                                    menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃              🎥 *music/video Commands:*                
+┃ ➥ \`.web <q>\` / \`.browse\` / \`.search\` - Web search
+┃ ➥ \`.aiweb <q>\` / \`.aisearch\` / \`.webai\` -AI powered Web search
+┃ ➥ \`.yts <query>\` - YouTube search (4 results)
+┃ ➥ \`.ytdl <url>\` / \`.dlyt <url>\` - YT by URL
+┃ ➥ \`.song <name>\` / \`.play <name>\` - YT song DL
+┃ ➥ \`.news\` - Global headlines`;
+                            } else if (respomm === 'svm') {
+                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+┃              🎥 *YouTube / Music:*                
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃ ➥ \`.yts\` - Search YouTube  
-┃ ➥ \`.ytdl\` - Download MP3 from YouTube
-┃ ➥ \`.song\` - Download a Song`;
+┃ ➥ \`.yts <query>\` - Search YouTube
+┃ ➥ \`.ytdl <url>\` / \`.dlyt\` - Download by URL
+┃ ➥ \`.song <name>\` - Download song
+┃ ➥ \`.play <name>\` - Alias of .song
+┃ ➥ Select: \`.dlmp3\` / \`.dl480p\` / \`.dlvoice\``;
 
-                                } else if (respomm === 'groups') {
-                                    menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃                👥 *Groups Commands:*                
+                            } else if (respomm === 'groups') {
+                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+┃                👥 *Groups & Admin:*                
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃ ➥ \`.mute\` - put only admins can send massage
-┃ ➥ \`.unmute\` - put all participants can send massage   
-┃ ➥ \`.warn\` - warn a user
-┃ ➥ \`.rmwarn\` - remove warn of a user
-┃ ➥ \`.add\` - .add 94702368937 97897847134  
-┃ ➥ \`.remove\` - .remove also like add  
-┃ ➥ \`.promote\` - also like add  
-┃ ➥ \`.demote\` - also like add  
-┃ ➥ \`.kikbots\` - .kikbots on/off 
-┃ ➥ \`.chatbot\` - .chatbot on/off/
-┃ ➥ \`.antilink\` - .antilink on/off/remove/warn  
-┃ ➥ \`.hidetag\` - .hidetag msg (mention all members)  
-┃ ➥ \`.antinsfw\` - Similar to antilink
-┃ ➥ \`.config\` - .config to check group setting status  
-┃ ➥ \`.filter\` - /filter trigger to add filter 
-┃ ➥ \`.stop\` - /stop trigger to stop filter  
-┃ ➥ \`.filters\` - to get list of filters in group 
-┃ ➥ \`.chatbot\` - Similar to antilink  
-┃ ➥ \`.welcomeon\` - Turn on welcome message you can set costom welcome message(optanal)
-┃                            .welcomeon welcome to group
-┃ ➥ \`.welcomeoff\` - Turn off welcome message`;
-                                } else if (respomm === 'nsfw') {
-                                    menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃                🔞 *NSFW Commands:*                
+┃ ➥ \`.config\` - Show group settings
+┃ ➥ \`.mute\` / \`.unmute\` - Mute group
+┃ ➥ \`.warn @user\` / \`.warning\` - Warn
+┃ ➥ \`.warns\` / \`.warnings\` - List warns
+┃ ➥ \`.remwarn @user\` / \`.rmwarn\` - Remove warn
+┃ ➥ \`.report\` - Report user (DM button)
+┃ ➥ \`.add 94xx 94xx\` - Add members
+┃ ➥ \`.remove @user\` - Remove members
+┃ ➥ \`.promote @user\` / \`.demote\` - Admin
+┃ ➥ \`.invite 94xx\` - Invite via link (Owner)
+┃ ➥ \`.kikbots on/off\` - Kick bots
+┃ ➥ \`.chatbot on/off\` - AI chatbot
+┃ ➥ \`.antilink on/off/remove/warn\` - Anti link
+┃ ➥ \`.antinsfw on/off/remove/warn\` - Anti NSFW
+┃ ➥ \`.hidetag <msg>\` - Tag all
+┃ ➥ \`.welcome\` / \`.setwelcome <msg>\` - Welcome
+┃ ➥ \`.goodbye\` / \`.setgoodbye <msg>\` - Goodbye
+┃ ➥ \`.filter <word>\` - Add filter (reply)
+┃ ➥ \`.stop <word>\` / \`.stopall\` - Remove filter
+┃ ➥ \`.filters\` - List filters
+┃ ➥ \`.quiz <id>\` / \`.stopquiz\` - Quiz
+┃ ➥ \`.cmtdt\` - Community broadcast`;
+                            } else if (respomm === 'nsfw') {
+                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+┃                🔞 *NSFW — 19 Commands:*                
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃ ➥ \`.anal\`           ➥ \`.ass\`  
-┃ ➥ \`.boobs\`          ➥ \`.gonewild\`  
-┃ ➥ \`.hanal\`          ➥ \`.hass\`  
-┃ ➥ \`.hboobs\`         ➥ \`.hentai\`  
-┃ ➥ \`.hkitsune\`       ➥ \`.hmidriff\`  
-┃ ➥ \`.hneko\`          ➥ \`.hthigh\`  
-┃ ➥ \`.neko\`           ➥ \`.paizuri\`  
-┃ ➥ \`.pgif\`           ➥ \`.pussy\`  
-┃ ➥ \`.tentacle\`       ➥ \`.thigh\`  
+┃ ➥ \`.anal\`          ➥ \`.ass\`  
+┃ ➥ \`.boobs\`         ➥ \`.gonewild\`  
+┃ ➥ \`.hanal\`         ➥ \`.hass\`  
+┃ ➥ \`.hboobs\`        ➥ \`.hentai\`  
+┃ ➥ \`.hkitsune\`      ➥ \`.hmidriff\`  
+┃ ➥ \`.hneko\`         ➥ \`.hthigh\`  
+┃ ➥ \`.neko\`          ➥ \`.paizuri\`  
+┃ ➥ \`.pgif\`          ➥ \`.pussy\`  
+┃ ➥ \`.tentacle\`      ➥ \`.thigh\`  
 ┃ ➥ \`.yaoi\``;
-                                } else if (respomm === 'sfw') {
-                                    menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+                            } else if (respomm === 'sfw') {
+                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃                 🌸 *SFW Commands:*                 
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃ ➥ \`.coffee\`  
-┃ ➥ \`.food\`  
-┃ ➥ \`.holo\`  
-┃ ➥ \`.kanna\``;
-                                } else if (respomm === 'games') {
-                                    menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+┃ ➥ \`.coffee\` - Random coffee pic
+┃ ➥ \`.food\` - Random food pic
+┃ ➥ \`.holo\` - Holo anime pic
+┃ ➥ \`.kanna\` - Kanna pic`;
+                            } else if (respomm === 'games') {
+                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃                   🪀 *Games Menu:*                 
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
-┃ _*Hangman*_  
-┃ ➥ \`.newhang\` - create hangman game
-┃ ➥ \`.joinhang\` - join a hangman game 
-┃ ➥ \`.endhang\` - End hangman game  
-┃ ➥ \`.starthang\` - Start hangman game 
-┃ ➥ \`.hanglead\` - Get leaderboard  
+┃ _*🎰 Fun*_
+┃ ➥ \`.slot\` - Slot machine
+┃ ➥ \`.shipping\` / \`.couple\` - Random couple
+┃ ➥ \`.dailyqa\` - Start Daily Q&A
+┃ ➥ \`.answer <num>\` - Answer Q&A
 ┃
-┃ _*wordchain*_  
-┃ ➥ \`.startchain\` - create wordchain game
-┃ ➥ \`.joincain\` - join a wordchain game 
-┃ 
-┃ 
-┃ _*battle arena*_  
-┃ ➥ \`.battle\` - start battle arena
-┃ ➥ \`.attack\`  
-┃ ➥ \`.defend\`  
-┃ ➥ \`.heal\`  
-┃ ➥ \`.special\` 
-┃ 
-┃ _*DailyGiveaway*_  
-┃ ➥ \`.newmafia\` - Start mafia game registration  
-┃ ➥ \`.extendmafia\` - extend registration time
-┃ ➥ \`.startmafia\` - menual start mafia game  
-┃ ➥ \`.mafiatop\` - get mafea leaderboard
-┃ 
-┃ _*DailyGiveaway*_  
-┃ ➥ \`.dailyqa\` - Start Q&A  
-┃ ➥ \`.answer\` - Send answer number
-┃ 
-┃ ➥\`.slot\`
-┃ ➥\`.shipping\` or \`couple\`  - chose random couple from group 
-`;
+┃ _*🔤 WordChain*_
+┃ ➥ \`.startchain\` - Create game
+┃ ➥ \`.joinchain\` - Join game
+┃ ➥ \`.stopchain\` - Stop game
+┃
+┃ _*🔠 Hangman*_
+┃ ➥ \`.newhang\` - Create hangman
+┃ ➥ \`.joinhang\` - Join hangman
+┃ ➥ \`.starthang\` - Start hangman
+┃ ➥ \`.endhang\` - End hangman
+┃ ➥ \`.hanglead\` - Leaderboard
+┃
+┃ _*⚔️ Battle Arena*_
+┃ ➥ \`.battle\` - Start battle
+┃ ➥ \`.attack\` / \`.defend\` / \`.heal\` / \`.special\`
+┃ ➥ \`.battletop\` - Leaderboard
+┃
+┃ _*🕵️ Mafia*_
+┃ ➥ \`.newmafia\` - Start registration
+┃ ➥ \`.extendmafia\` - Extend time
+┃ ➥ \`.startmafia\` - Manual start
+┃ ➥ \`.mafiatop\` - Leaderboard
+┃
+┃ _*🗡️ Assassin*_
+┃ ➥ \`.newassassin\` / \`.assassin\` - Start
+┃ ➥ \`.startassassin\` - Manual start
+┃ ➥ \`.assassintop\` - Leaderboard
+┃
+┃ _*🏆 Ranking*_
+┃ ➥ \`.rank\` / \`.myrank\` - Your rank
+┃ ➥ \`.ranking\` / \`.global\` / \`.daily\` / \`.weekly\`
+┃ ➥ \`.topadder\` - Top inviters`;
 
-                                }
+                            }
 
                             const fmenu = `╭━━━━━━━━━━━━━━━━━━━━━━╮
 ┃               🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                ┃
@@ -3044,6 +3051,25 @@ source - ${url}
 
 
                             break
+                        }
+
+                        case 'webai':
+                        case 'aiweb':{
+                            if (!text) return  mess.reply('provide text to search')
+                            try {
+                                result = await ai.searchWeb(text);
+                                const providerList = result?.providers?.map(p => `• ${p}`).join('\n') || '';
+                                replymsg = (result?.text+`\n\n*Providers:*\n`+ providerList);
+
+                                AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    text: replymsg,
+                                }, {
+                                    quoted: msg
+                                })
+                            }catch (e) {
+                                console.error(e);
+                            }
+                            break;
                         }
 
                         case 'weather': {

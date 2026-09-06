@@ -13,7 +13,7 @@
         "@googleapis/customsearch": "^6.0.0",
         "@gradio/client": "^2.5.1",
         "@hansaka02/baileys": "github:alexainc/baileys-mod",
-        "alexa-ai": "github:alexainc/deepai",
+        "alexa-ai": "^2.1.2",
         "ascii-art": "^2.8.5",
         "axios": "^1.13.1",
         "bad-words-next": "^3.1.1",
