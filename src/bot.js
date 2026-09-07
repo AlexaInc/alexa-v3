@@ -3082,16 +3082,43 @@ source - ${url}
  // }
  //                            break;
  //                        }
-                        case 'imagine':{
-                            if (!text) return  mess.reply('provide text to search')
+                        case 'imagine': {
+                            if (!text) return mess.reply('Please provide a prompt to generate an image.');
+
                             try {
+                                await AlexaInc.sendPresenceUpdate('composing', msg.key.remoteJid);
+
                                 const result = await ai.generateImage(text);
+
+                                if (!result || !result.url) {
+                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                        text: '⚠️ Image generation failed. The API service is currently unavailable.'
+                                    }, { quoted: msg });
+                                }
+
                                 const imgbuf = await getBuffer(result.url);
-                                AlexaInc.sendMessage(msg.key.remoteJid, {image:imgbuf},{quoted:msg})
+
+                                if (!imgbuf || !Buffer.isBuffer(imgbuf)) {
+                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                        text: '⚠️ Failed to download the generated image.'
+                                    }, { quoted: msg });
+                                }
+
+                                await AlexaInc.sendMessage(
+                                    msg.key.remoteJid,
+                                    { image: imgbuf, caption: `Prompt: ${text}` },
+                                    { quoted: msg }
+                                );
+
+                            } catch (e) {
+                                console.error('[Imagine Error]:', e);
+                                await AlexaInc.sendMessage(
+                                    msg.key.remoteJid,
+                                    { text: `❌ Error generating image: ${e.message || 'Unknown error'}` },
+                                    { quoted: msg }
+                                );
                             }
-                            catch (e) {
-                                console.error(e);
-                            }
+                            break;
                         }
                         case'summerize':{
                             if (!text) return  mess.reply('provide text to generate')
