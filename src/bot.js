@@ -3072,11 +3072,26 @@ source - ${url}
                             break;
                         }
 
-                        case'nsfw':{
-                            // not  done yet
-                            const result =await ai.detectNsfw('h');
-                            console.log(result);
-                            break;
+ //                        case'nsfw':{
+ //                            // not  done yet
+ // try {
+ //     const result =await ai.detectNsfw();
+ //     console.log(result);
+ // }catch (e) {
+ //     console.error(e);
+ // }
+ //                            break;
+ //                        }
+                        case 'imagine':{
+                            if (!text) return  mess.reply('provide text to search')
+                            try {
+                                const result = await ai.generateImage(text);
+                                const imgbuf = await getBuffer(result.url);
+                                AlexaInc.sendMessage(msg.key.remoteJid, {image:imgbuf},{quoted:msg})
+                            }
+                            catch (e) {
+                                console.error(e);
+                            }
                         }
                         case'summerize':{
                             if (!text) return  mess.reply('provide text to generate')
@@ -5900,6 +5915,7 @@ from : @${visibleNumber}
                     // console.log(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid, jidNormalizedUser(botLid), isReplyToBot);
                     if (!isGroup) {
                         // ✅ Not a group → run AI
+
                         runAI();
                     } else if (isReplyToBot) {
                         // ✅ Group + Reply to Bot → Check if chatbot is enabled in Cache
@@ -5928,8 +5944,9 @@ from : @${visibleNumber}
                     }
 
                     function runAI() {
+                        AlexaInc.sendPresenceUpdate('composing',msg.key.remoteJid);
                         ai(msgfai,finalLid,FinalGid,msg.pushName, async (err, reply) => {
-
+                            AlexaInc.sendPresenceUpdate('paused',msg.key.remoteJid);
                             // AlexaInc.sendMessage(msg.key.remoteJid, {
                             //     react: {
                             //         text: '🔄',
