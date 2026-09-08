@@ -2326,6 +2326,29 @@ ${quotedid ? "Senderid:" + quotedid : ""}`
                                 msg.message?.extendedTextMessage?.contextInfo.quotedMessage?.extendedTextMessage
                                     ?.text ||
                                 ''; // Fallback to empty string
+                            // console.log(msg.message?.extendedTextMessage?.contextInfo.quotedMessage)
+                            const isimgosticker = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage ? true : msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.stickerMessage ? true : false;
+                            let media , mesiaBuffer,quotemedia;
+                            if (isimgosticker) {
+                                const ctx = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage || msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.stickerMessage
+                                media = {
+                                    mediaUrl: ctx.url,
+                                    mediaMimetype: ctx.mimetype,
+                                    mediaKey: ctx.mediaKey ? Buffer.from(ctx.mediaKey) : null,
+                                    mediaFileEncSha256: ctx.fileEncSha256 ? Buffer.from(ctx.fileEncSha256) : null,
+                                    mediaFileSha256: ctx.fileSha256 ? Buffer.from(ctx.fileSha256) : null,
+                                    messageId: msg.message?.extendedTextMessage?.contextInfo?.stanzaId
+                                };
+
+                                // --- Decrypt media first ---
+                                // console.log(media.mediaKey);
+                                 mediaBuffer = await getDecryptedMediaBuffer(AlexaInc, media);
+                                quotemedia ={
+                                    mediabuf:mediaBuffer,
+                                    issticker: msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.stickerMessage ? true : false
+                                }
+                                console.log(quotemedia);
+                            }
 
                             const islid = quotedSender.endsWith('@lid');
 
@@ -2414,9 +2437,9 @@ ${quotedid ? "Senderid:" + quotedid : ""}`
                             do {
                                 secondNum = Math.floor(Math.random() * 10);
                             } while (secondNum === firstNum);
-
+                            // console.log(dpbuffer)
                             const webpbuff = await generatequote(quotesendername || '', '', customemojiid,
-                                quotemessagetxt, firstNum, dpbuffer, gftsendername, gftmassage, secondNum);
+                                quotemessagetxt, firstNum, dpbuffer,quotemedia, gftsendername, gftmassage, secondNum);
 
                             // Fix 8: 'fs.writeFile' is async.
                             // For debugging, 'fs.writeFileSync' is easier.
