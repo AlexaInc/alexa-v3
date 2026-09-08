@@ -86,11 +86,7 @@ const config = {
   QUIZ_MONGO_URI: str(env.QUIZ_MONGO_URI),
   // ── AI / content APIs ───────────────────────────────────────────────
   /** Used by tools/ai.js (standalone OpenRouter client). */
-  OPENROUTER_TOKEN: str(env.OPENROUTER_TOKEN),
-  OPENROUTER_TOKEN1: str(env.OPENROUTER_TOKEN1),
-  OPENROUTER_TOKEN2: str(env.OPENROUTER_TOKEN2),
-  OPENROUTER_TOKEN3: str(env.OPENROUTER_TOKEN3),
-  OPENROUTER_TOKEN4: str(env.OPENROUTER_TOKEN4),
+
   CHAT_MODEL: str(env.CHAT_MODEL),
   NIGHTAPI_AUTH: str(env.NIGHTAPI_AUTH),
   TENOR_API_KEY: str(env.TENOR_API_KEY),

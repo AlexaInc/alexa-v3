@@ -2,7 +2,7 @@
  * src/modules/Aii.js  (or callai.js — whichever your bot requires)
  * ---------------------------------------------------------------------------
  * Alexa's AI layer, powered by the `alexa-ai` package (DeepAI + PostgreSQL)
- * instead of the Hugging Face Gradio Space.
+ * this file is partof alexa-v3 owns by hansaka
  *
  * DROP-IN COMPATIBLE: the exported function keeps the exact same signature as
  * the old Gradio version, so no call site in the bot has to change:
