@@ -957,6 +957,68 @@ async function getdpurl(AlexaInc, userid) {
 
 }
 
+function parseWhatsAppFormatting(text) {
+    if (!text) return { cleanText: "", entities: [] };
+
+    // Format Regex Map
+    const rules = [
+        { type: "pre", regex: /```([\s\S]+?)```/g },
+        { type: "code", regex: /`([^`\n]+?)`/g },
+        { type: "bold", regex: /(?<=^|[^\w*])\*([^\n*]+?)\*(?=$|[^\w*])/g },
+        { type: "italic", regex: /(?<=^|[^\w_])_([^\n_]+?)_(?=$|[^\w_])/g },
+        { type: "strikethrough", regex: /(?<=^|[^\w~])~([^\n~]+?)~(?=$|[^\w~])/g },
+    ];
+
+    const matches = [];
+
+    // formating matches
+    for (const rule of rules) {
+        let match;
+        while ((match = rule.regex.exec(text)) !== null) {
+            matches.push({
+                type: rule.type,
+                start: match.index,
+                end: match.index + match[0].length,
+                innerStart: match.index + (rule.type === "pre" ? 3 : 1),
+                innerEnd: match.index + match[0].length - (rule.type === "pre" ? 3 : 1),
+                rawText: match[0],
+                innerText: match[1],
+            });
+        }
+    }
+
+    // Overlappingprevent
+    matches.sort((a, b) => a.start - b.start);
+
+    let cleanText = "";
+    const entities = [];
+    let lastIndex = 0;
+
+    for (const m of matches) {
+        // Overlapping tags මගහැරීම
+        if (m.start < lastIndex) continue;
+
+        // Formatting st
+        cleanText += text.slice(lastIndex, m.start);
+
+        const entityOffset = cleanText.length;
+        const entityLength = m.innerText.length;
+
+        cleanText += m.innerText;
+
+        entities.push({
+            type: m.type,
+            offset: entityOffset,
+            length: entityLength,
+        });
+
+        lastIndex = m.end;
+    }
+
+    cleanText += text.slice(lastIndex);
+
+    return { cleanText, entities };
+}
 
 
 async function updateTaskStatus(user_id, taskName, newStatus) {
@@ -1008,7 +1070,7 @@ async function addNewTask(user_id, newTask) {
 async function handleMessage(AlexaInc, {
     messages,
     type
-}, loadMessage, saveMessage, p, alexasocket) {
+}, loadMessage, saveMessage, p, alexasocket,getnMessagesFrom, getMessagePosition, loadMessagesBetween) {
     try {
         const msg = messages[0];
 
@@ -2307,139 +2369,170 @@ ${quotedid ? "Senderid:" + quotedid : ""}`
                                 quoted: msg
                             });
 
-                            let quotesendernumber, grandfather, isgftrfm, usercontact, quotesendername,
-                                gftsendername, gftsendercontact, gftsendernumber, gftmassage;
 
-                            // This is safe because we already checked for quotedid, which implies contextInfo exists.
-                            const stanzaaaaa = p.replyInfo.messageId
+
+// Safe execution after contextInfo check
+                            const stanzaaaaa = p.replyInfo.messageId;
                             const loadedMessage = await loadMessage(msg.key.remoteJid, stanzaaaaa);
-                            if (!loadedMessage) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'fail to load that massag try again'
-                            })
-                            const quotedSender = loadedMessage?.sender
-                            //console.log(quotedSender)
-                            // Fix 2: Make text fetching more robust.
-                            // A quoted message's text can be in 'conversation' OR 'extendedTextMessage.text'.
-                            // Use optional chaining and a fallback to an empty string.
-                            const quotemessagetxt = msg.message?.extendedTextMessage?.contextInfo.quotedMessage
-                                ?.conversation ||
-                                msg.message?.extendedTextMessage?.contextInfo.quotedMessage?.extendedTextMessage
-                                    ?.text ||
-                                ''; // Fallback to empty string
-                            // console.log(msg.message?.extendedTextMessage?.contextInfo.quotedMessage)
-                            const isimgosticker = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage ? true : msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.stickerMessage ? true : false;
-                            let media , mesiaBuffer,quotemedia;
-                            if (isimgosticker) {
-                                const ctx = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage || msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.stickerMessage
-                                media = {
-                                    mediaUrl: ctx.url,
-                                    mediaMimetype: ctx.mimetype,
-                                    mediaKey: ctx.mediaKey ? Buffer.from(ctx.mediaKey) : null,
-                                    mediaFileEncSha256: ctx.fileEncSha256 ? Buffer.from(ctx.fileEncSha256) : null,
-                                    mediaFileSha256: ctx.fileSha256 ? Buffer.from(ctx.fileSha256) : null,
-                                    messageId: msg.message?.extendedTextMessage?.contextInfo?.stanzaId
-                                };
 
-                                // --- Decrypt media first ---
-                                // console.log(media.mediaKey);
-                                 mediaBuffer = await getDecryptedMediaBuffer(AlexaInc, media);
-                                quotemedia ={
-                                    mediabuf:mediaBuffer,
-                                    issticker: msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.stickerMessage ? true : false
-                                }
-                                console.log(quotemedia);
+                            const counttoload = (text && !isNaN(text)) ? parseInt(text, 10) : 1;
+                            const loadednmsgs = await getnMessagesFrom(msg.key.remoteJid, stanzaaaaa, counttoload);
+
+                            if (!loadednmsgs || loadednmsgs.length === 0) {
+                                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    text: 'fail to load that massag try again'
+                                });
                             }
 
-                            const islid = quotedSender.endsWith('@lid');
-
-                            if (isGroup && islid) {
-                                // Fix 3: Add optional chaining (?).
-                                // This prevents a crash if 'participants.find' returns undefined.
-                                quotesendernumber = (await participants.find(jsn => jsn.lid === quotedSender))?.id
-                                    ?.replace(/@.*/, "");
-                            } else {
-                                quotesendernumber = quotedSender === 'me' ? botNumber : isGroup ?
-                                    quotedSender.replace(/:.*/, "") : quotedSender.replace(/@.*/, "");
-                            }
-
-                            console.log(quotesendernumber);
-                            usercontact = await loadUserByNumber(quotesendernumber);
-                            quotesendername = (usercontact && usercontact.name) ? usercontact.name : quotesendernumber;
-                            const id2getpp = quotedSender === 'me' ? `${botNumber}@s.whatsapp.net` :
-                                quotedSender
-                            const dpurl = await getdpurl(AlexaInc, id2getpp);
-                            const dpbuffer = dpurl ? await getBuffer(dpurl) : null;
-                            // Use writeFileSync for simple debugging, or await fs.promises.writeFile
-                            // if (dpbuffer) fs.writeFileSync('./pp.jpg', dpbuffer);
-
-                            const fullQuoted = await loadMessage(msg.key.remoteJid, quotedid);
-
-                            // Fix 4: Major logic restructure for safety.
-                            // We must check if 'grandfather' actually exists before using it.
-                            if (fullQuoted.reply) {
-                                grandfather = await loadMessage(msg.key.remoteJid, fullQuoted.reply.messageId) ||
-                                    null;
-
-                                if (grandfather) { // Only proceed if grandfather message was loaded
-                                    // Use optional chaining for safety
-                                    isgftrfm = grandfather?.sender === 'me';
-
-                                    // This needs to check the grandfather's sender, not the quoted sender
-                                    const isgftrlid = grandfather?.sender?.endsWith('@lid');
-
-                                    // Fix 5: Logical error. Use 'isgftrlid' here, NOT 'islid'.
-                                    if (isGroup && isgftrlid && !isgftrfm) {
-                                        // Add optional chaining here too
-                                        gftsendernumber = (await participants.find(jsn => jsn.lid === grandfather
-                                            .sender))?.id?.replace(/@.*/, "");
-                                    } else if (!isgftrfm) {
-                                        gftsendernumber = grandfather.sender ? grandfather.sender.replace(/@.*/,
-                                            "") : null;
-                                    } else { // isgftrfm is true
-                                        gftsendernumber = botNumber;
-                                    }
-
-                                    console.log(gftsendernumber);
-                                    gftsendercontact = await loadUserByNumber(gftsendernumber);
-                                    gftsendername = gftsendercontact ? gftsendercontact.name : gftsendernumber;
-                                    gftmassage = grandfather
-                                        .messageText; // Assuming 'messageText' is a valid property
-
-                                } else {
-                                    // Grandfather is null (e.g., deleted message)
-                                    isgftrfm = null;
-                                    gftsendername = null;
-                                    gftmassage = null;
-                                }
-                            } else {
-                                // The quoted message was not a reply
-                                grandfather = null;
-                                isgftrfm = null;
-                                gftsendername = null;
-                                gftmassage = null;
-                            }
-
-                            // Fix 6: Prevent substring bug.
-                            // If Owner_nb="12345" and quotesendernumber="123", .includes() would be true.
-                            // Split into an array to check for an exact match.
+// Environment config array extraction
                             const ownerNumbers = (process.env.Owner_nb || '').split(',');
                             const rank = (process.env.spc_nb || '').split(',');
-                            const isquoteowner = ownerNumbers.includes(quotesendernumber);
-                            const isquoterank = rank.includes(quotesendernumber);
 
-                            // Fix 7: Fix typo "costom" -> "custom"
-                            const customemojiid = isquoteowner ? '5267500801240092311' : isquoterank ?
-                                '6228999461754900766' : null;
+                            const msgObj = [];
+                            const costomemojiees = [];
 
-                            let firstNum = Math.floor(Math.random() * 10);
-                            let secondNum;
+                            // console.log(JSON.stringify(loadednmsgs, null, 2));
 
-                            do {
-                                secondNum = Math.floor(Math.random() * 10);
-                            } while (secondNum === firstNum);
-                            // console.log(dpbuffer)
-                            const webpbuff = await generatequote(quotesendername || '', '', customemojiid,
-                                quotemessagetxt, firstNum, dpbuffer,quotemedia, gftsendername, gftmassage, secondNum);
+                            for (const message of loadednmsgs) {
+                                let quotesendernumber, grandfather, isgftrfm, usercontact, quotesendername;
+                                let gftsendername, gftsendercontact, gftsendernumber, gftmassage;
+                                let media = null, mediaBuffer = null, quotemedia = null;
+
+                                // Direct iteration item values
+                                const quotedSender = message?.sender;
+
+                                // 1. Raw Text extraction from loop item
+                                const rawQuoteText = message?.messageText || '';
+
+                                // 2. Media processing using loop item
+                                const isimgosticker = message?.type === 'imageMessage' || message?.type === 'stickerMessage';
+
+                                if (isimgosticker && message.mediaUrl) {
+                                    const parseBuffer = (data) => {
+                                        if (!data) return null;
+                                        if (typeof data === 'string') {
+                                            const numberArray = data.split(',').map(Number);
+                                            return Buffer.from(numberArray);
+                                        }
+                                        return Buffer.from(data);
+                                    };
+                                    media = {
+                                        mediaUrl: message.mediaUrl,
+                                        mediaMimetype: message.mediaMimetype,
+                                        mediaKey: message.mediaKey ? parseBuffer(message.mediaKey) : null,
+                                        mediaFileEncSha256: message.mediaFileEncSha256 ? parseBuffer(message.mediaFileEncSha256) : null,
+                                        mediaFileSha256: message.mediaFileSha256 ? parseBuffer(message.mediaFileSha256) : null,
+                                        messageId: message.messageId
+                                    };
+
+                                    // Decrypt media
+                                    mediaBuffer = await getDecryptedMediaBuffer(AlexaInc, media);
+                                    quotemedia = {
+                                        mediabuf: mediaBuffer,
+                                        issticker: message.type === 'stickerMessage'
+                                    };
+                                }
+
+                                // Sender Number Calcu
+                                const islid = quotedSender ? quotedSender.endsWith('@lid') : false;
+
+                                if (isGroup && islid) {
+                                    quotesendernumber = (await participants.find(jsn => jsn.lid === quotedSender))?.id?.replace(/@.*/, "");
+                                } else {
+                                    quotesendernumber = quotedSender === 'me'
+                                        ? botNumber
+                                        : isGroup
+                                            ? quotedSender?.replace(/:.*/, "")
+                                            : quotedSender?.replace(/@.*/, "");
+                                }
+
+                                usercontact = await loadUserByNumber(quotesendernumber);
+                                quotesendername = message?.pushname || (usercontact && usercontact.name ? usercontact.name : quotesendernumber);
+
+                                const id2getpp = quotedSender === 'me' ? `${botNumber}@s.whatsapp.net` : quotedSender;
+                                const dpurl = await getdpurl(AlexaInc, id2getpp);
+                                const dpbuffer = dpurl ? await getBuffer(dpurl) : null;
+
+                                // Grandfather Message (Reply Check)
+                                if (message?.reply && message.reply.messageId) {
+                                    grandfather = await loadMessage(msg.key.remoteJid, message.reply.messageId) || null;
+
+                                    if (grandfather) {
+                                        isgftrfm = grandfather?.sender === 'me';
+                                        const isgftrlid = grandfather?.sender?.endsWith('@lid');
+
+                                        if (isGroup && isgftrlid && !isgftrfm) {
+                                            gftsendernumber = (await participants.find(jsn => jsn.lid === grandfather.sender))?.id?.replace(/@.*/, "");
+                                        } else if (!isgftrfm) {
+                                            gftsendernumber = grandfather.sender ? grandfather.sender.replace(/@.*/, "") : null;
+                                        } else {
+                                            gftsendernumber = botNumber;
+                                        }
+
+                                        gftsendercontact = await loadUserByNumber(gftsendernumber);
+                                        gftsendername = gftsendercontact ? gftsendercontact.name : gftsendernumber;
+                                        gftmassage = grandfather.messageText || '';
+                                    }
+                                }
+
+                                // Owner and Rank Check
+                                const isquoteowner = ownerNumbers.includes(quotesendernumber);
+                                const isquoterank = rank.includes(quotesendernumber);
+
+                                const customemojiid = isquoteowner
+                                    ? '5267500801240092311'
+                                    : isquoterank
+                                        ? '6228999461754900766'
+                                        : null;
+
+                                // Text parsing
+                                const parsedText = parseWhatsAppFormatting(rawQuoteText);
+
+
+
+                                if (customemojiid != null) {
+                                    costomemojiees.push(customemojiid);
+                                }
+
+                                // Object creation
+                                const msgData = {
+                                    text: parsedText.cleanText,
+                                    entities: parsedText.entities,
+                                    from: {
+                                        id: Number(quotesendernumber) || 0,
+                                        first_name: quotesendername || "User",
+                                        ...(customemojiid && { emoji_status_custom_emoji_id: customemojiid })
+                                    }
+                                };
+
+                                if (dpbuffer) {
+                                    msgData.avatarBase64 = `data:image/png;base64,${dpbuffer.toString("base64")}`;
+                                }
+
+                                if (quotemedia && quotemedia.mediabuf) {
+                                    const mimeType = quotemedia.issticker ? "image/webp" : "image/png";
+                                    msgData.mediaBase64 = `data:${mimeType};base64,${quotemedia.mediabuf.toString("base64")}`;
+                                    msgData.mediaType = quotemedia.issticker ? "sticker" : "photo";
+                                }
+
+                                if (grandfather) {
+                                    const parsedGftText = parseWhatsAppFormatting(gftmassage || "");
+                                    msgData.reply_to = {
+                                        text: parsedGftText.cleanText,
+                                        entities: parsedGftText.entities,
+                                        from: {
+                                            id: Number(gftsendernumber) || 0,
+                                            first_name: gftsendername || "Replier"
+                                        }
+                                    };
+                                }
+
+                                msgObj.push(msgData);
+                            }
+
+                            // console.log(JSON.stringify(msgObj, null, 2));
+
+                            const webpbuff = await generatequote(msgObj,costomemojiees);
 
                             // Fix 8: 'fs.writeFile' is async.
                             // For debugging, 'fs.writeFileSync' is easier.
@@ -2477,7 +2570,7 @@ ${quotedid ? "Senderid:" + quotedid : ""}`
                             }, {
                                 quoted: msg
                             });
-                            //console.log(grandfather, isgftrfm);
+
 
                             break;
                         }

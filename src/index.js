@@ -26,7 +26,7 @@ const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const path = require("path");
 const { makeWASocket: WAConnection } = require("@hansaka02/baileys"); // for first-time QR login
-const authPath = path.join(__dirname, "..", "auth5a");
+const authPath = path.join(__dirname, "..", "authtest");
 const mysql = require("mysql2");
 const DB_HOST = process.env["DB_HOST"];
 const DB_UNAME = process.env["DB_UNAME"];
@@ -513,6 +513,45 @@ function loadMessage(jid, messageId) {
     return chatData.find((m) => m.messageId === messageId) || null;
   } catch {
     return null;
+  }
+}
+
+function getMessagePosition(jid, messageId) {
+  if (!jid || !messageId) return -1;
+
+  const filePath = path.join(STORE_DIR, `${jid}.json`);
+  if (!fs.existsSync(filePath)) return -1;
+
+  try {
+    const chatData = JSON.parse(fs.readFileSync(filePath));
+    return chatData.findIndex((m) => m.messageId === messageId);
+  } catch {
+    return -1;
+  }
+}
+/*
+ *
+ *
+ * */
+function getnMessagesFrom(jid, startMessageId, n) {
+  if (!jid || !startMessageId || !n || n <= 0) return [];
+
+  const filePath = path.join(STORE_DIR, `${jid}.json`);
+  if (!fs.existsSync(filePath)) return [];
+
+  try {
+    const chatData = JSON.parse(fs.readFileSync(filePath));
+
+    const startIndex = chatData.findIndex(
+      (m) => m.messageId === startMessageId,
+    );
+
+    // Message eka hambu wune nathnam empty array ekak return karanawa
+    if (startIndex === -1) return [];
+
+    return chatData.slice(startIndex, startIndex + n);
+  } catch {
+    return [];
   }
 }
 
@@ -1015,11 +1054,19 @@ async function startWhatsAppConnection() {
     const p = await parseMessage(msg, AlexaInc);
 
     await saveMessage(jid, p);
-    handleMessage(AlexaInc, m, loadMessage, saveMessage, p, alexasocket).catch(
-      (err) => {
-        console.error("Error in handleMessage:", err);
-      },
-    );
+    handleMessage(
+      AlexaInc,
+      m,
+      loadMessage,
+      saveMessage,
+      p,
+      alexasocket,
+      getnMessagesFrom,
+      getMessagePosition,
+      loadMessagesBetween,
+    ).catch((err) => {
+      console.error("Error in handleMessage:", err);
+    });
   });
 
   // 8. Inactive game checker
@@ -1110,3 +1157,4 @@ process.on("beforeExit", () => {
   writeData(data);
   console.log("index.js stopped, data set to null");
 });
+module.exports = { getnMessagesFrom, getMessagePosition, loadMessagesBetween };
