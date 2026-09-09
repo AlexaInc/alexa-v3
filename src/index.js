@@ -464,7 +464,10 @@ function saveMessage(jid, p) {
   // We don't need to check msgType string matching, we just check if the properties exist
   const content = p.messageContent;
 
-  const mediaUrl = content.url || null;
+  const mediaUrl =
+    content.url !== "https://a.whatsapp.net"
+      ? content.url
+      : `https://media.fcmb2-2.fna.whatsapp.net${content.directPath}` || null;
   const mediaMimetype = content.mimetype || null;
   const mediaKey = content.mediaKey?.toString("base64") || null;
   const mediaIv = content.iv?.toString("base64") || null;

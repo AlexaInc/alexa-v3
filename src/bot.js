@@ -525,55 +525,142 @@ async function getDecryptedMediaBuffer(client, data) {
             mediaUrl,
             mediaMimetype,
             mediaKey,
-            mediaIv,
             mediaFileEncSha256,
             mediaFileSha256,
             messageId
         } = data;
 
-        // download encrypted bytes
-        const encRes = await axios.get(mediaUrl, {
-            responseType: 'arraybuffer'
-        });
+        // ---------- self-contained helpers (no new globals) ----------
+        const __crypto = require('crypto');
+        const __asBuf = (d) => { // Buffer-first (your caller pre-buffers), strings tolerated
+            if (!d) return null;
+            if (Buffer.isBuffer(d)) return d;
+            if (d instanceof Uint8Array) return Buffer.from(d);
+            if (Array.isArray(d)) return Buffer.from(d);
+            if (typeof d === 'string') {
+                const s = d.trim();
+                if (!s) return null;
+                if (/^-?\d+(\s*,\s*-?\d+)+$/.test(s)) return Buffer.from(s.split(',').map(x => Number(x.trim())));
+                return Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+            }
+            if (typeof d === 'object' && d.type === 'Buffer' && Array.isArray(d.data)) return Buffer.from(d.data);
+            return Buffer.from(d);
+        };
+        const __hkdf = (key, len, info) => {
+            const prk = __crypto.createHmac('sha256', Buffer.alloc(32, 0)).update(key).digest();
+            let okm = Buffer.alloc(0), prev = Buffer.alloc(0), c = 1;
+            while (okm.length < len) {
+                const h = __crypto.createHmac('sha256', prk);
+                h.update(prev); h.update(Buffer.from(info, 'utf-8')); h.update(Buffer.from([c]));
+                prev = h.digest(); okm = Buffer.concat([okm, prev]); c++;
+            }
+            return okm.slice(0, len);
+        };
+        const __appInfo = (m) => {
+            const t = (m || '').split(';')[0].trim().toLowerCase();
+            if (t.startsWith('image/')) return 'WhatsApp Image Keys';
+            if (t.startsWith('video/')) return 'WhatsApp Video Keys';
+            if (t.startsWith('audio/')) return 'WhatsApp Audio Keys';
+            return 'WhatsApp Document Keys';
+        };
+        const __msgType = (m) => {
+            const t = (m || '').split(';')[0].trim().toLowerCase();
+            if (t === 'image/webp') return 'stickerMessage';
+            if (t.startsWith('image/')) return 'imageMessage';
+            if (t.startsWith('video/')) return 'videoMessage';
+            if (t.startsWith('audio/')) return 'audioMessage';
+            return 'documentMessage';
+        };
+        const __detect = (b) => { // real type from magic bytes
+            if (b.length > 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b.slice(8, 12).toString() === 'WEBP') return { mimetype: 'image/webp', ext: 'webp' };
+            if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return { mimetype: 'image/jpeg', ext: 'jpg' };
+            if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return { mimetype: 'image/png', ext: 'png' };
+            if (b.slice(0, 3).toString() === 'GIF') return { mimetype: 'image/gif', ext: 'gif' };
+            if (b.length > 12 && b.slice(4, 8).toString() === 'ftyp') return { mimetype: 'video/mp4', ext: 'mp4' };
+            if (b.slice(0, 4).toString() === 'OggS') return { mimetype: 'audio/ogg', ext: 'ogg' };
+            if (b.slice(0, 3).toString() === 'ID3' || (b[0] === 0xFF && (b[1] & 0xE0) === 0xE0)) return { mimetype: 'audio/mpeg', ext: 'mp3' };
+            if (b.slice(0, 4).toString() === '%PDF') return { mimetype: 'application/pdf', ext: 'pdf' };
+            return { mimetype: mediaMimetype, ext: (mediaMimetype || '').split('/')[1]?.split(';')[0] || 'bin' };
+        };
+        const __tag = (plain) => { // attach detected type (non-breaking) + warn on mismatch
+            const det = __detect(plain);
+            try {
+                plain.detectedMimetype = det.mimetype;
+                plain.detectedExt = det.ext;
+            } catch (_) { /* ignore */ }
+            const declared = (mediaMimetype || '').split(';')[0].trim().toLowerCase();
+            if (declared && det.mimetype !== declared) {
+                console.warn(`⚠️ mimetype mismatch: declared "${declared}" but bytes are "${det.mimetype}" — save/send as .${det.ext}, not as declared type (wrong type renders BLACK/broken)`);
+            }
+            return plain;
+        };
+        // ------------------------------------------------------------------
 
-        const type = getMessageType(mediaMimetype);
+        const keyBuf = __asBuf(mediaKey);
+        if (!keyBuf || keyBuf.length !== 32) {
+            throw new Error(`Invalid mediaKey (len=${keyBuf?.length}, expected 32). Check caller pre-buffering.`);
+        }
+
+        const __u = new URL(mediaUrl);
+        const __directPath = __u.pathname + __u.search; // query (?ccb&oh&oe) is REQUIRED auth — never ''
+
+        // download encrypted bytes (plain HTTPS GET works for BOTH hosts)
+        const encRes = await axios.get(mediaUrl, {
+            responseType: 'arraybuffer',
+            timeout: 30000,
+            headers: { Origin: 'https://web.whatsapp.com', 'User-Agent': 'Mozilla/5.0', Accept: '*/*' }
+        });
+        const encBuffer = Buffer.from(encRes.data);
+        if (encBuffer.length <= 10) throw new Error(`Download too short (${encBuffer.length} bytes) — URL expired or blocked`);
+
+        // ---- primary: manual decrypt (bypasses the fork's URL bug entirely) ----
+        try {
+            const expanded = __hkdf(keyBuf, 112, __appInfo(mediaMimetype));
+            const iv = expanded.slice(0, 16);
+            const cipherKey = expanded.slice(16, 48);
+            const macKey = expanded.slice(48, 80);
+            const ciphertext = encBuffer.slice(0, encBuffer.length - 10);
+            const mac = encBuffer.slice(encBuffer.length - 10);
+            const calc = __crypto.createHmac('sha256', macKey).update(iv).update(ciphertext).digest().slice(0, 10);
+            if (!calc.equals(mac)) throw new Error('MAC mismatch — wrong mediaKey bytes or corrupt download');
+            const decipher = __crypto.createDecipheriv('aes-256-cbc', cipherKey, iv);
+            const plain = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+            const expPlain = __asBuf(mediaFileSha256);
+            if (expPlain && expPlain.length === 32 && !__crypto.createHash('sha256').update(plain).digest().equals(expPlain)) {
+                console.warn('⚠️ fileSha256 mismatch after decrypt');
+            }
+            return __tag(plain);
+        } catch (manualErr) {
+            console.warn('⚠️ Manual decrypt failed, falling back to Baileys:', manualErr.message);
+            if (typeof downloadMediaMessage !== 'function') throw manualErr;
+        }
+
+        // ---- fallback: Baileys with FORK-CORRECT fakeMsg ----
+        // This fork uses `url` ONLY for mmg hosts, else `https://mmg.whatsapp.net${directPath}`.
+        // So directPath must be the REAL path (mmg CDN serves both path styles by path).
+        const type = (typeof getMessageType === 'function' ? getMessageType(mediaMimetype) : __msgType(mediaMimetype));
         const fakeMsg = {
-            key: {
-                remoteJid: 'status@broadcast',
-                fromMe: true,
-                id: messageId
-            },
+            key: { remoteJid: 'status@broadcast', fromMe: true, id: messageId || `fake-${Date.now()}` },
             message: {}
         };
-
         fakeMsg.message[type] = {
             mimetype: mediaMimetype,
             url: mediaUrl,
-            mediaKey: parseToBuffer(mediaKey),
-            fileEncSha256: parseToBuffer(mediaFileEncSha256),
-            fileSha256: parseToBuffer(mediaFileSha256),
-            fileLength: encRes.data.length.toString(),
-            mediaKeyTimestamp: '0',
-            directPath: '',
-            iv: parseToBuffer(mediaIv) || Buffer.alloc(16, 0)
+            directPath: __directPath, // <-- THE FIX for media.*.fna URLs (was '')
+            mediaKey: keyBuf,
+            fileEncSha256: __asBuf(mediaFileEncSha256),
+            fileSha256: __asBuf(mediaFileSha256)
         };
-
-        const decrypted = await downloadMediaMessage(
-            fakeMsg,
-            'buffer', {}, {
+        const out = await downloadMediaMessage(fakeMsg, 'buffer', {}, {
             logger: client?.logger,
             reuploadRequest: client?.updateMediaMessage
-        }
-        );
-
-        return decrypted;
+        });
+        return __tag(Buffer.from(out));
     } catch (err) {
         console.error('❌ Media decrypt failed:', err.message);
         throw err;
     }
 }
-// Example usage:
-
 
 
 // Function to load the Hangman data from the JSON file
@@ -946,8 +1033,10 @@ async function getTasks(user_id) {
 
 
 async function getdpurl(AlexaInc, userid) {
+
     try {
         const ppUrl = await AlexaInc.profilePictureUrl(userid, 'image');
+
         return ppUrl;
 
     } catch (e) {
@@ -1114,7 +1203,7 @@ async function handleMessage(AlexaInc, {
 
 
 
-
+        // console.log(msg)
 
         let sender = msg.key.remoteJid;
         let senderabfff = msg.key.remoteJid;
@@ -1153,7 +1242,7 @@ async function handleMessage(AlexaInc, {
         const ottffsse = msg.participant || msg.key.participant
         const botJid = jidNormalizedUser(AlexaInc.user.id);
         const botNumber = botJid.replace(/@.*/, "")
-        const botLid = AlexaInc.user.lid;
+        const botLid = AlexaInc.user.lid.replace(/:[^@]+/, '');
         const isBotAdmins = isGroup ?
             groupAdmins.some(admin =>
                 admin.id === botJid ||
@@ -2410,10 +2499,15 @@ ${quotedid ? "Senderid:" + quotedid : ""}`
                                 if (isimgosticker && message.mediaUrl) {
                                     const parseBuffer = (data) => {
                                         if (!data) return null;
+                                        if (Buffer.isBuffer(data)) return data;
                                         if (typeof data === 'string') {
-                                            const numberArray = data.split(',').map(Number);
-                                            return Buffer.from(numberArray);
+                                            if (data.includes(',')) {
+                                                const numberArray = data.split(',').map(Number);
+                                                return Buffer.from(numberArray);
+                                            }
+                                            return Buffer.from(data, 'base64');
                                         }
+
                                         return Buffer.from(data);
                                     };
                                     media = {
@@ -2449,7 +2543,7 @@ ${quotedid ? "Senderid:" + quotedid : ""}`
                                 usercontact = await loadUserByNumber(quotesendernumber);
                                 quotesendername = message?.pushname || (usercontact && usercontact.name ? usercontact.name : quotesendernumber);
 
-                                const id2getpp = quotedSender === 'me' ? `${botNumber}@s.whatsapp.net` : quotedSender;
+                                const id2getpp = quotedSender === 'me' ? botLid : quotedSender;
                                 const dpurl = await getdpurl(AlexaInc, id2getpp);
                                 const dpbuffer = dpurl ? await getBuffer(dpurl) : null;
 
