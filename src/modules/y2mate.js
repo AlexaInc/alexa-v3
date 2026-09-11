@@ -21,6 +21,8 @@
  *   COOKIES_URLS                    cookie file URL(s)        (passed through)
  *   YTDL_AUDIO_FORMAT=native        native|mp3|opus           (passed through as AUDIO_FORMAT)
  *   YTDL_MAX_HEIGHT=720             video cap
+ *   YTDL_MAX_AUDIO_SEC=7200         max duration for audio (default 2 h; "2h"/"120m" also ok)
+ *   YTDL_MAX_VIDEO_SEC=3600         max duration for video (default 1 h)  -> rejected BEFORE downloading
  *   YTDL_CONCURRENCY=1              max simultaneous local downloads
  *   YTDL_DISABLE=1                  skip local, relays only
  *   YTDL_RELAYS="https://xxx.koyeb.app,https://hansaka1-ytdl.hf.space"   tried in order
@@ -44,6 +46,23 @@ const MAX_HEIGHT = parseInt(
   process.env.YTDL_MAX_HEIGHT || process.env.YTDLP_MAX_HEIGHT || "720",
   10,
 );
+// duration limits (seconds); env may be "7200" or "2h" / "90m"
+function parseDur(v, dflt) {
+  const m = /^\s*(\d+(?:\.\d+)?)\s*([hms]?)\s*$/i.exec(v || "");
+  if (!m) return dflt;
+  const n = parseFloat(m[1]),
+    u = m[2].toLowerCase();
+  return Math.round(u === "h" ? n * 3600 : u === "m" ? n * 60 : n);
+}
+const MAX_AUDIO_SEC = parseDur(
+  process.env.YTDL_MAX_AUDIO_SEC || process.env.MAX_AUDIO_DURATION,
+  2 * 3600,
+);
+const MAX_VIDEO_SEC = parseDur(
+  process.env.YTDL_MAX_VIDEO_SEC || process.env.MAX_VIDEO_DURATION,
+  1 * 3600,
+);
+const maxSecFor = (type) => (type === "video" ? MAX_VIDEO_SEC : MAX_AUDIO_SEC);
 const CONCURRENCY = Math.max(
   1,
   parseInt(
@@ -82,6 +101,26 @@ function getVideoId(url) {
   if (!m) throw new Error("Invalid YouTube URL");
   return m[1];
 }
+/** "1:02:03" | "4:42" | 282 -> seconds */
+function toSeconds(d) {
+  if (typeof d === "number") return d;
+  const parts = String(d || "0")
+    .trim()
+    .split(":")
+    .map(Number);
+  if (!parts.length || parts.some(isNaN)) return 0;
+  return parts.reduce((a, b) => a * 60 + b, 0);
+}
+class DurationError extends Error {
+  constructor(sec, limit, type) {
+    super(
+      `${type === "video" ? "Video" : "Audio"} too long${sec ? ": " + fmtSeconds(sec) : ""} (limit ${fmtSeconds(limit)})`,
+    );
+    this.code = "TOO_LONG";
+    this.duration = sec;
+    this.limit = limit;
+  }
+}
 function fmtSeconds(sec) {
   sec = Math.max(0, parseInt(sec || 0, 10));
   const h = Math.floor(sec / 3600),
@@ -95,9 +134,17 @@ function fmtSeconds(sec) {
   );
 }
 function parseDuration(iso) {
-  const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(iso || "");
+  // ISO-8601: P[nD]T[nH][nM][nS]  (livestream VODs can have a days part)
+  const m = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/.exec(
+    iso || "",
+  );
   return m
-    ? fmtSeconds((+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0))
+    ? fmtSeconds(
+        (+m[1] || 0) * 86400 +
+          (+m[2] || 0) * 3600 +
+          (+m[3] || 0) * 60 +
+          (+m[4] || 0),
+      )
     : "0:00";
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -120,20 +167,21 @@ let localAvailable = null;
 let localDisabledUntil = 0;
 const LOCAL_BACKOFF = 15 * 60 * 1000;
 
-function childEnv() {
+function childEnv(type) {
   const env = { ...process.env };
+  env.MAX_DURATION_SEC = String(maxSecFor(type) || 0); // CLI-side guard too (yt-dlp --match-filter)
   if (BIN_DIR && BIN_DIR !== ".") env.PATH = `${BIN_DIR}:${env.PATH || ""}`;
   env.AUDIO_FORMAT = AUDIO_FORMAT;
   env.MAX_HEIGHT = String(MAX_HEIGHT);
   return env;
 }
 
-function cli(args, timeoutMs) {
+function cli(args, timeoutMs, type) {
   return new Promise((resolve, reject) => {
     execFile(
       YTDL_BIN,
       args,
-      { env: childEnv(), timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024 },
+      { env: childEnv(type), timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024 },
       (err, stdout, stderr) => {
         let json = null;
         try {
@@ -197,6 +245,7 @@ async function localDownload(url, type) {
     const r = await cli(
       ["get", videoId, "--type", isVideo ? "video" : "audio"],
       isVideo ? 15 * 60 * 1000 : 8 * 60 * 1000,
+      type,
     );
     let buffer;
     if (r.local && fs.existsSync(r.local)) {
@@ -216,6 +265,8 @@ async function localDownload(url, type) {
       title: r.title,
     };
   } catch (e) {
+    if (/does not pass filter/i.test(e.message) && /duration/i.test(e.message))
+      throw new DurationError(0, maxSecFor(type), type);
     if (isBotCheck(e.message + e.stderr)) {
       console.warn(
         "[ytdl] bot-check / cookies rejected on this IP, using relays for 15 min",
@@ -382,6 +433,17 @@ async function ytWithMeta(url, type = "audio") {
   const key = `${getVideoId(url)}:${type}`;
   if (inflight.has(key)) return inflight.get(key);
   const p = (async () => {
+    // ---- duration guard: reject before spending bandwidth/CPU anywhere
+    const limit = maxSecFor(type);
+    if (limit > 0) {
+      const info = await getInfo(url).catch(() => null);
+      const sec = info ? toSeconds(info.duration) : 0;
+      if (sec > limit) throw new DurationError(sec, limit, type);
+      if (!sec)
+        console.warn(
+          `[ytdl] duration unknown for ${key}; relying on CLI-side limit`,
+        );
+    }
     let localErr;
     if ((await checkLocal()) && Date.now() > localDisabledUntil) {
       try {
@@ -412,6 +474,9 @@ module.exports = {
   getInfo,
   getVideoId,
   ytWithMeta,
+  DurationError,
+  /** effective limits in seconds */
+  limits: { audio: MAX_AUDIO_SEC, video: MAX_VIDEO_SEC },
   /** audio Buffer (m4a unless YTDL_AUDIO_FORMAT=mp3) — check .ext/.mime from ytWithMeta if you need to know */
   async yta(url) {
     return (await ytWithMeta(url, "audio")).buffer;

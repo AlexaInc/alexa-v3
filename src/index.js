@@ -697,9 +697,6 @@ setInterval(() => {
   });
 }, 300000);
 
-// Store logs in an array, now also keeping HTML-styled logs
-const SESSION_FOLDER = "./auth5a";
-
 async function startWhatsAppConnection() {
   const proxyAgent = proxyHelper.agent;
   if (proxyAgent) {
