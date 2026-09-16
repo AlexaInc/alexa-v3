@@ -2158,18 +2158,6 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`thunder\`    ➥ \`leaves\`    ➥ \`1917\`
 ┃ ➥ \`arena\`      ➥ \`hacker\`    ➥ \`sand\`
 ┃ ➥ \`blackpink\`  ➥ \`glitch\`    ➥ \`fire\`
-┃ _*💰 Economy*_
-┃ ➥ \`.balance\` / \`.claim\` / \`.work\` / \`.pay\` / \`.rob\`
-┃ ➥ \`.deposit\` / \`.withdraw\` / \`.baltop\`
-┃
-┃ _*🛍️ Shop*_
-┃ ➥ \`.shop\` / \`.buy\` / \`.inventory\` / \`.sell\`
-┃
-┃ _*⚔️ RPG*_
-┃ ➥ \`.class\` / \`.profile\` / \`.train\` / \`.dungeon\` / \`.rpgtop\`
-┃
-┃ _*🎲 Party Games*_
-┃ ➥ \`.truth\` / \`.dare\` / \`.tod\` / \`.wyr\`
 ┃
 ┃ *Usage:* \`.metallic <text>\` etc.`;
                             } else if (respomm === 'owner') {
@@ -2325,7 +2313,24 @@ async function handleMessage(AlexaInc, {
 ┃ _*🏆 Ranking*_
 ┃ ➥ \`.rank\` / \`.myrank\` - Your rank
 ┃ ➥ \`.ranking\` / \`.global\` / \`.daily\` / \`.weekly\`
-┃ ➥ \`.topadder\` - Top inviters`;
+┃ ➥ \`.topadder\` - Top inviters
+┃ _*💰 Economy*_
+┃ ➥ \`.balance\` / \`.claim\` / \`.work\` / \`.pay\` / \`.rob\`
+┃ ➥ \`.deposit\` / \`.withdraw\` / \`.baltop\`
+┃
+┃ _*🛍️ Shop*_
+┃ ➥ \`.shop\` / \`.buy\` / \`.inventory\` / \`.sell\`
+┃
+┃ _*⚔️ RPG*_
+┃ ➥ \`.class\` / \`.profile\` / \`.train\` / \`.dungeon\` / \`.rpgtop\`
+┃
+┃ _*🎲 Party Games*_
+┃ ➥ \`.truth\` / \`.dare\` / \`.tod\` / \`.wyr\`
+┃
+
+`
+
+                                ;
 
                             }
 
