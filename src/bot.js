@@ -4118,6 +4118,61 @@ Duration : ${formatTime(details.durationInSeconds)}
                             break
                         }
 
+
+                        case "liric": case "lyrics": {
+                            if (!text) return mess.reply("song name required for search lyrics");
+                            try {
+                                const encodedQuery = encodeURIComponent(text);
+                                const { data: response } = await axios.get(`https://lrclib.net/api/search?q=${encodedQuery}`);
+
+                                if (!response || response.length === 0) {
+                                    return await AlexaInc.sendMessage(msg.key.remoteJid, { text: "No lyrics found for this song." }, { quoted: msg });
+                                }
+
+                                const interactiveButtons = [{
+                                    name: "single_select",
+                                    buttonParamsJson: JSON.stringify({
+                                        title: "Select a song to get lyrics",
+                                        sections: [{
+                                            title: `top ${response.length < 10 ? response.length : 10} songs`,
+                                            highlight_label: "Select",
+                                            rows: response.slice(0, 10).map((song) => ({
+                                                header: song.name || "Unknown",
+                                                title: song.artistName || "Unknown Artist",
+                                                description: song.albumName || "Unknown Album",
+                                                id: `.lyric_select ${song.id}`
+                                            }))
+                                        }]
+                                    })
+                                }];
+
+                                const interactiveMessage = {
+                                    text: `Found ${response.length} results for "${text}". Choose a song to get lyrics:`,
+                                    title: `Hello ${msg.pushName || "User"}`,
+                                    footer: "Powered by HANSAKA",
+                                    interactiveButtons
+                                };
+
+                                await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, {
+                                    quoted: msg
+                                });
+                            } catch (e) {
+                                await AlexaInc.sendMessage(msg.key.remoteJid, { text: e.message });
+                            }
+                            break;
+                        }
+                        case "lyric_select":{
+                            if (!text) mess.reply("song name requred for search lyrics");
+                            axios.get(`https://lrclib.net/api/get/${text}`).then(async (response) => {
+                                response = response.data;
+                                // console.log(response);
+
+                                const painlyrics = `*Song name* :  _${response.name}_ \n\n*Artist name* :  _${response.artistName}_\n\n*Album name* :  _${ response.albumName }_\n\n\n*Lyrics* :  \n\n ${response.plainLyrics}`
+                                await AlexaInc.sendMessage(msg.key.remoteJid, {text:painlyrics,},{quoted:msg})
+                            })
+                            break;
+                        }
+
                         case 'coffee':
                         case 'food':
                         case 'holo':
