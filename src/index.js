@@ -610,37 +610,37 @@ function loadMessagesBetween(jid, startId, endId) {
 
 // // Save any event
 // function saveEvent(eventName, data) {
-//   const filePath = path.join(STORE_DIR2, `${eventName}.json`);
-//   let existing = [];
+//   const filePath = path.join(STORE_DIR2, `${eventName}.json`);
+//   let existing = [];
 
-//   if (fs.existsSync(filePath)) {
-//     try {
-//       existing = JSON.parse(fs.readFileSync(filePath));
-//     } catch {
-//       existing = [];
-//     }
-//   }
+//   if (fs.existsSync(filePath)) {
+//     try {
+//       existing = JSON.parse(fs.readFileSync(filePath));
+//     } catch {
+//       existing = [];
+//     }
+//   }
 
-//   existing.push({
-//     timestamp: Date.now(),
-//     data,
-//   });
+//   existing.push({
+//     timestamp: Date.now(),
+//     data,
+//   });
 
-//   // Optional: keep last 500 events per type
-//   if (existing.length > 500) existing = existing.slice(-500);
+//   // Optional: keep last 500 events per type
+//   if (existing.length > 500) existing = existing.slice(-500);
 
-//   fs.writeFileSync(filePath, JSON.stringify(existing, null, 2));
+//   fs.writeFileSync(filePath, JSON.stringify(existing, null, 2));
 // }
 
 // // Load events of a certain type
 // function loadEvents(eventName) {
-//   const filePath = path.join(STORE_DIR2, `${eventName}.json`);
-//   if (!fs.existsSync(filePath)) return [];
-//   try {
-//     return JSON.parse(fs.readFileSync(filePath));
-//   } catch {
-//     return [];
-//   }
+//   const filePath = path.join(STORE_DIR2, `${eventName}.json`);
+//   if (!fs.existsSync(filePath)) return [];
+//   try {
+//     return JSON.parse(fs.readFileSync(filePath));
+//   } catch {
+//     return [];
+//   }
 // }
 
 const db = mysql.createPool({

@@ -11,7 +11,6 @@ dotenv.config({ path: path.join(ROOT_DIR, ".env") });
 
 const env = process.env;
 
-// --- small coercion helpers ---------------------------------------------
 const str = (value, fallback = "") =>
   value === undefined || value === "" ? fallback : String(value);
 const int = (value, fallback) => {
