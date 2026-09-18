@@ -26,7 +26,7 @@ const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const path = require("path");
 const { makeWASocket: WAConnection } = require("@hansaka02/baileys"); // for first-time QR login
-const authPath = path.join(__dirname, "..", "auth5a");
+const authPath = path.join(__dirname, "..", "authtest");
 const mysql = require("mysql2");
 const DB_HOST = process.env["DB_HOST"];
 const DB_UNAME = process.env["DB_UNAME"];
@@ -268,12 +268,7 @@ const logger = P(
 logger.level = "info"; // Reduced from debug to save CPU/IO
 
 let restartHistory = [];
-// NOTE: app.js writes restart history to <repo root>/data/restarts.json
-// (see restartLogFile in app.js). This MUST read from the exact same path —
-// it previously read "./restarts.json" (missing the "data/" folder AND
-// depending on process.cwd() at spawn time), so restartHistory here was
-// always empty and the "Your bot Alexa is ready!" WhatsApp message always
-// fell back to "Restart id: N/A ... Reason: Startup".
+
 const RESTART_LOG_FILE = path.join(__dirname, "..", "data", "restarts.json");
 try {
   if (fs.existsSync(RESTART_LOG_FILE)) {

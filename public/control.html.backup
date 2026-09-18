@@ -190,6 +190,10 @@
                 its own leaderboard.</p>
             </div>
             <div class="ref-item">
+              <h4>💰 AlexaCash Economy</h4>
+              <p>MySQL-backed AC currency, Shop, anime-styled RPG, and English-only Truth or Dare.</p>
+            </div>
+            <div class="ref-item">
               <h4>🌸 SFW / 🔞 NSFW</h4>
               <p>Curated safe image commands plus an opt-in 18+ set, governable per-group via anti-NSFW controls.</p>
             </div>
@@ -197,6 +201,11 @@
               <h4>👑 Owner &amp; Admin</h4>
               <p>Status/about/presence, chat &amp; group listings, maintenance mode, task tracking, quiz-pack
                 management, and this Control Panel.</p>
+            </div>
+            <div class="ref-item">
+              <h4>☁️ Cloudflare Tunnel</h4>
+              <p>Self-managed tunnel — auto-downloads <code>cloudflared</code> for your OS/CPU, dies with the app,
+                zero orphan processes.</p>
             </div>
           </div>
         </div>
@@ -210,9 +219,9 @@
         <div class="accordion-body">
           <ol class="deploy-steps">
             <li>
-              <b>Prepare a MySQL database</b> — group settings, conversation history, and tasks all live in MySQL.
-              Tables are created automatically (<code>CREATE TABLE IF NOT EXISTS</code>) on first connect; you
-              only need empty database credentials.
+              <b>Prepare a MySQL database</b> — group settings, conversation history, tasks, the economy and
+              RPG/Shop state all live in MySQL. Tables are created automatically
+              (<code>CREATE TABLE IF NOT EXISTS</code>) on first connect; you only need empty database credentials.
             </li>
             <li>
               <b>Clone &amp; install</b>
@@ -238,12 +247,19 @@ npm install</pre>
               reach this Control Panel: live CPU/RAM/network gauges, streaming logs for both processes, and JSON
               data downloads.
             </li>
+            <li>
+              <b>(Optional) Expose it publicly</b> — set <code>CLOUDFLARE_TUNNEL_TOKEN</code> for a named tunnel,
+              or leave it blank for a free temporary <code>*.trycloudflare.com</code> link. The tunnel is
+              auto-downloaded per OS/CPU and shuts down automatically when the bot stops.
+            </li>
+            <li>
+              <b>Or deploy to a free PaaS</b> — one-click templates exist for
+              <a href="https://app.koyeb.com/deploy" target="_blank" rel="noopener">Koyeb</a>,
+              <a href="https://replit.com/github/hansaka02/alexa-v3" target="_blank" rel="noopener">Replit</a>, and
+              <a href="https://railway.app/new/template?repository=https://github.com/hansaka02/alexa-v3" target="_blank" rel="noopener">Railway</a> —
+              just supply the same environment variables.
+            </li>
           </ol>
-          <p style="margin-top: 1.5rem;">
-            <a href="deploy.html" class="btn btn-primary" style="text-decoration: none;">
-              📖 Open the Full Deployment Guide (every env variable explained) →
-            </a>
-          </p>
         </div>
       </div>
 

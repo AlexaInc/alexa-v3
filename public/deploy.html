@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deployment Guide | Alexa v3</title>
+  <link rel="icon"
+    href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/rt2Br0AAAAASUVORK5CYII="
+    type="image/png">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .deploy-page-main {
+      margin-top: 110px;
+      padding-bottom: 100px;
+    }
+
+    .deploy-hero {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .deploy-hero h1 {
+      font-size: 2.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .deploy-hero p {
+      color: var(--text-secondary);
+      max-width: 720px;
+      margin: 0 auto;
+      font-size: 1.05rem;
+    }
+
+    /* Sticky table-of-contents sidebar layout */
+    .deploy-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 2.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .deploy-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .deploy-toc {
+        position: static !important;
+      }
+    }
+
+    .deploy-toc {
+      position: sticky;
+      top: 100px;
+      padding: 1.25rem;
+    }
+
+    .deploy-toc h4 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+    }
+
+    .deploy-toc a {
+      display: block;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 0.35rem 0;
+      border-left: 2px solid transparent;
+      padding-left: 0.75rem;
+      transition: var(--transition);
+    }
+
+    .deploy-toc a:hover {
+      color: var(--text-primary);
+      border-left-color: var(--accent-color);
+    }
+
+    /* Big numbered step blocks */
+    .big-step {
+      margin-bottom: 3rem;
+      scroll-margin-top: 100px;
+    }
+
+    .big-step-head {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .big-step-head h2 {
+      font-size: 1.6rem;
+    }
+
+    /* Env variable reference cards */
+    .env-card {
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      border-radius: 12px;
+    }
+
+    .env-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .env-name {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      background: none;
+      padding: 0;
+    }
+
+    .env-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+    }
+
+    .env-badge.required {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .env-badge.optional {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--accent-color);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .env-what {
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .env-howto {
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+      line-height: 1.65;
+    }
+
+    .env-howto ol,
+    .env-howto ul {
+      margin: 0.5rem 0 0.5rem 1.25rem;
+    }
+
+    .env-howto li {
+      margin-bottom: 0.35rem;
+    }
+
+    .env-example {
+      margin-top: 0.75rem;
+    }
+
+    .section-divider {
+      margin: 3rem 0;
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .group-heading {
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      margin: 2rem 0 1rem 0;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .checklist {
+      list-style: none;
+      padding: 0;
+    }
+
+    .checklist li {
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .checklist li::before {
+      content: "☐";
+      color: var(--accent-color);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar scrolled">
+    <h1 onclick="location.href='./';">Alexa v3</h1>
+    <div class="nav-buttons">
+      <a href="./#features" class="btn btn-outline" style="text-decoration: none;">Features</a>
+      <a href="./" class="btn btn-outline" style="text-decoration: none;">Home</a>
+      <button id="loginButton" class="btn btn-outline" onclick="window.location.href='login.html'">Admin
+        Login</button>
+    </div>
+  </nav>
+
+  <main class="container deploy-page-main">
+
+    <div class="deploy-hero animate-fade">
+      <h1>Full Deployment Guide</h1>
+      <p>
+        A complete, no-assumptions walkthrough — for someone who has <b>never deployed this bot before</b> and
+        doesn't know what an environment variable is. Every single setting the bot reads is explained here: what
+        it does, whether you actually need it, exactly where to get the value, and what to type.
+      </p>
+    </div>
+
+    <div class="deploy-layout">
+
+      <!-- Sticky Table of Contents -->
+      <aside class="deploy-toc glass card">
+        <h4>On this page</h4>
+        <a href="#step0">0. What you'll end up with</a>
+        <a href="#step1">1. Get a server to run it on</a>
+        <a href="#step2">2. Get the code &amp; install</a>
+        <a href="#step3">3. Understand the .env file</a>
+        <a href="#env-required">→ Required variables</a>
+        <a href="#env-optional">→ Optional variables</a>
+        <a href="#step4">4. Start the bot &amp; scan QR</a>
+        <a href="#step5">5. Log in to the Control Panel</a>
+        <a href="#step6">6. Final checklist</a>
+      </aside>
+
+      <div>
+
+        <!-- STEP 0 -->
+        <section class="big-step" id="step0">
+          <div class="big-step-head">
+            <div class="step-num">0</div>
+            <h2>What you'll end up with</h2>
+          </div>
+          <div class="card glass" style="padding: 1.5rem;">
+            <p style="color: var(--text-secondary); line-height: 1.7;">
+              By the end of this guide you will have: a WhatsApp number that runs the Alexa bot 24/7, a MySQL
+              database storing group settings and bot data, and this web Control Panel (the one you're looking at
+              right now, or will reach at <code>/control</code>) protected by a username/password you set
+              yourself, showing live CPU/RAM graphs and logs. No coding required — just copying values into one
+              file called <code>.env</code>.
+            </p>
+          </div>
+        </section>
+
+        <!-- STEP 1 -->
+        <section class="big-step" id="step1">
+          <div class="big-step-head">
+            <div class="step-num">1</div>
+            <h2>Get a server to run it on</h2>
+          </div>
+          <div class="card glass" style="padding: 1.5rem;">
+            <p class="env-what">You need <i>something</i> that stays powered on to run Node.js continuously. Pick
+              one:</p>
+            <ul style="color: var(--text-secondary); font-size: 0.92rem; margin-left: 1.25rem; line-height: 1.8;">
+              <li><b>Easiest — a free PaaS.</b> No server management at all. Click one of these and follow their
+                on-screen setup (you'll still need Steps 3 below to fill in variables in their dashboard instead of
+                a file):
+                <a href="https://app.koyeb.com/deploy" target="_blank" rel="noopener">Koyeb</a> ·
+                <a href="https://replit.com/github/hansaka02/alexa-v3" target="_blank" rel="noopener">Replit</a> ·
+                <a href="https://railway.app/new/template?repository=https://github.com/hansaka02/alexa-v3"
+                  target="_blank" rel="noopener">Railway</a>.
+              </li>
+              <li><b>Full control — a VPS.</b> Rent a cheap Linux server (e.g. from any VPS provider), SSH into it,
+                and follow every step on this page exactly as written.</li>
+              <li><b>Using Docker?</b> This repo ships a <code>Dockerfile</code> — build it with
+                <code>docker build . -t alexa-v3</code> and run with
+                <code>docker run -p 8000:8000 --env-file .env alexa-v3</code> once you've prepared your
+                <code>.env</code> file in Step 3.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- STEP 2 -->
+        <section class="big-step" id="step2">
+          <div class="big-step-head">
+            <div class="step-num">2</div>
+            <h2>Get the code &amp; install dependencies</h2>
+          </div>
+          <div class="card glass" style="padding: 1.5rem;">
+            <p class="env-what">On your VPS terminal (skip this exact form if you clicked a PaaS deploy button
+              above — it clones the repo for you automatically):</p>
+            <pre class="code-block">apt update &amp;&amp; apt install -y speedtest-cli ffmpeg
+git clone https://github.com/AlexaInc/alexa-v3.git
+cd alexa-v3
+npm install</pre>
+            <p class="env-howto">This downloads the bot's code and every library it depends on. It does
+              <b>not</b> start the bot yet — you must configure it first (Step 3), otherwise it will crash or run
+              with broken features because it doesn't know your database, your WhatsApp number, or your admin
+              login.
+            </p>
+          </div>
+        </section>
+
+        <!-- STEP 3 -->
+        <section class="big-step" id="step3">
+          <div class="big-step-head">
+            <div class="step-num">3</div>
+            <h2>Understand the <code>.env</code> file</h2>
+          </div>
+          <div class="card glass" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+            <p class="env-what">🔑 This is the single most important step. Read it fully before moving on.</p>
+            <p class="env-howto">
+              An <b>environment variable</b> is just a named setting the bot reads when it starts — things like
+              "what's my database password" or "who is allowed to log into the admin panel". Instead of writing
+              these directly into the code, they live in one plain-text file called <code>.env</code>, in the
+              format <code>NAME=value</code>, one per line.
+            </p>
+            <p class="env-howto" style="margin-top: 0.75rem;">
+              This repo ships a template called <code>env_dummy</code> with every variable already listed (with
+              placeholder/example values). Your first move is to copy it and rename it:
+            </p>
+            <pre class="code-block">cp env_dummy .env</pre>
+            <p class="env-howto" style="margin-top: 0.75rem;">
+              Now open <code>.env</code> in any text editor (<code>nano .env</code> on a VPS) and replace every
+              placeholder with your real value, using the reference below. <b>If you're deploying on a PaaS
+              instead of a VPS</b> (Koyeb/Railway/Replit/Hugging Face Spaces), you won't have a <code>.env</code>
+              file at all — instead, open your service's dashboard, find "Environment Variables" or "Secrets", and
+              add each <code>NAME</code> / <code>value</code> pair there one by one, using the exact same names
+              shown below.
+            </p>
+            <p class="env-howto" style="margin-top: 0.75rem; color: var(--danger);">
+              ⚠️ Never commit a filled-in <code>.env</code> file to GitHub or share it publicly — it contains
+              passwords and secret tokens.
+            </p>
+          </div>
+
+          <h3 id="env-required" style="scroll-margin-top: 100px; color: var(--danger); font-size: 1.3rem; margin-bottom: 1rem;">
+            🔴 Required variables — the bot will not work correctly without these
+          </h3>
+
+          <div class="group-heading">Admin &amp; Security — controls who can log into this Control Panel</div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">ADMIN_USERNAME</span>
+              <span class="env-badge required">Required</span>
+            </div>
+            <p class="env-what">The username you'll type on the <a href="login.html">login page</a> to reach this
+              Control Panel.</p>
+            <div class="env-howto">
+              <b>How to set it:</b> just make one up — it isn't looked up anywhere, you're choosing it yourself
+              right now. Pick something that isn't easy to guess (not literally "admin").
+            </div>
+            <pre class="code-block env-example">ADMIN_USERNAME=hansaka_admin</pre>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">ADMIN_PASSWORD</span>
+              <span class="env-badge required">Required</span>
+            </div>
+            <p class="env-what">The password that pairs with <code>ADMIN_USERNAME</code> above to log into the
+              Control Panel.</p>
+            <div class="env-howto">
+              <b>How to set it:</b> make up a strong password — at least 12 characters, mixing letters/numbers/
+              symbols. This is the only thing standing between the internet and your bot's admin controls if you
+              expose this panel publicly, so don't reuse a password from somewhere else.
+            </div>
+            <pre class="code-block env-example">ADMIN_PASSWORD=Kx9!mPz2Qw#Lr7Vt</pre>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">SESSION_SECRET</span>
+              <span class="env-badge required">Required</span>
+            </div>
+            <p class="env-what">A private key the server uses to cryptographically sign your login session cookie,
+              so nobody can forge a fake "logged in" cookie.</p>
+            <div class="env-howto">
+              <b>How to set it:</b> generate a long random string — you never need to remember it, it's just used
+              internally. Run this on any machine with Node.js installed and paste the output:
+              <pre class="code-block">node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</pre>
+            </div>
+          </div>
+
+          <div class="group-heading">MySQL Database — stores group settings, conversation history, tasks</div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">DB_HOST</span>
+              <span class="env-badge required">Required</span>
+            </div>
+            <p class="env-what">The network address of your MySQL server.</p>
+            <div class="env-howto">
+              <b>How to get it:</b>
+              <ol>
+                <li>Create a free MySQL database — <a href="https://aiven.io" target="_blank" rel="noopener">aiven.io</a>
+                  has a genuinely free tier that works well for this bot. (Any other MySQL host — PlanetScale,
+                  Railway MySQL, a self-hosted server — works the same way.)</li>
+                <li>After creating the service, its dashboard shows connection details: <b>Host</b>,
+                  <b>Port</b>, <b>User</b>, <b>Password</b>, <b>Database name</b>.</li>
+                <li>Copy the <b>Host</b> value here — it looks like
+                  <code>mysql-xxxxx-yourproject.aivencloud.com</code>.</li>
+              </ol>
+            </div>
+            <pre class="code-block env-example">DB_HOST=mysql-abc123-myproject.aivencloud.com</pre>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">DB_PORT</span>
+              <span class="env-badge required">Required</span>
+            </div>
+            <p class="env-what">The port your MySQL server listens on.</p>
+            <div class="env-howto">
+              <b>How to get it:</b> same dashboard as <code>DB_HOST</code> above — it's shown right next to it.
+              Standard MySQL port is <code>3306</code>, but managed providers like Aiven often use a custom port
+              (e.g. <code>14322</code>) — always use the exact number your provider shows you, not the default.
+            </div>
+            <pre class="code-block env-example">DB_PORT=14322</pre>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">DB_NAME</span>
+              <span class="env-badge required">Required</span>
+            </div>
+            <p class="env-what">The name of the specific database (schema) the bot should use inside your MySQL
+              server.</p>
+            <div class="env-howto">
+              <b>How to get it:</b> same dashboard. Most providers create a default database for you already
+              (often called <code>defaultdb</code>) — you can use that, or create a new one named e.g.
+              <code>alexa_bot</code>. You do <b>not</b> need to manually create any tables — the bot creates them
+              itself the first time it connects.
+            </div>
+            <pre class="code-block env-example">DB_NAME=defaultdb</pre>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">DB_UNAME</span>
+              <span class="env-badge required">Required</span>
+            </div>
+            <p class="env-what">The username the bot logs into MySQL with.</p>
+            <div class="env-howto">
+              <b>How to get it:</b> same dashboard — usually shown as "User". Aiven's default is often
+              <code>avnadmin</code>.
+            </div>
+            <pre class="code-block env-example">DB_UNAME=avnadmin</pre>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">DB_PASS</span>
+              <span class="env-badge required">Required</span>
+            </div>
+            <p class="env-what">The password for the MySQL user above.</p>
+            <div class="env-howto">
+              <b>How to get it:</b> shown once when you create the database, and always retrievable from the same
+              dashboard afterwards. Copy it exactly — MySQL passwords are case-sensitive and often contain
+              symbols, which is fine.
+            </div>
+          </div>
+
+          <div class="group-heading">Bot &amp; Owner Identity — who owns the bot, which number it runs on</div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">bot_nb</span>
+              <span class="env-badge required">Required</span>
+            </div>
+            <p class="env-what">The WhatsApp phone number the bot itself will run on (the number you'll scan a QR
+              code with, or link as a device).</p>
+            <div class="env-howto">
+              <b>How to set it:</b> type the number in full international format, digits only, no <code>+</code>,
+              no spaces, no leading zero. Example: a Sri Lankan number <code>077 123 4567</code> becomes
+              <code>94771234567</code>.
+            </div>
+            <pre class="code-block env-example">bot_nb=94771234567</pre>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">Owner_nb</span>
+              <span class="env-badge required">Required</span>
+            </div>
+            <p class="env-what">Your own WhatsApp number — the person who controls the bot and receives
+              owner-only messages (like the restart notification). Can be different from
+              <code>bot_nb</code>.</p>
+            <div class="env-howto">
+              <b>How to set it:</b> same international digits-only format as above. You can list more than one
+              owner separated by commas.
+            </div>
+            <pre class="code-block env-example">Owner_nb=94771234567,94719876543</pre>
+          </div>
+
+          <hr class="section-divider">
+
+          <h3 id="env-optional" style="scroll-margin-top: 100px; color: var(--accent-color); font-size: 1.3rem; margin-bottom: 1rem;">
+            🟢 Optional variables — leave blank to skip that feature, nothing breaks
+          </h3>
+
+          <div class="group-heading">Extra bot identifiers</div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">Owner_id</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Your WhatsApp platform ID (LID), used in newer WhatsApp accounts alongside phone
+              numbers for owner checks.</p>
+            <div class="env-howto">Leave blank unless you specifically know you need it — most setups work fine
+              with just <code>Owner_nb</code>.</div>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">spc_nb</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">"Special"/sudo numbers that get elevated permissions without being a full
+              owner.</p>
+            <div class="env-howto">Comma-separated numbers, same digits-only format. Leave blank if you don't need
+              a separate moderator tier.</div>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">ocid</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">The ID of an official WhatsApp group where the bot is an admin, used for broadcast
+              features.</p>
+            <div class="env-howto">Format is a group JID like <code>1234567890@g.us</code>. Get this by adding the
+              bot to a group and checking the logs, or using the <code>.gp</code> / group-info command once the
+              bot is running. Leave blank if unused.</div>
+          </div>
+
+          <div class="group-heading">Web panel extras</div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">WEBHOOK_SECRET</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Secret used to verify GitHub webhook requests (if you wire up
+              auto-deploy-on-push via the <code>/github-webhook</code> route).</p>
+            <div class="env-howto">Only needed if you use the GitHub webhook integration. Generate the same way as
+              <code>SESSION_SECRET</code> above. If left blank, the webhook endpoint still works but without
+              signature verification (anyone could call it) — a warning is printed to the logs reminding you.</div>
+          </div>
+
+          <div class="group-heading">AI Chatbot (optional — bot works fine without any AI configured)</div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">CHAT_MODEL</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Which AI model powers the <code>.chatbot on</code> / AI web search features.</p>
+            <div class="env-howto">Example values: <code>gpt-4o</code>, <code>gemini-1.5-pro</code>,
+              <code>claude-3-5-sonnet</code>. Get an API key from whichever provider you choose and set the
+              matching key below. Leave the whole AI section blank to simply not offer AI chat features.</div>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">GOOGLE_API_KEY</span> &nbsp;+&nbsp;
+              <span class="env-name">GOOGLESEARCH_ENGINE_ID</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Powers Google-backed web search commands (<code>.web</code>,
+              <code>.aiweb</code>).</p>
+            <div class="env-howto">
+              <ol>
+                <li>Go to <a href="https://programmablesearchengine.google.com/" target="_blank" rel="noopener">Google
+                    Programmable Search Engine</a> and create a search engine → copy its <b>Search engine ID</b>
+                  into <code>GOOGLESEARCH_ENGINE_ID</code>.</li>
+                <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google
+                    Cloud Console → Credentials</a>, create an API key, enable the "Custom Search API" for it, and
+                  paste the key into <code>GOOGLE_API_KEY</code>.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">HF_TOKEN</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Hugging Face access token, used for certain AI model inference calls.</p>
+            <div class="env-howto">Get one free at
+              <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">huggingface.co/settings/tokens</a>
+              → "New token" → Read access is enough.</div>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">DEEPAI_API_KEY</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Used by the image-related AI module for extra generation/analysis features.</p>
+            <div class="env-howto">Sign up at <a href="https://deepai.org/dashboard/profile" target="_blank" rel="noopener">deepai.org</a>
+              to get a free key. Leave blank to skip DeepAI-specific features only.</div>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">NIGHTAPI_AUTH</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Token for the NightAPI service, used by a subset of content commands.</p>
+            <div class="env-howto">Only needed if you specifically use NightAPI-backed commands — otherwise leave
+              blank.</div>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">TENOR_API_KEY</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Powers GIF-search related features via Tenor.</p>
+            <div class="env-howto">Get a free key at
+              <a href="https://tenor.com/developer/keyregistration" target="_blank" rel="noopener">tenor.com/developer</a>.</div>
+          </div>
+
+          <div class="group-heading">Custom Quiz Packs (MongoDB — separate from the main MySQL database)</div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">QUIZ_MONGO_URI</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Connection string for a MongoDB database that stores custom quiz packs used by
+              <code>.setquiz</code> and <code>.quiz &lt;id&gt;</code>.</p>
+            <div class="env-howto">Get a free MongoDB cluster at
+              <a href="https://www.mongodb.com/cloud/atlas/register" target="_blank" rel="noopener">MongoDB
+                Atlas</a> → "Connect" → "Drivers" → copy the connection string and replace
+              <code>&lt;password&gt;</code> with your database user's password. Without this set, the quiz feature
+              is simply disabled (a warning is logged, nothing crashes).</div>
+            <pre class="code-block env-example">QUIZ_MONGO_URI=mongodb+srv://user:pass@cluster0.xxxx.mongodb.net/alexa</pre>
+          </div>
+
+          <div class="group-heading">YouTube Downloads (optional fine-tuning — sensible defaults already work)</div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">YTDL_AUDIO_FORMAT</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Preferred output format when the bot downloads a song for
+              <code>.song</code>/<code>.play</code>.</p>
+            <div class="env-howto">Accepted values: <code>native</code>, <code>mp3</code>, <code>opus</code>. Leave
+              blank to use the default.</div>
+          </div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">YTDL_RELAYS</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Comma-separated list of relay-server URLs to route around YouTube's bot
+              detection, if downloads start failing.</p>
+            <div class="env-howto">Only relevant if you self-host a relay (an advanced/rare setup) — safe to
+              leave blank for a normal deployment.</div>
+          </div>
+
+          <div class="group-heading">Networking / Proxy (advanced — only needed behind a restrictive network)</div>
+
+          <div class="env-card glass card">
+            <div class="env-card-head">
+              <span class="env-name">PROXY_URL</span>
+              <span class="env-badge optional">Optional</span>
+            </div>
+            <p class="env-what">Routes all outbound bot traffic through an HTTP/HTTPS/SOCKS proxy.</p>
+            <div class="env-howto">Only needed if your hosting provider blocks direct outbound connections
+              (some restricted regions/networks). Format:
+              <code>http://user:pass@proxyhost:port</code>. Leave blank for a normal setup.</div>
+          </div>
+
+        </section>
+
+        <!-- STEP 4 -->
+        <section class="big-step" id="step4">
+          <div class="big-step-head">
+            <div class="step-num">4</div>
+            <h2>Start the bot &amp; scan the QR code</h2>
+          </div>
+          <div class="card glass" style="padding: 1.5rem;">
+            <p class="env-what">Once every required variable above is filled in and saved in <code>.env</code>
+              (or your PaaS dashboard):</p>
+            <pre class="code-block">npm start</pre>
+            <p class="env-howto">
+              This runs <code>app.js</code>, the process supervisor — it starts both the WhatsApp connection
+              (<code>src/index.js</code>) and this web panel (<code>src/server.js</code>), and automatically
+              restarts either one if it crashes, recording exactly why/when in
+              <code>data/restarts.json</code> (shown to you as the owner on WhatsApp the next time it restarts).
+            </p>
+            <p class="env-howto" style="margin-top: 0.75rem;">
+              Watch the terminal — a QR code will print directly in the console. On your phone: open WhatsApp →
+              <b>Settings → Linked Devices → Link a Device</b> → scan it. Once linked, the bot is online and will
+              respond to commands like <code>.menu</code> in any chat.
+            </p>
+          </div>
+        </section>
+
+        <!-- STEP 5 -->
+        <section class="big-step" id="step5">
+          <div class="big-step-head">
+            <div class="step-num">5</div>
+            <h2>Log in to the Control Panel</h2>
+          </div>
+          <div class="card glass" style="padding: 1.5rem;">
+            <p class="env-what">
+              Open this website's <a href="login.html">Admin Login</a> page and sign in with the
+              <code>ADMIN_USERNAME</code> / <code>ADMIN_PASSWORD</code> you chose in Step 3. From there you get
+              live CPU/RAM/network gauges, streaming logs for both processes (with a fixed scroll — reading old
+              logs no longer gets interrupted by new ones arriving), and JSON data downloads.
+            </p>
+          </div>
+        </section>
+
+        <!-- STEP 6 -->
+        <section class="big-step" id="step6">
+          <div class="big-step-head">
+            <div class="step-num">6</div>
+            <h2>Final checklist</h2>
+          </div>
+          <div class="card glass" style="padding: 1.5rem;">
+            <ul class="checklist">
+              <li><code>.env</code> created from <code>env_dummy</code> (or PaaS environment variables set) —
+                every 🔴 Required variable above is filled in</li>
+              <li>MySQL database created and reachable — <code>DB_HOST</code>/<code>DB_PORT</code>/<code>DB_NAME</code>/<code>DB_UNAME</code>/<code>DB_PASS</code> all correct</li>
+              <li><code>npm install</code> completed with no errors</li>
+              <li><code>npm start</code> shows a QR code and no "missing environment variables" warning in the
+                console</li>
+              <li>WhatsApp linked successfully — <code>.menu</code> replies in a test chat</li>
+              <li>Logged into the Control Panel with your <code>ADMIN_USERNAME</code>/<code>ADMIN_PASSWORD</code></li>
+            </ul>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="container"
+    style="padding: 4rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+    <p style="color: var(--text-secondary);">&copy; 2026 Hansaka Rasanjana (AlexaInc). Built for the Decentralized
+      Social World.</p>
+  </footer>
+
+  <script>
+    fetch('/is-logged-in')
+      .then(r => r.json())
+      .then(data => {
+        const btn = document.getElementById('loginButton');
+        if (data.isLoggedIn) {
+          btn.textContent = 'Control Panel';
+          btn.onclick = () => window.location.href = '/control';
+        }
+      })
+      .catch(() => {});
+  </script>
+</body>
+
+</html>

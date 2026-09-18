@@ -131,6 +131,14 @@
                 </div>
 
                 <div class="card glass">
+                    <h3 style="margin-bottom: 0.5rem;">💰 AlexaCash Economy</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem;">
+                        A persistent MySQL‑backed currency (AC) with a Shop, an anime‑styled RPG progression system,
+                        and an English‑only Truth or Dare game — all storing state in the database, not flat files.
+                    </p>
+                </div>
+
+                <div class="card glass">
                     <h3 style="margin-bottom: 0.5rem;">🌸 SFW / 🔞 NSFW Content</h3>
                     <p style="color: var(--text-secondary); font-size: 0.95rem;">
                         Curated safe‑for‑work image commands (coffee, food, anime), plus an 18+ command set that is
@@ -147,22 +155,147 @@
                     </p>
                 </div>
 
+                <div class="card glass">
+                    <h3 style="margin-bottom: 0.5rem;">☁️ Built‑in Cloudflare Tunnel</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem;">
+                        The app can expose its own web panel to the internet through a Cloudflare Tunnel it manages
+                        itself — auto‑downloads the right <code>cloudflared</code> binary for your OS/CPU and shuts
+                        the tunnel down automatically when the bot stops. No separate process to babysit.
+                    </p>
+                </div>
+
             </div>
         </section>
 
-        <!-- ================= DEPLOYMENT GUIDE (TEASER) ================= -->
+        <!-- ================= DEPLOYMENT GUIDE ================= -->
         <section class="container" id="deploy" style="padding-bottom: 100px;">
-            <div class="card glass"
-                style="max-width: 850px; margin: 0 auto; padding: 3rem; text-align: center;">
-                <h2 style="font-size: 2.25rem; margin-bottom: 1rem;">Deploying this yourself?</h2>
-                <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 2rem auto;">
-                    We wrote a full, no-assumptions deployment guide — every single environment variable the bot
-                    reads, explained one by one: what it does, whether you actually need it, and exactly where to
-                    get the value. No prior experience with environment variables required.
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <h2 style="font-size: 2.5rem; margin-bottom: 0.75rem;">Deployment Guide</h2>
+                <p style="color: var(--text-secondary); max-width: 700px; margin: 0 auto;">
+                    A step-by-step walkthrough to get your own copy of Alexa v3 running — from a bare server or a
+                    PaaS free tier, to a fully logged-in WhatsApp bot with a public admin panel.
                 </p>
-                <a href="deploy.html" class="btn btn-primary" style="text-decoration: none; padding: 1rem 2.5rem; font-size: 1.05rem;">
-                    Open the Full Deployment Guide →
-                </a>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 850px; margin: 0 auto;">
+
+                <div class="card glass" style="display: flex; gap: 1.25rem; align-items: flex-start;">
+                    <div class="step-num">1</div>
+                    <div>
+                        <h3 style="margin-bottom: 0.4rem;">Prepare a MySQL database</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 0.6rem;">
+                            Alexa stores group settings, conversation history, tasks, the economy, and the RPG/Shop
+                            state in MySQL — not local JSON files. A free tier from
+                            <a href="https://aiven.io" target="_blank" rel="noopener"
+                                style="color: var(--accent-color);">aiven.io</a> works well. All tables are created
+                            automatically with <code>CREATE TABLE IF NOT EXISTS</code> the first time the bot
+                            connects — you only need the empty database and its credentials.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card glass" style="display: flex; gap: 1.25rem; align-items: flex-start;">
+                    <div class="step-num">2</div>
+                    <div>
+                        <h3 style="margin-bottom: 0.4rem;">Clone the repository &amp; install dependencies</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 0.6rem;">
+                            On a VPS/Linux box:
+                        </p>
+                        <pre class="code-block">apt update &amp;&amp; apt install -y speedtest-cli ffmpeg
+git clone https://github.com/AlexaInc/alexa-v3.git
+cd alexa-v3
+npm install</pre>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.6rem;">
+                            Or use the included <code>Dockerfile</code> (<code>docker build . -t alexa-v3 &amp;&amp;
+                            docker run -p 8000:8000 alexa-v3</code>) — it already installs every native/system
+                            dependency Puppeteer and image processing need.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card glass" style="display: flex; gap: 1.25rem; align-items: flex-start;">
+                    <div class="step-num">3</div>
+                    <div>
+                        <h3 style="margin-bottom: 0.4rem;">Configure your environment</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 0.6rem;">
+                            Copy <code>env_dummy</code> to <code>.env</code> and fill in the required values.
+                            On a PaaS (Koyeb, Railway, Replit, Hugging Face Spaces), set the same keys as
+                            environment/secret variables in the service dashboard instead of a file.
+                        </p>
+                        <pre class="code-block">cp env_dummy .env</pre>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.6rem;">
+                            At minimum you need: <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>,
+                            <code>DB_UNAME</code>, <code>DB_PASS</code> (MySQL), <code>Owner_nb</code> /
+                            <code>bot_nb</code> (WhatsApp numbers), and <code>ADMIN_USERNAME</code> /
+                            <code>ADMIN_PASSWORD</code> / <code>SESSION_SECRET</code> for this control panel's
+                            login. Everything else (AI keys, Tenor, proxy, Cloudflare Tunnel) is optional and only
+                            unlocks extra features when filled in.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card glass" style="display: flex; gap: 1.25rem; align-items: flex-start;">
+                    <div class="step-num">4</div>
+                    <div>
+                        <h3 style="margin-bottom: 0.4rem;">Start the bot</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 0.6rem;">
+                            <code>app.js</code> is the process supervisor — it launches and auto‑restarts both the
+                            WhatsApp connection (<code>src/index.js</code>) and this web panel
+                            (<code>src/server.js</code>), and records why/when every restart happened.
+                        </p>
+                        <pre class="code-block">npm start</pre>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.6rem;">
+                            Watch the terminal (or the <b>Control Panel → Logs</b> tab after step 5) for a QR code —
+                            scan it from WhatsApp: <b>Linked Devices → Link a Device</b>.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card glass" style="display: flex; gap: 1.25rem; align-items: flex-start;">
+                    <div class="step-num">5</div>
+                    <div>
+                        <h3 style="margin-bottom: 0.4rem;">Log in to the admin Control Panel</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 0.6rem;">
+                            Open this site, click <b>Admin Login</b>, and sign in with the
+                            <code>ADMIN_USERNAME</code> / <code>ADMIN_PASSWORD</code> you set in step 3. From
+                            there you get live CPU/RAM/network graphs, streaming logs for both processes, and JSON
+                            data downloads.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card glass" style="display: flex; gap: 1.25rem; align-items: flex-start;">
+                    <div class="step-num">6</div>
+                    <div>
+                        <h3 style="margin-bottom: 0.4rem;">(Optional) Expose it to the internet</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 0.6rem;">
+                            If you're self‑hosting behind a home network or a sandbox with no public IP, set
+                            <code>CLOUDFLARE_TUNNEL_TOKEN</code> (from a named tunnel in the Cloudflare Zero Trust
+                            dashboard) or leave it blank to get a free temporary
+                            <code>*.trycloudflare.com</code> link automatically — <code>app.js</code> downloads
+                            <code>cloudflared</code> for your OS/CPU on first run and shuts the tunnel down the
+                            moment the bot stops, so nothing is left running in the background.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card glass" style="display: flex; gap: 1.25rem; align-items: flex-start;">
+                    <div class="step-num">7</div>
+                    <div>
+                        <h3 style="margin-bottom: 0.4rem;">Deploy to a free PaaS instead</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem;">
+                            Prefer not to run your own server? One‑click templates exist for
+                            <a href="https://app.koyeb.com/deploy" target="_blank" rel="noopener"
+                                style="color: var(--accent-color);">Koyeb</a>,
+                            <a href="https://replit.com/github/hansaka02/alexa-v3" target="_blank" rel="noopener"
+                                style="color: var(--accent-color);">Replit</a>, and
+                            <a href="https://railway.app/new/template?repository=https://github.com/hansaka02/alexa-v3"
+                                target="_blank" rel="noopener" style="color: var(--accent-color);">Railway</a> —
+                            just supply the same environment variables from step 3 in their dashboard.
+                        </p>
+                    </div>
+                </div>
+
             </div>
         </section>
     </main>
