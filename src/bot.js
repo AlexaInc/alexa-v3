@@ -52,6 +52,13 @@ const yts = async (query) => {
 };
 const mumaker = require('mumaker');
 const { parsePhoneNumberFromString } = require("libphonenumber-js");
+
+
+
+const economy = require('./modules/economy.js');
+const shop = require('./modules/shop.js');
+const rpg = require('./modules/rpg.js');
+const tod = require('./modules/truthordare.js');
 const battlearena = require("./modules/battlearena.js");
 const weatherof = require('./modules/weather.js')
 const Assassin = require('./modules/assassin.js');
@@ -997,6 +1004,17 @@ db.getConnection((err) => {
         console.log("Connected to MySQL");
     }
 });
+
+(async () => {
+    try {
+        await economy.initTables(db);
+        await shop.initTables(db);
+        await rpg.initTables(db);
+        console.log('[GamesAddon] Economy / Shop / RPG tables verified (created if missing).');
+    } catch (err) {
+        console.error('[GamesAddon] Failed to initialize add-on tables:', err);
+    }
+})();
 
 
 // Bot status and maintenance functions are below
@@ -2294,7 +2312,24 @@ async function handleMessage(AlexaInc, {
 ┃ _*🏆 Ranking*_
 ┃ ➥ \`.rank\` / \`.myrank\` - Your rank
 ┃ ➥ \`.ranking\` / \`.global\` / \`.daily\` / \`.weekly\`
-┃ ➥ \`.topadder\` - Top inviters`;
+┃ ➥ \`.topadder\` - Top inviters
+┃ _*💰 Economy*_
+┃ ➥ \`.balance\` / \`.claim\` / \`.work\` / \`.pay\` / \`.rob\`
+┃ ➥ \`.deposit\` / \`.withdraw\` / \`.baltop\`
+┃
+┃ _*🛍️ Shop*_
+┃ ➥ \`.shop\` / \`.buy\` / \`.inventory\` / \`.sell\`
+┃
+┃ _*⚔️ RPG*_
+┃ ➥ \`.class\` / \`.profile\` / \`.train\` / \`.dungeon\` / \`.rpgtop\`
+┃
+┃ _*🎲 Party Games*_
+┃ ➥ \`.truth\` / \`.dare\` / \`.tod\` / \`.wyr\`
+┃
+
+`
+
+                                ;
 
                             }
 
@@ -4539,6 +4574,207 @@ Congratulations ❤️`,
 
                             break
                         }
+
+
+
+                        // ----- Economy -----
+                        case 'balance':
+                        case 'bal':
+                        case 'wallet': {
+                            let target = finalLid;
+                            if (p.mentionedJids?.length) target = p.mentionedJids[0];
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: await economy.balance(target),
+                                mentions: [target]
+                            }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'claim': {
+                            const ecoRes = await economy.claimDaily(finalLid);
+                            AlexaInc.sendMessage(msg.key.remoteJid, { text: ecoRes.message }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'work': {
+                            const ecoRes = await economy.doWork(finalLid);
+                            AlexaInc.sendMessage(msg.key.remoteJid, { text: ecoRes.message }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'rob': {
+                            if (!p.mentionedJids?.length) {
+                                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    text: 'Mention who you want to rob! e.g. .rob @user'
+                                }, { quoted: msg });
+                            }
+                            const ecoRes = await economy.robUser(finalLid, p.mentionedJids[0]);
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: ecoRes.message,
+                                mentions: [finalLid, p.mentionedJids[0]]
+                            }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'pay': {
+                            if (!p.mentionedJids?.length || !args[1]) {
+                                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    text: 'Usage: .pay @user <amount>'
+                                }, { quoted: msg });
+                            }
+                            const ecoRes = await economy.pay(finalLid, p.mentionedJids[0], args[1]);
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: ecoRes.message,
+                                mentions: [finalLid, p.mentionedJids[0]]
+                            }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'deposit':
+                        case 'dep': {
+                            const ecoRes = await economy.deposit(finalLid, args[0]);
+                            AlexaInc.sendMessage(msg.key.remoteJid, { text: ecoRes.message }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'withdraw':
+                        case 'wd': {
+                            const ecoRes = await economy.withdraw(finalLid, args[0]);
+                            AlexaInc.sendMessage(msg.key.remoteJid, { text: ecoRes.message }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'baltop':
+                        case 'richest': {
+                            const ecoRes = await economy.leaderboard();
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: ecoRes.message,
+                                mentions: ecoRes.mentions
+                            }, { quoted: msg });
+                            break;
+                        }
+
+                        // ----- Shop / Inventory -----
+                        case 'shop': {
+                            AlexaInc.sendMessage(msg.key.remoteJid, { text: shop.listShop() }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'buy': {
+                            if (!args[0]) {
+                                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    text: 'Usage: .buy <item_id> — see .shop'
+                                }, { quoted: msg });
+                            }
+                            const shopRes = await shop.buyItem(finalLid, args[0]);
+                            AlexaInc.sendMessage(msg.key.remoteJid, { text: shopRes.message }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'inventory':
+                        case 'inv': {
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: await shop.showInventory(finalLid)
+                            }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'sell': {
+                            if (!args[0]) {
+                                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    text: 'Usage: .sell <item_id>'
+                                }, { quoted: msg });
+                            }
+                            const shopRes = await shop.sellItem(finalLid, args[0]);
+                            AlexaInc.sendMessage(msg.key.remoteJid, { text: shopRes.message }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'settitle': {
+                            const shopRes = await shop.setTitle(finalLid, text);
+                            AlexaInc.sendMessage(msg.key.remoteJid, { text: shopRes.message }, { quoted: msg });
+                            break;
+                        }
+
+                        // ----- RPG Leveling -----
+                        case 'class': {
+                            const rpgRes = await rpg.chooseClass(finalLid, text);
+                            AlexaInc.sendMessage(msg.key.remoteJid, { text: rpgRes.message }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'rpgprofile':
+                        case 'profile': {
+                            let target = finalLid;
+                            let name = msg.pushName;
+                            if (p.mentionedJids?.length) { target = p.mentionedJids[0]; name = null; }
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: await rpg.profile(target, name),
+                                mentions: [target]
+                            }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'train': {
+                            const rpgRes = await rpg.train(finalLid);
+                            AlexaInc.sendMessage(msg.key.remoteJid, { text: rpgRes.message }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'dungeon': {
+                            const rpgRes = await rpg.dungeon(finalLid);
+                            AlexaInc.sendMessage(msg.key.remoteJid, { text: rpgRes.message }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'rpgtop': {
+                            const rpgRes = await rpg.leaderboard();
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: rpgRes.message,
+                                mentions: rpgRes.mentions
+                            }, { quoted: msg });
+                            break;
+                        }
+
+                        // ----- Truth or Dare / Would You Rather -----
+                        case 'truth': {
+                            if (!isGroup) return mess.group();
+                            const target = p.mentionedJids?.[0] || null;
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: tod.getTruth(target),
+                                mentions: target ? [target] : []
+                            }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'dare': {
+                            if (!isGroup) return mess.group();
+                            const target = p.mentionedJids?.[0] || null;
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: tod.getDare(target),
+                                mentions: target ? [target] : []
+                            }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'tod': {
+                            if (!isGroup) return mess.group();
+                            const target = p.mentionedJids?.[0] || null;
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: tod.getTruthOrDare(target),
+                                mentions: target ? [target] : []
+                            }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'wyr': {
+                            if (!isGroup) return mess.group();
+                            AlexaInc.sendMessage(msg.key.remoteJid, {
+                                text: tod.getWouldYouRather()
+                            }, { quoted: msg });
+                            break;
+                        }
+                        // ================= END NEW GAMES ADD-ON PACK =================
 
                         case 'newhang':
                             break;
