@@ -39,44 +39,21 @@ const {
   clearGroupCache,
   setAlexaInstance,
 } = require("./modules/cacheHelper.js");
-
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
-
 const fownerNumber = process.env["Owner_nb"]?.split(",")[0]?.trim();
 
-const alexasock = require("ws");
-let alexasocket;
-// Example in browser JavaScript
-// Example in browser JavaScript
-function connectWebSocket(AlexaInc) {
-  const socketUrl = process.env.Alexasock_url;
-  if (!socketUrl) return;
+// This process is spawned by app.js with an IPC channel enabled (see
+// app.js's startApp()), so it talks to src/server.js indirectly through
+// app.js's relayMessage() using Node's built-in process.send()/process.on
+// ("message") instead of the old "/data-transfer" WebSocket bridge.
+function setupIpcListener(AlexaInc) {
+  if (typeof process.on !== "function") return;
 
-  alexasocket = new alexasock(socketUrl);
-
-  alexasocket.onopen = () => {
-    if (alexasocket.readyState === alexasock.OPEN) {
-      console.log("✅ Dashboard WebSocket connected");
-      alexasocket.send(
-        JSON.stringify({
-          type: "register",
-          id: "app1",
-        }),
-      );
-    } else {
-      console.warn(
-        "⚠️ WebSocket onopen triggered but state is not OPEN:",
-        alexasocket.readyState,
-      );
-    }
-  };
-
-  alexasocket.onmessage = async (event) => {
+  process.on("message", async (data) => {
     if (!AlexaInc) return;
     try {
-      const data = JSON.parse(event.data);
-      if (data.type === "data") {
+      if (data && data.type === "data") {
         if (data.payload?.event == "gitpush") {
           const interactiveButtons = [
             {
@@ -206,20 +183,9 @@ function connectWebSocket(AlexaInc) {
         }
       }
     } catch (e) {
-      console.error("Error parsing WebSocket message:", e);
+      console.error("Error handling IPC message:", e);
     }
-  };
-
-  alexasocket.onerror = (err) => {
-    console.warn(
-      `⚠️ Dashboard WebSocket error (is server.js starting?): ${err.message}`,
-    );
-  };
-
-  alexasocket.onclose = () => {
-    console.log("ℹ️ Dashboard WebSocket closed. Retrying in 10s...");
-    setTimeout(() => connectWebSocket(AlexaInc), 10000);
-  };
+  });
 }
 
 const getBuffer = async (url, options) => {
@@ -256,7 +222,6 @@ if (!fs.existsSync(STORE_DIR)) fs.mkdirSync(STORE_DIR);
 const msgRetryCounterCache = new NodeCache({ stdTTL: 3600, maxKeys: 1000 }); // 1 hour TTL
 const PORT = process.env.PORT || 8000;
 const dataFile = path.join(__dirname, "..", "data", "sharedData.json");
-const WebSocket = require("ws");
 const { default: axios } = require("axios");
 const proxyHelper = require("./services/proxyHelper");
 proxyHelper.configureAxios();
@@ -843,8 +808,9 @@ async function startWhatsAppConnection() {
       global.connectionStatus = global.botPhoneNumber ? "Online" : "Offline";
       console.log("✅ WhatsApp bot connected!");
 
-      // 1. Initialize Dashboard WebSocket
-      connectWebSocket(AlexaInc);
+      // 1. Initialize IPC listener (receives gitpush notifications from
+      // src/server.js, relayed through app.js — see setupIpcListener above)
+      setupIpcListener(AlexaInc);
 
       // 2. Fetch groups (now safe since connection is open)
       try {
@@ -1069,7 +1035,6 @@ async function startWhatsAppConnection() {
       loadMessage,
       saveMessage,
       p,
-      alexasocket,
       getnMessagesFrom,
       getMessagePosition,
       loadMessagesBetween,

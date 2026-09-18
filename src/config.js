@@ -81,8 +81,6 @@ const config = {
   SPC_NB: list(env.spc_nb),
   /** Owner chat JID that receives dashboard "gitpush" broadcasts. */
   OWNER_CHAT_ID: str(env.ocid),
-  /** Dashboard WebSocket URL (index.js connects here when set). */
-  ALEXASOCK_URL: str(env.Alexasock_url),
   QUIZ_MONGO_URI: str(env.QUIZ_MONGO_URI),
   // ── AI / content APIs ───────────────────────────────────────────────
   /** Used by tools/ai.js (standalone OpenRouter client). */

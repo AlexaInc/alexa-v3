@@ -212,16 +212,10 @@ const http = require("http");
 const server = http.createServer(app); // Create an HTTP server from Express
 
 // --- MODIFICATION START ---
-// We will create two WebSocket servers on different paths
-
-// 1. Create the Log server (for your existing dashboard)
+// Log server (for the control panel's live log streaming dashboard).
+// This is the only WebSocket server in this file — the old "/data-transfer"
+// bridge to index.js has been replaced with Node's built-in IPC (see below).
 const logWss = new WebSocket.Server({ noServer: true });
-
-// 2. Create the Data Transfer server (for your new app)
-const dataTransferWss = new WebSocket.Server({ noServer: true });
-
-// This Map will store clients for the data transfer app, indexed by their ID
-const clients = new Map();
 
 // Handle the main HTTP 'upgrade' request to route clients based on path
 server.on("upgrade", (request, socket, head) => {
@@ -231,11 +225,6 @@ server.on("upgrade", (request, socket, head) => {
     // Route to your existing log server
     logWss.handleUpgrade(request, socket, head, (ws) => {
       logWss.emit("connection", ws, request);
-    });
-  } else if (pathname === "/data-transfer") {
-    // Route to the new data transfer server
-    dataTransferWss.handleUpgrade(request, socket, head, (ws) => {
-      dataTransferWss.emit("connection", ws, request);
     });
   } else {
     // No WebSocket server on this path
@@ -295,103 +284,12 @@ logWss.on("connection", (ws) => {
   sendLogs();
 });
 
-// --- 2. New Data Transfer Functionality (on /data-transfer) ---
-// This server handles registration and targeted message passing
-// Clients must connect to: ws://your-server-address/data-transfer
-dataTransferWss.on("connection", (ws) => {
-  console.log("Data transfer client connected.");
-
-  ws.on("message", (message) => {
-    let data;
-    try {
-      // Ensure message is parsed as a string before JSON parsing
-      data = JSON.parse(message.toString());
-    } catch (e) {
-      console.error(
-        "Failed to parse message or non-JSON message:",
-        message.toString(),
-      );
-      return;
-    }
-
-    // 1. Handle Registration
-    // Client must send: { "type": "register", "id": "myApp1" }
-    if (data.type === "register" && data.id) {
-      if (clients.has(data.id)) {
-        // ID is already in use
-        ws.send(JSON.stringify({ type: "error", message: "ID already taken" }));
-        ws.close();
-      } else {
-        // Store the client with its ID
-        ws.id = data.id; // Attach the id to the ws object for easier cleanup
-        clients.set(data.id, ws);
-        console.log(`Client registered with ID: ${data.id}`);
-        ws.send(
-          JSON.stringify({
-            type: "status",
-            message: "Registration successful",
-          }),
-        );
-      }
-    }
-
-    // 2. Handle Data Transfer
-    // Client sends: { "type": "data", "targetId": "myApp2", "payload": { ... } }
-    else if (data.type === "data" && data.targetId && ws.id) {
-      const targetClient = clients.get(data.targetId);
-
-      if (targetClient && targetClient.readyState === WebSocket.OPEN) {
-        // Send the payload to the target client
-        // We'll also tell the target who it's from
-        targetClient.send(
-          JSON.stringify({
-            type: "data",
-            from: ws.id, // Let the receiver know who sent it
-            payload: data.payload, // The actual data
-          }),
-        );
-      } else {
-        // Optional: Notify sender that the target is not found or not open
-        console.log(
-          `Target client ${data.targetId} not found or not connected.`,
-        );
-        ws.send(
-          JSON.stringify({
-            type: "error",
-            message: `Target ${data.targetId} not available`,
-          }),
-        );
-      }
-    }
-
-    // 3. Handle unregistered clients trying to send data
-    else if (data.type === "data" && !ws.id) {
-      ws.send(
-        JSON.stringify({
-          type: "error",
-          message: "Client not registered. Please register first.",
-        }),
-      );
-    }
-  });
-
-  ws.on("close", () => {
-    // If the client was registered, remove it from the map
-    if (ws.id) {
-      clients.delete(ws.id);
-      console.log(`Data transfer client ${ws.id} disconnected.`);
-    } else {
-      console.log("Unregistered data transfer client disconnected.");
-    }
-  });
-
-  ws.on("error", (error) => {
-    console.error(
-      `WebSocket error on client ${ws.id || "(unregistered)"}:`,
-      error,
-    );
-  });
-});
+// --- 2. Data Transfer Functionality ---
+// This used to be a "/data-transfer" WebSocket bridge between the server.js
+// and index.js child processes. Since app.js already spawns both as child
+// processes, we now use Node's built-in IPC channel (process.send /
+// process.on('message')) instead — see app.js's relayMessage() for the
+// parent-side relay logic. No WebSocket server or client registry needed.
 // --- MODIFICATION END ---
 
 // WEBHOOK_SECRET is read from config (see /github-webhook handler below).
@@ -404,6 +302,8 @@ app.use(express.json());
 app.post("/github-webhook", async (req, res) => {
   // Made this async
 
+  // Verify GitHub's HMAC signature when WEBHOOK_SECRET is configured.
+  // Without it, anyone who can reach this port could forge a "push" event.
   if (config.WEBHOOK_SECRET) {
     const expected =
       "sha256=" +
@@ -457,25 +357,21 @@ app.post("/github-webhook", async (req, res) => {
         message += "\n\n_No new commits in this push._";
       }
 
-      // --- 3. (FIXED) Send the message to the WebSocket client ---
-      // We find the client named "app1" in our 'clients' Map
-      const targetClient = clients.get("app1");
-
-      if (targetClient && targetClient.readyState === WebSocket.OPEN) {
-        // We send the data to that specific client
-        targetClient.send(
-          JSON.stringify({
-            type: "data",
-            from: "github-webhook", // Let the receiver know who sent it
-            payload: { message: message, value: 12345, event: "gitpush" },
-          }),
-        );
+      // --- 3. Send the message to index.js via the parent (app.js) IPC relay ---
+      // server.js -> app.js -> index.js, using Node's built-in fork IPC channel
+      // (process.send). See app.js's relayMessage() for the relay logic.
+      if (typeof process.send === "function") {
+        process.send({
+          type: "data",
+          from: "github-webhook",
+          payload: { message: message, value: 12345, event: "gitpush" },
+        });
         console.log(
-          '[GitHub Webhook] Sent push data to WebSocket client "app1".',
+          '[GitHub Webhook] Sent push data to index.js via IPC.',
         );
       } else {
         console.warn(
-          '[GitHub Webhook] WebSocket client "app1" not found or not connected.',
+          "[GitHub Webhook] process.send unavailable — is server.js running as a forked child with IPC enabled?",
         );
       }
 

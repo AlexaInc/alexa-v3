@@ -10,6 +10,26 @@ const restartLogFile = path.join(__dirname, "data", "restarts.json");
 
 let restartHistory = [];
 
+// === Inter-process messaging (replaces the old WebSocket "/data-transfer" bridge) ===
+// Both src/server.js and src/index.js are spawned as children of THIS process with an
+// IPC channel enabled. Since Node's fork/IPC channel only connects parent<->child (not
+// child<->child), this app relays any message a child sends via `process.send()` to the
+// other child's `process.on('message')` listener.
+const children = {}; // scriptName -> ChildProcess
+
+function relayMessage(fromScript, message) {
+  const targetScript =
+    fromScript === "src/server.js" ? "src/index.js" : "src/server.js";
+  const targetChild = children[targetScript];
+  if (targetChild && targetChild.connected) {
+    targetChild.send(message);
+  } else {
+    console.warn(
+      `[IPC] Could not relay message from ${fromScript} to ${targetScript}: target not connected.`,
+    );
+  }
+}
+
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
 }
@@ -76,7 +96,17 @@ function startApp(scriptName, onExit) {
   if (scriptName === "src/index.js") {
     args.unshift("--max-old-space-size=4096");
   }
-  const child = spawn("node", args);
+  // stdio: pipe stdout/stderr as before, and add an "ipc" channel so this
+  // process can exchange messages with the child via process.send()/on('message').
+  const child = spawn("node", args, {
+    stdio: ["inherit", "pipe", "pipe", "ipc"],
+  });
+
+  children[scriptName] = child;
+
+  child.on("message", (message) => {
+    relayMessage(scriptName, message);
+  });
 
   let lastCrashReason = null;
   let stdoutBuffer = "";
@@ -161,6 +191,10 @@ function startApp(scriptName, onExit) {
 
   child.on("exit", (code) => {
     console.log(`${scriptName} exited with code ${code}`);
+
+    if (children[scriptName] === child) {
+      delete children[scriptName];
+    }
 
     let restartReason;
     if (lastCrashReason && code === 1) {
