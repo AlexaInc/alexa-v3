@@ -1,25 +1,3 @@
-/**
- * src/config.js
- * ---------------------------------------------------------------------------
- * Central configuration loader for the whole app.
- *
- * WHY THIS FILE EXISTS
- *   Previously every entry point (index.js, bot.js, server.js, ...) called
- *   `require('dotenv').config()` on its own, scattered in the middle of its
- *   require list — so environment variables were read OUT OF ORDER:
- *     • app.js never loaded .env at all (PROXY_URL was always empty there),
- *     • index.js required other modules BEFORE dotenv ran,
- *     • several sub-modules (emojicook, web.js, ai.js, ...) re-called dotenv.
- *
- * HOW TO USE
- *   `require('./config')` must be the FIRST require in every entry point:
- *     app.js, src/index.js, src/server.js, and every script in tools/.
- *   Anything required after it can safely read process.env at top level.
- *
- * This module also exports a typed view of EVERY variable the app
- * understands. Keep it in sync with `env_dummy` (the .env template).
- * ---------------------------------------------------------------------------
- */
 const path = require("path");
 const dotenv = require("dotenv");
 
