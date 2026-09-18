@@ -39,8 +39,10 @@ const {
   clearGroupCache,
   setAlexaInstance,
 } = require("./modules/cacheHelper.js");
+
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
+
 const fownerNumber = process.env["Owner_nb"]?.split(",")[0]?.trim();
 
 const alexasock = require("ws");

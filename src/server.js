@@ -404,8 +404,6 @@ app.use(express.json());
 app.post("/github-webhook", async (req, res) => {
   // Made this async
 
-  // Verify GitHub's HMAC signature when WEBHOOK_SECRET is configured.
-  // Without it, anyone who can reach this port could forge a "push" event.
   if (config.WEBHOOK_SECRET) {
     const expected =
       "sha256=" +
