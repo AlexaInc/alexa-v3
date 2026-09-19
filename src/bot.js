@@ -118,6 +118,10 @@ const path = require('path');
 const quizManager = require('./modules/quizManager.js');
 const FilterManager = require('filtermatics');
 const si = require('os');
+// `free -h` compatible RAM reporting (used vs reclaimable buff/cache, cgroup
+// aware). Replaces the old totalmem()-freemem() maths that reported 93% on a
+// server that was actually 37% full.
+const memoryStats = require('./modules/memoryStats.js');
 const shippingflder = 'shipping'
 const axios = require('axios');
 const sharp = require('sharp');
@@ -1321,15 +1325,21 @@ async function handleMessage(AlexaInc, {
 
         const uptimepc = await formatUptime(si.uptime());
         const cpuData = await si.cpus()[0].model;
-        const memTotal = Math.round(await si.totalmem() / 1e+9) + ' GB';
-        const memUsed = Math.round(((await si.totalmem() - await si.freemem()) / 1e+9) * 100) / 100;
+        // RAM line: os.totalmem() - os.freemem() counted the kernel's page
+        // cache as "used" and reported ~93% on a box `free -h` called 37% full.
+        // memoryStats reproduces `free`'s arithmetic (and honours a container
+        // limit), so .menu and the control panel now show the same number.
+        const memSnapshot = memoryStats.snapshot({ processes: false });
+        const memTotal = memoryStats.formatBytes(memSnapshot.total);
+        const memUsed = memoryStats.formatBytes(memSnapshot.used);
+        const memPct = Math.round(memSnapshot.usedPercent);
         const roleuser = isOwner ? 'Owner' : 'User';
         let menu = `╭━━━━━━━━━━━━━━━━━━━━━━━╮
 ┃                     🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                       ┃
 ┃━━━━━━━━━━━━━━━━━━━━━━━┃
 ┃
 ┃🖥️ : ${cpuData}
-┃💾 𝐑𝐚𝐦 : ${memUsed} GB of ${memTotal}
+┃💾 𝐑𝐚𝐦 : ${memUsed} of ${memTotal} (${memPct}%)
 ┃💻 𝐔𝐩 𝐓𝐢𝐦𝐞 : ${uptimepc}
 ┃
 ┃ 𝗛𝗲𝗹𝗹𝗼, *${msg.pushName}* ${getGreeting()} 🌙
@@ -2338,7 +2348,7 @@ async function handleMessage(AlexaInc, {
 ┃━━━━━━━━━━━━━━━━━━━━━━┃
 ┃
 ┃🖥️ : ${cpuData}
-┃💾 𝐑𝐚𝐦 : ${memUsed} GB of ${memTotal}
+┃💾 𝐑𝐚𝐦 : ${memUsed} of ${memTotal} (${memPct}%)
 ┃💻 𝐔𝐩 𝐓𝐢𝐦𝐞 : ${uptimepc}
 ┃
 ┃  𝗛𝗲𝗹𝗹𝗼, *${msg.pushName}* ${getGreeting()} 🌙

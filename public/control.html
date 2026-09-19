@@ -55,6 +55,16 @@
       transform: translate(-50%, -50%);
       font-size: 1.25rem;
       font-weight: 700;
+      line-height: 1.15;
+    }
+
+    .gauge-sub {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.02em;
+      margin-top: 0.15rem;
     }
 
     .gauge-label {
@@ -71,6 +81,108 @@
       gap: 1rem;
       margin-top: 2rem;
     }
+
+    /* ---- Memory card: segmented ring + breakdown ---------------------- */
+    /* The ring draws three arcs on one circle so "used", reclaimable
+       "buff/cache" and "free" are visually distinct — a Linux box that is 93%
+       "full" of page cache is not a box in trouble, and the gauge should say
+       so. Colours: used = accent, cache = indigo, free = faint track. */
+    .mem-used-arc   { stroke: var(--accent-color); }
+    .mem-cache-arc  { stroke: #6366f1; opacity: 0.75; }
+
+    .mem-pressure-tick {
+      stroke: #f59e0b;
+      stroke-width: 3;
+      stroke-linecap: round;
+      opacity: 0.9;
+    }
+
+    .mem-breakdown {
+      margin-top: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      text-align: left;
+    }
+
+    .mem-row {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--text-secondary);
+    }
+
+    .mem-row .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .mem-row .dot.used { background: var(--accent-color); }
+    .mem-row .dot.cache { background: #6366f1; opacity: 0.85; }
+    .mem-row .dot.free { background: rgba(255, 255, 255, 0.18); }
+    .mem-row .dot.swap { background: #f59e0b; }
+
+    .mem-row .val {
+      margin-left: auto;
+      color: var(--text-primary);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mem-note {
+      margin-top: 0.6rem;
+      font-size: 0.68rem;
+      color: var(--text-secondary);
+      opacity: 0.7;
+      text-align: left;
+      line-height: 1.45;
+    }
+
+    .mem-badge {
+      display: inline-block;
+      margin-left: 0.4rem;
+      padding: 0.05rem 0.4rem;
+      border-radius: 999px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: rgba(99, 102, 241, 0.18);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      vertical-align: middle;
+    }
+
+    .mem-proc {
+      margin-top: 0.55rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      flex-direction: column;
+      gap: 0.22rem;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      text-align: left;
+    }
+
+    .mem-proc .proc-row {
+      display: flex;
+      gap: 0.5rem;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    .mem-proc .proc-row .val {
+      margin-left: auto;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* The memory card carries more content than the other three, so let it
+       stretch instead of forcing every card to the tallest one. */
+    .gauge-card.mem-card { text-align: center; }
   </style>
 </head>
 
@@ -107,15 +219,55 @@
         <div class="gauge-label">CPU Load</div>
       </div>
 
-      <div class="gauge-card glass card">
+      <div class="gauge-card glass card mem-card">
         <div style="position: relative; display: inline-block;">
           <svg class="gauge-svg" viewBox="0 0 140 140">
             <circle class="gauge-bg" cx="70" cy="70" r="65"></circle>
-            <circle id="memGauge" class="gauge-progress" cx="70" cy="70" r="65"></circle>
+            <!-- cache arc sits underneath and starts where "used" ends -->
+            <circle id="memCacheGauge" class="gauge-progress mem-cache-arc" cx="70" cy="70" r="65"></circle>
+            <circle id="memGauge" class="gauge-progress mem-used-arc" cx="70" cy="70" r="65"></circle>
+            <!-- amber tick marks the "committed" point: (total - available) -->
+            <line id="memPressureTick" class="mem-pressure-tick" x1="70" y1="0" x2="70" y2="10"
+              style="display: none;"></line>
           </svg>
-          <div class="gauge-value" id="memValue">0%</div>
+          <div class="gauge-value" id="memValue">
+            0%
+            <span class="gauge-sub" id="memValueSub">— / —</span>
+          </div>
         </div>
-        <div class="gauge-label">Memory</div>
+        <div class="gauge-label">
+          Memory<span class="mem-badge" id="memScopeBadge" style="display: none;">cgroup</span>
+        </div>
+
+        <!-- Real breakdown, mirroring `free -h` exactly -->
+        <div class="mem-breakdown">
+          <div class="mem-row">
+            <span class="dot used"></span><span>Used</span>
+            <span class="val" id="memUsedVal">—</span>
+          </div>
+          <div class="mem-row">
+            <span class="dot cache"></span><span>Buff/cache</span>
+            <span class="val" id="memCacheVal">—</span>
+          </div>
+          <div class="mem-row">
+            <span class="dot free"></span><span>Free</span>
+            <span class="val" id="memFreeVal">—</span>
+          </div>
+          <div class="mem-row">
+            <span class="dot free"></span><span>Available</span>
+            <span class="val" id="memAvailVal">—</span>
+          </div>
+          <div class="mem-row" id="memSwapRow" style="display: none;">
+            <span class="dot swap"></span><span>Swap</span>
+            <span class="val" id="memSwapVal">—</span>
+          </div>
+        </div>
+
+        <div class="mem-proc" id="memProcList" style="display: none;"></div>
+
+        <div class="mem-note" id="memNote">
+          Buff/cache is reclaimable — Linux fills spare RAM with page cache on purpose.
+        </div>
       </div>
 
       <div class="gauge-card glass card">
@@ -335,8 +487,112 @@ npm install</pre>
 
     function setCircleProgress(id, percent) {
       const circle = document.getElementById(id);
-      const offset = circ - (percent / 100 * circ);
-      circle.style.strokeDashoffset = offset;
+      const clamped = Math.max(0, Math.min(100, Number(percent) || 0));
+      circle.style.strokeDashoffset = circ - (clamped / 100 * circ);
+    }
+
+    /**
+     * Draw an arc that STARTS at `startPercent` around the ring instead of at
+     * 12 o'clock. Used for the buff/cache segment so it picks up exactly where
+     * the "used" segment ends, giving one continuous used|cache|free ring.
+     */
+    function setCircleSegment(id, startPercent, lengthPercent) {
+      const circle = document.getElementById(id);
+      const start = Math.max(0, Math.min(100, Number(startPercent) || 0));
+      const len = Math.max(0, Math.min(100 - start, Number(lengthPercent) || 0));
+      const startLen = (start / 100) * circ;
+      const segLen = (len / 100) * circ;
+      // gap, dash, then blank out the remainder of the circle
+      circle.style.strokeDasharray = `0 ${startLen} ${segLen} ${circ}`;
+      circle.style.strokeDashoffset = 0;
+    }
+
+    /** Bytes -> the same binary units `free -h` prints (355Mi, 2.2Gi, ...). */
+    function fmtBytes(bytes) {
+      if (bytes === null || bytes === undefined || !isFinite(bytes)) return '—';
+      const units = ['B', 'Ki', 'Mi', 'Gi', 'Ti'];
+      let v = Math.abs(bytes), u = 0;
+      while (v >= 1024 && u < units.length - 1) { v /= 1024; u++; }
+      const n = (v >= 10 || u === 0) ? Math.round(v) : v.toFixed(1);
+      return `${bytes < 0 ? '-' : ''}${n}${units[u]}`;
+    }
+
+    /**
+     * Render the memory card from the /sysstats `mem` payload.
+     *
+     * The gauge intentionally shows only genuinely consumed memory in the
+     * accent colour. Page cache gets its own indigo arc, because a Linux
+     * server that has cached 531Mi of files is not a server at 93% RAM — the
+     * kernel hands that memory straight back the moment anything needs it.
+     */
+    function renderMemory(mem) {
+      // Legacy fallback: an older server build only sends a flat percentage.
+      if (!mem) return;
+
+      const usedPct = Number(mem.usedPercent) || 0;
+      const cachePct = Number(mem.cachePercent) || 0;
+
+      document.getElementById('memValue').childNodes[0].nodeValue =
+        Math.round(usedPct) + '%';
+      document.getElementById('memValueSub').textContent =
+        `${fmtBytes(mem.used)} / ${fmtBytes(mem.total)}`;
+
+      setCircleProgress('memGauge', usedPct);
+      setCircleSegment('memCacheGauge', usedPct, cachePct);
+
+      // Amber tick at the "committed" point — memory the kernel could not
+      // hand out even by dropping every cache page.
+      const tick = document.getElementById('memPressureTick');
+      const pressure = Number(mem.pressurePercent) || 0;
+      if (pressure > 0.5) {
+        tick.style.display = '';
+        tick.setAttribute('transform', `rotate(${(pressure / 100) * 360} 70 70)`);
+      } else {
+        tick.style.display = 'none';
+      }
+
+      const cache = mem.buffcache || {};
+      document.getElementById('memUsedVal').textContent =
+        `${fmtBytes(mem.used)} (${Math.round(usedPct)}%)`;
+      document.getElementById('memCacheVal').textContent =
+        `${fmtBytes(cache.total)} (${Math.round(cachePct)}%)`;
+      document.getElementById('memFreeVal').textContent = fmtBytes(mem.free);
+      document.getElementById('memAvailVal').textContent =
+        `${fmtBytes(mem.available)} (${Math.round(Number(mem.availablePercent) || 0)}%)`;
+
+      // Swap row only when the box actually has swap configured.
+      const swap = mem.swap || {};
+      const swapRow = document.getElementById('memSwapRow');
+      if (swap.total > 0) {
+        swapRow.style.display = '';
+        document.getElementById('memSwapVal').textContent =
+          `${fmtBytes(swap.used)} / ${fmtBytes(swap.total)}`;
+      } else {
+        swapRow.style.display = 'none';
+      }
+
+      // "cgroup" badge whenever we are reporting a container limit rather
+      // than the host's RAM (Docker / HF Space).
+      const badge = document.getElementById('memScopeBadge');
+      badge.style.display = mem.limited ? '' : 'none';
+
+      // Per-process RSS for our own node processes.
+      const procBox = document.getElementById('memProcList');
+      const procs = Array.isArray(mem.processes) ? mem.processes : [];
+      if (procs.length) {
+        procBox.style.display = '';
+        procBox.innerHTML = procs.map(p => {
+          const cap = p.heapCap ? ` / ${fmtBytes(p.heapCap)} cap` : '';
+          return `<div class="proc-row"><span>${p.label}</span>` +
+            `<span class="val">${fmtBytes(p.rss)}${cap}</span></div>`;
+        }).join('');
+      } else {
+        procBox.style.display = 'none';
+      }
+
+      document.getElementById('memNote').textContent = mem.limited
+        ? 'Container limit shown (cgroup). Buff/cache is reclaimable.'
+        : 'Buff/cache is reclaimable — Linux fills spare RAM with page cache on purpose.';
     }
 
     async function fetchsysStats() {
@@ -349,10 +605,16 @@ npm install</pre>
         document.getElementById('cpuValue').textContent = cpuVal + '%';
         setCircleProgress('cpuGauge', cpuVal);
 
-        // Memory
-        const memVal = data.memory.toFixed(0);
-        document.getElementById('memValue').textContent = memVal + '%';
-        setCircleProgress('memGauge', memVal);
+        // Memory — `data.mem` carries the full used/cache/free split. The flat
+        // `data.memory` percentage is kept for older clients and used here only
+        // as a fallback if the server predates the breakdown.
+        if (data.mem) {
+          renderMemory(data.mem);
+        } else {
+          const memVal = Number(data.memory || 0).toFixed(0);
+          document.getElementById('memValue').childNodes[0].nodeValue = memVal + '%';
+          setCircleProgress('memGauge', memVal);
+        }
 
         // Download
         let dlMbps = (data.downloadSpeed * 8) / 1_000_000;

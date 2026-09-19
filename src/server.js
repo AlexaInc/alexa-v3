@@ -22,6 +22,7 @@ const fs = require("fs");
 const crypto = require("crypto");
 const bodyParser = require("body-parser");
 const si = require("systeminformation");
+const memoryStats = require("./modules/memoryStats");
 require("./state/whatsappState");
 //const { botPhoneNumber, connectionStatus } = require('./index');
 app.use(express.static(path.join(__dirname, "..", "public")));
@@ -183,27 +184,59 @@ app.get("/login", (req, res) => {
 app.get("/sysstats", async (req, res) => {
   try {
     const cpuData = await si.currentLoad();
-    const memData = await si.mem();
     const netData = await si.networkStats();
 
-    // CPU usage in percentage (0-100)
-    const cpuUsage = cpuData.currentLoad;
-
-    // Memory usage in percentage (0-100)
-    const memUsage = (memData.used / memData.total) * 100;
+    // ---- Memory ---------------------------------------------------------
+    // Previously this endpoint reported `si.mem().used / total`, which on
+    // Linux is (total - free) — i.e. it counted the kernel's page cache as
+    // "used" and showed 90%+ on a box that `free -h` said was a third full:
+    //
+    //     Mem: 952Mi total, 355Mi used, 65Mi free, 531Mi buff/cache
+    //     (952-65)/952 = 93%   <- old gauge
+    //      355/952     = 37%   <- the truth
+    //
+    // memoryStats reads /proc/meminfo (and the cgroup limit when we run in a
+    // container) and reproduces procps' arithmetic exactly, so the panel and
+    // `free -h` always agree. buff/cache is reported separately instead of
+    // being silently folded into "used".
+    const mem = memoryStats.snapshot();
 
     // networkStats() returns an array (one element per network interface).
     // We'll use the first interface (netData[0]) or you can sum them if needed.
-    const downloadSpeed = netData[0].rx_sec; // bytes/sec
-    const uploadSpeed = netData[0].tx_sec; // bytes/sec
+    const downloadSpeed = netData[0]?.rx_sec ?? 0; // bytes/sec
+    const uploadSpeed = netData[0]?.tx_sec ?? 0; // bytes/sec
 
     res.json({
-      cpu: cpuUsage,
-      memory: memUsage,
+      cpu: cpuData.currentLoad,
+
+      // Back-compat: `memory` stays a 0-100 number, but it is now the honest
+      // "used" percentage (cache excluded) rather than total-free.
+      memory: mem.usedPercent,
+
+      // Full breakdown for the dashboard's segmented gauge + tooltip.
+      mem: {
+        scope: mem.scope, // "host" | "container"
+        limited: mem.limited, // true when a cgroup limit applies
+        total: mem.total, // bytes
+        used: mem.used, // bytes — matches `free`'s used column
+        free: mem.free,
+        shared: mem.shared,
+        available: mem.available,
+        buffcache: mem.buffcache, // { total, buffers, cached, reclaimable }
+        usedPercent: mem.usedPercent,
+        cachePercent: mem.cachePercent,
+        freePercent: mem.freePercent,
+        availablePercent: mem.availablePercent,
+        pressurePercent: mem.pressurePercent, // (total - available) / total
+        swap: mem.swap, // { total, used, free, cached, percent }
+        processes: mem.processes, // per-process RSS for index/server/app
+      },
+
       downloadSpeed,
       uploadSpeed,
     });
   } catch (error) {
+    console.error("[/sysstats] failed:", error.message);
     res.status(500).json({ error: "Failed to retrieve system stats" });
   }
 });
