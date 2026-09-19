@@ -1,255 +1,146 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alexa v3 | WhatsApp Bot Ecosystem</title>
-
-    <link rel="icon"
-        href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/rt2Br0AAAAASUVORK5CYII="
-        type="image/png">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#020617">
+  <title>Alexa V3 — WhatsApp Bot</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
-
 <body>
+  <nav class="navbar" id="navbar">
+    <button class="brand" id="homeButton" type="button" aria-label="Alexa home">Alexa <span>V3</span></button>
+    <div class="nav-buttons">
+      <a class="btn btn-outline" href="#features">Features</a>
+      <a class="btn btn-outline" href="#deploy">Deploy</a>
+      <button class="btn btn-primary" id="loginButton" type="button">Login</button>
+    </div>
+  </nav>
 
-    <!-- Navigation Bar -->
-    <nav class="navbar" id="navbar">
-        <h1 onclick="location.href='./';">Alexa v3</h1>
-        <div class="nav-buttons">
-            <a href="#features" class="btn btn-outline" style="text-decoration: none;">Features</a>
-            <a href="#deploy" class="btn btn-outline" style="text-decoration: none;">Deploy</a>
-            <button id="loginButton" class="btn btn-outline" onclick="window.location.href='login.html'">Admin
-                Login</button>
+  <main id="publicView">
+    <section class="hero container">
+      <p class="eyebrow animate-fade">WhatsApp automation, thoughtfully connected</p>
+      <h1 class="hero-title animate-fade">Your community.<br><span>One intelligent control center.</span></h1>
+      <p class="hero-copy animate-fade">Alexa combines group tools, games, media and AI in one WhatsApp bot. Sign in with your bot account to manage the groups where you are an admin.</p>
+      <div class="hero-actions animate-fade">
+        <button class="btn btn-primary hero-btn" id="whatsappButton" type="button">Open WhatsApp</button>
+        <button class="btn btn-outline hero-btn" id="heroLoginButton" type="button">Open dashboard</button>
+      </div>
+      <div class="status-box glass" aria-live="polite">
+        <span class="status-dot" id="statusDot"></span>
+        <span>Bot status: <strong id="status">Checking…</strong></span>
+      </div>
+    </section>
+
+    <section class="container section" id="features">
+      <div class="section-heading">
+        <p class="eyebrow">Built for communities</p>
+        <h2>More than commands</h2>
+      </div>
+      <div class="feature-grid">
+        <article class="card glass feature-card"><span>🛡️</span><h3>Group control</h3><p>Configure AI chat, welcome messages and safety tools in WhatsApp or in your personal dashboard.</p></article>
+        <article class="card glass feature-card"><span>🎮</span><h3>Connected profiles</h3><p>Your LID account connects RPG progress, AlexaCash, inventory and your secure web login.</p></article>
+        <article class="card glass feature-card"><span>✨</span><h3>AI & media</h3><p>Search, image generation, summaries, downloads, stickers and an AI assistant in one conversation.</p></article>
+      </div>
+    </section>
+
+    <section class="container section" id="deploy">
+      <div class="card glass deploy-card">
+        <div><p class="eyebrow">Operators</p><h2>Deploy Alexa V3</h2><p>Configure MySQL and the application automatically creates the account, profile, group directory and game tables on startup.</p></div>
+        <a class="btn btn-outline" href="https://github.com/AlexaInc/alexa-v3" target="_blank" rel="noopener">View source</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Both owner and user dashboards are views in this single document. -->
+  <main class="container dashboard-shell" id="dashboardView" hidden>
+    <header class="dashboard-header">
+      <div>
+        <p class="eyebrow" id="dashboardEyebrow">Dashboard</p>
+        <h1 id="dashboardTitle">Welcome</h1>
+        <p id="dashboardSubtitle">Loading your workspace…</p>
+      </div>
+      <button class="btn btn-outline" id="logoutButton" type="button">Logout</button>
+    </header>
+
+    <section id="userDashboard" hidden>
+      <div class="dashboard-grid two-col">
+        <article class="card glass profile-card">
+          <p class="card-label">BOT ACCOUNT</p>
+          <h2 id="userDisplayName">—</h2>
+          <p class="mono" id="userLid">—</p>
+          <div class="toggle-row">
+            <div><strong>Personal chat AI</strong><small>Respond to non-command messages in your private chat.</small></div>
+            <label class="switch"><input id="privateChatbotToggle" type="checkbox"><span></span></label>
+          </div>
+          <p class="muted profile-note">Use <code>.profile</code> in a private WhatsApp chat to view your credentials. Use <code>.changpw &lt;new password&gt;</code> to change the password.</p>
+        </article>
+        <article class="card glass game-card">
+          <p class="card-label">CONNECTED GAME PROFILE</p>
+          <div class="game-stats">
+            <div><small>Class</small><strong id="gameClass">Unassigned</strong></div>
+            <div><small>Level</small><strong id="gameLevel">1</strong></div>
+            <div><small>Power</small><strong id="gamePower">10</strong></div>
+            <div><small>AlexaCash</small><strong id="gameCash">0 AC</strong></div>
+            <div><small>Bank</small><strong id="gameBank">0 AC</strong></div>
+            <div><small>Items</small><strong id="gameItems">0</strong></div>
+          </div>
+        </article>
+      </div>
+      <section class="group-section">
+        <div class="section-heading inline-heading">
+          <div><p class="eyebrow">GROUP OWNER INSIGHTS</p><h2>Your admin groups</h2></div>
+          <button class="btn btn-outline" id="refreshDashboardButton" type="button">Refresh</button>
         </div>
-    </nav>
+        <p class="muted">Only groups where WhatsApp currently recognises your LID as an admin appear here. Group data refreshes whenever the bot reconnects or receives an admin/member update.</p>
+        <div class="group-grid" id="groupGrid"></div>
+        <div class="empty-state glass" id="emptyGroups" hidden>
+          <strong>No managed groups available yet.</strong>
+          <p>Make the bot a participant, send one message in the group, and ensure your account is an admin. The next sync will add it here.</p>
+        </div>
+      </section>
+    </section>
 
-    <main>
-        <!-- Hero Section -->
-        <section class="hero container">
-            <h2 class="animate-fade">Social Intelligence.<br><span style="color: var(--accent-color)">Refined.</span>
-            </h2>
-            <p class="animate-fade" style="animation-delay: 0.2s">A specialized ecosystem of high-performance automation
-                bots tailored for the next generation of social interaction.</p>
+    <section id="ownerDashboard" hidden>
+      <div class="dashboard-grid owner-stats">
+        <article class="card glass stat-card"><small>BOT</small><strong id="ownerBotStatus">Checking…</strong></article>
+        <article class="card glass stat-card"><small>CPU LOAD</small><strong id="ownerCpu">—</strong></article>
+        <article class="card glass stat-card"><small>MEMORY</small><strong id="ownerMemory">—</strong></article>
+        <article class="card glass stat-card"><small>NETWORK</small><strong id="ownerNetwork">—</strong></article>
+      </div>
+      <article class="card glass owner-help">
+        <p class="card-label">OWNER CONTROL CENTER</p>
+        <h2>System diagnostics are live</h2>
+        <p>The user dashboard is intentionally isolated from owner diagnostics. Users can only manage groups for which the bot has synced their current WhatsApp admin status.</p>
+      </article>
+    </section>
+  </main>
 
-            <div class="status-box glass animate-fade"
-                style="animation-delay: 0.4s; padding: 1.5rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
-                <div id="statusDot"
-                    style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--danger); box-shadow: 0 0 10px var(--danger);">
-                </div>
-                <span style="font-weight: 600; font-size: 1.1rem;">Status: <span id="status"
-                        style="color: var(--text-secondary)">Checking...</span></span>
-            </div>
+  <!-- AJAX authentication modal: no page navigation and no login.html route. -->
+  <div class="modal-backdrop" id="loginModal" hidden>
+    <section class="login-modal glass" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <button class="modal-close" id="closeLoginModal" type="button" aria-label="Close login">×</button>
+      <p class="eyebrow">SECURE ACCESS</p>
+      <h2 id="loginTitle">Sign in to Alexa</h2>
+      <div class="login-tabs" role="tablist">
+        <button class="active" type="button" role="tab" aria-selected="true" data-login-tab="owner">Owner Login</button>
+        <button type="button" role="tab" aria-selected="false" data-login-tab="user">User Login</button>
+      </div>
+      <form id="ownerLoginForm" class="login-form">
+        <label>Owner username<input name="username" type="text" autocomplete="username" required placeholder="Owner username"></label>
+        <label>Owner password<input name="password" type="password" autocomplete="current-password" required placeholder="••••••••"></label>
+        <button class="btn btn-primary" type="submit">Sign in as owner</button>
+      </form>
+      <form id="userLoginForm" class="login-form" hidden>
+        <label>WhatsApp LID username<input name="username" type="text" autocomplete="username" required placeholder="123456789@lid"></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required placeholder="Your bot password"></label>
+        <button class="btn btn-primary" type="submit">Sign in to my dashboard</button>
+        <p class="muted form-help">Find your LID and password by sending <code>.profile</code> to Alexa in a private chat.</p>
+      </form>
+      <p class="form-error" id="loginError" role="alert" hidden></p>
+    </section>
+  </div>
 
-            <div class="animate-fade" style="animation-delay: 0.6s">
-                <button class="btn btn-primary" onclick="sendMessage()"
-                    style="padding: 1rem 3rem; font-size: 1.1rem;">Get Started on WhatsApp</button>
-            </div>
-        </section>
-
-        <!-- Featured Section -->
-        <section class="container" style="padding-bottom: 100px;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-                <div class="card glass">
-                    <img src="https://pngimg.com/uploads/anime_girl/anime_girl_PNG33.png" alt="Alexa v3"
-                        style="width: 100%; height: 250px; object-fit: contain; margin-bottom: 1.5rem;">
-                    <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem;">Industry Leading</h3>
-                    <p style="color: var(--text-secondary);">Powerful utilities, advanced group management, and seamless
-                        media processing built for the core community.</p>
-                </div>
-                <div class="card glass">
-                    <div
-                        style="height: 250px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
-                        <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                            style="color: var(--accent-color)">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                        </svg>
-                    </div>
-                    <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem;">Secure & Fast</h3>
-                    <p style="color: var(--text-secondary);">Built on the robust Baileys API with multi-layered
-                        encryption and optimized performance for high-traffic environments.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= FEATURES SHOWCASE ================= -->
-        <section class="container" id="features" style="padding-bottom: 100px;">
-            <div style="text-align: center; margin-bottom: 3rem;">
-                <h2 style="font-size: 2.5rem; margin-bottom: 0.75rem;">Everything Alexa Can Do</h2>
-                <p style="color: var(--text-secondary); max-width: 700px; margin: 0 auto;">
-                    A full breakdown of every command category, straight from the bot's own <code>.menu</code>
-                    system — nothing here is invented, it's a live mirror of what's inside the codebase.
-                </p>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-
-                <div class="card glass">
-                    <h3 style="margin-bottom: 0.5rem;">🛠 Utility</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.95rem;">
-                        <code>.menu</code>/<code>.alive</code> interactive menu, <code>.ping</code> latency +
-                        speedtest, <code>.weather</code>, <code>.news</code>, group/user IDs, view‑once reveal
-                        (<code>.vv</code>), quote‑to‑sticker (<code>.q</code>), personal rank &amp; global/daily/weekly
-                        leaderboards.
-                    </p>
-                </div>
-
-                <div class="card glass">
-                    <h3 style="margin-bottom: 0.5rem;">👥 Group Management</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.95rem;">
-                        Mute/unmute, warn system, add/remove/promote/demote members, invite links, anti‑link &amp;
-                        anti‑NSFW auto‑moderation (delete/warn/remove), welcome/goodbye messages, word filters,
-                        tag‑all, AI chatbot toggle per group, and bot‑account kicking.
-                    </p>
-                </div>
-
-                <div class="card glass">
-                    <h3 style="margin-bottom: 0.5rem;">🖼 Stickers &amp; Media</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.95rem;">
-                        Image/video → sticker conversion, emoji mixing, YouTube search &amp; download (audio/video),
-                        web search, and an AI‑assisted web search mode.
-                    </p>
-                </div>
-
-                <div class="card glass">
-                    <h3 style="margin-bottom: 0.5rem;">🖼 TextMaker</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.95rem;">
-                        18 styled text-image generators — metallic, neon, matrix, glitch, fire, ice, thunder,
-                        blackpink, hacker and more — turn any text into a styled image with one command.
-                    </p>
-                </div>
-
-                <div class="card glass">
-                    <h3 style="margin-bottom: 0.5rem;">🪀 Games &amp; Fun</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.95rem;">
-                        Slot machine, couple shipping, daily Q&amp;A, Word Chain, Hangman (with leaderboard),
-                        turn‑based Battle Arena, social‑deduction Mafia, and Assassin — each with its own
-                        registration → play → leaderboard flow.
-                    </p>
-                </div>
-
-                <div class="card glass">
-                    <h3 style="margin-bottom: 0.5rem;">🌸 SFW / 🔞 NSFW Content</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.95rem;">
-                        Curated safe‑for‑work image commands (coffee, food, anime), plus an 18+ command set that is
-                        opt‑in and governable per‑group via the anti‑NSFW moderation controls.
-                    </p>
-                </div>
-
-                <div class="card glass">
-                    <h3 style="margin-bottom: 0.5rem;">👑 Owner &amp; Admin Tools</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.95rem;">
-                        Bot status/about/presence control, private‑chat &amp; group listings, maintenance mode,
-                        top‑adder stats, task tracking, quiz‑pack management, and this very web Control Panel with
-                        live CPU/RAM/network gauges and streaming logs.
-                    </p>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- ================= DEPLOYMENT GUIDE (TEASER) ================= -->
-        <section class="container" id="deploy" style="padding-bottom: 100px;">
-            <div class="card glass"
-                style="max-width: 850px; margin: 0 auto; padding: 3rem; text-align: center;">
-                <h2 style="font-size: 2.25rem; margin-bottom: 1rem;">Deploying this yourself?</h2>
-                <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 2rem auto;">
-                    We wrote a full, no-assumptions deployment guide — every single environment variable the bot
-                    reads, explained one by one: what it does, whether you actually need it, and exactly where to
-                    get the value. No prior experience with environment variables required.
-                </p>
-                <a href="deploy.html" class="btn btn-primary" style="text-decoration: none; padding: 1rem 2.5rem; font-size: 1.05rem;">
-                    Open the Full Deployment Guide →
-                </a>
-            </div>
-        </section>
-    </main>
-
-    <footer class="container"
-        style="padding: 4rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
-        <p style="color: var(--text-secondary);">&copy; 2026 Hansaka Rasanjana (AlexaInc). Built for the Decentralized
-            Social World.</p>
-        <p style="font-size: 0.85rem; color: #475569; margin-top: 0.5rem;">Developer: Hansaka</p>
-    </footer>
-
-    <script>
-        // Navbar Scroll Effect
-        window.addEventListener('scroll', () => {
-            const nav = document.getElementById('navbar');
-            if (window.scrollY > 50) {
-                nav.classList.add('scrolled');
-            } else {
-                nav.classList.remove('scrolled');
-            }
-        });
-
-        async function checkStatus() {
-            try {
-                const response = await fetch('/status');
-                const data = await response.json();
-                const statusEl = document.getElementById('status');
-                const dot = document.getElementById('statusDot');
-
-                statusEl.textContent = data.status;
-                if (data.status === "Online") {
-                    statusEl.style.color = "var(--success)";
-                    dot.style.backgroundColor = "var(--success)";
-                    dot.style.boxShadow = "0 0 10px var(--success)";
-                } else {
-                    statusEl.style.color = "var(--danger)";
-                    dot.style.backgroundColor = "var(--danger)";
-                    dot.style.boxShadow = "0 0 10px var(--danger)";
-                }
-            } catch (error) {
-                document.getElementById('status').textContent = "Offline";
-            }
-        }
-
-        checkStatus();
-        setInterval(checkStatus, 5000);
-
-        async function getPhoneNumber() {
-            try {
-                const response = await fetch('/get-phone-number');
-                const data = await response.json();
-                return data.phoneNumber;
-            } catch (error) {
-                return null;
-            }
-        }
-
-        async function sendMessage() {
-            const phoneNumber = await getPhoneNumber();
-            if (phoneNumber) {
-                const message = 'Hello, I want to talk to Alexa!';
-                const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
-            } else {
-                alert('Unable to retrieve bot phone number.');
-            }
-        }
-
-        async function checkLoginStatus() {
-            try {
-                const response = await fetch('/is-logged-in');
-                const data = await response.json();
-                const loginButton = document.getElementById('loginButton');
-                if (data.isLoggedIn) {
-                    loginButton.textContent = 'Control Panel';
-                    loginButton.onclick = function () { window.location.href = '/control'; };
-                } else {
-                    loginButton.textContent = 'Admin Login';
-                    loginButton.onclick = function () { window.location.href = 'login.html'; };
-                }
-            } catch (error) {
-                console.error("Error checking login status:", error);
-            }
-        }
-
-        checkLoginStatus();
-    </script>
+  <script src="/app.js" defer></script>
 </body>
-
 </html>

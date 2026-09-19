@@ -36,6 +36,11 @@ const config = {
   ADMIN_PASSWORD: str(env.ADMIN_PASSWORD),
   /** express-session signing secret. */
   SESSION_SECRET: str(env.SESSION_SECRET),
+  /**
+   * Dedicated key used to encrypt the recoverable password shown by `.profile`.
+   * Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+   */
+  CREDENTIAL_ENCRYPTION_KEY: str(env.CREDENTIAL_ENCRYPTION_KEY),
   /** GitHub webhook HMAC secret (recommended). */
   WEBHOOK_SECRET: str(env.WEBHOOK_SECRET),
 

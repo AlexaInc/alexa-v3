@@ -115,12 +115,28 @@ DB_PORT=<your database port>
 # MongoDB for custom quiz packs (like alexatg — /setquiz and /quiz <id> use this)
 QUIZ_MONGO_URI=<your mongodb uri, e.g. mongodb+srv://user:pass@cluster0.xxxx.mongodb.net/alexa>
 # Web Interface (Optional)
-ADMIN_USERNAME=<username for web interface>
-ADMIN_PASSWORD=<password for web interface>
+ADMIN_USERNAME=<owner username for web interface>
+ADMIN_PASSWORD=<owner password for web interface>
 SESSION_SECRET=<use a strong random text without spaces>
+# Dedicated key used to encrypt recoverable bot-user credentials at rest.
+# Generate: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+CREDENTIAL_ENCRYPTION_KEY=<random base64 key>
 # Other API Keys
 NIGHTAPI_AUTH=<nightapi token>
 ```
+
+-----
+
+## 🔐 User accounts and web panel
+
+On startup, Alexa automatically creates all required MySQL tables, including
+legacy bot settings plus `bot_users`, `user_profiles`, `group_directory`, and
+`group_admin_memberships`. No manual SQL import is required.
+
+- The first time WhatsApp provides a user's **LID**, Alexa creates their account and matching Economy, RPG, and Shop records.
+- In a **private** chat, `.profile` shows the LID username, encrypted-at-rest password, private-AI preference, and connected game progress.
+- `.changpw <new password>` changes the panel password (10–128 characters; private chat only).
+- The website has one AJAX login modal with **Owner Login** and **User Login** tabs. Users can manage settings only for groups where their LID is currently a WhatsApp admin; that membership is re-synced on bot reconnect and admin/member updates.
 
 -----
 

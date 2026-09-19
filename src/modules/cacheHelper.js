@@ -76,13 +76,13 @@ async function getCachedGroupMetadata(arg1, arg2) {
  * Fetches group settings from MySQL with caching and deduplication.
  */
 async function getCachedGroupSettings(db, jid) {
-  if (!jid.endsWith("@g.us")) return;
   if (!jid) {
     console.error(
       "[CacheHelper] getCachedGroupSettings called with undefined JID",
     );
     return null;
   }
+  if (!jid.endsWith("@g.us")) return null;
   const cached = groupSettingsCache.get(jid);
   if (cached) return cached;
 
@@ -139,6 +139,15 @@ function clearGroupCache(jid) {
 }
 
 /**
+ * Force a fresh WhatsApp metadata read. Use after a promote/demote event and
+ * on reconnect so admin-only bot commands never rely on stale cache data.
+ */
+async function refreshGroupMetadata(socket, jid) {
+  clearGroupCache(jid);
+  return getCachedGroupMetadata(socket, jid);
+}
+
+/**
  * Clears the settings cache for a specific group.
  */
 function clearSettingsCache(jid) {
@@ -149,6 +158,7 @@ module.exports = {
   getCachedGroupMetadata,
   getCachedGroupSettings,
   clearGroupCache,
+  refreshGroupMetadata,
   clearSettingsCache,
   setAlexaInstance,
 };

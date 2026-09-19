@@ -59,6 +59,10 @@ const economy = require('./modules/economy.js');
 const shop = require('./modules/shop.js');
 const rpg = require('./modules/rpg.js');
 const tod = require('./modules/truthordare.js');
+
+const database = require('./services/database.js');
+const userProfiles = require('./services/userProfiles.js');
+const groupDirectory = require('./services/groupDirectory.js');
 const battlearena = require("./modules/battlearena.js");
 const weatherof = require('./modules/weather.js')
 const Assassin = require('./modules/assassin.js');
@@ -207,7 +211,6 @@ const ai = require('./modules/Aii.js');
 const {
     OpenAI
 } = require("openai");
-const mysql = require("mysql2");
 const mongo_url = process.env.mongo_url;
 const Filters = new FilterManager({
     dbPath: mongo_url
@@ -224,11 +227,6 @@ const {
     mediafireDl
 } = require('./services/mediafire.js')
 const { getCachedGroupMetadata, clearGroupCache, getCachedGroupSettings, clearSettingsCache } = require('./modules/cacheHelper.js');
-const DB_HOST = process.env["DB_HOST"];
-const DB_UNAME = process.env["DB_UNAME"];
-const DB_NAME = process.env["DB_NAME"];
-const DB_PASS = process.env["DB_PASS"];
-const DB_PORT = process.env["DB_PORT"] || 3306;
 const {
     isUrl
 } = require('./modules/func')
@@ -992,40 +990,27 @@ function getGreeting() {
 
 
 
-// Create MySQL connection
-const db = mysql.createPool({
-    host: DB_HOST,
-    user: DB_UNAME,
-    password: DB_PASS,
-    database: DB_NAME,
-    port: DB_PORT
-});
 
-db.getConnection((err) => {
-    if (err) {
-        console.error("Error connecting to MySQL:", err);
-    } else {
-        console.log("Connected to MySQL");
-    }
-});
+const db = database.getPool();
 
 (async () => {
     try {
+        await database.initialize();
         await economy.initTables(db);
         await shop.initTables(db);
         await rpg.initTables(db);
-        console.log('[GamesAddon] Economy / Shop / RPG tables verified (created if missing).');
+        console.log('[GamesAddon] Database, account/profile, economy, shop and RPG tables are ready.');
     } catch (err) {
-        console.error('[GamesAddon] Failed to initialize add-on tables:', err);
+
+        console.error('[GamesAddon] Failed to initialize MySQL tables:', err.message);
     }
 })();
 
 
-// Bot status and maintenance functions are below
-// Store conversation history - handled by Aii.js module
+
 const conversations = {};
 
-// Bot status and maintenance functions are below
+
 
 
 fs.ensureDirSync(TEMP_DIR);
@@ -1253,24 +1238,26 @@ async function handleMessage(AlexaInc, {
         const groupMetadata = isGroup ? await getCachedGroupMetadata(AlexaInc, msg.key.remoteJid) : null;
         const participants = isGroup ? groupMetadata?.participants || [] : [];
         const groupname = groupMetadata?.subject || null
-        const groupAdmins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
+        const groupAdmins = participants.filter(groupDirectory.isAdmin);
+        // Match every Baileys identifier (id/jid/lid/phoneNumber), not only an
+        // optional `participant.jid` property. This works after reconnect when
+        // WhatsApp returns a different representation for the same account.
+        const senderIdentity = [senderabfff, msg.key.participant, msg.key.participantAlt];
         const isAdmins = isGroup ?
-            isOwner || groupAdmins.some(admin => admin.jid === senderabfff || admin.lid === senderabfff) :
+            isOwner || groupAdmins.some(admin =>
+                groupDirectory.sameIdentity(senderIdentity, groupDirectory.participantIds(admin))) :
             false;
         const groupOwner = isGroup ? groupMetadata?.owner || '' : '';
         const isBotallowed = await isBotAllowed(msg.key.remoteJid);
         const isBotorFakeWeb = isBotOrFakeWeb(msg);
-        // console.log(isBotallowed,isBotorFakeWeb)
         const ottffsse = msg.participant || msg.key.participant
         const botJid = jidNormalizedUser(AlexaInc.user.id);
         const botNumber = botJid.replace(/@.*/, "")
-        const botLid = AlexaInc.user.lid.replace(/:[^@]+/, '');
-        const isBotAdmins = isGroup ?
-            groupAdmins.some(admin =>
-                admin.id === botJid ||
-                (botLid && admin.lid === botLid)
-            ) :
-            false;
+        const botLid = groupDirectory.socketIds(AlexaInc).find(id => id.endsWith('@lid')) || '';
+        // Admin state is derived from freshly invalidated/refetched metadata,
+        // never persisted as a stale boolean. index.js clears metadata cache on
+        // every promote/demote/add/remove and re-syncs every group on reconnect.
+        const isBotAdmins = isGroup && groupDirectory.isBotAdmin(AlexaInc, groupMetadata);
         updateUser(msg, participants, groupname);
         const isReplyToBot = areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid) || areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botLid);
 
@@ -1319,7 +1306,23 @@ async function handleMessage(AlexaInc, {
             finalLid = rawParticipantAlt;
         }
 
-        addXP(finalLid);
+        // Register every user as soon as Baileys gives us an LID. This is the
+        // canonical identity shared by the account portal and every game table.
+        // WhatsApp occasionally omits an LID in a new DM; in that case we wait
+        // for its LID mapping instead of creating a fake phone-number username.
+        if (userProfiles.isLid(finalLid)) {
+            try {
+                await userProfiles.ensureAccount({
+                    lid: finalLid,
+                    whatsappJid: finalJid,
+                    displayName: msg.pushName,
+                });
+            } catch (accountError) {
+                console.error('[profile] Could not register user account:', accountError.message);
+            }
+        }
+
+        if (finalLid) addXP(finalLid);
 
 
 
@@ -2024,8 +2027,8 @@ async function handleMessage(AlexaInc, {
                             }, {
                                 name: 'cta_url',
                                 buttonParamsJson: JSON.stringify({
-                                    display_text: `Contact Owner`,
-                                    url: `https://wa.me/94740970377?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
+                                    display_text: `Open Web Panel`,
+                                    url: `https://whatsapp.alexa.dpdns.org/`
                                 })
                             }, ((function () {
                                 function _0x5575() {
@@ -2205,7 +2208,9 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`.config\` - Group settings
 ┃ ➥ \`.rank\` / \`.myrank\` - Your rank
 ┃ ➥ \`.ranking\` / \`.global\` / \`.daily\` / \`.weekly\` - Leaderboards
-┃ ➥ \`.topadder\` - Top inviters`;
+┃ ➥ \`.topadder\` - Top inviters
+┃ ➥ \`.profile\` - Private account + game profile
+┃ ➥ \`.changpw <password>\` - Change panel password (private)`;
                             } else if (respomm === 'sticker') {
                                 menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃            🖼 *Sticker & Image Commands:*           
@@ -2331,7 +2336,7 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`.shop\` / \`.buy\` / \`.inventory\` / \`.sell\`
 ┃
 ┃ _*⚔️ RPG*_
-┃ ➥ \`.class\` / \`.profile\` / \`.train\` / \`.dungeon\` / \`.rpgtop\`
+┃ ➥ \`.class\` / \`.rpgprofile\` / \`.train\` / \`.dungeon\` / \`.rpgtop\`
 ┃
 ┃ _*🎲 Party Games*_
 ┃ ➥ \`.truth\` / \`.dare\` / \`.tod\` / \`.wyr\`
@@ -4766,8 +4771,7 @@ Congratulations ❤️`,
                             break;
                         }
 
-                        case 'rpgprofile':
-                        case 'profile': {
+                        case 'rpgprofile': {
                             let target = finalLid;
                             let name = msg.pushName;
                             if (p.mentionedJids?.length) { target = p.mentionedJids[0]; name = null; }
@@ -4775,6 +4779,48 @@ Congratulations ❤️`,
                                 text: await rpg.profile(target, name),
                                 mentions: [target]
                             }, { quoted: msg });
+                            break;
+                        }
+
+                        case 'profile': {
+
+                            if (isGroup) {
+                                return mess.reply('🔐 For your privacy, send *.profile* to me in a private chat.');
+                            }
+                            if (!userProfiles.isLid(finalLid)) {
+                                return mess.reply('I could not read your WhatsApp LID yet. Send any message and try *.profile* again.');
+                            }
+                            try {
+                                await userProfiles.ensureAccount({
+                                    lid: finalLid,
+                                    whatsappJid: finalJid,
+                                    displayName: msg.pushName,
+                                });
+                                const profile = await userProfiles.getProfileSummary(finalLid);
+                                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                                    text: userProfiles.formatProfileMessage(profile)
+                                }, { quoted: msg });
+                            } catch (profileError) {
+                                console.error('[profile] Failed to send profile:', profileError.message);
+                                await mess.reply('❌ Your profile is temporarily unavailable. Please try again later.');
+                            }
+                            break;
+                        }
+
+                        case 'changpw': {
+
+                            if (isGroup) return mess.private();
+                            if (!userProfiles.isLid(finalLid)) {
+                                return mess.reply('I could not read your WhatsApp LID yet. Send any message and try again.');
+                            }
+                            if (!text) return mess.reply('Usage: *.changpw <new password>* (10–128 characters)');
+                            try {
+                                const result = await userProfiles.changePassword(finalLid, text);
+                                await mess.reply(result.ok ? '✅ Password changed successfully. Keep it private.' : `❌ ${result.message}`);
+                            } catch (passwordError) {
+                                console.error('[profile] Failed to change password:', passwordError.message);
+                                await mess.reply('❌ Could not change your password right now. Please try again later.');
+                            }
                             break;
                         }
 
@@ -6420,9 +6466,19 @@ from : @${visibleNumber}
                     const isReplyToBot = areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid) || areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botLid);
                     // console.log(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid, jidNormalizedUser(botLid), isReplyToBot);
                     if (!isGroup) {
-                        // ✅ Not a group → run AI
-
-                        runAI();
+                        // The user dashboard controls this exact private-chat AI
+                        // preference. Commands still work while automatic AI is off.
+                        const privateChatbotEnabled = await userProfiles
+                            .getPrivateChatbot(finalLid)
+                            .catch((error) => {
+                                console.error('[profile] Could not read private chatbot preference:', error.message);
+                                return true; // preserve legacy behaviour during a transient DB outage
+                            });
+                        if (privateChatbotEnabled) {
+                            runAI();
+                        } else {
+                            console.log('[AI] Private chatbot is disabled by user preference.');
+                        }
                     } else if (isReplyToBot) {
                         // ✅ Group + Reply to Bot → Check if chatbot is enabled in Cache
                         try {
@@ -6535,8 +6591,8 @@ from : @${visibleNumber}
                                         }, {
                                             name: 'cta_url',
                                             buttonParamsJson: JSON.stringify({
-                                                display_text: `Contact Owner`,
-                                                url: `https://wa.me/94740970377?text=${encodeURIComponent(`hello can you tell more info about alexa`)}`
+                                                display_text: `Open Web Panel`,
+                                                url: `https://whatsapp.alexa.dpdns.org/`
                                             })
                                         }, ((function () {
                                             function _0x5575() {

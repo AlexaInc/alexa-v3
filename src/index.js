@@ -27,18 +27,16 @@ const { SocksProxyAgent } = require("socks-proxy-agent");
 const path = require("path");
 const { makeWASocket: WAConnection } = require("@hansaka02/baileys"); // for first-time QR login
 const authPath = path.join(__dirname, "..", "auth5a");
-const mysql = require("mysql2");
-const DB_HOST = process.env["DB_HOST"];
-const DB_UNAME = process.env["DB_UNAME"];
-const DB_NAME = process.env["DB_NAME"];
-const DB_PASS = process.env["DB_PASS"];
-const DB_PORT = process.env["DB_PORT"] || 3306;
 const { handleHangman, checkInactiveGames } = require("./games/hangman.js");
 const {
   getCachedGroupMetadata,
   clearGroupCache,
+  clearSettingsCache,
+  refreshGroupMetadata,
   setAlexaInstance,
 } = require("./modules/cacheHelper.js");
+const database = require("./services/database.js");
+const groupDirectory = require("./services/groupDirectory.js");
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
 const fownerNumber = process.env["Owner_nb"]?.split(",")[0]?.trim();
@@ -54,6 +52,12 @@ function setupIpcListener(AlexaInc) {
     if (!AlexaInc) return;
     try {
       if (data && data.type === "data") {
+        // Settings changed through the user SPA. Drop the bot process cache so
+        // the next reply/admin command immediately uses the new MySQL values.
+        if (data.payload?.event === "clear-group-settings" && data.payload.groupId) {
+          clearSettingsCache(data.payload.groupId);
+          return;
+        }
         if (data.payload?.event == "gitpush") {
           const interactiveButtons = [
             {
@@ -643,31 +647,16 @@ function loadMessagesBetween(jid, startId, endId) {
 //   }
 // }
 
-const db = mysql.createPool({
-  host: DB_HOST,
-  user: DB_UNAME,
-  password: DB_PASS,
-  database: DB_NAME,
-  port: DB_PORT,
-  enableKeepAlive: true, // Keeps TCP connection alive
-  keepAliveInitialDelay: 10000,
-});
-
-db.getConnection((err) => {
-  if (err) {
-    console.error("Error connecting to MySQL:", err);
-  } else {
-    console.log("Connected to MySQL");
-  }
+// A single shared schema/pool service replaces the duplicate index.js pool.
+// It creates all legacy and new account/panel tables on startup.
+const db = database.getPool();
+database.initialize().catch((error) => {
+  console.error('[index] Database bootstrap failed:', error.message);
 });
 
 setInterval(() => {
   db.query("SELECT 1", (err) => {
-    if (err) {
-      console.error("Keep-alive ping failed:", err);
-    } else {
-      console.log("Aiven DB pinged successfully.");
-    }
+    if (err) console.error("Keep-alive ping failed:", err.message);
   });
 }, 300000);
 
@@ -812,11 +801,13 @@ async function startWhatsAppConnection() {
       // src/server.js, relayed through app.js — see setupIpcListener above)
       setupIpcListener(AlexaInc);
 
-      // 2. Fetch groups (now safe since connection is open)
+      // 2. Rebuild the group directory on every connection. This refreshes
+      // bot-admin status and user admin memberships after a restart/reconnect.
       try {
-        await AlexaInc.groupFetchAllParticipating();
+        const groups = await AlexaInc.groupFetchAllParticipating();
+        await groupDirectory.syncAllGroups(AlexaInc, groups);
       } catch (e) {
-        console.error("Error fetching groups on startup:", e.message);
+        console.error("Error syncing groups on startup:", e.message);
       }
 
       // 3. Send startup message to owner
@@ -895,20 +886,36 @@ async function startWhatsAppConnection() {
 
   AlexaInc.ev.on("group-participants.update", async (anu) => {
     try {
-      const botNumber = AlexaInc.user.id.split(":")[0] + "@s.whatsapp.net";
-
-      // 1. Get the Participant ID (LID) and JID (Phone Number)
-      // We need the raw object to check for LIDs provided in your logs
-      const participantObj = anu.participants[0];
-      const participantLid = participantObj.id; // The LID (e.g., 1919...@lid)
-      const participantJid = participantObj.phoneNumber || participantObj.id; // The JID (e.g., 947...@s.whatsapp.net)
-
-      // Standardize for mentions/display
-      const rawParticipants = anu.participants.map(
-        (p) => p.phoneNumber || p.id,
+      // WhatsApp emits this for add/remove/promote/demote. Invalidate first,
+      // including when the changed participant is the bot itself; the old code
+      // returned early in that case and left the bot-admin flag stale forever.
+      const changedParticipants = (anu.participants || []).map((participant) =>
+        typeof participant === "string" ? { id: participant } : participant,
       );
+      clearGroupCache(anu.id);
 
-      if (rawParticipants.includes(botNumber)) return;
+      let groupMetadata;
+      try {
+        groupMetadata = await refreshGroupMetadata(AlexaInc, anu.id);
+        if (groupMetadata) await groupDirectory.syncGroupMetadata(AlexaInc, groupMetadata);
+      } catch (error) {
+        console.error("Could not refresh group metadata after participant update:", error.message);
+        return;
+      }
+
+      // The directory/admin sync above is still required when the bot itself
+      // is promoted or demoted. Welcome/goodbye output is not.
+      if (changedParticipants.some((participant) => groupDirectory.isBotParticipant(AlexaInc, participant))) {
+        return;
+      }
+
+      const participantObj = changedParticipants[0];
+      if (!participantObj) return;
+      const participantLid = participantObj.lid || participantObj.id;
+      const participantJid = participantObj.phoneNumber || participantObj.jid || participantObj.id;
+      const rawParticipants = changedParticipants.map((participant) =>
+        participant.phoneNumber || participant.jid || participant.id,
+      );
 
       const { getCachedGroupSettings } = require("./modules/cacheHelper.js");
       const settings = await getCachedGroupSettings(db, anu.id);
@@ -937,15 +944,7 @@ async function startWhatsAppConnection() {
       if ((eventType === "leave" || eventType === "kick") && !settings.isleft_w)
         return;
 
-      // --- Fetch Group Meta & DP ---
-      let groupMetadata;
-      try {
-        clearGroupCache(anu.id); // Clear cache because participants changed
-        groupMetadata = await getCachedGroupMetadata(AlexaInc, anu.id);
-      } catch (e) {
-        return;
-      }
-
+      // --- Group metadata was freshly refreshed and synced above ---
       const groupName = groupMetadata.subject;
       const groupDesc = groupMetadata.desc || "No description available.";
       let ppUrl;
