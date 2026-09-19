@@ -36,8 +36,7 @@ function encryptionKey() {
   // CREDENTIAL_ENCRYPTION_KEY should be a dedicated random secret. SESSION_SECRET
   // is retained as a backwards-compatible fallback so existing deployments work,
   // but deployment docs instruct operators to set the dedicated key.
-  const secret =
-    config.CREDENTIAL_ENCRYPTION_KEY || config.SESSION_SECRET;
+  const secret = config.CREDENTIAL_ENCRYPTION_KEY || config.SESSION_SECRET;
   if (!secret) {
     throw new Error(
       "CREDENTIAL_ENCRYPTION_KEY (or SESSION_SECRET) is required for account credentials.",
@@ -63,7 +62,9 @@ function encryptPassword(password) {
 }
 
 function decryptPassword(ciphertext) {
-  const [version, ivValue, tagValue, encryptedValue] = String(ciphertext || "").split(".");
+  const [version, ivValue, tagValue, encryptedValue] = String(
+    ciphertext || "",
+  ).split(".");
   if (version !== "v1" || !ivValue || !tagValue || !encryptedValue) {
     return null;
   }
@@ -79,7 +80,10 @@ function decryptPassword(ciphertext) {
       decipher.final(),
     ]).toString("utf8");
   } catch (error) {
-    console.warn("[profiles] Could not decrypt a stored credential:", error.message);
+    console.warn(
+      "[profiles] Could not decrypt a stored credential:",
+      error.message,
+    );
     return null;
   }
 }
@@ -94,9 +98,16 @@ async function verifyPassword(password, storedHash) {
   const [algorithm, saltValue, hashValue] = String(storedHash || "").split("$");
   if (algorithm !== "scrypt" || !saltValue || !hashValue) return false;
   try {
-    const actual = await scrypt(password, Buffer.from(saltValue, "base64url"), 64);
+    const actual = await scrypt(
+      password,
+      Buffer.from(saltValue, "base64url"),
+      64,
+    );
     const expected = Buffer.from(hashValue, "base64url");
-    return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+    return (
+      actual.length === expected.length &&
+      crypto.timingSafeEqual(actual, expected)
+    );
   } catch {
     return false;
   }
@@ -109,7 +120,10 @@ function generatePassword() {
 
 function validateNewPassword(value) {
   const password = String(value || "");
-  if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
+  if (
+    password.length < PASSWORD_MIN_LENGTH ||
+    password.length > PASSWORD_MAX_LENGTH
+  ) {
     return {
       ok: false,
       message: `Password must be ${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters long.`,
@@ -169,10 +183,18 @@ async function ensureAccount({ lid, whatsappJid = null, displayName = null }) {
 
   // All game modules use the same LID as user_id. INSERT IGNORE preserves all
   // existing XP, cash, inventory and titles while creating the missing rows.
-  await db.query("INSERT IGNORE INTO user_profiles (user_lid) VALUES (?)", [username]);
-  await db.query("INSERT IGNORE INTO economy_users (user_id) VALUES (?)", [username]);
-  await db.query("INSERT IGNORE INTO rpg_users (user_id) VALUES (?)", [username]);
-  await db.query("INSERT IGNORE INTO shop_profile (user_id) VALUES (?)", [username]);
+  await db.query("INSERT IGNORE INTO user_profiles (user_lid) VALUES (?)", [
+    username,
+  ]);
+  await db.query("INSERT IGNORE INTO economy_users (user_id) VALUES (?)", [
+    username,
+  ]);
+  await db.query("INSERT IGNORE INTO rpg_users (user_id) VALUES (?)", [
+    username,
+  ]);
+  await db.query("INSERT IGNORE INTO shop_profile (user_id) VALUES (?)", [
+    username,
+  ]);
 
   const account = await findByUsername(username);
   return { account, created: existingRows.length === 0, generatedPassword };
@@ -196,15 +218,19 @@ async function findByUsername(username) {
 
 async function authenticate(username, password) {
   const account = await findByUsername(username);
-  if (!account || !(await verifyPassword(String(password || ""), account.password_hash))) {
+  if (
+    !account ||
+    !(await verifyPassword(String(password || ""), account.password_hash))
+  ) {
     return null;
   }
   await database
     .getPool()
     .promise()
-    .query("UPDATE bot_users SET last_login_at = CURRENT_TIMESTAMP WHERE lid_username = ?", [
-      account.lid_username,
-    ]);
+    .query(
+      "UPDATE bot_users SET last_login_at = CURRENT_TIMESTAMP WHERE lid_username = ?",
+      [account.lid_username],
+    );
   return {
     lid: account.lid_username,
     whatsappJid: account.whatsapp_jid,
@@ -226,7 +252,10 @@ function normalizeWhatsAppIdentity(value) {
 function phonePart(value) {
   // Compare the numeric JID local-part separately so @s.whatsapp.net, @c.us,
   // a raw phone number, and a device-suffixed JID all identify the same owner.
-  return String(value || "").split("@")[0].replace(/:\d+$/, "").replace(/\D/g, "");
+  return String(value || "")
+    .split("@")[0]
+    .replace(/:\d+$/, "")
+    .replace(/\D/g, "");
 }
 
 function isConfiguredOwner(account) {
@@ -234,12 +263,12 @@ function isConfiguredOwner(account) {
     (config.OWNER_ID || [])
       .map((id) => String(id || "").trim())
       .filter(Boolean)
-      .map((id) => normalizeWhatsAppIdentity(id.includes("@") ? id : `${id}@lid`)),
+      .map((id) =>
+        normalizeWhatsAppIdentity(id.includes("@") ? id : `${id}@lid`),
+      ),
   );
   const ownerNumbers = new Set(
-    (config.OWNER_NB || [])
-      .map(phonePart)
-      .filter(Boolean),
+    (config.OWNER_NB || []).map(phonePart).filter(Boolean),
   );
 
   return (
@@ -281,7 +310,9 @@ async function getPrivateChatbot(lid) {
   const [rows] = await database
     .getPool()
     .promise()
-    .query("SELECT private_chatbot FROM user_profiles WHERE user_lid = ?", [username]);
+    .query("SELECT private_chatbot FROM user_profiles WHERE user_lid = ?", [
+      username,
+    ]);
   // Existing users keep the historical bot behaviour (AI enabled) until they
   // explicitly turn it off.
   return rows.length === 0 ? true : Boolean(rows[0].private_chatbot);
@@ -291,12 +322,15 @@ async function setPrivateChatbot(lid, enabled) {
   const username = normalizeLid(lid);
   if (!username) throw new Error("A WhatsApp LID is required.");
   await database.initialize();
-  await database.getPool().promise().query(
-    `INSERT INTO user_profiles (user_lid, private_chatbot)
+  await database
+    .getPool()
+    .promise()
+    .query(
+      `INSERT INTO user_profiles (user_lid, private_chatbot)
      VALUES (?, ?)
      ON DUPLICATE KEY UPDATE private_chatbot = VALUES(private_chatbot)`,
-    [username, Boolean(enabled)],
-  );
+      [username, Boolean(enabled)],
+    );
   return Boolean(enabled);
 }
 
@@ -336,7 +370,9 @@ function formatProfileMessage(profile) {
   if (!profile) return "No Alexa account was found yet.";
   const cash = Number(profile.balance || 0).toLocaleString();
   const bank = Number(profile.bank || 0).toLocaleString();
-  const password = profile.password || "Unavailable — use .changpw <new password> to reset it.";
+  const password =
+    profile.password ||
+    "Unavailable — use .changpw <new password> to reset it.";
   return [
     "🔐 *ALEXA ACCOUNT PROFILE*",
     "",
@@ -356,13 +392,38 @@ function formatProfileMessage(profile) {
     "`.changpw <new password>`",
   ].join("\n");
 }
-
+function formatsecretProfileMessage(profile) {
+  if (!profile) return "No Alexa account was found yet.";
+  const cash = Number(profile.balance || 0).toLocaleString();
+  const bank = Number(profile.bank || 0).toLocaleString();
+  const password =
+    profile.password ||
+    "Unavailable — use .changpw <new password> to reset it.";
+  return [
+    "🔐 *ALEXA ACCOUNT PROFILE*",
+    "",
+    `👤 Name: *${profile.display_name || "Alexa user"}*`,
+    `🆔 Username (LID): hidden for groups`,
+    `🔑 Password: hidden for groups`,
+    `🤖 Private chatbot: *hidden for groups*`,
+    "",
+    "🎮 *Connected Game Profile*",
+    `⚔️ Class: *${profile.rpg_class || "Unassigned"}*`,
+    `📈 Level: *${profile.rpg_level || 1}* | XP: *${profile.rpg_xp || 0}*`,
+    `💪 Power: *${profile.rpg_power || 10}* | W/L: *${profile.rpg_wins || 0}/${profile.rpg_losses || 0}*`,
+    `💰 Wallet: *${cash} AC* | Bank: *${bank} AC*`,
+    `🎒 Items: *${profile.inventory_count || 0}*${profile.shop_title ? ` | Title: *${profile.shop_title}*` : ""}`,
+    "",
+    "Keep your password private. Change it in a private chat with:",
+  ].join("\n");
+}
 module.exports = {
   ensureAccount,
   findByUsername,
   authenticate,
   changePassword,
   getPrivateChatbot,
+  formatsecretProfileMessage,
   setPrivateChatbot,
   getProfileSummary,
   formatProfileMessage,

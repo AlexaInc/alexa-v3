@@ -4797,9 +4797,9 @@ Congratulations ❤️`,
 
                         case 'profile': {
 
-                            if (isGroup) {
-                                return mess.reply('🔐 For your privacy, send *.profile* to me in a private chat.');
-                            }
+                            // if (isGroup) {
+                            //     return mess.reply('🔐 For your privacy, send *.profile* to me in a private chat.');
+                            // }
                             if (!userProfiles.isLid(finalLid)) {
                                 return mess.reply('I could not read your WhatsApp LID yet. Send any message and try *.profile* again.');
                             }
@@ -4810,8 +4810,9 @@ Congratulations ❤️`,
                                     displayName: msg.pushName,
                                 });
                                 const profile = await userProfiles.getProfileSummary(finalLid);
+                                const msgtext = (isgroup) ? userProfiles.formatsecretProfileMessage(profile : userProfiles.formatProfileMessage(profile) ;
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: userProfiles.formatProfileMessage(profile)
+                                    text: msgtext
                                 }, { quoted: msg });
                             } catch (profileError) {
                                 console.error('[profile] Failed to send profile:', profileError.message);
