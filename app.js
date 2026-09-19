@@ -86,7 +86,7 @@ function logOutput(scriptName, type, data) {
 function startApp(scriptName, onExit) {
   const args = [scriptName];
   if (scriptName === "src/index.js") {
-    args.unshift("--max-old-space-size=256");
+    args.unshift("--max-old-space-size=460");
   }
   const child = spawn("node", args, {
     stdio: ["inherit", "pipe", "pipe", "ipc"],
