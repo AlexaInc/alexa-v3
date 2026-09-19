@@ -349,35 +349,21 @@ npm install</pre>
             🔴 Required variables — the bot will not work correctly without these
           </h3>
 
-          <div class="group-heading">Admin &amp; Security — controls who can log into this Control Panel</div>
+          <div class="group-heading">Panel security &amp; owner identity</div>
 
           <div class="env-card glass card">
             <div class="env-card-head">
-              <span class="env-name">ADMIN_USERNAME</span>
+              <span class="env-name">Owner_nb / Owner_id</span>
               <span class="env-badge required">Required</span>
             </div>
-            <p class="env-what">The username you'll type on the <a href="login.html">login page</a> to reach this
-              Control Panel.</p>
+            <p class="env-what">These are the bot owner identities. The panel has no separate owner username or password.</p>
             <div class="env-howto">
-              <b>How to set it:</b> just make one up — it isn't looked up anywhere, you're choosing it yourself
-              right now. Pick something that isn't easy to guess (not literally "admin").
+              <b>How it works:</b> first use the normal bot-issued WhatsApp LID and password to sign in. If that
+              authenticated account matches <code>Owner_nb</code> or <code>Owner_id</code>, it is automatically
+              given the owner dashboard.
             </div>
-            <pre class="code-block env-example">ADMIN_USERNAME=hansaka_admin</pre>
-          </div>
-
-          <div class="env-card glass card">
-            <div class="env-card-head">
-              <span class="env-name">ADMIN_PASSWORD</span>
-              <span class="env-badge required">Required</span>
-            </div>
-            <p class="env-what">The password that pairs with <code>ADMIN_USERNAME</code> above to log into the
-              Control Panel.</p>
-            <div class="env-howto">
-              <b>How to set it:</b> make up a strong password — at least 12 characters, mixing letters/numbers/
-              symbols. This is the only thing standing between the internet and your bot's admin controls if you
-              expose this panel publicly, so don't reuse a password from somewhere else.
-            </div>
-            <pre class="code-block env-example">ADMIN_PASSWORD=Kx9!mPz2Qw#Lr7Vt</pre>
+            <pre class="code-block env-example">Owner_nb=94771234567
+Owner_id=123456789012345</pre>
           </div>
 
           <div class="env-card glass card">
@@ -723,10 +709,9 @@ npm install</pre>
           </div>
           <div class="card glass" style="padding: 1.5rem;">
             <p class="env-what">
-              Open this website's <a href="login.html">Admin Login</a> page and sign in with the
-              <code>ADMIN_USERNAME</code> / <code>ADMIN_PASSWORD</code> you chose in Step 3. From there you get
-              live CPU/RAM/network gauges, streaming logs for both processes (with a fixed scroll — reading old
-              logs no longer gets interrupted by new ones arriving), and JSON data downloads.
+              Open this website's <a href="/">Alexa panel</a> and sign in with the bot-issued WhatsApp LID and
+              password. When that account matches <code>Owner_nb</code> or <code>Owner_id</code>, the owner
+              diagnostics dashboard opens automatically.
             </p>
           </div>
         </section>
@@ -746,7 +731,7 @@ npm install</pre>
               <li><code>npm start</code> shows a QR code and no "missing environment variables" warning in the
                 console</li>
               <li>WhatsApp linked successfully — <code>.menu</code> replies in a test chat</li>
-              <li>Logged into the Control Panel with your <code>ADMIN_USERNAME</code>/<code>ADMIN_PASSWORD</code></li>
+              <li>Signed into the Alexa panel with a bot-issued WhatsApp LID/password; configured owners receive owner access automatically</li>
             </ul>
           </div>
         </section>

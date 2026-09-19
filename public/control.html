@@ -376,8 +376,8 @@ npm install</pre>
             <li>
               <b>Configure environment</b> — copy <code>env_dummy</code> to <code>.env</code> (or set the same keys
               as PaaS secrets). Minimum required: <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>,
-              <code>DB_UNAME</code>, <code>DB_PASS</code>, <code>Owner_nb</code>, <code>bot_nb</code>,
-              <code>ADMIN_USERNAME</code>, <code>ADMIN_PASSWORD</code>, <code>SESSION_SECRET</code>.
+              <code>DB_UNAME</code>, <code>DB_PASS</code>, <code>Owner_nb</code>, <code>Owner_id</code>,
+              <code>bot_nb</code>, <code>SESSION_SECRET</code>.
             </li>
             <li>
               <b>Start the bot</b> — <code>npm start</code> runs <code>app.js</code>, the process supervisor that
@@ -386,9 +386,8 @@ npm install</pre>
               Scan the QR code from WhatsApp → Linked Devices.
             </li>
             <li>
-              <b>Log in here</b> — use the <code>ADMIN_USERNAME</code>/<code>ADMIN_PASSWORD</code> from step 3 to
-              reach this Control Panel: live CPU/RAM/network gauges, streaming logs for both processes, and JSON
-              data downloads.
+              <b>Log in here</b> — use the bot-issued WhatsApp LID/password. Accounts matching
+              <code>Owner_nb</code> or <code>Owner_id</code> receive owner access automatically.
             </li>
           </ol>
           <p style="margin-top: 1.5rem;">

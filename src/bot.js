@@ -1222,18 +1222,26 @@ async function handleMessage(AlexaInc, {
 
 
 
-
-        const ownerJIDs = (process.env.Owner_nb || "")
+        const configuredValues = (value) => String(value || "")
             .split(",")
-            .map(num => num.trim() + "@s.whatsapp.net");
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+        const phoneJids = (value) => configuredValues(value).map((number) => {
+            const cleaned = number.replace(/[^\d@.]/g, "");
+            return cleaned.includes("@")
+                ? cleaned
+                : `${cleaned.replace(/\D/g, "")}@s.whatsapp.net`;
+        });
+        const lidJids = (value) => configuredValues(value).map((id) =>
+            id.includes("@") ? id : `${id}@lid`,
+        );
 
-        const ownerLIDs = (process.env.Owner_id || "")
-            .split(",")
-            .map(id => id.trim() + "@lid");
+        const ownerJIDs = phoneJids(process.env.Owner_nb);
+        const ownerLIDs = lidJids(process.env.Owner_id);
         const allOwners = [...ownerJIDs, ...ownerLIDs];
-        const isOwner = allOwners.includes(senderabfff);
-        const rank = (process.env.spc_nb || '').split(',');
-        const isspc = rank.includes(senderabfff)
+        const isOwner = groupDirectory.sameIdentity(senderabfff, allOwners);
+        const specialJids = phoneJids(process.env.spc_nb);
+        const isspc = groupDirectory.sameIdentity(senderabfff, specialJids);
         const isGroup = msg.key.remoteJid.endsWith('@g.us');
         const groupMetadata = isGroup ? await getCachedGroupMetadata(AlexaInc, msg.key.remoteJid) : null;
         const participants = isGroup ? groupMetadata?.participants || [] : [];

@@ -22,7 +22,10 @@ const pool = mysql.createPool({
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 10_000,
-  charset: "utf8mb4",
+  // Make connection parameters use the same portable collation as tables.
+  // This avoids MySQL 8 defaulting parameters to utf8mb4_0900_ai_ci while
+  // older Aiven/MariaDB tables use utf8mb4_unicode_ci.
+  charset: "utf8mb4_unicode_ci",
 });
 
 let initializationPromise = null;
@@ -43,6 +46,29 @@ async function ensureColumn(db, tableName, columnName, definition) {
       `ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${definition}`,
     );
     console.log(`[database] Added ${tableName}.${columnName}`);
+  }
+}
+
+
+const APP_COLLATION = "utf8mb4_unicode_ci";
+
+/**
+ * Older deployments already contain a mixture of MySQL 8's 0900 collation and
+ * unicode_ci tables. A JOIN between those table columns throws ER_CANT_AGGREGATE_2COLLATIONS.
+ * Normalize Alexa-owned tables once, non-destructively, during startup.
+ */
+async function ensureTableCollation(db, tableName) {
+  const [rows] = await db.query(
+    `SELECT TABLE_COLLATION
+     FROM information_schema.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?`,
+    [tableName],
+  );
+  if (rows[0]?.TABLE_COLLATION !== APP_COLLATION) {
+    await db.query(
+      `ALTER TABLE \`${tableName}\` CONVERT TO CHARACTER SET utf8mb4 COLLATE ${APP_COLLATION}`,
+    );
+    console.log(`[database] Normalized ${tableName} collation to ${APP_COLLATION}.`);
   }
 }
 
@@ -81,19 +107,19 @@ async function initialize() {
         isleft_w TINYINT(1) NOT NULL DEFAULT 0,
         left_m TEXT DEFAULT NULL,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     await db.query(`
       CREATE TABLE IF NOT EXISTS conversation_history (
         id VARCHAR(255) NOT NULL PRIMARY KEY,
         conventions LONGTEXT NOT NULL
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     await db.query(`
       CREATE TABLE IF NOT EXISTS tasks (
         user_id VARCHAR(255) NOT NULL PRIMARY KEY,
         tasks LONGTEXT NOT NULL
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     // Canonical account record. The password has both a one-way scrypt hash
@@ -110,7 +136,7 @@ async function initialize() {
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         last_login_at TIMESTAMP NULL DEFAULT NULL,
         INDEX idx_bot_users_jid (whatsapp_jid)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     await db.query(`
       CREATE TABLE IF NOT EXISTS user_profiles (
@@ -119,7 +145,7 @@ async function initialize() {
         timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Colombo',
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     // A server-side group directory. It is refreshed after every successful
@@ -132,7 +158,7 @@ async function initialize() {
         member_count INT NOT NULL DEFAULT 0,
         bot_is_admin TINYINT(1) NOT NULL DEFAULT 0,
         metadata_synced_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     await db.query(`
       CREATE TABLE IF NOT EXISTS group_admin_memberships (
@@ -143,7 +169,7 @@ async function initialize() {
         synced_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (group_id, user_lid),
         INDEX idx_group_admin_user (user_lid, is_admin)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     // Game tables are declared here as well as in their game modules. This
@@ -157,7 +183,7 @@ async function initialize() {
         last_daily BIGINT NOT NULL DEFAULT 0,
         last_work BIGINT NOT NULL DEFAULT 0,
         last_rob BIGINT NOT NULL DEFAULT 0
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     await db.query(`
       CREATE TABLE IF NOT EXISTS rpg_users (
@@ -170,7 +196,7 @@ async function initialize() {
         losses INT NOT NULL DEFAULT 0,
         last_train BIGINT NOT NULL DEFAULT 0,
         last_dungeon BIGINT NOT NULL DEFAULT 0
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     await db.query(`
       CREATE TABLE IF NOT EXISTS shop_inventory (
@@ -178,13 +204,13 @@ async function initialize() {
         item_id VARCHAR(100) NOT NULL,
         qty INT NOT NULL DEFAULT 0,
         PRIMARY KEY (user_id, item_id)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     await db.query(`
       CREATE TABLE IF NOT EXISTS shop_profile (
         user_id VARCHAR(255) NOT NULL PRIMARY KEY,
         title VARCHAR(60) DEFAULT NULL
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     // Additive migration path for legacy installs made before this service.
@@ -198,6 +224,25 @@ async function initialize() {
     await ensureColumn(db, "groups", "wc_m", "TEXT DEFAULT NULL");
     await ensureColumn(db, "groups", "isleft_w", "TINYINT(1) NOT NULL DEFAULT 0");
     await ensureColumn(db, "groups", "left_m", "TEXT DEFAULT NULL");
+
+    // Migrate tables created by older Alexa releases before this unified
+    // collation policy existed. This fixes the dashboard JOIN failure without
+    // deleting accounts, game progress or group configuration.
+    for (const tableName of [
+      "groups",
+      "conversation_history",
+      "tasks",
+      "bot_users",
+      "user_profiles",
+      "group_directory",
+      "group_admin_memberships",
+      "economy_users",
+      "rpg_users",
+      "shop_inventory",
+      "shop_profile",
+    ]) {
+      await ensureTableCollation(db, tableName);
+    }
 
     initialized = true;
     console.log("[database] MySQL schema is ready.");

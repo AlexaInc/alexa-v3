@@ -63,7 +63,7 @@ app.use(sessionMiddleware);
 
 // No page in the new UI links to an .html URL. Redirect bookmarks made by the
 // old multi-page panel back into the SPA rather than exposing those paths.
-app.get(["/index.html", "/login.html", "/control.html"], (req, res) => {
+app.get(["/index.html", "/login.html", "/control.html", "/deploy.html"], (req, res) => {
   res.redirect(302, "/");
 });
 // Legacy links land inside the same SPA rather than a separate login/control
@@ -78,12 +78,6 @@ function readRuntimeData() {
   } catch {
     return { status: "Offline", number: null };
   }
-}
-
-function safeOwnerMatch(value) {
-  const input = Buffer.from(String(value || ""));
-  const expected = Buffer.from(String(config.ADMIN_PASSWORD || ""));
-  return input.length === expected.length && crypto.timingSafeEqual(input, expected);
 }
 
 function requireRole(role) {
@@ -123,28 +117,6 @@ function clearLoginFailures(req, type) {
   failedLogins.delete(rateLimitKey(req, type));
 }
 
-async function ownerLogin(req, res) {
-  if (loginBlocked(req, "owner")) {
-    return res.status(429).json({ success: false, message: "Too many attempts. Try again later." });
-  }
-  const { username, password } = req.body || {};
-  if (!config.ADMIN_USERNAME || !config.ADMIN_PASSWORD) {
-    return res.status(503).json({ success: false, message: "Owner login is not configured." });
-  }
-  const usernameOK = safeOwnerMatch(String(username || ""), config.ADMIN_USERNAME);
-  const passwordOK = safeOwnerMatch(String(password || ""), config.ADMIN_PASSWORD);
-  if (!usernameOK || !passwordOK) {
-    recordLoginFailure(req, "owner");
-    return res.status(401).json({ success: false, message: "Invalid credentials." });
-  }
-  clearLoginFailures(req, "owner");
-  req.session.auth = { role: "owner", username: config.ADMIN_USERNAME };
-  return req.session.save((error) => {
-    if (error) return res.status(500).json({ success: false, message: "Could not create session." });
-    return res.json({ success: true, role: "owner" });
-  });
-}
-
 async function userLogin(req, res) {
   if (loginBlocked(req, "user")) {
     return res.status(429).json({ success: false, message: "Too many attempts. Try again later." });
@@ -157,14 +129,17 @@ async function userLogin(req, res) {
       return res.status(401).json({ success: false, message: "Invalid LID or password." });
     }
     clearLoginFailures(req, "user");
+    // Owner access is derived from the same Owner_id / Owner_nb identity
+    // lists used by the WhatsApp bot. There is no separate web-owner password.
+    const role = user.isOwner ? "owner" : "user";
     req.session.auth = {
-      role: "user",
+      role,
       userLid: user.lid,
       displayName: user.displayName || null,
     };
     return req.session.save((error) => {
       if (error) return res.status(500).json({ success: false, message: "Could not create session." });
-      return res.json({ success: true, role: "user" });
+      return res.json({ success: true, role });
     });
   } catch (error) {
     console.error("[server] User login failed:", error.message);
@@ -183,11 +158,11 @@ app.get("/api/auth/session", (req, res) => {
     displayName: auth?.displayName || null,
   });
 });
-app.post("/api/auth/owner-login", ownerLogin);
+// Every account signs in through one LID/password form. userLogin assigns
+// the owner role automatically when the authenticated LID/JID matches
+// Owner_id/Owner_nb, just like bot.js.
 app.post("/api/auth/user-login", userLogin);
-// Backward-compatible endpoint for older clients; the new SPA calls the API
-// path above and never navigates to login.html.
-app.post("/login", ownerLogin);
+app.post("/login", userLogin); // legacy endpoint, same identity-based role assignment
 app.post("/api/auth/logout", (req, res) => {
   req.session.destroy(() => {
     res.clearCookie("connect.sid");
@@ -219,9 +194,11 @@ async function getUserGroups(userLid) {
             COALESCE(g.is_welcome, 0) AS is_welcome,
             COALESCE(g.isleft_w, 0) AS isleft_w
      FROM group_admin_memberships m
-     INNER JOIN group_directory d ON d.group_id = m.group_id
-     LEFT JOIN \`groups\` g ON g.group_id = d.group_id
-     WHERE m.user_lid = ? AND m.is_admin = 1
+     INNER JOIN group_directory d
+       ON d.group_id COLLATE utf8mb4_unicode_ci = m.group_id COLLATE utf8mb4_unicode_ci
+     LEFT JOIN \`groups\` g
+       ON g.group_id COLLATE utf8mb4_unicode_ci = d.group_id COLLATE utf8mb4_unicode_ci
+     WHERE m.user_lid COLLATE utf8mb4_unicode_ci = ? AND m.is_admin = 1
      ORDER BY d.subject ASC`,
     [userLid],
   );

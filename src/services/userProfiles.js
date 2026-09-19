@@ -207,8 +207,45 @@ async function authenticate(username, password) {
     ]);
   return {
     lid: account.lid_username,
+    whatsappJid: account.whatsapp_jid,
     displayName: account.display_name,
+    // The web server uses exactly the same owner identity settings as bot.js
+    // (`Owner_id` and `Owner_nb`) instead of maintaining a second web-only
+    // username/password pair.
+    isOwner: isConfiguredOwner(account),
   };
+}
+
+function normalizeWhatsAppIdentity(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/:\d+(?=@)/, "");
+}
+
+function phonePart(value) {
+  // Compare the numeric JID local-part separately so @s.whatsapp.net, @c.us,
+  // a raw phone number, and a device-suffixed JID all identify the same owner.
+  return String(value || "").split("@")[0].replace(/:\d+$/, "").replace(/\D/g, "");
+}
+
+function isConfiguredOwner(account) {
+  const ownerLids = new Set(
+    (config.OWNER_ID || [])
+      .map((id) => String(id || "").trim())
+      .filter(Boolean)
+      .map((id) => normalizeWhatsAppIdentity(id.includes("@") ? id : `${id}@lid`)),
+  );
+  const ownerNumbers = new Set(
+    (config.OWNER_NB || [])
+      .map(phonePart)
+      .filter(Boolean),
+  );
+
+  return (
+    ownerLids.has(normalizeWhatsAppIdentity(account.lid_username)) ||
+    ownerNumbers.has(phonePart(account.whatsapp_jid))
+  );
 }
 
 async function changePassword(lid, newPassword) {
@@ -277,13 +314,14 @@ async function getProfileSummary(lid) {
               r.class AS rpg_class, r.level AS rpg_level, r.xp AS rpg_xp,
               r.power AS rpg_power, r.wins AS rpg_wins, r.losses AS rpg_losses,
               sp.title AS shop_title,
-              COALESCE((SELECT SUM(i.qty) FROM shop_inventory i WHERE i.user_id = u.lid_username), 0) AS inventory_count
+              COALESCE((SELECT SUM(i.qty) FROM shop_inventory i
+                        WHERE i.user_id COLLATE utf8mb4_unicode_ci = u.lid_username COLLATE utf8mb4_unicode_ci), 0) AS inventory_count
        FROM bot_users u
-       LEFT JOIN user_profiles p ON p.user_lid = u.lid_username
-       LEFT JOIN economy_users e ON e.user_id = u.lid_username
-       LEFT JOIN rpg_users r ON r.user_id = u.lid_username
-       LEFT JOIN shop_profile sp ON sp.user_id = u.lid_username
-       WHERE u.lid_username = ?`,
+       LEFT JOIN user_profiles p ON p.user_lid COLLATE utf8mb4_unicode_ci = u.lid_username COLLATE utf8mb4_unicode_ci
+       LEFT JOIN economy_users e ON e.user_id COLLATE utf8mb4_unicode_ci = u.lid_username COLLATE utf8mb4_unicode_ci
+       LEFT JOIN rpg_users r ON r.user_id COLLATE utf8mb4_unicode_ci = u.lid_username COLLATE utf8mb4_unicode_ci
+       LEFT JOIN shop_profile sp ON sp.user_id COLLATE utf8mb4_unicode_ci = u.lid_username COLLATE utf8mb4_unicode_ci
+       WHERE u.lid_username COLLATE utf8mb4_unicode_ci = ?`,
       [username],
     );
   if (!rows[0]) return null;

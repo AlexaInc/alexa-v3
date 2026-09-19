@@ -31,9 +31,7 @@ const config = {
   /** Server port (web panel + dashboard). */
   PORT: int(env.PORT, 8000),
 
-  // ── Web admin panel ─────────────────────────────────────────────────
-  ADMIN_USERNAME: str(env.ADMIN_USERNAME),
-  ADMIN_PASSWORD: str(env.ADMIN_PASSWORD),
+  // ── Web panel security ───────────────────────────────────────────────
   /** express-session signing secret. */
   SESSION_SECRET: str(env.SESSION_SECRET),
   /**
@@ -96,8 +94,6 @@ const config = {
 // ---------------------------------------------------------------------------
 (function warnAboutMissing() {
   const critical = [
-    "ADMIN_USERNAME",
-    "ADMIN_PASSWORD",
     "SESSION_SECRET",
     "DB_HOST",
     "DB_UNAME",

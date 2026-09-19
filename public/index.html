@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#020617">
   <title>Alexa V3 — WhatsApp Bot</title>
+  <meta name="description" content="Alexa V3 brings WhatsApp automation, group tools, games and AI into one secure control center.">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -19,17 +20,25 @@
 
   <main id="publicView">
     <section class="hero container">
-      <p class="eyebrow animate-fade">WhatsApp automation, thoughtfully connected</p>
-      <h1 class="hero-title animate-fade">Your community.<br><span>One intelligent control center.</span></h1>
-      <p class="hero-copy animate-fade">Alexa combines group tools, games, media and AI in one WhatsApp bot. Sign in with your bot account to manage the groups where you are an admin.</p>
-      <div class="hero-actions animate-fade">
-        <button class="btn btn-primary hero-btn" id="whatsappButton" type="button">Open WhatsApp</button>
-        <button class="btn btn-outline hero-btn" id="heroLoginButton" type="button">Open dashboard</button>
+      <div class="hero-content">
+        <p class="eyebrow animate-fade">WHATSAPP AUTOMATION · CONNECTED</p>
+        <h1 class="hero-title animate-fade">Your community,<br><span>in full flow.</span></h1>
+        <p class="hero-copy animate-fade">Alexa unifies group tools, games, media and AI in one WhatsApp bot. Sign in with your bot account to manage the groups where you are an admin.</p>
+        <div class="hero-actions animate-fade">
+          <button class="btn btn-primary hero-btn" id="whatsappButton" type="button"><span aria-hidden="true">↗</span> Open WhatsApp</button>
+          <button class="btn btn-outline hero-btn" id="heroLoginButton" type="button">Open dashboard <span aria-hidden="true">→</span></button>
+        </div>
+        <div class="status-box glass" aria-live="polite">
+          <span class="status-dot" id="statusDot"></span>
+          <span>Bot status <strong id="status">Checking…</strong></span>
+        </div>
       </div>
-      <div class="status-box glass" aria-live="polite">
-        <span class="status-dot" id="statusDot"></span>
-        <span>Bot status: <strong id="status">Checking…</strong></span>
-      </div>
+      <aside class="hero-signal glass" aria-label="Alexa platform overview">
+        <div class="signal-topline"><span class="signal-mark" aria-hidden="true">✦</span><span>Alexa workspace</span><span class="signal-live">LIVE</span></div>
+        <div class="signal-orbit" aria-hidden="true"><span></span><i></i></div>
+        <div class="signal-copy"><strong>Everything in sync.</strong><p>Your WhatsApp identity, group permissions and game profile stay connected.</p></div>
+        <div class="signal-points"><span><b>01</b> Account</span><span><b>02</b> Groups</span><span><b>03</b> Control</span></div>
+      </aside>
     </section>
 
     <section class="container section" id="features">
@@ -122,19 +131,11 @@
       <button class="modal-close" id="closeLoginModal" type="button" aria-label="Close login">×</button>
       <p class="eyebrow">SECURE ACCESS</p>
       <h2 id="loginTitle">Sign in to Alexa</h2>
-      <div class="login-tabs" role="tablist">
-        <button class="active" type="button" role="tab" aria-selected="true" data-login-tab="owner">Owner Login</button>
-        <button type="button" role="tab" aria-selected="false" data-login-tab="user">User Login</button>
-      </div>
-      <form id="ownerLoginForm" class="login-form">
-        <label>Owner username<input name="username" type="text" autocomplete="username" required placeholder="Owner username"></label>
-        <label>Owner password<input name="password" type="password" autocomplete="current-password" required placeholder="••••••••"></label>
-        <button class="btn btn-primary" type="submit">Sign in as owner</button>
-      </form>
-      <form id="userLoginForm" class="login-form" hidden>
+      <p class="muted form-help">Use the WhatsApp LID and password Alexa gave you. Accounts configured as bot owners are recognised automatically.</p>
+      <form id="loginForm" class="login-form">
         <label>WhatsApp LID username<input name="username" type="text" autocomplete="username" required placeholder="123456789@lid"></label>
         <label>Password<input name="password" type="password" autocomplete="current-password" required placeholder="Your bot password"></label>
-        <button class="btn btn-primary" type="submit">Sign in to my dashboard</button>
+        <button class="btn btn-primary" type="submit">Sign in</button>
         <p class="muted form-help">Find your LID and password by sending <code>.profile</code> to Alexa in a private chat.</p>
       </form>
       <p class="form-error" id="loginError" role="alert" hidden></p>

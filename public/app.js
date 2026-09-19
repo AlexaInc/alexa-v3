@@ -34,28 +34,16 @@
     loginError.hidden = !message;
   }
 
-  function openLoginModal(tab = "owner") {
+  function openLoginModal() {
     showLoginError();
     loginModal.hidden = false;
     document.body.classList.add("modal-open");
-    selectLoginTab(tab);
-    setTimeout(() => $(`#${tab}LoginForm input`)?.focus(), 0);
+    setTimeout(() => $("#loginForm input")?.focus(), 0);
   }
 
   function closeLoginModal() {
     loginModal.hidden = true;
     document.body.classList.remove("modal-open");
-    showLoginError();
-  }
-
-  function selectLoginTab(tab) {
-    $$('[data-login-tab]').forEach((button) => {
-      const selected = button.dataset.loginTab === tab;
-      button.classList.toggle("active", selected);
-      button.setAttribute("aria-selected", String(selected));
-    });
-    $("#ownerLoginForm").hidden = tab !== "owner";
-    $("#userLoginForm").hidden = tab !== "user";
     showLoginError();
   }
 
@@ -221,7 +209,7 @@
     }
   }
 
-  async function submitLogin(event, role) {
+  async function submitLogin(event) {
     event.preventDefault();
     const form = event.currentTarget;
     const submit = $("button[type=submit]", form);
@@ -229,7 +217,7 @@
     showLoginError();
     const credentials = Object.fromEntries(new FormData(form));
     try {
-      const data = await api(`/api/auth/${role}-login`, {
+      const data = await api("/api/auth/user-login", {
         method: "POST",
         body: JSON.stringify(credentials),
       });
@@ -250,15 +238,13 @@
 
   async function initialise() {
     $("#loginButton").addEventListener("click", () => currentRole ? showDashboard(currentRole) : openLoginModal());
-    $("#heroLoginButton").addEventListener("click", () => openLoginModal("user"));
+    $("#heroLoginButton").addEventListener("click", openLoginModal);
     $("#homeButton").addEventListener("click", showPublicView);
     $("#whatsappButton").addEventListener("click", openWhatsApp);
     $("#closeLoginModal").addEventListener("click", closeLoginModal);
     loginModal.addEventListener("click", (event) => { if (event.target === loginModal) closeLoginModal(); });
     document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !loginModal.hidden) closeLoginModal(); });
-    $$('[data-login-tab]').forEach((button) => button.addEventListener("click", () => selectLoginTab(button.dataset.loginTab)));
-    $("#ownerLoginForm").addEventListener("submit", (event) => submitLogin(event, "owner"));
-    $("#userLoginForm").addEventListener("submit", (event) => submitLogin(event, "user"));
+    $("#loginForm").addEventListener("submit", submitLogin);
     $("#logoutButton").addEventListener("click", logout);
     $("#privateChatbotToggle").addEventListener("change", (event) => updatePrivateChatbot(event.target.checked));
     $("#refreshDashboardButton").addEventListener("click", loadUserDashboard);
