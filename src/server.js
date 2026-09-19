@@ -87,12 +87,12 @@ app.use((req, res, next) => {
 
 // No page in the new UI links to an .html URL. Redirect bookmarks made by the
 // old multi-page panel back into the SPA rather than exposing those paths.
-app.get(
-  ["/index.html", "/login.html", "/control.html", "/deploy.html"],
-  (req, res) => {
-    res.redirect(302, "/");
-  },
-);
+app.get(["/index.html", "/login.html", "/control.html"], (req, res) => {
+  res.redirect(302, "/");
+});
+// The deployment guide is intentionally public and remains available to users
+// who are already signed in; reading it never clears an authenticated session.
+app.get("/deploy.html", (req, res) => res.redirect(302, "/deploy"));
 // Legacy links land inside the same SPA rather than a separate login/control
 // document. The current navbar never navigates to either route.
 app.get("/login", (req, res) => res.redirect(302, "/"));
@@ -415,6 +415,40 @@ app.get("/api/user/groups/:groupId", requireRole("user"), async (req, res) => {
   }
 });
 
+app.get("/api/account/dashboard", requireAnyLogin, async (req, res) => {
+  try {
+    await database.initialize();
+    const profile = await profiles.getProfileSummary(req.session.auth.userLid);
+    if (!profile) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Account no longer exists." });
+    }
+    return res.json({
+      success: true,
+      user: {
+        username: profile.lid_username,
+        displayName: profile.display_name,
+        privateChatbot: Boolean(profile.private_chatbot),
+        game: {
+          class: profile.rpg_class,
+          level: profile.rpg_level || 1,
+          power: profile.rpg_power || 10,
+          balance: Number(profile.balance || 0),
+          bank: Number(profile.bank || 0),
+          inventoryCount: Number(profile.inventory_count || 0),
+          title: profile.shop_title || null,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("[server] Could not load account summary:", error.message);
+    return res
+      .status(503)
+      .json({ success: false, message: "Account data is unavailable." });
+  }
+});
+
 app.get("/api/user/dashboard", requireRole("user"), async (req, res) => {
   try {
     await database.initialize();
@@ -453,7 +487,7 @@ app.get("/api/user/dashboard", requireRole("user"), async (req, res) => {
 
 app.patch(
   "/api/user/private-chatbot",
-  requireRole("user"),
+  requireAnyLogin,
   requireFreshCsrf,
   async (req, res) => {
     if (typeof req.body?.enabled !== "boolean") {
@@ -723,21 +757,28 @@ app.patch(
   },
 );
 
-// ---- Owner diagnostics API ------------------------------------------------
+// ---- Owner diagnostics ----------------------------------------------------
+// One normalized snapshot is shared by the owner WebSocket stream. Keeping
+// this helper also preserves the authenticated REST endpoint for integrations,
+// but the SPA no longer polls it.
+async function collectSystemStats() {
+  const [cpuData, netData] = await Promise.all([
+    si.currentLoad(),
+    si.networkStats(),
+  ]);
+  const mem = memoryStats.snapshot();
+  return {
+    cpu: cpuData.currentLoad,
+    memory: mem.usedPercent,
+    mem,
+    downloadSpeed: netData[0]?.rx_sec ?? 0,
+    uploadSpeed: netData[0]?.tx_sec ?? 0,
+  };
+}
+
 app.get("/api/owner/sysstats", requireRole("owner"), async (req, res) => {
   try {
-    const [cpuData, netData] = await Promise.all([
-      si.currentLoad(),
-      si.networkStats(),
-    ]);
-    const mem = memoryStats.snapshot();
-    return res.json({
-      cpu: cpuData.currentLoad,
-      memory: mem.usedPercent,
-      mem,
-      downloadSpeed: netData[0]?.rx_sec ?? 0,
-      uploadSpeed: netData[0]?.tx_sec ?? 0,
-    });
+    return res.json(await collectSystemStats());
   } catch (error) {
     return res
       .status(500)
@@ -811,6 +852,7 @@ app.post("/github-webhook", (req, res) => {
 function serveSpa(req, res) {
   res.sendFile(path.join(publicDir, "index.html"));
 }
+app.get("/deploy", (req, res) => res.sendFile(path.join(publicDir, "deploy.html")));
 app.get(["/", "/dashboard", "/dashboard/group/:groupId"], serveSpa);
 
 const server = http.createServer(app);
@@ -838,6 +880,47 @@ server.on("upgrade", (request, socket, head) => {
     );
   });
 });
+// System information is sampled once per interval and broadcast to every
+// authenticated owner. This replaces one REST polling loop per dashboard while
+// retaining a single protected WebSocket for logs, bot status and sysstats.
+let ownerTelemetryTimer = null;
+let ownerTelemetryInFlight = false;
+
+async function broadcastOwnerTelemetry() {
+  const clients = [...logWss.clients].filter(
+    (client) => client.readyState === WebSocket.OPEN,
+  );
+  if (!clients.length || ownerTelemetryInFlight) return;
+
+  ownerTelemetryInFlight = true;
+  try {
+    const stats = await collectSystemStats();
+    const frame = JSON.stringify({
+      type: "telemetry",
+      status: readRuntimeData().status || "Offline",
+      stats,
+    });
+    clients.forEach((client) => client.send(frame));
+  } catch (error) {
+    console.error("[server] Could not stream owner telemetry:", error.message);
+  } finally {
+    ownerTelemetryInFlight = false;
+  }
+}
+
+function startOwnerTelemetry() {
+  if (ownerTelemetryTimer) return;
+  ownerTelemetryTimer = setInterval(() => {
+    void broadcastOwnerTelemetry();
+  }, 5000);
+}
+
+function stopOwnerTelemetryWhenIdle() {
+  if (logWss.clients.size || !ownerTelemetryTimer) return;
+  clearInterval(ownerTelemetryTimer);
+  ownerTelemetryTimer = null;
+}
+
 logWss.on("connection", (ws) => {
   const sendLogs = () => {
     for (const [type, file] of [
@@ -853,9 +936,16 @@ logWss.on("connection", (ws) => {
       });
     }
   };
-  const interval = setInterval(sendLogs, 1000);
-  ws.on("close", () => clearInterval(interval));
+
+  startOwnerTelemetry();
+  const logInterval = setInterval(sendLogs, 1000);
+  ws.on("close", () => {
+    clearInterval(logInterval);
+    // ws removes the closed client after this event; defer the idle check.
+    setImmediate(stopOwnerTelemetryWhenIdle);
+  });
   sendLogs();
+  void broadcastOwnerTelemetry();
 });
 
 server.listen(PORT, "0.0.0.0", () => {

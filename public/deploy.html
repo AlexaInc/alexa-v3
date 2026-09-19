@@ -26,7 +26,7 @@
     }
 
     .deploy-hero p {
-      color: var(--text-secondary);
+      color: var(--muted);
       max-width: 720px;
       margin: 0 auto;
       font-size: 1.05rem;
@@ -60,24 +60,24 @@
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: var(--text-secondary);
+      color: var(--muted);
       margin-bottom: 0.75rem;
     }
 
     .deploy-toc a {
       display: block;
-      color: var(--text-secondary);
+      color: var(--muted);
       text-decoration: none;
       font-size: 0.9rem;
       padding: 0.35rem 0;
       border-left: 2px solid transparent;
       padding-left: 0.75rem;
-      transition: var(--transition);
+      transition: color .2s ease, border-color .2s ease;
     }
 
     .deploy-toc a:hover {
-      color: var(--text-primary);
-      border-left-color: var(--accent-color);
+      color: var(--text);
+      border-left-color: var(--accent);
     }
 
     /* Big numbered step blocks */
@@ -117,7 +117,7 @@
       font-family: 'JetBrains Mono', 'Fira Code', monospace;
       font-size: 1.05rem;
       font-weight: 700;
-      color: var(--accent-color);
+      color: var(--accent);
       background: none;
       padding: 0;
     }
@@ -139,18 +139,18 @@
 
     .env-badge.optional {
       background: rgba(16, 185, 129, 0.12);
-      color: var(--accent-color);
+      color: var(--accent);
       border: 1px solid rgba(16, 185, 129, 0.35);
     }
 
     .env-what {
-      color: var(--text-primary);
+      color: var(--text);
       font-size: 0.95rem;
       margin-bottom: 0.75rem;
     }
 
     .env-howto {
-      color: var(--text-secondary);
+      color: var(--muted);
       font-size: 0.88rem;
       line-height: 1.65;
     }
@@ -176,7 +176,7 @@
 
     .group-heading {
       font-size: 1.1rem;
-      color: var(--text-primary);
+      color: var(--text);
       margin: 2rem 0 1rem 0;
       padding-bottom: 0.5rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -190,7 +190,7 @@
     .checklist li {
       padding: 0.6rem 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      color: var(--text-secondary);
+      color: var(--muted);
       font-size: 0.92rem;
       display: flex;
       gap: 0.6rem;
@@ -198,21 +198,55 @@
 
     .checklist li::before {
       content: "☐";
-      color: var(--accent-color);
+      color: var(--accent);
       flex-shrink: 0;
+    }
+
+    .step-num {
+      display: grid;
+      width: 2.35rem;
+      height: 2.35rem;
+      place-items: center;
+      flex: 0 0 auto;
+      border: 1px solid rgba(94, 230, 174, .36);
+      border-radius: .75rem;
+      color: var(--accent);
+      background: rgba(94, 230, 174, .10);
+      font-weight: 850;
+    }
+
+    .code-block {
+      overflow-x: auto;
+      margin: 1rem 0 0;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: .75rem;
+      color: #d8ffeb;
+      background: rgba(2, 7, 17, .66);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .82rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+
+    .deploy-page-main a:not(.btn) { color: var(--accent-bright); }
+    @media (max-width: 620px) {
+      .deploy-page-main { margin-top: 72px; }
+      .deploy-hero h1 { font-size: 2.15rem; }
+      .big-step-head { align-items: flex-start; }
+      .env-card { padding: 1.15rem; }
     }
   </style>
 </head>
 
 <body>
 
-  <nav class="navbar scrolled">
-    <h1 onclick="location.href='./';">Alexa v3</h1>
+  <nav class="navbar">
+    <button class="brand" type="button" onclick="location.href='/';" aria-label="Alexa home">Alexa <span>V3</span></button>
     <div class="nav-buttons">
-      <a href="./#features" class="btn btn-outline" style="text-decoration: none;">Features</a>
-      <a href="./" class="btn btn-outline" style="text-decoration: none;">Home</a>
-      <button id="loginButton" class="btn btn-outline" onclick="window.location.href='login.html'">Admin
-        Login</button>
+      <a href="/#features" class="btn btn-outline">Features</a>
+      <a href="/#deploy" class="btn btn-outline">Deploy</a>
+      <a id="loginButton" class="btn btn-primary" href="/?login=1">Sign in</a>
     </div>
   </nav>
 
@@ -252,12 +286,13 @@
             <h2>What you'll end up with</h2>
           </div>
           <div class="card glass" style="padding: 1.5rem;">
-            <p style="color: var(--text-secondary); line-height: 1.7;">
+            <p style="color: var(--muted); line-height: 1.7;">
               By the end of this guide you will have: a WhatsApp number that runs the Alexa bot 24/7, a MySQL
-              database storing group settings and bot data, and this web Control Panel (the one you're looking at
-              right now, or will reach at <code>/control</code>) protected by a username/password you set
-              yourself, showing live CPU/RAM graphs and logs. No coding required — just copying values into one
-              file called <code>.env</code>.
+              database storing group settings and bot data, and this web Control Panel at <code>/dashboard</code>.
+              You sign in there with the bot-issued WhatsApp LID and password from <code>.profile</code>; configured
+              owners are recognised automatically, with no separate owner login. The owner dashboard shows live
+              CPU/RAM/network data and logs. No coding required — just copying values into one file called
+              <code>.env</code>.
             </p>
           </div>
         </section>
@@ -271,7 +306,7 @@
           <div class="card glass" style="padding: 1.5rem;">
             <p class="env-what">You need <i>something</i> that stays powered on to run Node.js continuously. Pick
               one:</p>
-            <ul style="color: var(--text-secondary); font-size: 0.92rem; margin-left: 1.25rem; line-height: 1.8;">
+            <ul style="color: var(--muted); font-size: 0.92rem; margin-left: 1.25rem; line-height: 1.8;">
               <li><b>Easiest — a free PaaS.</b> No server management at all. Click one of these and follow their
                 on-screen setup (you'll still need Steps 3 below to fill in variables in their dashboard instead of
                 a file):
@@ -306,8 +341,8 @@ cd alexa-v3
 npm install</pre>
             <p class="env-howto">This downloads the bot's code and every library it depends on. It does
               <b>not</b> start the bot yet — you must configure it first (Step 3), otherwise it will crash or run
-              with broken features because it doesn't know your database, your WhatsApp number, or your admin
-              login.
+              with broken features because it doesn't know your database, your WhatsApp number, or its owner
+              identities.
             </p>
           </div>
         </section>
@@ -362,8 +397,8 @@ npm install</pre>
               authenticated account matches <code>Owner_nb</code> or <code>Owner_id</code>, it is automatically
               given the owner dashboard.
             </div>
-            <pre class="code-block env-example">Owner_nb=94771234567
-Owner_id=123456789012345</pre>
+            <pre class="code-block env-example">Owner_nb=94766045156,94723966801
+Owner_id=78151912841263,209032400879844</pre>
           </div>
 
           <div class="env-card glass card">
@@ -488,12 +523,12 @@ Owner_id=123456789012345</pre>
               <b>How to set it:</b> same international digits-only format as above. You can list more than one
               owner separated by commas.
             </div>
-            <pre class="code-block env-example">Owner_nb=94771234567,94719876543</pre>
+            <pre class="code-block env-example">Owner_nb=94766045156,94723966801</pre>
           </div>
 
           <hr class="section-divider">
 
-          <h3 id="env-optional" style="scroll-margin-top: 100px; color: var(--accent-color); font-size: 1.3rem; margin-bottom: 1rem;">
+          <h3 id="env-optional" style="scroll-margin-top: 100px; color: var(--accent); font-size: 1.3rem; margin-bottom: 1rem;">
             🟢 Optional variables — leave blank to skip that feature, nothing breaks
           </h3>
 
@@ -506,8 +541,10 @@ Owner_id=123456789012345</pre>
             </div>
             <p class="env-what">Your WhatsApp platform ID (LID), used in newer WhatsApp accounts alongside phone
               numbers for owner checks.</p>
-            <div class="env-howto">Leave blank unless you specifically know you need it — most setups work fine
-              with just <code>Owner_nb</code>.</div>
+            <div class="env-howto">Use the numeric LID(s), with no <code>@lid</code> suffix. More than one value
+              is supported: separate each LID with a comma. Most setups work with just <code>Owner_nb</code>, but
+              setting both formats gives the most reliable owner detection.</div>
+            <pre class="code-block env-example">Owner_id=78151912841263,209032400879844</pre>
           </div>
 
           <div class="env-card glass card">
@@ -519,6 +556,7 @@ Owner_id=123456789012345</pre>
               owner.</p>
             <div class="env-howto">Comma-separated numbers, same digits-only format. Leave blank if you don't need
               a separate moderator tier.</div>
+            <pre class="code-block env-example">spc_nb=94771442053,94703812053</pre>
           </div>
 
           <div class="env-card glass card">
@@ -742,7 +780,7 @@ Owner_id=123456789012345</pre>
 
   <footer class="container"
     style="padding: 4rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
-    <p style="color: var(--text-secondary);">&copy; 2026 Hansaka Rasanjana (AlexaInc). Built for the Decentralized
+    <p style="color: var(--muted);">&copy; 2026 Hansaka Rasanjana (AlexaInc). Built for the Decentralized
       Social World.</p>
   </footer>
 
@@ -752,8 +790,8 @@ Owner_id=123456789012345</pre>
       .then(data => {
         const btn = document.getElementById('loginButton');
         if (data.isLoggedIn) {
-          btn.textContent = 'Control Panel';
-          btn.onclick = () => window.location.href = '/control';
+          btn.textContent = 'Dashboard';
+          btn.href = '/dashboard';
         }
       })
       .catch(() => {});

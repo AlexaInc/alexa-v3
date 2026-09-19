@@ -12,8 +12,8 @@
   <nav class="navbar" id="navbar">
     <button class="brand" id="homeButton" type="button" aria-label="Alexa home">Alexa <span>V3</span></button>
     <div class="nav-buttons">
-      <a class="btn btn-outline" href="#features">Features</a>
-      <a class="btn btn-outline" href="#deploy">Deploy</a>
+      <a class="btn btn-outline" id="featuresNavButton" href="/#features">Features</a>
+      <a class="btn btn-outline" id="deployNavButton" href="/#deploy">Deploy</a>
       <button class="btn btn-primary" id="loginButton" type="button">Login</button>
     </div>
   </nav>
@@ -56,7 +56,7 @@
     <section class="container section" id="deploy">
       <div class="card glass deploy-card">
         <div><p class="eyebrow">Operators</p><h2>Deploy Alexa V3</h2><p>Configure MySQL and the application automatically creates the account, profile, group directory and game tables on startup.</p></div>
-        <a class="btn btn-outline" href="https://github.com/AlexaInc/alexa-v3" target="_blank" rel="noopener">View source</a>
+        <div class="deploy-actions"><a class="btn btn-primary" href="/deploy">Read detailed deploy guide <span aria-hidden="true">→</span></a><a class="btn btn-outline" href="https://github.com/AlexaInc/alexa-v3" target="_blank" rel="noopener">View source</a></div>
       </div>
     </section>
   </main>
@@ -112,6 +112,31 @@
     </section>
 
     <section id="ownerDashboard" hidden>
+      <section class="dashboard-grid two-col owner-account-overview" aria-label="Owner bot account and game profile">
+        <article class="card glass profile-card">
+          <p class="card-label">BOT ACCOUNT</p>
+          <h2 id="ownerDisplayName">—</h2>
+          <p class="mono" id="ownerLid">—</p>
+          <div class="toggle-row">
+            <div><strong>Personal chat AI</strong><small>Respond to non-command messages in your private chat.</small></div>
+            <label class="switch"><input id="ownerPrivateChatbotToggle" type="checkbox"><span></span></label>
+          </div>
+          <p class="muted profile-note">Use <code>.profile</code> in a private WhatsApp chat to view your credentials. Use <code>.changpw &lt;new password&gt;</code> to change the password.</p>
+          <button class="text-action" id="ownerProfileChatButton" type="button">Open Alexa chat <span aria-hidden="true">↗</span></button>
+        </article>
+        <article class="card glass game-card">
+          <p class="card-label">CONNECTED GAME PROFILE</p>
+          <div class="game-stats">
+            <div><small>Class</small><strong id="ownerGameClass">Unassigned</strong></div>
+            <div><small>Level</small><strong id="ownerGameLevel">1</strong></div>
+            <div><small>Power</small><strong id="ownerGamePower">10</strong></div>
+            <div><small>AlexaCash</small><strong id="ownerGameCash">0 AC</strong></div>
+            <div><small>Bank</small><strong id="ownerGameBank">0 AC</strong></div>
+            <div><small>Items</small><strong id="ownerGameItems">0</strong></div>
+          </div>
+        </article>
+      </section>
+
       <div class="owner-status-row">
         <span class="live-indicator" id="ownerLiveIndicator"></span>
         <strong id="ownerBotStatus">Checking bot status…</strong>
@@ -126,12 +151,28 @@
           </div>
           <div><p class="card-label">PROCESSOR</p><h3>CPU load</h3><p>Live system usage</p></div>
         </article>
-        <article class="usage-card glass">
-          <div class="usage-ring memory-ring" style="--ring-color: var(--purple)">
-            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="51"/><circle class="ring-value" id="ownerMemoryGauge" cx="60" cy="60" r="51"/></svg>
-            <strong id="ownerMemory">—</strong>
+        <article class="usage-card glass owner-memory-card">
+          <div class="usage-ring memory-ring" style="--ring-color: var(--accent)">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ring-track" cx="60" cy="60" r="51"/>
+              <circle class="ring-value memory-cache-ring" id="ownerMemoryCacheGauge" cx="60" cy="60" r="51"/>
+              <circle class="ring-value" id="ownerMemoryGauge" cx="60" cy="60" r="51"/>
+              <line class="memory-pressure-tick" id="ownerMemoryPressureTick" x1="111" y1="60" x2="102" y2="60" hidden/>
+            </svg>
+            <strong><span id="ownerMemory">—</span><small id="ownerMemorySummary">— / —</small></strong>
           </div>
-          <div><p class="card-label">MEMORY</p><h3>RAM in use</h3><p id="ownerMemoryDetail">Collecting data…</p></div>
+          <div class="memory-card-copy">
+            <div class="memory-title"><div><p class="card-label">MEMORY</p><h3>RAM in use</h3></div><span class="memory-scope-badge" id="ownerMemoryScopeBadge" hidden>cgroup</span></div>
+            <div class="memory-breakdown" aria-label="RAM usage breakdown">
+              <div><span class="memory-dot used"></span><span>Used</span><strong id="ownerMemoryUsed">—</strong></div>
+              <div><span class="memory-dot cache"></span><span>Buff/cache</span><strong id="ownerMemoryCache">—</strong></div>
+              <div><span class="memory-dot free"></span><span>Free</span><strong id="ownerMemoryFree">—</strong></div>
+              <div><span class="memory-dot free"></span><span>Available</span><strong id="ownerMemoryAvailable">—</strong></div>
+              <div id="ownerMemorySwapRow" hidden><span class="memory-dot swap"></span><span>Swap</span><strong id="ownerMemorySwap">—</strong></div>
+            </div>
+            <div class="memory-processes" id="ownerMemoryProcesses" hidden aria-label="Alexa process memory"></div>
+            <p class="memory-note" id="ownerMemoryNote">Buff/cache is reclaimable — Linux uses spare RAM to speed up files.</p>
+          </div>
         </article>
         <article class="usage-card glass">
           <div class="usage-ring download-ring" style="--ring-color: #8bc9ff">

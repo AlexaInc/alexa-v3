@@ -232,6 +232,9 @@ code { padding: .08rem .32rem; border: 1px solid rgba(94, 230, 174, .13); border
 .empty-state strong { font-size: 1.02rem; }
 .empty-state p { max-width: 510px; margin: .55rem auto 0; color: var(--muted); }
 
+/* Owner dashboard: the owner remains a normal bot account, followed by diagnostics. */
+.owner-account-overview { margin-bottom: 1rem; }
+
 /* Owner dashboard: compact live status, circular usage meters and protected logs. */
 .owner-status-row { display: flex; align-items: center; gap: .65rem; margin-bottom: 1rem; padding: .78rem 1rem; border: 1px solid var(--border); border-radius: .8rem; color: var(--muted); background: rgba(15, 28, 52, .54); font-size: .82rem; }
 .owner-status-row strong { color: var(--text); }
@@ -378,4 +381,47 @@ code { padding: .08rem .32rem; border: 1px solid rgba(94, 230, 174, .13); border
   .setting-panel-heading { min-height: 0; }
   .group-detail-actions { align-items: stretch; flex-direction: column; }
   .group-detail-actions .btn { width: 100%; }
+}
+
+/* Public deployment callout and the restored detailed owner RAM view. */
+.deploy-actions { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; }
+
+.owner-memory-card {
+  grid-column: 1 / -1;
+  grid-template-columns: 108px minmax(0, 1fr);
+  align-items: start;
+  min-height: 0;
+}
+.owner-memory-card .usage-ring { margin-top: .45rem; }
+.usage-ring strong { display: grid; align-content: center; gap: .08rem; }
+.usage-ring strong small { color: var(--muted); font-size: .55rem; font-weight: 650; letter-spacing: 0; }
+.memory-cache-ring { stroke: var(--purple) !important; opacity: .72; }
+.memory-pressure-tick { stroke: var(--warning); stroke-width: 3; stroke-linecap: round; opacity: .96; }
+.memory-card-copy { min-width: 0; }
+.memory-title { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.memory-title .card-label { margin-bottom: .25rem; }
+.memory-title h3 { margin: 0; }
+.memory-scope-badge { flex: 0 0 auto; padding: .16rem .48rem; border: 1px solid rgba(169, 166, 255, .34); border-radius: 999px; color: #d0ceff; background: rgba(169, 166, 255, .12); font-size: .62rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.memory-breakdown { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .36rem 1rem; margin-top: .78rem; }
+.memory-breakdown > div { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: .42rem; min-width: 0; color: var(--muted); font-size: .72rem; }
+.memory-breakdown strong { min-width: 0; color: var(--text); font-size: .71rem; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.memory-dot { width: 8px; height: 8px; border-radius: 50%; }
+.memory-dot.used { background: var(--accent); box-shadow: 0 0 8px rgba(94, 230, 174, .55); }
+.memory-dot.cache { background: var(--purple); box-shadow: 0 0 8px rgba(169, 166, 255, .45); }
+.memory-dot.free { background: rgba(220, 230, 255, .26); }
+.memory-dot.swap { background: var(--warning); }
+.memory-processes { display: grid; gap: .3rem; margin-top: .75rem; padding-top: .7rem; border-top: 1px solid var(--border); }
+.memory-processes > div { display: flex; justify-content: space-between; gap: .75rem; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .69rem; }
+.memory-processes strong { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.memory-note { margin: .67rem 0 0; color: var(--muted); font-size: .68rem !important; line-height: 1.4; }
+
+@media (max-width: 780px) {
+  .deploy-actions { width: 100%; }
+  .deploy-actions .btn { flex: 1 1 190px; }
+}
+@media (max-width: 520px) {
+  .owner-memory-card { grid-template-columns: 88px minmax(0, 1fr); }
+  .owner-memory-card .usage-ring { margin-top: .15rem; }
+  .memory-breakdown { grid-template-columns: 1fr; gap: .32rem; }
+  .memory-title { align-items: flex-start; flex-direction: column; gap: .35rem; }
 }

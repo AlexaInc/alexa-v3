@@ -5901,17 +5901,31 @@ Url: ${response[1].url}
                         }
 
                         case 'chatbot': {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins) return mess.admin();
-                            if (!isBotAdmins) return mess.botadmin();
                             if (!args[0] || (args[0] !== 'on' && args[0] !== 'off'))
                                 return AlexaInc.sendMessage(msg.key.remoteJid, {
                                     text: 'Please send .chatbot on/off'
                                 });
 
-                            const value1 = args[0] === 'on';
+                            const value1 = (args[0] === 'on') ? true : false;
 
-                            // Corrected SQL query
+                            if (!isGroup) {
+                                const enables = userProfiles.setPrivateChatbot(finalLid, value1);
+
+                                if (enables) {
+                                    AlexaInc.sendMessage(msg.key.remoteJid, {
+                                        text: 'chatbot ' + args[0] + ' successfully!'
+                                    });
+                                } else {
+                                    AlexaInc.sendMessage(msg.key.remoteJid, {
+                                        text: 'chatbot ' + args[0] + ' failed!'
+                                    });
+                                }
+                                return;
+                            }
+                            if (!isAdmins) return mess.admin();
+                            if (!isBotAdmins) return mess.botadmin();
+
+
                             const query = `
     INSERT INTO \`groups\` (group_id, chatbot)
     VALUES (?, ?)

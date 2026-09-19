@@ -9,7 +9,7 @@
   // This one-time token is issued inside the authenticated server session.
   // Every state-changing request consumes it and receives a replacement.
   let csrfToken = null;
-  let ownerStatsTimer = null;
+  let publicStatusTimer = null;
   let logSocket = null;
   let logReconnectTimer = null;
   let activeLogTab = "index";
@@ -75,8 +75,6 @@
   }
 
   function stopOwnerStreams() {
-    clearInterval(ownerStatsTimer);
-    ownerStatsTimer = null;
     clearTimeout(logReconnectTimer);
     logReconnectTimer = null;
     if (logSocket) {
@@ -87,26 +85,48 @@
     }
   }
 
-  function showPublicView() {
-    currentRole = null;
+  function stopPublicStatusPolling() {
+    clearInterval(publicStatusTimer);
+    publicStatusTimer = null;
+  }
+
+  function startPublicStatusPolling() {
+    if (publicStatusTimer) return;
+    void loadStatus();
+    publicStatusTimer = setInterval(loadStatus, 15_000);
+  }
+
+  // Going back to the public site is navigation only. The browser session,
+  // role and CSRF token stay intact until the explicit Logout action is used.
+  function showPublicView({ preserveSession = false, replaceRoute = true } = {}) {
+    const retainedRole = preserveSession ? currentRole : null;
     stopOwnerStreams();
     activeGroup = null;
+    currentRole = retainedRole;
     $("#groupDetailView").hidden = true;
     $("#publicView").hidden = false;
     $("#dashboardView").hidden = true;
-    $("#loginButton").textContent = "Login";
-    if (location.pathname !== "/") history.replaceState({}, "", "/");
+    $("#loginButton").textContent = retainedRole ? "Dashboard" : "Login";
+    if (replaceRoute && (location.pathname !== "/" || location.search || location.hash)) {
+      history.replaceState({}, "", "/");
+    }
+    startPublicStatusPolling();
   }
 
-  async function goHome() {
-    // The brand is navigation, not logout. Keep the existing authenticated
-    // session and return signed-in visitors to their dashboard.
-    if (currentRole) return showDashboard(currentRole);
-    return showPublicView();
+  function showPublicSection(section) {
+    showPublicView({ preserveSession: Boolean(currentRole) });
+    history.pushState({}, "", `/#${encodeURIComponent(section)}`);
+    requestAnimationFrame(() => $("#" + section)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
+  function goHome() {
+    showPublicView({ preserveSession: Boolean(currentRole) });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function showDashboard(role) {
     currentRole = role;
+    stopPublicStatusPolling();
     activeGroup = null;
     $("#groupDetailView").hidden = true;
     $("#publicView").hidden = true;
@@ -128,9 +148,9 @@
     $("#dashboardEyebrow").textContent = "OWNER CONTROL CENTER";
     $("#dashboardTitle").textContent = "Command Center";
     $("#dashboardSubtitle").textContent = "Live diagnostics, protected logs and complete group control.";
-    await Promise.all([loadOwnerStats(), loadOwnerGroups()]);
-    clearInterval(ownerStatsTimer);
-    ownerStatsTimer = setInterval(loadOwnerStats, 5000);
+    // Sysstats and bot state arrive through the authenticated /logs WebSocket.
+    // No owner REST polling is started here.
+    await Promise.all([loadOwnerAccount(), loadOwnerGroups()]);
     connectLogStream();
   }
 
@@ -171,7 +191,7 @@
       // The bot fetches WhatsApp metadata asynchronously; keep the refresh
       // state visible long enough for the fresh directory snapshot to arrive.
       await new Promise((resolve) => setTimeout(resolve, 3000));
-      if (scope === "owner") await Promise.all([loadOwnerGroups(), loadOwnerStats()]);
+      if (scope === "owner") await loadOwnerGroups();
       else await loadUserDashboard();
     } catch (error) {
       alert(error.message || "Could not request a WhatsApp group refresh.");
@@ -201,6 +221,26 @@
     } catch (error) {
       if (/Authentication required|Account no longer exists/.test(error.message)) return showPublicView();
       alert(error.message || "Could not load your dashboard.");
+    }
+  }
+
+  async function loadOwnerAccount() {
+    if (currentRole !== "owner") return;
+    try {
+      const data = await api("/api/account/dashboard");
+      const user = data.user;
+      $("#ownerDisplayName").textContent = user.displayName || "Alexa owner";
+      $("#ownerLid").textContent = user.username;
+      $("#ownerPrivateChatbotToggle").checked = Boolean(user.privateChatbot);
+      $("#ownerGameClass").textContent = user.game.class || "Unassigned";
+      $("#ownerGameLevel").textContent = user.game.level || 1;
+      $("#ownerGamePower").textContent = user.game.power || 10;
+      $("#ownerGameCash").textContent = `${formatNumber(user.game.balance)} AC`;
+      $("#ownerGameBank").textContent = `${formatNumber(user.game.bank)} AC`;
+      $("#ownerGameItems").textContent = user.game.inventoryCount || 0;
+    } catch (error) {
+      if (/Authentication required|Account no longer exists/.test(error.message)) return showPublicView();
+      alert(error.message || "Could not load the owner account profile.");
     }
   }
 
@@ -294,8 +334,7 @@
     }
   }
 
-  async function updatePrivateChatbot(enabled) {
-    const toggle = $("#privateChatbotToggle");
+  async function updatePrivateChatbot(enabled, toggle) {
     toggle.disabled = true;
     try {
       await api("/api/user/private-chatbot", {
@@ -316,34 +355,81 @@
     element.style.strokeDashoffset = String(RING_CIRCUMFERENCE * (1 - percent / 100));
   }
 
-  async function loadOwnerStats() {
-    if (currentRole !== "owner") return;
-    try {
-      const [stats, status] = await Promise.all([api("/api/owner/sysstats"), api("/status", { headers: {} })]);
-      const online = status.status === "Online";
-      $("#ownerBotStatus").textContent = online ? "Bot online" : "Bot offline";
-      $("#ownerLiveIndicator").classList.toggle("online", online);
+  function setRingSegment(selector, startPercent, lengthPercent) {
+    const element = $(selector);
+    const start = Math.max(0, Math.min(100, Number(startPercent) || 0));
+    const length = Math.max(0, Math.min(100 - start, Number(lengthPercent) || 0));
+    const startLength = (start / 100) * RING_CIRCUMFERENCE;
+    const segmentLength = (length / 100) * RING_CIRCUMFERENCE;
+    element.style.strokeDasharray = `0 ${startLength} ${segmentLength} ${RING_CIRCUMFERENCE}`;
+    element.style.strokeDashoffset = "0";
+  }
 
-      const cpu = Math.round(stats.cpu || 0);
-      const memory = Math.round(stats.memory || 0);
-      const downMbps = ((Number(stats.downloadSpeed) || 0) * 8 / 1_000_000);
-      const upMbps = ((Number(stats.uploadSpeed) || 0) * 8 / 1_000_000);
-      $("#ownerCpu").textContent = `${cpu}%`;
-      $("#ownerMemory").textContent = `${memory}%`;
-      $("#ownerDownload").textContent = `${downMbps.toFixed(2)} Mbps`;
-      $("#ownerUpload").textContent = `${upMbps.toFixed(2)} Mbps`;
-      $("#ownerMemoryDetail").textContent = stats.mem?.total
-        ? `${formatBytes(stats.mem.used)} / ${formatBytes(stats.mem.total)}`
-        : "Live system usage";
-      setRing("#ownerCpuGauge", cpu);
-      setRing("#ownerMemoryGauge", memory);
-      // Network has no fixed maximum. The ring uses a calm 10 Mbps reference
-      // while the centre always displays the exact current throughput.
-      setRing("#ownerDownloadGauge", Math.min(100, downMbps * 10));
-      setRing("#ownerUploadGauge", Math.min(100, upMbps * 10));
-    } catch (error) {
-      if (/Authentication required/.test(error.message)) showPublicView();
+  function renderOwnerMemory(mem, legacyPercent) {
+    const usedPercent = Number(mem?.usedPercent ?? legacyPercent) || 0;
+    const cachePercent = Number(mem?.cachePercent) || 0;
+    $("#ownerMemory").textContent = `${Math.round(usedPercent)}%`;
+    setRing("#ownerMemoryGauge", usedPercent);
+    setRingSegment("#ownerMemoryCacheGauge", usedPercent, cachePercent);
+
+    if (!mem) {
+      $("#ownerMemorySummary").textContent = "Live system usage";
+      return;
     }
+
+    $("#ownerMemorySummary").textContent = `${formatBytes(mem.used)} / ${formatBytes(mem.total)}`;
+    $("#ownerMemoryUsed").textContent = `${formatBytes(mem.used)} (${Math.round(usedPercent)}%)`;
+    $("#ownerMemoryCache").textContent = `${formatBytes(mem.buffcache?.total)} (${Math.round(cachePercent)}%)`;
+    $("#ownerMemoryFree").textContent = formatBytes(mem.free);
+    $("#ownerMemoryAvailable").textContent = `${formatBytes(mem.available)} (${Math.round(Number(mem.availablePercent) || 0)}%)`;
+
+    const pressureTick = $("#ownerMemoryPressureTick");
+    const pressure = Number(mem.pressurePercent) || 0;
+    pressureTick.hidden = pressure <= 0.5;
+    if (!pressureTick.hidden) pressureTick.setAttribute("transform", `rotate(${(pressure / 100) * 360} 60 60)`);
+
+    $("#ownerMemoryScopeBadge").hidden = !mem.limited;
+    const swap = mem.swap || {};
+    $("#ownerMemorySwapRow").hidden = !(Number(swap.total) > 0);
+    $("#ownerMemorySwap").textContent = `${formatBytes(swap.used)} / ${formatBytes(swap.total)}`;
+
+    const processBox = $("#ownerMemoryProcesses");
+    const processes = Array.isArray(mem.processes) ? mem.processes : [];
+    processBox.replaceChildren();
+    processBox.hidden = !processes.length;
+    for (const processInfo of processes) {
+      const row = document.createElement("div");
+      const label = document.createElement("span");
+      const value = document.createElement("strong");
+      label.textContent = processInfo.label || "node";
+      const cap = processInfo.heapCap ? ` / ${formatBytes(processInfo.heapCap)} cap` : "";
+      value.textContent = `${formatBytes(processInfo.rss)}${cap}`;
+      row.append(label, value);
+      processBox.append(row);
+    }
+    $("#ownerMemoryNote").textContent = mem.limited
+      ? "Container limit shown (cgroup). Buff/cache is reclaimable."
+      : "Buff/cache is reclaimable — Linux uses spare RAM to speed up files.";
+  }
+
+  function renderOwnerTelemetry(stats, status) {
+    if (currentRole !== "owner") return;
+    const online = status === "Online";
+    $("#ownerBotStatus").textContent = online ? "Bot online" : "Bot offline";
+    $("#ownerLiveIndicator").classList.toggle("online", online);
+
+    const cpu = Math.round(stats.cpu || 0);
+    const downMbps = ((Number(stats.downloadSpeed) || 0) * 8 / 1_000_000);
+    const upMbps = ((Number(stats.uploadSpeed) || 0) * 8 / 1_000_000);
+    $("#ownerCpu").textContent = `${cpu}%`;
+    $("#ownerDownload").textContent = `${downMbps.toFixed(2)} Mbps`;
+    $("#ownerUpload").textContent = `${upMbps.toFixed(2)} Mbps`;
+    setRing("#ownerCpuGauge", cpu);
+    renderOwnerMemory(stats.mem, stats.memory);
+    // Network has no fixed maximum. The ring uses a calm 10 Mbps reference
+    // while the centre always displays the exact current throughput.
+    setRing("#ownerDownloadGauge", Math.min(100, downMbps * 10));
+    setRing("#ownerUploadGauge", Math.min(100, upMbps * 10));
   }
 
   async function loadOwnerGroups() {
@@ -391,10 +477,14 @@
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        if (data.type === "telemetry" && data.stats) {
+          renderOwnerTelemetry(data.stats, data.status);
+          return;
+        }
         if (!Array.isArray(data.logs) || !Object.prototype.hasOwnProperty.call(logLines, data.type)) return;
         logLines[data.type] = data.logs.map((line) => String(line));
         if (data.type === activeLogTab) renderLogs();
-      } catch { /* Ignore a malformed log frame without breaking the dashboard. */ }
+      } catch { /* Ignore a malformed stream frame without breaking the dashboard. */ }
     };
     socket.onerror = () => updateLogConnection("Stream unavailable");
     socket.onclose = () => {
@@ -439,15 +529,25 @@
     $("#loginButton").addEventListener("click", () => currentRole ? showDashboard(currentRole) : openLoginModal());
     $("#heroLoginButton").addEventListener("click", openLoginModal);
     $("#homeButton").addEventListener("click", goHome);
+    $("#featuresNavButton").addEventListener("click", (event) => {
+      event.preventDefault();
+      showPublicSection("features");
+    });
+    $("#deployNavButton").addEventListener("click", (event) => {
+      event.preventDefault();
+      showPublicSection("deploy");
+    });
     $("#whatsappButton").addEventListener("click", () => openWhatsApp());
     $("#profileChatButton").addEventListener("click", openProfileChat);
+    $("#ownerProfileChatButton").addEventListener("click", openProfileChat);
     $("#loginProfileChatButton").addEventListener("click", openProfileChat);
     $("#closeLoginModal").addEventListener("click", closeLoginModal);
     loginModal.addEventListener("click", (event) => { if (event.target === loginModal) closeLoginModal(); });
     document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !loginModal.hidden) closeLoginModal(); });
     $("#loginForm").addEventListener("submit", submitLogin);
     $("#logoutButton").addEventListener("click", logout);
-    $("#privateChatbotToggle").addEventListener("change", (event) => updatePrivateChatbot(event.target.checked));
+    $("#privateChatbotToggle").addEventListener("change", (event) => updatePrivateChatbot(event.target.checked, event.target));
+    $("#ownerPrivateChatbotToggle").addEventListener("change", (event) => updatePrivateChatbot(event.target.checked, event.target));
     $("#refreshDashboardButton").addEventListener("click", () => requestGroupRefresh("user"));
     $("#refreshOwnerDashboardButton").addEventListener("click", () => requestGroupRefresh("owner"));
     $("#groupGrid").addEventListener("click", (event) => {
@@ -462,8 +562,11 @@
     $("#groupSettingsForm").addEventListener("submit", saveGroupDetail);
     $$("[data-log-tab]").forEach((button) => button.addEventListener("click", () => selectLogTab(button.dataset.logTab)));
     window.addEventListener("popstate", () => {
-      if (location.pathname === "/") goHome();
-      else if (currentRole) {
+      if (location.pathname === "/") {
+        showPublicView({ preserveSession: Boolean(currentRole), replaceRoute: false });
+        const section = decodeURIComponent(location.hash.replace(/^#/, ""));
+        if (section) requestAnimationFrame(() => $("#" + section)?.scrollIntoView({ behavior: "auto", block: "start" }));
+      } else if (currentRole) {
         const groupPrefix = "/dashboard/group/";
         const groupId = location.pathname.startsWith(groupPrefix)
           ? location.pathname.slice(groupPrefix.length)
@@ -473,22 +576,30 @@
       }
     });
 
-    loadStatus();
-    setInterval(loadStatus, 15_000);
+    const wantsLogin = new URLSearchParams(location.search).has("login");
     try {
       const session = await api("/api/auth/session", { headers: {} });
       csrfToken = session.csrfToken || null;
       if (session.authenticated) {
-        await showDashboard(session.role);
+        currentRole = session.role;
         const groupPrefix = "/dashboard/group/";
         const groupId = location.pathname.startsWith(groupPrefix)
           ? location.pathname.slice(groupPrefix.length)
           : null;
-        if (groupId) {
-          await openGroupSettings(decodeURIComponent(groupId), session.role, { updateHistory: false });
+        if (location.pathname.startsWith("/dashboard") || wantsLogin) {
+          await showDashboard(session.role);
+          if (groupId) await openGroupSettings(decodeURIComponent(groupId), session.role, { updateHistory: false });
+        } else {
+          // A signed-in visitor may deliberately browse Home, Features or the
+          // deployment guide. Keep their role so the Dashboard button returns
+          // without another sign-in.
+          showPublicView({ preserveSession: true, replaceRoute: false });
+          const section = decodeURIComponent(location.hash.replace(/^#/, ""));
+          if (section) requestAnimationFrame(() => $("#" + section)?.scrollIntoView({ behavior: "auto", block: "start" }));
         }
-      } else if (location.pathname.startsWith("/dashboard")) {
-        history.replaceState({}, "", "/");
+      } else {
+        showPublicView({ replaceRoute: location.pathname.startsWith("/dashboard") || wantsLogin });
+        if (wantsLogin) openLoginModal();
       }
     } catch {
       showPublicView();
