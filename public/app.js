@@ -5,6 +5,10 @@
   const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector)];
   const RING_CIRCUMFERENCE = 2 * Math.PI * 51;
   let currentRole = null;
+  let activeGroup = null;
+  // This one-time token is issued inside the authenticated server session.
+  // Every state-changing request consumes it and receives a replacement.
+  let csrfToken = null;
   let ownerStatsTimer = null;
   let logSocket = null;
   let logReconnectTimer = null;
@@ -39,11 +43,15 @@
   }
 
   async function api(url, options = {}) {
-    const response = await fetch(url, {
-      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-      ...options,
-    });
+    const method = String(options.method || "GET").toUpperCase();
+    const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+    if (!["GET", "HEAD", "OPTIONS"].includes(method) && csrfToken) {
+      headers["X-CSRF-Token"] = csrfToken;
+    }
+    const response = await fetch(url, { ...options, method, headers });
     const data = await response.json().catch(() => ({}));
+    const nextToken = response.headers.get("X-CSRF-Token");
+    if (nextToken) csrfToken = nextToken;
     if (!response.ok) throw new Error(data.message || "Request failed.");
     return data;
   }
@@ -82,6 +90,8 @@
   function showPublicView() {
     currentRole = null;
     stopOwnerStreams();
+    activeGroup = null;
+    $("#groupDetailView").hidden = true;
     $("#publicView").hidden = false;
     $("#dashboardView").hidden = true;
     $("#loginButton").textContent = "Login";
@@ -97,12 +107,17 @@
 
   async function showDashboard(role) {
     currentRole = role;
+    activeGroup = null;
+    $("#groupDetailView").hidden = true;
     $("#publicView").hidden = true;
     $("#dashboardView").hidden = false;
     $("#userDashboard").hidden = role !== "user";
     $("#ownerDashboard").hidden = role !== "owner";
     $("#loginButton").textContent = "Dashboard";
-    if (location.pathname !== "/dashboard") history.pushState({}, "", "/dashboard");
+    const openingSavedGroupRoute = location.pathname.startsWith("/dashboard/group/");
+    if (!openingSavedGroupRoute && location.pathname !== "/dashboard") {
+      history.pushState({}, "", "/dashboard");
+    }
 
     if (role === "user") {
       stopOwnerStreams();
@@ -189,10 +204,6 @@
     }
   }
 
-  function settingToggle(group, field, title, hint) {
-    return `<label class="setting-toggle"><span><strong>${escapeHTML(title)}</strong><small>${escapeHTML(hint)}</small></span><input type="checkbox" data-field="${field}" ${group[field] ? "checked" : ""}></label>`;
-  }
-
   function renderGroups(groups, scope) {
     const owner = scope === "owner";
     const grid = $(owner ? "#ownerGroupGrid" : "#groupGrid");
@@ -203,44 +214,79 @@
       const botLabel = group.bot_is_admin
         ? '<span class="pill success">Bot is admin</span>'
         : '<span class="pill warning">Bot is not admin</span>';
-      return `<article class="group-card card glass" data-group-id="${escapeHTML(group.group_id)}" data-scope="${scope}">
+      return `<article class="group-card group-list-card card glass" data-group-id="${escapeHTML(group.group_id)}" data-scope="${scope}">
         <header><div><h3>${escapeHTML(group.subject)}</h3><p>${formatNumber(group.member_count)} members</p></div>${botLabel}</header>
         <p class="group-id">${escapeHTML(group.group_id)}</p>
-        <div class="settings-list">
-          ${settingToggle(group, "chatbot", "Group AI", "Reply-to-bot assistant")}
-          ${settingToggle(group, "antilink", "Anti-link", "Moderate links")}
-          <label class="setting-select"><span>Link action</span><select data-field="linkAction">
-            ${["delete", "warn", "remove", "false"].map((action) => `<option value="${action}" ${group.link_a === action ? "selected" : ""}>${action}</option>`).join("")}
-          </select></label>
-          ${settingToggle(group, "antinsfw", "Anti-NSFW", "Moderate flagged text")}
-          <label class="setting-select"><span>NSFW action</span><select data-field="nsfwAction">
-            ${["delete", "warn", "remove", "false"].map((action) => `<option value="${action}" ${group.nsfw_a === action ? "selected" : ""}>${action}</option>`).join("")}
-          </select></label>
-          ${settingToggle(group, "welcome", "Welcome", "Send welcome message")}
-          ${settingToggle(group, "goodbye", "Goodbye", "Send leave message")}
-        </div>
-        <footer><button class="btn btn-primary save-group" data-group="${encodedId}" type="button">Save group settings</button><span class="save-state" aria-live="polite"></span></footer>
+        <footer><button class="btn btn-primary open-group" data-group="${encodedId}" type="button">Manage settings <span aria-hidden="true">→</span></button></footer>
       </article>`;
     }).join("");
   }
 
-  async function saveGroupSettings(button) {
-    const card = button.closest(".group-card");
-    const groupId = decodeURIComponent(button.dataset.group);
-    const scope = card.dataset.scope === "owner" ? "owner" : "user";
+  function setDetailBotBadge(isBotAdmin) {
+    const badge = $("#detailBotAdmin");
+    badge.textContent = isBotAdmin ? "Bot is admin" : "Bot is not admin";
+    badge.className = `pill ${isBotAdmin ? "success" : "warning"}`;
+  }
+
+  function populateGroupDetail(group) {
+    $("#detailGroupName").textContent = group.subject || "Unnamed group";
+    $("#detailGroupId").textContent = group.group_id;
+    setDetailBotBadge(Boolean(group.bot_is_admin));
+    $("#detailChatbot").checked = Boolean(group.chatbot);
+    $("#detailAllowBots").checked = Boolean(group.is_allow_bots);
+    $("#detailAntilink").checked = Boolean(group.antilink);
+    $("#detailLinkAction").value = group.link_a || "delete";
+    $("#detailAntinsfw").checked = Boolean(group.antinsfw);
+    $("#detailNsfwAction").value = group.nsfw_a || "delete";
+    $("#detailWelcome").checked = Boolean(group.is_welcome);
+    $("#detailWelcomeMessage").value = group.wc_m || "";
+    $("#detailGoodbye").checked = Boolean(group.isleft_w);
+    $("#detailGoodbyeMessage").value = group.left_m || "";
+    $("#detailSaveState").textContent = "";
+  }
+
+  async function openGroupSettings(groupId, scope, { updateHistory = true } = {}) {
+    try {
+      const data = await api(`/api/${scope}/groups/${encodeURIComponent(groupId)}`);
+      activeGroup = { id: data.group.group_id, scope };
+      populateGroupDetail(data.group);
+      $("#userDashboard").hidden = true;
+      $("#ownerDashboard").hidden = true;
+      $("#groupDetailView").hidden = false;
+      if (updateHistory) {
+        history.pushState({}, "", `/dashboard/group/${encodeURIComponent(activeGroup.id)}`);
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      if (/Authentication required/.test(error.message)) return showPublicView();
+      alert(error.message || "Could not open this group’s settings.");
+    }
+  }
+
+  async function returnToGroupList() {
+    if (!currentRole) return showPublicView();
+    history.pushState({}, "", "/dashboard");
+    await showDashboard(currentRole);
+  }
+
+  async function saveGroupDetail(event) {
+    event.preventDefault();
+    if (!activeGroup) return;
+    const button = $("#saveGroupDetailButton");
+    const state = $("#detailSaveState");
     const payload = {};
-    $$("input[data-field]", card).forEach((input) => { payload[input.dataset.field] = input.checked; });
-    $$("select[data-field]", card).forEach((select) => { payload[select.dataset.field] = select.value; });
-    const state = $(".save-state", card);
+    $$("[data-field]", $("#groupSettingsForm")).forEach((field) => {
+      payload[field.dataset.field] = field.type === "checkbox" ? field.checked : field.value;
+    });
     button.disabled = true;
     state.textContent = "Saving…";
     try {
-      await api(`/api/${scope}/groups/${encodeURIComponent(groupId)}/settings`, {
+      await api(`/api/${activeGroup.scope}/groups/${encodeURIComponent(activeGroup.id)}/settings`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
-      state.textContent = "Saved ✓";
-      setTimeout(() => { state.textContent = ""; }, 2500);
+      state.textContent = "Saved securely ✓";
+      setTimeout(() => { if (state.textContent === "Saved securely ✓") state.textContent = ""; }, 2500);
     } catch (error) {
       state.textContent = error.message || "Save failed.";
     } finally {
@@ -372,6 +418,7 @@
         method: "POST",
         body: JSON.stringify(credentials),
       });
+      csrfToken = data.csrfToken || csrfToken;
       closeLoginModal();
       form.reset();
       await showDashboard(data.role);
@@ -384,6 +431,7 @@
 
   async function logout() {
     try { await api("/api/auth/logout", { method: "POST", body: "{}" }); } catch { /* Session may already be gone. */ }
+    csrfToken = null;
     showPublicView();
   }
 
@@ -403,25 +451,45 @@
     $("#refreshDashboardButton").addEventListener("click", () => requestGroupRefresh("user"));
     $("#refreshOwnerDashboardButton").addEventListener("click", () => requestGroupRefresh("owner"));
     $("#groupGrid").addEventListener("click", (event) => {
-      const button = event.target.closest(".save-group");
-      if (button) saveGroupSettings(button);
+      const button = event.target.closest(".open-group");
+      if (button) openGroupSettings(decodeURIComponent(button.dataset.group), "user");
     });
     $("#ownerGroupGrid").addEventListener("click", (event) => {
-      const button = event.target.closest(".save-group");
-      if (button) saveGroupSettings(button);
+      const button = event.target.closest(".open-group");
+      if (button) openGroupSettings(decodeURIComponent(button.dataset.group), "owner");
     });
+    $("#backToGroupListButton").addEventListener("click", returnToGroupList);
+    $("#groupSettingsForm").addEventListener("submit", saveGroupDetail);
     $$("[data-log-tab]").forEach((button) => button.addEventListener("click", () => selectLogTab(button.dataset.logTab)));
     window.addEventListener("popstate", () => {
       if (location.pathname === "/") goHome();
-      else if (currentRole) showDashboard(currentRole);
+      else if (currentRole) {
+        const groupPrefix = "/dashboard/group/";
+        const groupId = location.pathname.startsWith(groupPrefix)
+          ? location.pathname.slice(groupPrefix.length)
+          : null;
+        if (groupId) openGroupSettings(decodeURIComponent(groupId), currentRole, { updateHistory: false });
+        else showDashboard(currentRole);
+      }
     });
 
     loadStatus();
     setInterval(loadStatus, 15_000);
     try {
       const session = await api("/api/auth/session", { headers: {} });
-      if (session.authenticated) await showDashboard(session.role);
-      else if (location.pathname === "/dashboard") history.replaceState({}, "", "/");
+      csrfToken = session.csrfToken || null;
+      if (session.authenticated) {
+        await showDashboard(session.role);
+        const groupPrefix = "/dashboard/group/";
+        const groupId = location.pathname.startsWith(groupPrefix)
+          ? location.pathname.slice(groupPrefix.length)
+          : null;
+        if (groupId) {
+          await openGroupSettings(decodeURIComponent(groupId), session.role, { updateHistory: false });
+        }
+      } else if (location.pathname.startsWith("/dashboard")) {
+        history.replaceState({}, "", "/");
+      }
     } catch {
       showPublicView();
     }

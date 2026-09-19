@@ -174,6 +174,52 @@
         </div>
       </section>
     </section>
+
+    <section id="groupDetailView" hidden>
+      <header class="group-detail-header">
+        <button class="text-action" id="backToGroupListButton" type="button"><span aria-hidden="true">←</span> All groups</button>
+        <div class="group-detail-heading">
+          <div>
+            <p class="eyebrow">GROUP SETTINGS</p>
+            <h2 id="detailGroupName">Group</h2>
+            <p class="group-id" id="detailGroupId">—</p>
+          </div>
+          <span class="pill" id="detailBotAdmin">Checking bot access…</span>
+        </div>
+      </header>
+
+      <form class="group-settings-form" id="groupSettingsForm">
+        <section class="setting-panel glass">
+          <div class="setting-panel-heading"><p class="card-label">BOT BEHAVIOUR</p><h3>Core features</h3><p>Control Alexa’s response and bot moderation behaviour in this group.</p></div>
+          <div class="setting-panel-body">
+            <label class="setting-toggle"><span><strong>Group AI</strong><small>Reply-to-bot assistant in this group.</small></span><input id="detailChatbot" type="checkbox" data-field="chatbot"></label>
+            <label class="setting-toggle"><span><strong>Allow other bots</strong><small>Keep other bot accounts instead of automatically removing them.</small></span><input id="detailAllowBots" type="checkbox" data-field="allowBots"></label>
+          </div>
+        </section>
+
+        <section class="setting-panel glass">
+          <div class="setting-panel-heading"><p class="card-label">SAFETY</p><h3>Content moderation</h3><p>Choose whether Alexa should moderate links and flagged NSFW text.</p></div>
+          <div class="setting-panel-body">
+            <label class="setting-toggle"><span><strong>Anti-link</strong><small>Moderate links sent by group members.</small></span><input id="detailAntilink" type="checkbox" data-field="antilink"></label>
+            <label class="setting-select detail-select"><span><strong>Link action</strong><small>What Alexa does when a link is detected.</small></span><select id="detailLinkAction" data-field="linkAction"><option value="delete">Delete message</option><option value="warn">Warn member</option><option value="remove">Remove member</option><option value="false">Do nothing</option></select></label>
+            <label class="setting-toggle"><span><strong>Anti-NSFW</strong><small>Moderate flagged text from group members.</small></span><input id="detailAntinsfw" type="checkbox" data-field="antinsfw"></label>
+            <label class="setting-select detail-select"><span><strong>NSFW action</strong><small>What Alexa does when flagged text is detected.</small></span><select id="detailNsfwAction" data-field="nsfwAction"><option value="delete">Delete message</option><option value="warn">Warn member</option><option value="remove">Remove member</option><option value="false">Do nothing</option></select></label>
+          </div>
+        </section>
+
+        <section class="setting-panel glass">
+          <div class="setting-panel-heading"><p class="card-label">MEMBER MESSAGES</p><h3>Welcome and goodbye</h3><p>Configure the messages Alexa sends when members join or leave.</p></div>
+          <div class="setting-panel-body">
+            <label class="setting-toggle"><span><strong>Welcome members</strong><small>Send a greeting when a member joins.</small></span><input id="detailWelcome" type="checkbox" data-field="welcome"></label>
+            <label class="message-field"><span>Welcome message <small>Optional · up to 4,000 characters</small></span><textarea id="detailWelcomeMessage" data-field="welcomeMessage" maxlength="4000" placeholder="Welcome to the group, @user!"></textarea></label>
+            <label class="setting-toggle"><span><strong>Goodbye members</strong><small>Send a message when a member leaves or is removed.</small></span><input id="detailGoodbye" type="checkbox" data-field="goodbye"></label>
+            <label class="message-field"><span>Goodbye message <small>Optional · up to 4,000 characters</small></span><textarea id="detailGoodbyeMessage" data-field="goodbyeMessage" maxlength="4000" placeholder="Goodbye, @user!"></textarea></label>
+          </div>
+        </section>
+
+        <footer class="group-detail-actions"><button class="btn btn-primary" id="saveGroupDetailButton" type="submit">Save all group settings</button><span class="save-state" id="detailSaveState" aria-live="polite"></span></footer>
+      </form>
+    </section>
   </main>
 
   <!-- AJAX authentication modal: no page navigation and no login.html route. -->

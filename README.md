@@ -116,7 +116,9 @@ DB_PORT=<your database port>
 QUIZ_MONGO_URI=<your mongodb uri, e.g. mongodb+srv://user:pass@cluster0.xxxx.mongodb.net/alexa>
 # Web panel sessions (no separate owner username/password)
 # Sign in with the bot-issued WhatsApp LID and password. Owner_nb / Owner_id selects owner access.
-SESSION_SECRET=<use a strong random text without spaces>
+SESSION_SECRET=<use a unique random secret, not a default value>
+# HTTPS deployments automatically use secure cookies; optionally force this:
+# COOKIE_SECURE=true
 # Dedicated key used to encrypt recoverable bot-user credentials at rest.
 # Generate: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 CREDENTIAL_ENCRYPTION_KEY=<random base64 key>

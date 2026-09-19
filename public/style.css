@@ -342,3 +342,40 @@ code { padding: .08rem .32rem; border: 1px solid rgba(94, 230, 174, .13); border
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+/* Dedicated group-settings page — the dashboard stays a clean navigator. */
+.group-list-card { display: flex; min-height: 155px; flex-direction: column; justify-content: space-between; }
+.group-list-card footer { margin-top: auto; }
+.group-list-card .open-group { min-width: 174px; }
+.group-detail-header { margin-bottom: 1.2rem; }
+.group-detail-header > .text-action { margin-bottom: 1.15rem; }
+.group-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding-bottom: 1.35rem; border-bottom: 1px solid var(--border); }
+.group-detail-heading h2 { max-width: 760px; margin: 0; overflow-wrap: anywhere; font-size: clamp(2rem, 4vw, 3.25rem); line-height: 1.04; letter-spacing: -.06em; }
+.group-detail-heading .group-id { margin: .5rem 0 0; }
+.group-detail-heading .pill { margin-top: .4rem; }
+.group-settings-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: 1rem; }
+.setting-panel { overflow: hidden; border-radius: 1rem; }
+.setting-panel-heading { min-height: 158px; padding: 1.3rem 1.3rem 1rem; border-bottom: 1px solid var(--border); background: linear-gradient(145deg, rgba(40, 64, 102, .22), transparent); }
+.setting-panel-heading h3 { margin: 0 0 .36rem; font-size: 1.2rem; letter-spacing: -.03em; }
+.setting-panel-heading p:not(.card-label) { margin: 0; color: var(--muted); font-size: .8rem; }
+.setting-panel-body { padding: .1rem 1.15rem .75rem; }
+.setting-panel .setting-toggle, .setting-panel .setting-select { padding: .9rem .05rem; }
+.detail-select span { display: grid; gap: .1rem; }
+.detail-select small { color: var(--muted); font-size: .74rem; }
+.message-field { display: grid; gap: .45rem; padding: .9rem .05rem; border-bottom: 1px solid var(--border); color: var(--text); font-size: .83rem; font-weight: 700; }
+.message-field > span { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.message-field small { color: var(--muted); font-size: .68rem; font-weight: 500; }
+.message-field textarea { width: 100%; min-height: 100px; resize: vertical; padding: .68rem .72rem; border: 1px solid var(--border); border-radius: .65rem; outline: none; color: var(--text); background: rgba(3, 9, 21, .58); line-height: 1.45; }
+.message-field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(94, 230, 174, .11); }
+.group-detail-actions { grid-column: 1 / -1; display: flex; align-items: center; gap: .8rem; padding: .85rem 0 0; }
+
+@media (max-width: 1040px) {
+  .group-settings-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  .group-detail-heading { flex-direction: column; }
+  .group-settings-form { grid-template-columns: 1fr; }
+  .setting-panel-heading { min-height: 0; }
+  .group-detail-actions { align-items: stretch; flex-direction: column; }
+  .group-detail-actions .btn { width: 100%; }
+}
