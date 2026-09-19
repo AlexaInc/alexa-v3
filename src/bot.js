@@ -4810,7 +4810,7 @@ Congratulations ❤️`,
                                     displayName: msg.pushName,
                                 });
                                 const profile = await userProfiles.getProfileSummary(finalLid);
-                                const msgtext = (isgroup) ? userProfiles.formatsecretProfileMessage(profile) : userProfiles.formatProfileMessage(profile) ;
+                                const msgtext = (!isgroup) ? userProfiles.formatProfileMessage(profile) : userProfiles.formatsecretProfileMessage(profile) ;
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {
                                     text: msgtext
                                 }, { quoted: msg });
