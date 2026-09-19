@@ -58,6 +58,14 @@ function setupIpcListener(AlexaInc) {
           clearSettingsCache(data.payload.groupId);
           return;
         }
+        // A panel Refresh requests a fresh WhatsApp metadata pass instead of
+        // merely re-reading an old MySQL snapshot. This also gives the
+        // directory a chance to resolve newly available phone-JID → LID maps.
+        if (data.payload?.event === "refresh-group-directory") {
+          const groups = await AlexaInc.groupFetchAllParticipating();
+          await groupDirectory.syncAllGroups(AlexaInc, groups);
+          return;
+        }
         if (data.payload?.event == "gitpush") {
           const interactiveButtons = [
             {

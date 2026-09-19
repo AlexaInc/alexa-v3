@@ -79,13 +79,33 @@ async function syncGroupMetadata(socket, metadata) {
   const pool = database.getPool();
   const db = pool.promise();
   const groupId = metadata.id;
+
+  // Depending on the WhatsApp client/version, group metadata may expose an
+  // admin as a phone JID without an accompanying @lid. The web panel signs in
+  // by LID, so resolve those phone JIDs through the canonical bot_users map
+  // before writing the membership snapshot. Without this mapping a real admin
+  // would silently disappear from the dashboard even though both they and the
+  // bot are admins in WhatsApp.
+  const [knownAccounts] = await db.query(
+    `SELECT lid_username, whatsapp_jid
+     FROM bot_users
+     WHERE whatsapp_jid IS NOT NULL AND whatsapp_jid <> ''`,
+  );
   const members = metadata.participants
-    .map((participant) => ({
-      userLid: lidForParticipant(participant),
-      displayName:
-        String(participant.notify || participant.name || participant.pushName || "").slice(0, 255) || null,
-      isAdmin: isAdmin(participant),
-    }))
+    .map((participant) => {
+      const directLid = lidForParticipant(participant);
+      const mappedAccount = directLid
+        ? null
+        : knownAccounts.find((account) =>
+          sameIdentity(participantIds(participant), account.whatsapp_jid),
+        );
+      return {
+        userLid: directLid || normalizeIdentity(mappedAccount?.lid_username),
+        displayName:
+          String(participant.notify || participant.name || participant.pushName || "").slice(0, 255) || null,
+        isAdmin: isAdmin(participant),
+      };
+    })
     .filter((member) => member.userLid);
 
   const connection = await db.getConnection();

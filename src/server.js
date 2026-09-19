@@ -182,6 +182,20 @@ app.get("/is-logged-in", (req, res) => {
   });
 });
 
+// Request a new WhatsApp group metadata sync through the bot process. The
+// panel itself has no Baileys socket; app.js relays this IPC event to index.js.
+app.post("/api/groups/refresh", requireAnyLogin, (req, res) => {
+  if (typeof process.send !== "function") {
+    return res.status(503).json({ success: false, message: "The bot sync process is unavailable." });
+  }
+  process.send({
+    type: "data",
+    from: "panel",
+    payload: { event: "refresh-group-directory" },
+  });
+  return res.json({ success: true, queued: true });
+});
+
 // ---- User dashboard API ---------------------------------------------------
 async function getUserGroups(userLid) {
   const [rows] = await database.getPool().promise().query(
@@ -198,7 +212,9 @@ async function getUserGroups(userLid) {
        ON d.group_id COLLATE utf8mb4_unicode_ci = m.group_id COLLATE utf8mb4_unicode_ci
      LEFT JOIN \`groups\` g
        ON g.group_id COLLATE utf8mb4_unicode_ci = d.group_id COLLATE utf8mb4_unicode_ci
-     WHERE m.user_lid COLLATE utf8mb4_unicode_ci = ? AND m.is_admin = 1
+     WHERE m.user_lid COLLATE utf8mb4_unicode_ci = ?
+       AND m.is_admin = 1
+       AND d.bot_is_admin = 1
      ORDER BY d.subject ASC`,
     [userLid],
   );
@@ -269,61 +285,139 @@ const ALLOWED_GROUP_FIELDS = {
 };
 const ALLOWED_ACTIONS = new Set(["delete", "warn", "remove", "false"]);
 
+function validGroupId(value) {
+  return String(value || "").endsWith("@g.us");
+}
+
+function groupSettingsUpdate(body) {
+  const assignments = [];
+  const params = [];
+  for (const [inputName, columnName] of Object.entries(ALLOWED_GROUP_FIELDS)) {
+    if (!(inputName in body)) continue;
+    let value = body[inputName];
+    if (["linkAction", "nsfwAction"].includes(inputName)) {
+      value = String(value || "").toLowerCase();
+      if (!ALLOWED_ACTIONS.has(value)) {
+        return { error: `Invalid ${inputName}.` };
+      }
+    } else if (typeof value !== "boolean") {
+      return { error: `${inputName} must be true or false.` };
+    }
+    assignments.push(`\`${columnName}\` = ?`);
+    params.push(value);
+  }
+  if (!assignments.length) return { error: "No supported settings were supplied." };
+  return { assignments, params };
+}
+
+async function saveGroupSettings(groupId, body) {
+  const change = groupSettingsUpdate(body || {});
+  if (change.error) return change;
+  const db = database.getPool().promise();
+  await db.query("INSERT IGNORE INTO `groups` (group_id) VALUES (?)", [groupId]);
+  await db.query(
+    `UPDATE \`groups\` SET ${change.assignments.join(", ")} WHERE group_id = ?`,
+    [...change.params, groupId],
+  );
+  // Clear the bot process's settings cache immediately through app.js IPC.
+  if (typeof process.send === "function") {
+    process.send({
+      type: "data",
+      from: "panel",
+      payload: { event: "clear-group-settings", groupId },
+    });
+  }
+  return { success: true };
+}
+
 app.patch("/api/user/groups/:groupId/settings", requireRole("user"), async (req, res) => {
   const groupId = String(req.params.groupId || "");
-  if (!groupId.endsWith("@g.us")) {
+  if (!validGroupId(groupId)) {
     return res.status(400).json({ success: false, message: "Invalid group identifier." });
   }
   try {
+    await database.initialize();
     const db = database.getPool().promise();
     const [permissions] = await db.query(
-      `SELECT 1 FROM group_admin_memberships
-       WHERE group_id = ? AND user_lid = ? AND is_admin = 1`,
+      `SELECT 1
+       FROM group_admin_memberships m
+       INNER JOIN group_directory d
+         ON d.group_id COLLATE utf8mb4_unicode_ci = m.group_id COLLATE utf8mb4_unicode_ci
+       WHERE m.group_id COLLATE utf8mb4_unicode_ci = ?
+         AND m.user_lid COLLATE utf8mb4_unicode_ci = ?
+         AND m.is_admin = 1
+         AND d.bot_is_admin = 1`,
       [groupId, req.session.auth.userLid],
     );
     if (!permissions.length) {
-      return res.status(403).json({ success: false, message: "You are not a current admin of this group." });
+      return res.status(403).json({ success: false, message: "You and the bot must both be current group admins." });
     }
-
-    const body = req.body || {};
-    const assignments = [];
-    const params = [];
-    for (const [inputName, columnName] of Object.entries(ALLOWED_GROUP_FIELDS)) {
-      if (!(inputName in body)) continue;
-      let value = body[inputName];
-      if (["linkAction", "nsfwAction"].includes(inputName)) {
-        value = String(value || "").toLowerCase();
-        if (!ALLOWED_ACTIONS.has(value)) {
-          return res.status(400).json({ success: false, message: `Invalid ${inputName}.` });
-        }
-      } else if (typeof value !== "boolean") {
-        return res.status(400).json({ success: false, message: `${inputName} must be true or false.` });
-      }
-      assignments.push(`\`${columnName}\` = ?`);
-      params.push(value);
-    }
-    if (!assignments.length) {
-      return res.status(400).json({ success: false, message: "No supported settings were supplied." });
-    }
-
-    await db.query("INSERT IGNORE INTO `groups` (group_id) VALUES (?)", [groupId]);
-    await db.query(
-      `UPDATE \`groups\` SET ${assignments.join(", ")} WHERE group_id = ?`,
-      [...params, groupId],
-    );
-
-    // Clear the bot process's five-minute settings cache immediately. app.js
-    // relays server -> index.js messages through its built-in IPC channel.
-    if (typeof process.send === "function") {
-      process.send({
-        type: "data",
-        from: "panel",
-        payload: { event: "clear-group-settings", groupId },
-      });
-    }
-    return res.json({ success: true });
+    const result = await saveGroupSettings(groupId, req.body);
+    if (result.error) return res.status(400).json({ success: false, message: result.error });
+    return res.json(result);
   } catch (error) {
-    console.error("[server] Could not update group settings:", error.message);
+    console.error("[server] Could not update user group settings:", error.message);
+    return res.status(503).json({ success: false, message: "Could not save group settings." });
+  }
+});
+
+async function getOwnerGroups() {
+  const [rows] = await database.getPool().promise().query(
+    `SELECT d.group_id, d.subject, d.member_count, d.bot_is_admin, d.metadata_synced_at,
+            COALESCE(g.chatbot, 0) AS chatbot,
+            COALESCE(g.antilink, 0) AS antilink,
+            COALESCE(g.link_a, 'delete') AS link_a,
+            COALESCE(g.antinsfw, 0) AS antinsfw,
+            COALESCE(g.nsfw_a, 'delete') AS nsfw_a,
+            COALESCE(g.is_welcome, 0) AS is_welcome,
+            COALESCE(g.isleft_w, 0) AS isleft_w
+     FROM group_directory d
+     LEFT JOIN \`groups\` g
+       ON g.group_id COLLATE utf8mb4_unicode_ci = d.group_id COLLATE utf8mb4_unicode_ci
+     UNION ALL
+     SELECT g.group_id, CONCAT('Saved group ', g.group_id) AS subject,
+            0 AS member_count, 0 AS bot_is_admin, NULL AS metadata_synced_at,
+            g.chatbot, g.antilink, g.link_a, g.antinsfw, g.nsfw_a,
+            g.is_welcome, g.isleft_w
+     FROM \`groups\` g
+     LEFT JOIN group_directory d
+       ON d.group_id COLLATE utf8mb4_unicode_ci = g.group_id COLLATE utf8mb4_unicode_ci
+     WHERE d.group_id IS NULL
+     ORDER BY subject ASC`,
+  );
+  return rows.map((row) => ({
+    ...row,
+    bot_is_admin: Boolean(row.bot_is_admin),
+    chatbot: Boolean(row.chatbot),
+    antilink: Boolean(row.antilink),
+    antinsfw: Boolean(row.antinsfw),
+    is_welcome: Boolean(row.is_welcome),
+    isleft_w: Boolean(row.isleft_w),
+  }));
+}
+
+app.get("/api/owner/groups", requireRole("owner"), async (req, res) => {
+  try {
+    await database.initialize();
+    return res.json({ success: true, groups: await getOwnerGroups() });
+  } catch (error) {
+    console.error("[server] Could not load owner groups:", error.message);
+    return res.status(503).json({ success: false, message: "Owner group data is unavailable." });
+  }
+});
+
+app.patch("/api/owner/groups/:groupId/settings", requireRole("owner"), async (req, res) => {
+  const groupId = String(req.params.groupId || "");
+  if (!validGroupId(groupId)) {
+    return res.status(400).json({ success: false, message: "Invalid group identifier." });
+  }
+  try {
+    await database.initialize();
+    const result = await saveGroupSettings(groupId, req.body);
+    if (result.error) return res.status(400).json({ success: false, message: result.error });
+    return res.json(result);
+  } catch (error) {
+    console.error("[server] Could not update owner group settings:", error.message);
     return res.status(503).json({ success: false, message: "Could not save group settings." });
   }
 });
@@ -398,8 +492,8 @@ app.get(["/", "/dashboard"], serveSpa);
 
 const server = http.createServer(app);
 
-// Owner-only WebSocket log stream retained from the old panel. The SPA does
-// not require it, but protecting it closes the old unauthenticated log leak.
+// Owner-only WebSocket log stream. The SPA exposes it only in the owner
+// dashboard, while this session check keeps the old log endpoint private.
 const logWss = new WebSocket.Server({ noServer: true });
 server.on("upgrade", (request, socket, head) => {
   if (new URL(request.url, "http://localhost").pathname !== "/logs") {

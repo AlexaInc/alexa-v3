@@ -1222,6 +1222,11 @@ async function handleMessage(AlexaInc, {
 
 
 
+
+        // Every owner/special list accepts comma-separated values, e.g.
+        // Owner_nb="94766045156,94723966801". Normalise the configured
+        // identities exactly once so direct messages, group participants and
+        // device-suffixed JIDs are compared consistently.
         const configuredValues = (value) => String(value || "")
             .split(",")
             .map((entry) => entry.trim())

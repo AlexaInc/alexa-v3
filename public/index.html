@@ -83,6 +83,7 @@
             <label class="switch"><input id="privateChatbotToggle" type="checkbox"><span></span></label>
           </div>
           <p class="muted profile-note">Use <code>.profile</code> in a private WhatsApp chat to view your credentials. Use <code>.changpw &lt;new password&gt;</code> to change the password.</p>
+          <button class="text-action" id="profileChatButton" type="button">Open Alexa chat <span aria-hidden="true">↗</span></button>
         </article>
         <article class="card glass game-card">
           <p class="card-label">CONNECTED GAME PROFILE</p>
@@ -101,7 +102,7 @@
           <div><p class="eyebrow">GROUP OWNER INSIGHTS</p><h2>Your admin groups</h2></div>
           <button class="btn btn-outline" id="refreshDashboardButton" type="button">Refresh</button>
         </div>
-        <p class="muted">Only groups where WhatsApp currently recognises your LID as an admin appear here. Group data refreshes whenever the bot reconnects or receives an admin/member update.</p>
+        <p class="muted">Only groups where WhatsApp currently recognises both your LID and Alexa as admins appear here. Group data refreshes whenever the bot reconnects or receives an admin/member update.</p>
         <div class="group-grid" id="groupGrid"></div>
         <div class="empty-state glass" id="emptyGroups" hidden>
           <strong>No managed groups available yet.</strong>
@@ -111,17 +112,67 @@
     </section>
 
     <section id="ownerDashboard" hidden>
-      <div class="dashboard-grid owner-stats">
-        <article class="card glass stat-card"><small>BOT</small><strong id="ownerBotStatus">Checking…</strong></article>
-        <article class="card glass stat-card"><small>CPU LOAD</small><strong id="ownerCpu">—</strong></article>
-        <article class="card glass stat-card"><small>MEMORY</small><strong id="ownerMemory">—</strong></article>
-        <article class="card glass stat-card"><small>NETWORK</small><strong id="ownerNetwork">—</strong></article>
+      <div class="owner-status-row">
+        <span class="live-indicator" id="ownerLiveIndicator"></span>
+        <strong id="ownerBotStatus">Checking bot status…</strong>
+        <span>Owner access · all saved group settings</span>
       </div>
-      <article class="card glass owner-help">
-        <p class="card-label">OWNER CONTROL CENTER</p>
-        <h2>System diagnostics are live</h2>
-        <p>The user dashboard is intentionally isolated from owner diagnostics. Users can only manage groups for which the bot has synced their current WhatsApp admin status.</p>
-      </article>
+
+      <section class="owner-usage" aria-label="Live system usage">
+        <article class="usage-card glass">
+          <div class="usage-ring" style="--ring-color: var(--accent)">
+            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="51"/><circle class="ring-value" id="ownerCpuGauge" cx="60" cy="60" r="51"/></svg>
+            <strong id="ownerCpu">—</strong>
+          </div>
+          <div><p class="card-label">PROCESSOR</p><h3>CPU load</h3><p>Live system usage</p></div>
+        </article>
+        <article class="usage-card glass">
+          <div class="usage-ring memory-ring" style="--ring-color: var(--purple)">
+            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="51"/><circle class="ring-value" id="ownerMemoryGauge" cx="60" cy="60" r="51"/></svg>
+            <strong id="ownerMemory">—</strong>
+          </div>
+          <div><p class="card-label">MEMORY</p><h3>RAM in use</h3><p id="ownerMemoryDetail">Collecting data…</p></div>
+        </article>
+        <article class="usage-card glass">
+          <div class="usage-ring download-ring" style="--ring-color: #8bc9ff">
+            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="51"/><circle class="ring-value" id="ownerDownloadGauge" cx="60" cy="60" r="51"/></svg>
+            <strong id="ownerDownload">—</strong>
+          </div>
+          <div><p class="card-label">NETWORK</p><h3>Download</h3><p>Incoming traffic</p></div>
+        </article>
+        <article class="usage-card glass">
+          <div class="usage-ring upload-ring" style="--ring-color: #ffbb80">
+            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="51"/><circle class="ring-value" id="ownerUploadGauge" cx="60" cy="60" r="51"/></svg>
+            <strong id="ownerUpload">—</strong>
+          </div>
+          <div><p class="card-label">NETWORK</p><h3>Upload</h3><p>Outgoing traffic</p></div>
+        </article>
+      </section>
+
+      <section class="log-panel glass" aria-label="Live bot and server logs">
+        <header class="log-panel-header">
+          <div><p class="card-label">LIVE ACTIVITY</p><h2>Bot logs</h2></div>
+          <span class="log-connection" id="logConnection">Connecting…</span>
+        </header>
+        <div class="log-tabs" role="tablist" aria-label="Log source">
+          <button class="active" id="indexLogTab" data-log-tab="index" type="button" role="tab" aria-selected="true">Bot process</button>
+          <button id="serverLogTab" data-log-tab="server" type="button" role="tab" aria-selected="false">Panel server</button>
+        </div>
+        <pre class="log-area" id="ownerLogArea" aria-live="polite">Waiting for the protected owner log stream…</pre>
+      </section>
+
+      <section class="group-section owner-groups">
+        <div class="section-heading inline-heading">
+          <div><p class="eyebrow">OWNER GROUP CONTROL</p><h2>All group settings</h2></div>
+          <button class="btn btn-outline" id="refreshOwnerDashboardButton" type="button">Refresh groups</button>
+        </div>
+        <p class="muted">As a configured bot owner, you can update every saved group configuration. A bot-admin badge shows the current WhatsApp status, but does not limit owner access.</p>
+        <div class="group-grid" id="ownerGroupGrid"></div>
+        <div class="empty-state glass" id="ownerEmptyGroups" hidden>
+          <strong>No group configuration has been synced yet.</strong>
+          <p>Once Alexa connects to WhatsApp, it rebuilds the group directory automatically. You can then manage every saved group here.</p>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -137,6 +188,7 @@
         <label>Password<input name="password" type="password" autocomplete="current-password" required placeholder="Your bot password"></label>
         <button class="btn btn-primary" type="submit">Sign in</button>
         <p class="muted form-help">Find your LID and password by sending <code>.profile</code> to Alexa in a private chat.</p>
+        <button class="text-action login-chat-action" id="loginProfileChatButton" type="button">Chat to Alexa for my profile <span aria-hidden="true">↗</span></button>
       </form>
       <p class="form-error" id="loginError" role="alert" hidden></p>
     </section>
