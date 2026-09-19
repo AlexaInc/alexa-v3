@@ -94,7 +94,7 @@ function logOutput(scriptName, type, data) {
 function startApp(scriptName, onExit) {
   const args = [scriptName];
   if (scriptName === "src/index.js") {
-    args.unshift("--max-old-space-size=4096");
+    args.unshift("--max-old-space-size=256");
   }
   // stdio: pipe stdout/stderr as before, and add an "ipc" channel so this
   // process can exchange messages with the child via process.send()/on('message').

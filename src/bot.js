@@ -4165,8 +4165,6 @@ Duration : ${formatTime(details.durationInSeconds)}
                             if (!text) mess.reply("song name requred for search lyrics");
                             axios.get(`https://lrclib.net/api/get/${text}`).then(async (response) => {
                                 response = response.data;
-                                // console.log(response);
-
                                 const painlyrics = `*Song name* :  _${response.name}_ \n\n*Artist name* :  _${response.artistName}_\n\n*Album name* :  _${ response.albumName }_\n\n\n*Lyrics* :  \n\n ${response.plainLyrics}`
                                 await AlexaInc.sendMessage(msg.key.remoteJid, {text:painlyrics,},{quoted:msg})
                             })
