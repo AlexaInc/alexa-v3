@@ -11,10 +11,6 @@ const restartLogFile = path.join(__dirname, "data", "restarts.json");
 let restartHistory = [];
 
 // === Inter-process messaging (replaces the old WebSocket "/data-transfer" bridge) ===
-// Both src/server.js and src/index.js are spawned as children of THIS process with an
-// IPC channel enabled. Since Node's fork/IPC channel only connects parent<->child (not
-// child<->child), this app relays any message a child sends via `process.send()` to the
-// other child's `process.on('message')` listener.
 const children = {}; // scriptName -> ChildProcess
 
 function relayMessage(fromScript, message) {
@@ -72,21 +68,17 @@ function saveRestartReason(reasonString) {
 const codeRegex = /^[0-9]{3}$/;
 
 function logOutput(scriptName, type, data) {
-  // Save raw log to file
   if (scriptName === "src/index.js") {
     fs.appendFileSync(indexLogFile, `${data}\n`);
   } else if (scriptName === "src/server.js") {
     fs.appendFileSync(serverLogFile, `${data}\n`);
   }
 
-  // Check if line contains terminal QR code block characters
   const isQrLine = /[█▀▄\u2580-\u258F]/.test(data);
 
   if (isQrLine) {
-    // Print QR code lines directly to console without timestamp interference or extra newlines
     process.stdout.write(`${data}\n`);
   } else {
-    // Standard log output on a single line
     console.log(`[${new Date().toISOString()}] [${type}] ${data}`);
   }
 }
@@ -96,8 +88,6 @@ function startApp(scriptName, onExit) {
   if (scriptName === "src/index.js") {
     args.unshift("--max-old-space-size=256");
   }
-  // stdio: pipe stdout/stderr as before, and add an "ipc" channel so this
-  // process can exchange messages with the child via process.send()/on('message').
   const child = spawn("node", args, {
     stdio: ["inherit", "pipe", "pipe", "ipc"],
   });
@@ -117,7 +107,6 @@ function startApp(scriptName, onExit) {
     let boundary;
 
     while ((boundary = buffer.indexOf("\n")) !== -1) {
-      // FIX: Preserve leading/trailing spaces for QR codes, only strip carriage returns (\r)
       const line = buffer.substring(0, boundary).replace(/\r$/, "");
       buffer = buffer.substring(boundary + 1);
 
@@ -224,7 +213,16 @@ function startApp(scriptName, onExit) {
 }
 
 function startXray() {
-  const proxyUrl = process.env.PROXY_URL || "";
+  const proxyUrl = process.env.PROXY_URL ? process.env.PROXY_URL.trim() : "";
+
+  // PROXY_URL එක හිස් නම් හෝ නැත්නම් Xray ස්ටාර්ට් නොකර ඉවත් වේ
+  if (!proxyUrl) {
+    console.log(
+      "ℹ️ PROXY_URL not found or empty. Skipping Xray sidecar startup.",
+    );
+    return;
+  }
+
   const protocols = ["vmess://", "vless://", "ss://", "trojan://"];
   const isV2Ray = protocols.some((p) => proxyUrl.startsWith(p));
 
@@ -251,22 +249,6 @@ function startXray() {
       stdio: "inherit",
       env: process.env,
     });
-
-    if (fs.existsSync(configPath)) {
-      const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-      const sanitizedOutbounds = config.outbounds.map((o) => {
-        if (o.settings && o.settings.vnext) {
-          o.settings.vnext.forEach((vn) => {
-            vn.users.forEach((u) => (u.id = "********"));
-          });
-        }
-        return o;
-      });
-      console.log(
-        "📄 Generated Xray Outbounds:",
-        JSON.stringify(sanitizedOutbounds, null, 2),
-      );
-    }
   } catch (e) {
     console.error("❌ V2Ray/Xray: Failed to generate config:", e.message);
   }
