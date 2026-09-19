@@ -399,9 +399,7 @@ app.post("/github-webhook", async (req, res) => {
           from: "github-webhook",
           payload: { message: message, value: 12345, event: "gitpush" },
         });
-        console.log(
-          '[GitHub Webhook] Sent push data to index.js via IPC.',
-        );
+        console.log("[GitHub Webhook] Sent push data to index.js via IPC.");
       } else {
         console.warn(
           "[GitHub Webhook] process.send unavailable — is server.js running as a forked child with IPC enabled?",
