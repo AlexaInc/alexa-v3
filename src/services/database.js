@@ -51,6 +51,36 @@ async function ensureColumn(db, tableName, columnName, definition) {
 
 
 const APP_COLLATION = "utf8mb4_unicode_ci";
+const FIRST_PARTY_TABLES = Object.freeze([
+  "groups",
+  "conversation_history",
+  "tasks",
+  "bot_users",
+  "user_profiles",
+  "group_directory",
+  "group_admin_memberships",
+  "economy_users",
+  "rpg_users",
+  "shop_inventory",
+  "shop_profile",
+  "command_events",
+  "scheduled_jobs",
+]);
+
+async function assertFirstPartyTables(db) {
+  const placeholders = FIRST_PARTY_TABLES.map(() => "?").join(",");
+  const [rows] = await db.query(
+    `SELECT TABLE_NAME AS table_name
+     FROM information_schema.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN (${placeholders})`,
+    FIRST_PARTY_TABLES,
+  );
+  const existing = new Set(rows.map((row) => row.table_name));
+  const missing = FIRST_PARTY_TABLES.filter((table) => !existing.has(table));
+  if (missing.length) {
+    throw new Error(`Schema bootstrap did not create: ${missing.join(", ")}`);
+  }
+}
 
 /**
  * Older deployments already contain a mixture of MySQL 8's 0900 collation and
@@ -267,26 +297,19 @@ async function initialize() {
     // Migrate tables created by older Alexa releases before this unified
     // collation policy existed. This fixes the dashboard JOIN failure without
     // deleting accounts, game progress or group configuration.
-    for (const tableName of [
-      "groups",
-      "conversation_history",
-      "tasks",
-      "bot_users",
-      "user_profiles",
-      "group_directory",
-      "group_admin_memberships",
-      "economy_users",
-      "rpg_users",
-      "shop_inventory",
-      "shop_profile",
-      "command_events",
-      "scheduled_jobs",
-    ]) {
+    for (const tableName of FIRST_PARTY_TABLES) {
       await ensureTableCollation(db, tableName);
     }
 
+    // Fail startup clearly if the connected account could not create any table
+    // (for example because it lacks DDL permission) instead of letting workers
+    // fail later with a misleading ER_NO_SUCH_TABLE query error.
+    await assertFirstPartyTables(db);
+
     initialized = true;
-    console.log("[database] MySQL schema is ready.");
+    console.log(
+      `[database] MySQL schema is ready (${FIRST_PARTY_TABLES.length} tables verified).`,
+    );
     return true;
   })();
 
@@ -308,6 +331,7 @@ function isInitialized() {
 }
 
 module.exports = {
+  FIRST_PARTY_TABLES,
   getPool,
   initialize,
   isConfigured,

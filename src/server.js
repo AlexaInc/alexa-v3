@@ -33,10 +33,11 @@ const PORT = config.PORT;
 const publicDir = path.join(__dirname, "..", "public");
 const dataFile = path.join(__dirname, "..", "data", "sharedData.json");
 
-// Run the idempotent schema bootstrap on every server start. The bot process
-// does the same; CREATE TABLE IF NOT EXISTS makes simultaneous startup safe.
-database.initialize().catch((error) => {
+// Start one shared schema bootstrap immediately. Database-backed workers await
+// this exact promise, so no query can race CREATE TABLE during startup.
+const databaseReady = database.initialize().catch((error) => {
   console.error("[server] Database bootstrap failed:", error.message);
+  return false;
 });
 
 app.use(compression());
@@ -1036,12 +1037,24 @@ logWss.on("connection", (ws) => {
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
-  if (database.isConfigured()) {
+
+  // Do not start the first scheduler tick until every first-party table and
+  // additive migration has completed. This fixes ER_NO_SUCH_TABLE on a fresh DB.
+  void databaseReady.then((ready) => {
+    if (!ready) return;
     scheduler.start(async (job) => {
       if (typeof process.send !== "function") throw new Error("Bot IPC is unavailable.");
-      process.send({ type: "data", from: "scheduler", payload: { event: "scheduled-message", groupId: job.group_id, message: job.message } });
+      process.send({
+        type: "data",
+        from: "scheduler",
+        payload: {
+          event: "scheduled-message",
+          groupId: job.group_id,
+          message: job.message,
+        },
+      });
     });
-  }
+  });
 });
 
 module.exports = { app, server };
