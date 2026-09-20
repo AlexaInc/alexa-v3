@@ -20,13 +20,13 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           env: Production
 
-      - name: Trigger HF Factory Reboot
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          curl -X POST \
-          -H "Authorization: Bearer $HF_TOKEN" \
-          "https://huggingface.co/api/spaces/hansaka1/alexa/restart?factory=true"
+      # - name: Trigger HF Factory Reboot
+      #   env:
+      #     HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      #   run: |
+      #     curl -X POST \
+      #     -H "Authorization: Bearer $HF_TOKEN" \
+      #     "https://huggingface.co/api/spaces/hansaka1/alexa/restart?factory=true"
 
       - name: Update Deployment Status
         uses: bobheadxi/deployments@v1
@@ -38,4 +38,4 @@ jobs:
           # Use the explicit string "Production" to avoid the "Input required" error
           env: Production
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: https://hansaka1-alexa.hf.space/
+          env_url: https://whatsapp.alexa.dpdns.org/
