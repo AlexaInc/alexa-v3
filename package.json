@@ -5,7 +5,9 @@
     "main": "app.js",
     "scripts": {
         "test": "sudo systemctl start mariadb && sudo systemctl status mariadb",
-        "start": "node app"
+        "start": "node app.js",
+        "build:css": "tailwindcss -i ./assets/css/tailwind.input.css -o ./public/tailwind.css --minify",
+        "watch:css": "tailwindcss -i ./assets/css/tailwind.input.css -o ./public/tailwind.css --watch"
     },
     "author": "hansaka",
     "license": "ISC",
@@ -63,7 +65,8 @@
         "eslint": "^8.57.1",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",
-        "prettier": "^3.6.2"
+        "prettier": "^3.6.2",
+        "tailwindcss": "^3.4.17"
     },
     "overrides": {
         "canvas": "npm:@napi-rs/canvas@^0.1.6"

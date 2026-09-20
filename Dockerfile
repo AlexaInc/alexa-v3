@@ -61,6 +61,9 @@ RUN npm rebuild canvas sharp --force
 # Copy the rest of your app
 COPY . .
 
+# Compile responsive Tailwind utilities used by the existing dashboard.
+RUN npm run build:css
+
 # Set global Node.js memory limit for 16GB RAM environment (8GB limit)
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 

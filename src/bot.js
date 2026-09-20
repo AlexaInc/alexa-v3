@@ -61,6 +61,7 @@ const rpg = require('./modules/rpg.js');
 const tod = require('./modules/truthordare.js');
 
 const database = require('./services/database.js');
+const commandRegistry = require('./commands/registry.js');
 const userProfiles = require('./services/userProfiles.js');
 const groupDirectory = require('./services/groupDirectory.js');
 const battlearena = require("./modules/battlearena.js");
@@ -1914,6 +1915,12 @@ async function handleMessage(AlexaInc, {
 
 
                     let command = firstWord.slice(1); // Assign as command
+                    // Registry bridge: legacy switch commands are observed now while
+                    // handlers move into registry modules incrementally without breaking aliases.
+                    void commandRegistry.observe(command, {
+                        groupId: isGroup ? msg.key.remoteJid : null,
+                        userId: finalLid || msg.key.participant || msg.key.remoteJid
+                    });
                     const botStatus = loadBotStatus();
 
                     // Check before executing commands

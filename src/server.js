@@ -22,6 +22,10 @@ const si = require("systeminformation");
 const memoryStats = require("./modules/memoryStats");
 const database = require("./services/database");
 const profiles = require("./services/userProfiles");
+const analytics = require("./services/analytics");
+const scheduler = require("./services/scheduler");
+const i18n = require("./i18n");
+const moment = require("moment-timezone");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -362,7 +366,9 @@ async function getUserGroups(userLid) {
             COALESCE(g.is_welcome, 0) AS is_welcome,
             COALESCE(g.wc_m, '') AS wc_m,
             COALESCE(g.isleft_w, 0) AS isleft_w,
-            COALESCE(g.left_m, '') AS left_m
+            COALESCE(g.left_m, '') AS left_m,
+            COALESCE(g.locale, 'en') AS locale,
+            COALESCE(g.timezone, 'Asia/Colombo') AS timezone
      FROM group_admin_memberships m
      INNER JOIN group_directory d
        ON d.group_id COLLATE utf8mb4_unicode_ci = m.group_id COLLATE utf8mb4_unicode_ci
@@ -643,7 +649,9 @@ async function getOwnerGroups() {
             COALESCE(g.is_welcome, 0) AS is_welcome,
             COALESCE(g.wc_m, '') AS wc_m,
             COALESCE(g.isleft_w, 0) AS isleft_w,
-            COALESCE(g.left_m, '') AS left_m
+            COALESCE(g.left_m, '') AS left_m,
+            COALESCE(g.locale, 'en') AS locale,
+            COALESCE(g.timezone, 'Asia/Colombo') AS timezone
      FROM group_directory d
      LEFT JOIN \`groups\` g
        ON g.group_id COLLATE utf8mb4_unicode_ci = d.group_id COLLATE utf8mb4_unicode_ci
@@ -652,7 +660,8 @@ async function getOwnerGroups() {
             0 AS member_count, 0 AS bot_is_admin, NULL AS metadata_synced_at,
             g.chatbot, g.antilink, g.link_a, g.antinsfw, g.nsfw_a,
             g.is_allow_bots, g.is_welcome, COALESCE(g.wc_m, ''),
-            g.isleft_w, COALESCE(g.left_m, '')
+            g.isleft_w, COALESCE(g.left_m, ''),
+            COALESCE(g.locale, 'en'), COALESCE(g.timezone, 'Asia/Colombo')
      FROM \`groups\` g
      LEFT JOIN group_directory d
        ON d.group_id COLLATE utf8mb4_unicode_ci = g.group_id COLLATE utf8mb4_unicode_ci
@@ -756,6 +765,83 @@ app.patch(
     }
   },
 );
+
+// ---- Locale, analytics and automation APIs -------------------------------
+app.get("/api/locales", (req, res) => res.json({ locales: i18n.SUPPORTED }));
+
+async function dashboardGroupIds(req) {
+  const groups = req.session.auth.role === "owner"
+    ? await getOwnerGroups()
+    : await getUserGroups(req.session.auth.userLid);
+  return groups.map((group) => group.group_id);
+}
+
+app.get("/api/account/preferences", requireAnyLogin, async (req, res) => {
+  try {
+    await database.initialize();
+    const [rows] = await database.getPool().promise().query(
+      "SELECT locale, timezone FROM user_profiles WHERE user_lid = ?", [req.session.auth.userLid],
+    );
+    return res.json({ success: true, locale: i18n.normalize(rows[0]?.locale), timezone: rows[0]?.timezone || "Asia/Colombo", locales: i18n.SUPPORTED });
+  } catch (error) { return res.status(503).json({ success: false, message: "Preferences are unavailable." }); }
+});
+
+app.patch("/api/account/preferences", requireAnyLogin, requireFreshCsrf, async (req, res) => {
+  const locale = i18n.normalize(req.body?.locale);
+  const timezone = String(req.body?.timezone || "");
+  if (!moment.tz.zone(timezone)) return res.status(400).json({ success: false, message: "Unknown timezone." });
+  try {
+    await database.initialize();
+    await database.getPool().promise().query(
+      `INSERT INTO user_profiles (user_lid, locale, timezone) VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE locale=VALUES(locale), timezone=VALUES(timezone)`,
+      [req.session.auth.userLid, locale, timezone],
+    );
+    return res.json({ success: true, locale, timezone });
+  } catch (error) { return res.status(503).json({ success: false, message: "Could not save preferences." }); }
+});
+
+app.patch("/api/groups/:groupId/locale", requireAnyLogin, requireFreshCsrf, async (req, res) => {
+  const groupId = String(req.params.groupId || "");
+  if (!(await dashboardGroupIds(req)).includes(groupId)) return res.status(403).json({ success: false, message: "Group access denied." });
+  const locale = i18n.normalize(req.body?.locale);
+  const timezone = String(req.body?.timezone || "");
+  if (!moment.tz.zone(timezone)) return res.status(400).json({ success: false, message: "Unknown timezone." });
+  await database.initialize();
+  await database.getPool().promise().query(
+    `INSERT INTO \`groups\` (group_id, locale, timezone) VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE locale=VALUES(locale), timezone=VALUES(timezone)`, [groupId, locale, timezone],
+  );
+  return res.json({ success: true, locale, timezone });
+});
+
+app.get("/api/analytics/summary", requireAnyLogin, async (req, res) => {
+  try {
+    const groupId = req.query.groupId ? String(req.query.groupId) : null;
+    if (groupId && !(await dashboardGroupIds(req)).includes(groupId)) return res.status(403).json({ success: false, message: "Group access denied." });
+    if (!groupId && req.session.auth.role !== "owner") return res.status(400).json({ success: false, message: "Select a group." });
+    return res.json({ success: true, ...(await analytics.summary({ days: req.query.days, groupId })) });
+  } catch (error) { return res.status(503).json({ success: false, message: "Analytics are unavailable." }); }
+});
+
+app.get("/api/automations", requireAnyLogin, async (req, res) => {
+  try { return res.json({ success: true, jobs: await scheduler.list(await dashboardGroupIds(req)) }); }
+  catch (error) { return res.status(503).json({ success: false, message: "Automations are unavailable." }); }
+});
+
+app.post("/api/automations", requireAnyLogin, requireFreshCsrf, async (req, res) => {
+  try {
+    const groupId = String(req.body?.groupId || "");
+    if (!(await dashboardGroupIds(req)).includes(groupId)) return res.status(403).json({ success: false, message: "Group access denied." });
+    const id = await scheduler.create({ ...req.body, groupId, createdBy: req.session.auth.userLid });
+    return res.status(201).json({ success: true, id });
+  } catch (error) { return res.status(400).json({ success: false, message: error.message }); }
+});
+
+app.delete("/api/automations/:id", requireAnyLogin, requireFreshCsrf, async (req, res) => {
+  try { return res.json({ success: await scheduler.remove(req.params.id, await dashboardGroupIds(req)) }); }
+  catch (error) { return res.status(503).json({ success: false, message: "Could not delete automation." }); }
+});
 
 // ---- Owner diagnostics ----------------------------------------------------
 // One normalized snapshot is shared by the owner WebSocket stream. Keeping
@@ -950,6 +1036,12 @@ logWss.on("connection", (ws) => {
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
+  if (database.isConfigured()) {
+    scheduler.start(async (job) => {
+      if (typeof process.send !== "function") throw new Error("Bot IPC is unavailable.");
+      process.send({ type: "data", from: "scheduler", payload: { event: "scheduled-message", groupId: job.group_id, message: job.message } });
+    });
+  }
 });
 
 module.exports = { app, server };

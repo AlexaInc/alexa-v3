@@ -13,6 +13,8 @@
   let logSocket = null;
   let logReconnectTimer = null;
   let activeLogTab = "index";
+  let managedGroups = [];
+  let supportedLocales = [];
   const logLines = { index: [], server: [] };
 
   const loginModal = $("#loginModal");
@@ -26,6 +28,15 @@
 
   function formatNumber(value) {
     return Number(value || 0).toLocaleString();
+  }
+
+  function applyDashboardLocale(locale) {
+    const messages = window.AlexaLocales?.[locale] || window.AlexaLocales?.en || {};
+    $$('[data-i18n]').forEach((element) => {
+      if (messages[element.dataset.i18n]) element.textContent = messages[element.dataset.i18n];
+    });
+    document.documentElement.lang = locale || "en";
+    localStorage.setItem("alexa-dashboard-locale", locale || "en");
   }
 
   function formatBytes(value) {
@@ -131,6 +142,7 @@
     $("#groupDetailView").hidden = true;
     $("#publicView").hidden = true;
     $("#dashboardView").hidden = false;
+    selectDashboardTab("overview");
     $("#userDashboard").hidden = role !== "user";
     $("#ownerDashboard").hidden = role !== "owner";
     $("#loginButton").textContent = "Dashboard";
@@ -245,6 +257,8 @@
   }
 
   function renderGroups(groups, scope) {
+    managedGroups = groups;
+    refreshPlatformGroupOptions();
     const owner = scope === "owner";
     const grid = $(owner ? "#ownerGroupGrid" : "#groupGrid");
     const empty = $(owner ? "#ownerEmptyGroups" : "#emptyGroups");
@@ -260,6 +274,67 @@
         <footer><button class="btn btn-primary open-group" data-group="${encodedId}" type="button">Manage settings <span aria-hidden="true">→</span></button></footer>
       </article>`;
     }).join("");
+  }
+
+  function refreshPlatformGroupOptions() {
+    const options = managedGroups.map((group) => `<option value="${escapeHTML(group.group_id)}">${escapeHTML(group.subject)}</option>`).join("");
+    ["#analyticsGroup", "#automationGroup", "#localeGroup"].forEach((selector) => {
+      const select = $(selector);
+      if (!select) return;
+      const previous = select.value;
+      select.innerHTML = `${currentRole === "owner" && selector === "#analyticsGroup" ? '<option value="">All groups</option>' : ""}${options}`;
+      if ([...select.options].some((option) => option.value === previous)) select.value = previous;
+    });
+  }
+
+  function selectDashboardTab(tab) {
+    const overview = tab === "overview";
+    $("#userDashboard").hidden = !overview || currentRole !== "user";
+    $("#ownerDashboard").hidden = !overview || currentRole !== "owner";
+    $("#groupDetailView").hidden = true;
+    $("#analyticsDashboard").hidden = tab !== "analytics";
+    $("#automationsDashboard").hidden = tab !== "automations";
+    $("#localeDashboard").hidden = tab !== "locale";
+    $$('[data-dashboard-tab]').forEach((button) => button.classList.toggle("is-active", button.dataset.dashboardTab === tab));
+    if (tab === "analytics") void loadAnalytics();
+    if (tab === "automations") void loadAutomations();
+    if (tab === "locale") void loadLocalePreferences();
+  }
+
+  async function loadAnalytics() {
+    try {
+      const groupId = $("#analyticsGroup").value;
+      const days = $("#analyticsDays").value;
+      const data = await api(`/api/analytics/summary?days=${encodeURIComponent(days)}&groupId=${encodeURIComponent(groupId)}`);
+      $("#analyticsTotal").textContent = formatNumber(data.totals?.total);
+      $("#analyticsUsers").textContent = formatNumber(data.totals?.active_users);
+      $("#analyticsErrors").textContent = formatNumber(data.totals?.errors);
+      $("#analyticsPeriod").textContent = `${data.days}d`;
+      const maximum = Math.max(1, ...(data.commands || []).map((item) => Number(item.uses)));
+      $("#analyticsCommands").innerHTML = data.commands?.length ? data.commands.map((item) => `<div class="grid grid-cols-[7rem_1fr_3rem] items-center gap-3 text-sm"><span class="truncate text-slate-300">${escapeHTML(item.command_name)}</span><span class="h-2 overflow-hidden rounded-full bg-slate-800"><i class="block h-full rounded-full bg-cyan-400" style="width:${Math.max(4, Number(item.uses) / maximum * 100)}%"></i></span><strong class="text-right text-white">${formatNumber(item.uses)}</strong></div>`).join("") : '<p class="text-slate-400">No command data for this period.</p>';
+    } catch (error) { $("#analyticsCommands").innerHTML = `<p class="text-rose-300">${escapeHTML(error.message)}</p>`; }
+  }
+
+  async function loadAutomations() {
+    try {
+      const data = await api("/api/automations");
+      $("#automationList").innerHTML = data.jobs.length ? data.jobs.map((job) => `<article class="flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4 sm:flex-row sm:items-center sm:justify-between"><div><strong class="block text-white">${escapeHTML(job.name)}</strong><span class="block text-sm text-slate-400">${escapeHTML(job.schedule_type)} · ${escapeHTML(new Date(job.next_run_at).toLocaleString())}</span><small class="text-slate-500">${escapeHTML(job.group_id)}</small></div><button class="dashboard-tab automation-delete" data-job-id="${escapeHTML(job.id)}" type="button">Delete</button></article>`).join("") : '<p class="text-slate-400">No scheduled messages yet.</p>';
+    } catch (error) { $("#automationList").innerHTML = `<p class="text-rose-300">${escapeHTML(error.message)}</p>`; }
+  }
+
+  async function loadLocalePreferences() {
+    try {
+      const data = await api("/api/account/preferences");
+      supportedLocales = data.locales;
+      const options = supportedLocales.map((locale) => `<option value="${locale.code}">${escapeHTML(locale.name)} (${locale.code})</option>`).join("");
+      $("#accountLocale").innerHTML = options;
+      $("#groupLocale").innerHTML = options;
+      $("#accountLocale").value = data.locale;
+      $("#accountTimezone").value = data.timezone;
+      applyDashboardLocale(data.locale);
+      const group = managedGroups.find((item) => item.group_id === $("#localeGroup").value) || managedGroups[0];
+      if (group) { $("#groupLocale").value = group.locale || "en"; $("#groupTimezone").value = group.timezone || "Asia/Colombo"; }
+    } catch (error) { $("#accountLocaleFeedback").textContent = error.message; }
   }
 
   function setDetailBotBadge(isBotAdmin) {
@@ -526,6 +601,7 @@
   }
 
   async function initialise() {
+    applyDashboardLocale(localStorage.getItem("alexa-dashboard-locale") || "en");
     $("#loginButton").addEventListener("click", () => currentRole ? showDashboard(currentRole) : openLoginModal());
     $("#heroLoginButton").addEventListener("click", openLoginModal);
     $("#homeButton").addEventListener("click", goHome);
@@ -546,6 +622,30 @@
     document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !loginModal.hidden) closeLoginModal(); });
     $("#loginForm").addEventListener("submit", submitLogin);
     $("#logoutButton").addEventListener("click", logout);
+    $$("[data-dashboard-tab]").forEach((button) => button.addEventListener("click", () => selectDashboardTab(button.dataset.dashboardTab)));
+    $("#analyticsGroup").addEventListener("change", loadAnalytics);
+    $("#analyticsDays").addEventListener("change", loadAnalytics);
+    $("#refreshAutomations").addEventListener("click", loadAutomations);
+    $("#automationForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const feedback = $("#automationFeedback"); feedback.textContent = "Saving…";
+      try {
+        await api("/api/automations", { method: "POST", body: JSON.stringify({ groupId: $("#automationGroup").value, name: $("#automationName").value, type: $("#automationType").value, timezone: $("#automationTimezone").value, runAt: $("#automationRunAt").value, message: $("#automationMessage").value }) });
+        event.currentTarget.reset(); $("#automationTimezone").value = "Asia/Colombo"; feedback.textContent = "Automation created ✓"; await loadAutomations();
+      } catch (error) { feedback.textContent = error.message; }
+    });
+    $("#automationList").addEventListener("click", async (event) => {
+      const button = event.target.closest(".automation-delete"); if (!button) return;
+      try { await api(`/api/automations/${encodeURIComponent(button.dataset.jobId)}`, { method: "DELETE", body: "{}" }); await loadAutomations(); } catch (error) { $("#automationFeedback").textContent = error.message; }
+    });
+    $("#accountLocaleForm").addEventListener("submit", async (event) => {
+      event.preventDefault(); try { await api("/api/account/preferences", { method: "PATCH", body: JSON.stringify({ locale: $("#accountLocale").value, timezone: $("#accountTimezone").value }) }); applyDashboardLocale($("#accountLocale").value); $("#accountLocaleFeedback").textContent = "Preferences saved ✓"; } catch (error) { $("#accountLocaleFeedback").textContent = error.message; }
+    });
+    $("#localeGroup").addEventListener("change", () => { const group = managedGroups.find((item) => item.group_id === $("#localeGroup").value); if (group) { $("#groupLocale").value = group.locale || "en"; $("#groupTimezone").value = group.timezone || "Asia/Colombo"; } });
+    $("#groupLocaleForm").addEventListener("submit", async (event) => {
+      event.preventDefault(); const groupId = $("#localeGroup").value;
+      try { await api(`/api/groups/${encodeURIComponent(groupId)}/locale`, { method: "PATCH", body: JSON.stringify({ locale: $("#groupLocale").value, timezone: $("#groupTimezone").value }) }); const group = managedGroups.find((item) => item.group_id === groupId); if (group) { group.locale = $("#groupLocale").value; group.timezone = $("#groupTimezone").value; } $("#groupLocaleFeedback").textContent = "Group locale saved ✓"; } catch (error) { $("#groupLocaleFeedback").textContent = error.message; }
+    });
     $("#privateChatbotToggle").addEventListener("change", (event) => updatePrivateChatbot(event.target.checked, event.target));
     $("#ownerPrivateChatbotToggle").addEventListener("change", (event) => updatePrivateChatbot(event.target.checked, event.target));
     $("#refreshDashboardButton").addEventListener("click", () => requestGroupRefresh("user"));

@@ -18,8 +18,11 @@ jobs:
         node-version: '20'
 
     # GitHub Actions runner එක ඇතුළේ dependencies install කරගන්න (RAM ප්‍රශ්න එන්නේ නෑ)
-    - name: Install Dependencies Locally
-      run: npm install --production --legacy-peer-deps
+    - name: Install dependencies and build dashboard styles
+      run: |
+        npm install --legacy-peer-deps
+        npm run build:css
+        npm prune --omit=dev --legacy-peer-deps
 
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.9.0

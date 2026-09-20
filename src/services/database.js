@@ -106,6 +106,8 @@ async function initialize() {
         wc_m TEXT DEFAULT NULL,
         isleft_w TINYINT(1) NOT NULL DEFAULT 0,
         left_m TEXT DEFAULT NULL,
+        locale VARCHAR(16) NOT NULL DEFAULT 'en',
+        timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Colombo',
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
@@ -142,6 +144,7 @@ async function initialize() {
       CREATE TABLE IF NOT EXISTS user_profiles (
         user_lid VARCHAR(255) NOT NULL PRIMARY KEY,
         private_chatbot TINYINT(1) NOT NULL DEFAULT 1,
+        locale VARCHAR(16) NOT NULL DEFAULT 'en',
         timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Colombo',
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -212,6 +215,39 @@ async function initialize() {
         title VARCHAR(60) DEFAULT NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS command_events (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        command_name VARCHAR(100) NOT NULL,
+        group_id VARCHAR(255) DEFAULT NULL,
+        user_id_hash CHAR(32) DEFAULT NULL,
+        status VARCHAR(32) NOT NULL DEFAULT 'received',
+        duration_ms INT UNSIGNED NOT NULL DEFAULT 0,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_command_events_created (created_at),
+        INDEX idx_command_events_group_created (group_id, created_at),
+        INDEX idx_command_events_name_created (command_name, created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS scheduled_jobs (
+        id CHAR(36) NOT NULL PRIMARY KEY,
+        group_id VARCHAR(255) NOT NULL,
+        created_by VARCHAR(255) NOT NULL,
+        name VARCHAR(120) NOT NULL,
+        schedule_type ENUM('once','daily','weekly') NOT NULL,
+        timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Colombo',
+        message TEXT NOT NULL,
+        run_at DATETIME NOT NULL,
+        next_run_at DATETIME DEFAULT NULL,
+        last_run_at DATETIME DEFAULT NULL,
+        enabled TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_scheduled_due (enabled, next_run_at),
+        INDEX idx_scheduled_group (group_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
 
     // Additive migration path for legacy installs made before this service.
     await ensureColumn(db, "groups", "chatbot", "TINYINT(1) NOT NULL DEFAULT 0");
@@ -224,6 +260,9 @@ async function initialize() {
     await ensureColumn(db, "groups", "wc_m", "TEXT DEFAULT NULL");
     await ensureColumn(db, "groups", "isleft_w", "TINYINT(1) NOT NULL DEFAULT 0");
     await ensureColumn(db, "groups", "left_m", "TEXT DEFAULT NULL");
+    await ensureColumn(db, "groups", "locale", "VARCHAR(16) NOT NULL DEFAULT 'en'");
+    await ensureColumn(db, "groups", "timezone", "VARCHAR(64) NOT NULL DEFAULT 'Asia/Colombo'");
+    await ensureColumn(db, "user_profiles", "locale", "VARCHAR(16) NOT NULL DEFAULT 'en'");
 
     // Migrate tables created by older Alexa releases before this unified
     // collation policy existed. This fixes the dashboard JOIN failure without
@@ -240,6 +279,8 @@ async function initialize() {
       "rpg_users",
       "shop_inventory",
       "shop_profile",
+      "command_events",
+      "scheduled_jobs",
     ]) {
       await ensureTableCollation(db, tableName);
     }

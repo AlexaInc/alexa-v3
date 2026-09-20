@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#020617">
   <title>Alexa V3 — WhatsApp Bot</title>
   <meta name="description" content="Alexa V3 brings WhatsApp automation, group tools, games and AI into one secure control center.">
+  <link rel="stylesheet" href="/tailwind.css">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -71,6 +72,45 @@
       </div>
       <button class="btn btn-outline" id="logoutButton" type="button">Logout</button>
     </header>
+
+    <nav class="mb-6 flex gap-2 overflow-x-auto pb-2 sm:mb-8" id="dashboardTabs" aria-label="Dashboard sections">
+      <button class="dashboard-tab is-active" data-dashboard-tab="overview" data-i18n="overview" type="button">Overview</button>
+      <button class="dashboard-tab" data-dashboard-tab="analytics" data-i18n="analytics" type="button">Analytics</button>
+      <button class="dashboard-tab" data-dashboard-tab="automations" data-i18n="automations" type="button">Automations</button>
+      <button class="dashboard-tab" data-dashboard-tab="locale" data-i18n="locale" type="button">Language &amp; region</button>
+    </nav>
+
+    <section id="analyticsDashboard" class="space-y-5" hidden>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div><p class="eyebrow">OPERATIONS</p><h2 class="text-2xl font-bold text-white sm:text-3xl">Command analytics</h2></div>
+        <div class="flex gap-2"><select id="analyticsGroup" class="platform-input min-w-48"></select><select id="analyticsDays" class="platform-input w-28"><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option></select></div>
+      </div>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article class="metric-card"><span class="platform-label">Commands</span><strong id="analyticsTotal" class="text-3xl text-white">0</strong></article>
+        <article class="metric-card"><span class="platform-label">Active users</span><strong id="analyticsUsers" class="text-3xl text-white">0</strong></article>
+        <article class="metric-card"><span class="platform-label">Errors</span><strong id="analyticsErrors" class="text-3xl text-white">0</strong></article>
+        <article class="metric-card"><span class="platform-label">Period</span><strong id="analyticsPeriod" class="text-3xl text-white">7d</strong></article>
+      </div>
+      <article class="platform-card"><h3 class="mb-5 text-lg font-bold text-white">Most-used commands</h3><div id="analyticsCommands" class="space-y-3"><p class="text-slate-400">No data yet.</p></div></article>
+    </section>
+
+    <section id="automationsDashboard" class="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(320px,0.8fr)_minmax(380px,1.2fr)]" hidden>
+      <form id="automationForm" class="platform-card space-y-4">
+        <div><p class="eyebrow">SCHEDULER</p><h2 class="text-2xl font-bold text-white">New automation</h2></div>
+        <label><span class="platform-label">Group</span><select id="automationGroup" class="platform-input" required></select></label>
+        <label><span class="platform-label">Name</span><input id="automationName" class="platform-input" maxlength="120" required placeholder="Morning announcement"></label>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2"><label><span class="platform-label">Repeats</span><select id="automationType" class="platform-input"><option value="once">Once</option><option value="daily">Daily</option><option value="weekly">Weekly</option></select></label><label><span class="platform-label">Timezone</span><input id="automationTimezone" class="platform-input" value="Asia/Colombo" required></label></div>
+        <label><span class="platform-label">Run date &amp; time</span><input id="automationRunAt" class="platform-input" type="datetime-local" required></label>
+        <label><span class="platform-label">WhatsApp message</span><textarea id="automationMessage" class="platform-input min-h-32 resize-y" maxlength="4000" required placeholder="Type the scheduled message…"></textarea></label>
+        <button class="platform-button w-full sm:w-auto" type="submit">Create automation</button><p id="automationFeedback" class="text-sm text-slate-300" aria-live="polite"></p>
+      </form>
+      <article class="platform-card"><div class="mb-5 flex items-center justify-between"><div><p class="eyebrow">UPCOMING</p><h2 class="text-2xl font-bold text-white">Scheduled messages</h2></div><button id="refreshAutomations" class="dashboard-tab" type="button">Refresh</button></div><div id="automationList" class="space-y-3"><p class="text-slate-400">No automations yet.</p></div></article>
+    </section>
+
+    <section id="localeDashboard" class="grid grid-cols-1 gap-5 lg:grid-cols-2" hidden>
+      <form id="accountLocaleForm" class="platform-card space-y-4"><div><p class="eyebrow">YOUR ACCOUNT</p><h2 class="text-2xl font-bold text-white">Language &amp; region</h2></div><label><span class="platform-label">Dashboard language</span><select id="accountLocale" class="platform-input"></select></label><label><span class="platform-label">Timezone</span><input id="accountTimezone" class="platform-input" value="Asia/Colombo"></label><button class="platform-button" type="submit">Save preferences</button><p id="accountLocaleFeedback" class="text-sm text-slate-300"></p></form>
+      <form id="groupLocaleForm" class="platform-card space-y-4"><div><p class="eyebrow">MANAGED GROUP</p><h2 class="text-2xl font-bold text-white">Group language</h2></div><label><span class="platform-label">Group</span><select id="localeGroup" class="platform-input"></select></label><label><span class="platform-label">Bot reply language</span><select id="groupLocale" class="platform-input"></select></label><label><span class="platform-label">Group timezone</span><input id="groupTimezone" class="platform-input" value="Asia/Colombo"></label><button class="platform-button" type="submit">Save group locale</button><p id="groupLocaleFeedback" class="text-sm text-slate-300"></p></form>
+    </section>
 
     <section id="userDashboard" hidden>
       <div class="dashboard-grid two-col">
@@ -281,6 +321,7 @@
     </section>
   </div>
 
+  <script src="/locales.js" defer></script>
   <script src="/app.js" defer></script>
 </body>
 </html>

@@ -52,6 +52,12 @@ function setupIpcListener(AlexaInc) {
     if (!AlexaInc) return;
     try {
       if (data && data.type === "data") {
+        if (data.payload?.event === "scheduled-message") {
+          const groupId = String(data.payload.groupId || "");
+          const text = String(data.payload.message || "");
+          if (groupId.endsWith("@g.us") && text) await AlexaInc.sendMessage(groupId, { text });
+          return;
+        }
         // Settings changed through the user SPA. Drop the bot process cache so
         // the next reply/admin command immediately uses the new MySQL values.
         if (data.payload?.event === "clear-group-settings" && data.payload.groupId) {

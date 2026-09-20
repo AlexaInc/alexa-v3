@@ -1,0 +1,8 @@
+window.AlexaLocales = Object.freeze({
+  en: { overview:"Overview", analytics:"Analytics", automations:"Automations", locale:"Language & region", commandAnalytics:"Command analytics", newAutomation:"New automation", scheduledMessages:"Scheduled messages", languageRegion:"Language & region", save:"Save preferences" },
+  si: { overview:"සාරාංශය", analytics:"විශ්ලේෂණ", automations:"ස්වයංක්‍රීයකරණ", locale:"භාෂාව සහ කලාපය", commandAnalytics:"විධාන විශ්ලේෂණ", newAutomation:"නව ස්වයංක්‍රීයකරණය", scheduledMessages:"කාලසටහන්ගත පණිවිඩ", languageRegion:"භාෂාව සහ කලාපය", save:"මනාප සුරකින්න" },
+  ko: { overview:"개요", analytics:"분석", automations:"자동화", locale:"언어 및 지역", commandAnalytics:"명령 분석", newAutomation:"새 자동화", scheduledMessages:"예약 메시지", languageRegion:"언어 및 지역", save:"환경 설정 저장" },
+  ja: { overview:"概要", analytics:"分析", automations:"自動化", locale:"言語と地域", commandAnalytics:"コマンド分析", newAutomation:"新しい自動化", scheduledMessages:"予約メッセージ", languageRegion:"言語と地域", save:"設定を保存" },
+  fr: { overview:"Aperçu", analytics:"Analytique", automations:"Automatisations", locale:"Langue et région", commandAnalytics:"Analyse des commandes", newAutomation:"Nouvelle automatisation", scheduledMessages:"Messages programmés", languageRegion:"Langue et région", save:"Enregistrer" },
+  ru: { overview:"Обзор", analytics:"Аналитика", automations:"Автоматизация", locale:"Язык и регион", commandAnalytics:"Аналитика команд", newAutomation:"Новая автоматизация", scheduledMessages:"Запланированные сообщения", languageRegion:"Язык и регион", save:"Сохранить настройки" }
+});
