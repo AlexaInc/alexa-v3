@@ -771,78 +771,171 @@ app.patch(
 app.get("/api/locales", (req, res) => res.json({ locales: i18n.SUPPORTED }));
 
 async function dashboardGroupIds(req) {
-  const groups = req.session.auth.role === "owner"
-    ? await getOwnerGroups()
-    : await getUserGroups(req.session.auth.userLid);
+  const groups =
+    req.session.auth.role === "owner"
+      ? await getOwnerGroups()
+      : await getUserGroups(req.session.auth.userLid);
   return groups.map((group) => group.group_id);
 }
 
 app.get("/api/account/preferences", requireAnyLogin, async (req, res) => {
   try {
     await database.initialize();
-    const [rows] = await database.getPool().promise().query(
-      "SELECT locale, timezone FROM user_profiles WHERE user_lid = ?", [req.session.auth.userLid],
-    );
-    return res.json({ success: true, locale: i18n.normalize(rows[0]?.locale), timezone: rows[0]?.timezone || "Asia/Colombo", locales: i18n.SUPPORTED });
-  } catch (error) { return res.status(503).json({ success: false, message: "Preferences are unavailable." }); }
+    const [rows] = await database
+      .getPool()
+      .promise()
+      .query("SELECT locale, timezone FROM user_profiles WHERE user_lid = ?", [
+        req.session.auth.userLid,
+      ]);
+    return res.json({
+      success: true,
+      locale: i18n.normalize(rows[0]?.locale),
+      timezone: rows[0]?.timezone || "Asia/Colombo",
+      locales: i18n.SUPPORTED,
+    });
+  } catch (error) {
+    return res
+      .status(503)
+      .json({ success: false, message: "Preferences are unavailable." });
+  }
 });
 
-app.patch("/api/account/preferences", requireAnyLogin, requireFreshCsrf, async (req, res) => {
-  const locale = i18n.normalize(req.body?.locale);
-  const timezone = String(req.body?.timezone || "");
-  if (!moment.tz.zone(timezone)) return res.status(400).json({ success: false, message: "Unknown timezone." });
-  try {
-    await database.initialize();
-    await database.getPool().promise().query(
-      `INSERT INTO user_profiles (user_lid, locale, timezone) VALUES (?, ?, ?)
+app.patch(
+  "/api/account/preferences",
+  requireAnyLogin,
+  requireFreshCsrf,
+  async (req, res) => {
+    const locale = i18n.normalize(req.body?.locale);
+    const timezone = String(req.body?.timezone || "");
+    if (!moment.tz.zone(timezone))
+      return res
+        .status(400)
+        .json({ success: false, message: "Unknown timezone." });
+    try {
+      await database.initialize();
+      await database
+        .getPool()
+        .promise()
+        .query(
+          `INSERT INTO user_profiles (user_lid, locale, timezone) VALUES (?, ?, ?)
        ON DUPLICATE KEY UPDATE locale=VALUES(locale), timezone=VALUES(timezone)`,
-      [req.session.auth.userLid, locale, timezone],
-    );
-    return res.json({ success: true, locale, timezone });
-  } catch (error) { return res.status(503).json({ success: false, message: "Could not save preferences." }); }
-});
+          [req.session.auth.userLid, locale, timezone],
+        );
+      return res.json({ success: true, locale, timezone });
+    } catch (error) {
+      return res
+        .status(503)
+        .json({ success: false, message: "Could not save preferences." });
+    }
+  },
+);
 
-app.patch("/api/groups/:groupId/locale", requireAnyLogin, requireFreshCsrf, async (req, res) => {
-  const groupId = String(req.params.groupId || "");
-  if (!(await dashboardGroupIds(req)).includes(groupId)) return res.status(403).json({ success: false, message: "Group access denied." });
-  const locale = i18n.normalize(req.body?.locale);
-  const timezone = String(req.body?.timezone || "");
-  if (!moment.tz.zone(timezone)) return res.status(400).json({ success: false, message: "Unknown timezone." });
-  await database.initialize();
-  await database.getPool().promise().query(
-    `INSERT INTO \`groups\` (group_id, locale, timezone) VALUES (?, ?, ?)
-     ON DUPLICATE KEY UPDATE locale=VALUES(locale), timezone=VALUES(timezone)`, [groupId, locale, timezone],
-  );
-  return res.json({ success: true, locale, timezone });
-});
+app.patch(
+  "/api/groups/:groupId/locale",
+  requireAnyLogin,
+  requireFreshCsrf,
+  async (req, res) => {
+    const groupId = String(req.params.groupId || "");
+    if (!(await dashboardGroupIds(req)).includes(groupId))
+      return res
+        .status(403)
+        .json({ success: false, message: "Group access denied." });
+    const locale = i18n.normalize(req.body?.locale);
+    const timezone = String(req.body?.timezone || "");
+    if (!moment.tz.zone(timezone))
+      return res
+        .status(400)
+        .json({ success: false, message: "Unknown timezone." });
+    await database.initialize();
+    await database
+      .getPool()
+      .promise()
+      .query(
+        `INSERT INTO \`groups\` (group_id, locale, timezone) VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE locale=VALUES(locale), timezone=VALUES(timezone)`,
+        [groupId, locale, timezone],
+      );
+    return res.json({ success: true, locale, timezone });
+  },
+);
 
 app.get("/api/analytics/summary", requireAnyLogin, async (req, res) => {
   try {
     const groupId = req.query.groupId ? String(req.query.groupId) : null;
-    if (groupId && !(await dashboardGroupIds(req)).includes(groupId)) return res.status(403).json({ success: false, message: "Group access denied." });
-    if (!groupId && req.session.auth.role !== "owner") return res.status(400).json({ success: false, message: "Select a group." });
-    return res.json({ success: true, ...(await analytics.summary({ days: req.query.days, groupId })) });
-  } catch (error) { return res.status(503).json({ success: false, message: "Analytics are unavailable." }); }
+    if (groupId && !(await dashboardGroupIds(req)).includes(groupId))
+      return res
+        .status(403)
+        .json({ success: false, message: "Group access denied." });
+    if (!groupId && req.session.auth.role !== "owner")
+      return res
+        .status(400)
+        .json({ success: false, message: "Select a group." });
+    return res.json({
+      success: true,
+      ...(await analytics.summary({ days: req.query.days, groupId })),
+    });
+  } catch (error) {
+    return res
+      .status(503)
+      .json({ success: false, message: "Analytics are unavailable." });
+  }
 });
 
 app.get("/api/automations", requireAnyLogin, async (req, res) => {
-  try { return res.json({ success: true, jobs: await scheduler.list(await dashboardGroupIds(req)) }); }
-  catch (error) { return res.status(503).json({ success: false, message: "Automations are unavailable." }); }
-});
-
-app.post("/api/automations", requireAnyLogin, requireFreshCsrf, async (req, res) => {
   try {
-    const groupId = String(req.body?.groupId || "");
-    if (!(await dashboardGroupIds(req)).includes(groupId)) return res.status(403).json({ success: false, message: "Group access denied." });
-    const id = await scheduler.create({ ...req.body, groupId, createdBy: req.session.auth.userLid });
-    return res.status(201).json({ success: true, id });
-  } catch (error) { return res.status(400).json({ success: false, message: error.message }); }
+    return res.json({
+      success: true,
+      jobs: await scheduler.list(await dashboardGroupIds(req)),
+    });
+  } catch (error) {
+    return res
+      .status(503)
+      .json({ success: false, message: "Automations are unavailable." });
+  }
 });
 
-app.delete("/api/automations/:id", requireAnyLogin, requireFreshCsrf, async (req, res) => {
-  try { return res.json({ success: await scheduler.remove(req.params.id, await dashboardGroupIds(req)) }); }
-  catch (error) { return res.status(503).json({ success: false, message: "Could not delete automation." }); }
-});
+app.post(
+  "/api/automations",
+  requireAnyLogin,
+  requireFreshCsrf,
+  async (req, res) => {
+    try {
+      const groupId = String(req.body?.groupId || "");
+      if (!(await dashboardGroupIds(req)).includes(groupId))
+        return res
+          .status(403)
+          .json({ success: false, message: "Group access denied." });
+      const id = await scheduler.create({
+        ...req.body,
+        groupId,
+        createdBy: req.session.auth.userLid,
+      });
+      return res.status(201).json({ success: true, id });
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  },
+);
+
+app.delete(
+  "/api/automations/:id",
+  requireAnyLogin,
+  requireFreshCsrf,
+  async (req, res) => {
+    try {
+      return res.json({
+        success: await scheduler.remove(
+          req.params.id,
+          await dashboardGroupIds(req),
+        ),
+      });
+    } catch (error) {
+      return res
+        .status(503)
+        .json({ success: false, message: "Could not delete automation." });
+    }
+  },
+);
 
 // ---- Owner diagnostics ----------------------------------------------------
 // One normalized snapshot is shared by the owner WebSocket stream. Keeping
@@ -939,7 +1032,9 @@ app.post("/github-webhook", (req, res) => {
 function serveSpa(req, res) {
   res.sendFile(path.join(publicDir, "index.html"));
 }
-app.get("/deploy", (req, res) => res.sendFile(path.join(publicDir, "deploy.html")));
+app.get("/deploy", (req, res) =>
+  res.sendFile(path.join(publicDir, "deploy.html")),
+);
 app.get(["/", "/dashboard", "/dashboard/group/:groupId"], serveSpa);
 
 const server = http.createServer(app);
@@ -1043,7 +1138,8 @@ server.listen(PORT, "0.0.0.0", () => {
   void databaseReady.then((ready) => {
     if (!ready) return;
     scheduler.start(async (job) => {
-      if (typeof process.send !== "function") throw new Error("Bot IPC is unavailable.");
+      if (typeof process.send !== "function")
+        throw new Error("Bot IPC is unavailable.");
       process.send({
         type: "data",
         from: "scheduler",

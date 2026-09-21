@@ -5046,7 +5046,7 @@ Url: ${response[1].url}
 
 
 
-*Note The Original News Resources is Ada Derana 24*
+*Note The Original News Resources is Flashnews*
   `
                                 AlexaInc.sendMessage(msg.key.remoteJid, {
                                     image: {
@@ -5062,6 +5062,8 @@ Url: ${response[1].url}
                                         key: msg.key
                                     }
                                 });
+                            }).catch(error => {
+                                AlexaInc.sendMessage(msg.key.remoteJid, {text:error.message});
                             })
 
                             break;

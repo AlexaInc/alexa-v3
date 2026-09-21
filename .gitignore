@@ -50,3 +50,6 @@ shipping/
 database/
 authtest/
 /authtest2/
+/alexa-v3-dashboard-features.patch
+/alexa-v3-schema-startup-fix.patch
+/*.patch

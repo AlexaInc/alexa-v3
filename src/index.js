@@ -26,7 +26,7 @@ const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const path = require("path");
 const { makeWASocket: WAConnection } = require("@hansaka02/baileys"); // for first-time QR login
-const authPath = path.join(__dirname, "..", "auth5a");
+const authPath = path.join(__dirname, "..", "authtest");
 const { handleHangman, checkInactiveGames } = require("./games/hangman.js");
 const {
   getCachedGroupMetadata,
@@ -55,12 +55,16 @@ function setupIpcListener(AlexaInc) {
         if (data.payload?.event === "scheduled-message") {
           const groupId = String(data.payload.groupId || "");
           const text = String(data.payload.message || "");
-          if (groupId.endsWith("@g.us") && text) await AlexaInc.sendMessage(groupId, { text });
+          if (groupId.endsWith("@g.us") && text)
+            await AlexaInc.sendMessage(groupId, { text });
           return;
         }
         // Settings changed through the user SPA. Drop the bot process cache so
         // the next reply/admin command immediately uses the new MySQL values.
-        if (data.payload?.event === "clear-group-settings" && data.payload.groupId) {
+        if (
+          data.payload?.event === "clear-group-settings" &&
+          data.payload.groupId
+        ) {
           clearSettingsCache(data.payload.groupId);
           return;
         }
@@ -665,7 +669,7 @@ function loadMessagesBetween(jid, startId, endId) {
 // It creates all legacy and new account/panel tables on startup.
 const db = database.getPool();
 database.initialize().catch((error) => {
-  console.error('[index] Database bootstrap failed:', error.message);
+  console.error("[index] Database bootstrap failed:", error.message);
 });
 
 setInterval(() => {
@@ -911,24 +915,34 @@ async function startWhatsAppConnection() {
       let groupMetadata;
       try {
         groupMetadata = await refreshGroupMetadata(AlexaInc, anu.id);
-        if (groupMetadata) await groupDirectory.syncGroupMetadata(AlexaInc, groupMetadata);
+        if (groupMetadata)
+          await groupDirectory.syncGroupMetadata(AlexaInc, groupMetadata);
       } catch (error) {
-        console.error("Could not refresh group metadata after participant update:", error.message);
+        console.error(
+          "Could not refresh group metadata after participant update:",
+          error.message,
+        );
         return;
       }
 
       // The directory/admin sync above is still required when the bot itself
       // is promoted or demoted. Welcome/goodbye output is not.
-      if (changedParticipants.some((participant) => groupDirectory.isBotParticipant(AlexaInc, participant))) {
+      if (
+        changedParticipants.some((participant) =>
+          groupDirectory.isBotParticipant(AlexaInc, participant),
+        )
+      ) {
         return;
       }
 
       const participantObj = changedParticipants[0];
       if (!participantObj) return;
       const participantLid = participantObj.lid || participantObj.id;
-      const participantJid = participantObj.phoneNumber || participantObj.jid || participantObj.id;
-      const rawParticipants = changedParticipants.map((participant) =>
-        participant.phoneNumber || participant.jid || participant.id,
+      const participantJid =
+        participantObj.phoneNumber || participantObj.jid || participantObj.id;
+      const rawParticipants = changedParticipants.map(
+        (participant) =>
+          participant.phoneNumber || participant.jid || participant.id,
       );
 
       const { getCachedGroupSettings } = require("./modules/cacheHelper.js");

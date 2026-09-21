@@ -1,49 +1,30 @@
-const axios = require('axios');
+const axios = require("axios").default;
 
-async function sendRequest() {
+const fetchNews = async () => {
+  const options = {
+    method: "GET",
+    url: "https://flashnews-736769978816.europe-west1.run.app/api/news",
+  };
+
   try {
-    // Step 1: Send the POST request to get the event ID
-    const postResponse = await axios.post('https://hansaka1-adaderananews.hf.space/gradio_api/call/predict', {
-      data: []
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const response = await axios.request(options);
 
+    const data = response.data.data;
 
-    const eventId = postResponse.data?.event_id; 
+    const arranged = [];
+    for (let i = 0; i < data.length; i++) {
+      const news = {
+        title: data[i].title_en,
+        description: data[i].content_en,
+        url: `https://news.furo.lk/news/detail/${data[i]._id}?language=en`,
+      };
 
-    if (!eventId) {
-      console.error('Event ID not found in the POST response');
-      return;
+      arranged.push(news);
     }
-
-
-    const getResponse = await axios.get(`https://hansaka1-adaderananews.hf.space/gradio_api/call/predict/${eventId}`);
-
-
-    const rawResponse = getResponse.data;
-
-
-    const cleanedResponse = rawResponse.replace(/^event:\s*complete\s*data:\s*/, '');  // Remove 'event: complete data:'
-
-
-    try {
-      const cleanData = JSON.parse(cleanedResponse);
-      //return cleanData;
-      return  cleanData[0];
-      
-    } catch (parseError) {
-      console.error('Error parsing cleaned response:', parseError.message);
-    }
-
+    return arranged;
   } catch (error) {
-    console.error('Error:', error.response ? error.response.data : error.message);
+    console.error(error);
+    throw error;
   }
-}
-
-
-
-module.exports = sendRequest;
-
+};
+fetchNews();
