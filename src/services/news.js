@@ -27,4 +27,4 @@ const fetchNews = async () => {
     throw error;
   }
 };
-fetchNews();
+module.exports = fetchNews;
