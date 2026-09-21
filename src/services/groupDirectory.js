@@ -38,11 +38,15 @@ function socketIds(socket) {
 }
 
 function isAdmin(participant) {
-  return ["admin", "superadmin"].includes(String(participant?.admin || "").toLowerCase());
+  return ["admin", "superadmin"].includes(
+    String(participant?.admin || "").toLowerCase(),
+  );
 }
 
 function sameIdentity(a, b) {
-  const left = new Set(Array.isArray(a) ? a.map(normalizeIdentity) : [normalizeIdentity(a)]);
+  const left = new Set(
+    Array.isArray(a) ? a.map(normalizeIdentity) : [normalizeIdentity(a)],
+  );
   return (Array.isArray(b) ? b : [b])
     .map(normalizeIdentity)
     .filter(Boolean)
@@ -53,7 +57,8 @@ function isBotAdmin(socket, metadata) {
   const bot = socketIds(socket);
   if (!bot.length || !Array.isArray(metadata?.participants)) return false;
   return metadata.participants.some(
-    (participant) => isAdmin(participant) && sameIdentity(bot, participantIds(participant)),
+    (participant) =>
+      isAdmin(participant) && sameIdentity(bot, participantIds(participant)),
   );
 }
 
@@ -97,12 +102,17 @@ async function syncGroupMetadata(socket, metadata) {
       const mappedAccount = directLid
         ? null
         : knownAccounts.find((account) =>
-          sameIdentity(participantIds(participant), account.whatsapp_jid),
-        );
+            sameIdentity(participantIds(participant), account.whatsapp_jid),
+          );
       return {
         userLid: directLid || normalizeIdentity(mappedAccount?.lid_username),
         displayName:
-          String(participant.notify || participant.name || participant.pushName || "").slice(0, 255) || null,
+          String(
+            participant.notify ||
+              participant.name ||
+              participant.pushName ||
+              "",
+          ).slice(0, 255) || null,
         isAdmin: isAdmin(participant),
       };
     })
@@ -126,13 +136,23 @@ async function syncGroupMetadata(socket, metadata) {
         isBotAdmin(socket, metadata),
       ],
     );
-    await connection.query("DELETE FROM group_admin_memberships WHERE group_id = ?", [groupId]);
+    await connection.query(
+      "DELETE FROM group_admin_memberships WHERE group_id = ?",
+      [groupId],
+    );
     if (members.length) {
       await connection.query(
         `INSERT INTO group_admin_memberships
           (group_id, user_lid, display_name, is_admin)
          VALUES ?`,
-        [members.map((member) => [groupId, member.userLid, member.displayName, member.isAdmin])],
+        [
+          members.map((member) => [
+            groupId,
+            member.userLid,
+            member.displayName,
+            member.isAdmin,
+          ]),
+        ],
       );
     }
     await connection.commit();
@@ -170,7 +190,9 @@ async function syncAllGroups(socket, groups = null) {
   if (failed.length) {
     console.warn(`[group-directory] ${failed.length} group sync(s) failed.`);
   }
-  console.log(`[group-directory] Synced ${entries.length - failed.length}/${entries.length} groups.`);
+  console.log(
+    `[group-directory] Synced ${entries.length - failed.length}/${entries.length} groups.`,
+  );
   return { total: entries.length, failed: failed.length };
 }
 

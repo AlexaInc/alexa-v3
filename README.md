@@ -30,6 +30,7 @@
 3.  After connecting, execute the following queries to set up the required tables:
 
 ### SQL Query (Conversation History)
+####     not compulsory it will auto create when first startup
 
 ```sql
 CREATE TABLE IF NOT EXISTS `groups` (
@@ -86,35 +87,108 @@ point requires it first.
 
 If you are using a local deployment (VPS or Replit), create a `.env` file in the root directory. If you are using a PaaS (like Koyeb or Railway), set these as environment variables in your service configuration.
 
-```env
-# Deployment URL (your public link)
-WEBSOCKET_URL=<your deployement publick link>
-# AI Model (from OpenRouter)
-CHAT_MODEL=<get it from OpenRouter>
-OPENROUTER_TOKEN1=<your openrouter token>
-# Hugging Face (auto-taken)
-HUGING_FACE=<hugging face auto taken>
-# Bot & Owner Numbers
-BOT_NB=<your bot's WhatsApp number>
-Owner_nb=<your WhatsApp number>
-# Database Connection
-DB_HOST=<your database host>
-DB_UNAME=<your database username>
-DB_NAME=<your database name>
-DB_PASS=<your database password>
-DB_PORT=<your database port>
-# MongoDB for custom quiz packs (like alexatg — /setquiz and /quiz <id> use this)
-QUIZ_MONGO_URI=<your mongodb uri, e.g. mongodb+srv://user:pass@cluster0.xxxx.mongodb.net/alexa>
-# Web panel sessions (no separate owner username/password)
-# Sign in with the bot-issued WhatsApp LID and password. Owner_nb / Owner_id selects owner access.
-SESSION_SECRET=<use a unique random secret, not a default value>
-# HTTPS deployments automatically use secure cookies; optionally force this:
+```editorconfig
+# ==============================================================================
+# ENVIRONMENT CONFIGURATION FILE (.env)
+# ==============================================================================
+# GUIDELINES:
+# 1. SECURITY: Never commit this file with populated secrets to public version control (Git).
+# 2. FORMATTING: Do not add spaces around the '=' sign (e.g., KEY=value).
+# 3. QUOTES: Wrap values in double quotes if they contain spaces or special characters.
+# 4. DEFAULTS: Optional variables can be left blank unless specific behavior is needed.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. SECURITY CREDENTIALS
+# ------------------------------------------------------------------------------
+# The web panel uses each account's bot-issued WhatsApp LID/password.
+# Bot owners are recognised from Owner_nb / Owner_id below; no separate web-owner credential is needed.
+
+# Secret key used for signing session cookies. Generate a long random value; never reuse a public/default string.
+SESSION_SECRET=your_long_random_session_secret_key
+# The panel automatically uses secure cookies on HTTPS. For an HTTPS production deployment you may force it:
 # COOKIE_SECURE=true
-# Dedicated key used to encrypt recoverable bot-user credentials at rest.
-# Generate: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-CREDENTIAL_ENCRYPTION_KEY=<random base64 key>
-# Other API Keys
-NIGHTAPI_AUTH=<nightapi token>
+
+# Dedicated 32-byte secret for encrypted bot-user credential recovery.
+# Generate one with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+CREDENTIAL_ENCRYPTION_KEY=replace_with_a_random_base64_32_byte_key
+
+# Webhook signature validation secret
+WEBHOOK_SECRET=your_webhook_validation_secret
+
+# ------------------------------------------------------------------------------
+# 2. DATABASE CONFIGURATION
+# ------------------------------------------------------------------------------
+# Standard Relational Database (MySQL / PostgreSQL)
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=app_db
+DB_UNAME=db_user
+DB_PASS=db_password
+
+# MongoDB Connection (Local file path or full mongodb:// / mongodb+srv:// URI)
+MONGO_URL=mongodb://localhost:27017/bot_data or just /filters
+
+# MongoDB URI specifically allocated for quiz data
+QUIZ_MONGO_URI=mongodb://localhost:27017/quiz_data
+
+# PostgreSQL direct connection string (e.g., Supabase, Neon, or local)
+POSTGRES_URL=postgres://user:password@localhost:5432/dbname
+
+# ------------------------------------------------------------------------------
+# 3. BOT & USER IDENTIFIERS
+# ------------------------------------------------------------------------------
+# Primary owner details
+Owner_nb=1234567890          # Primary owner's phone number with country code
+Owner_id=1234567890          # Primary owner's platform ID (omit @lid / domain parts)
+
+# Bot operational details
+bot_nb=0987654321            # Bot's phone number or ID
+spc_nb=1234567890            # Special/SUDO phone number with elevated permissions
+ocid=1234567890@g.us         # Official channel/group ID where the bot is an admin
+
+# ------------------------------------------------------------------------------
+# 4. SERVER & NETWORK CONFIGURATION
+# ------------------------------------------------------------------------------
+# Optional HTTP/HTTPS proxy URL for outbound requests (e.g., http://proxy.example.com:8080)
+# PROXY_URL=
+
+# ------------------------------------------------------------------------------
+# 5. AI & MODEL CONFIGURATIONS
+# ------------------------------------------------------------------------------
+# Active LLM/Chat model identifier (e.g., gpt-4o, gemini-1.5-pro, claude-3-5-sonnet)
+CHAT_MODEL=gemini-1.5-pro
+
+# Google AI Platform API key
+GOOGLE_API_KEY=your_google_api_key
+
+# DeepAI Platform API key
+DEEPAI_API_KEY=your_deepai_api_key
+
+# Hugging Face Access Token (used for model inference or API access)
+HF_TOKEN=your_huggingface_access_token
+
+# Hugging Face Storage Bucket / Dataset path
+HF_BUCKET=your_hf_bucket_name
+
+# NightAPI authentication token
+NIGHTAPI_AUTH=your_nightapi_key
+
+# ------------------------------------------------------------------------------
+# 6. EXTERNAL SERVICES & MEDIA APIS
+# ------------------------------------------------------------------------------
+# Google Custom Search Engine ID (Programmable Search Engine)
+GOOGLESEARCH_ENGINE_ID=your_search_engine_id
+
+# Tenor GIF API key
+TENOR_API_KEY=your_tenor_api_key
+
+# YouTube Downloader (YTDL) configuration
+YTDL_RELAYS=                 # Relay servers or proxies for YouTube requests
+COOKIES_URLS=                # URL(s) to remote cookies files to bypass YTDL bot detection
+
+# Optional: Audio output format preference (e.g., mp3, m4a, wav, opus)
+YTDL_AUDIO_FORMAT=mp3
 ```
 
 -----

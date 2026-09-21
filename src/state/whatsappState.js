@@ -1,2 +1,2 @@
 global.botPhoneNumber = null;
-global.connectionStatus = 'Offline';
+global.connectionStatus = "Offline";

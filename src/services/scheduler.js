@@ -37,7 +37,11 @@ function nextRun(job, after = moment.utc()) {
   const next = localAfter.clone();
 
   if (job.schedule_type === "daily") {
-    next.hour(original.hour()).minute(original.minute()).second(0).millisecond(0);
+    next
+      .hour(original.hour())
+      .minute(original.minute())
+      .second(0)
+      .millisecond(0);
   } else {
     next
       .day(original.day())

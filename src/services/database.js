@@ -1,13 +1,5 @@
 "use strict";
 
-/**
- * Shared MySQL bootstrap for the bot process and the Express process.
- *
- * Both processes may start at the same time under app.js. Every statement is
- * idempotent, so it is safe for both to run this module's initializer. Keeping
- * the schema in one place also prevents the web panel and the bot from slowly
- * drifting apart.
- */
 const mysql = require("mysql2");
 const config = require("../config");
 
@@ -22,9 +14,7 @@ const pool = mysql.createPool({
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 10_000,
-  // Make connection parameters use the same portable collation as tables.
-  // This avoids MySQL 8 defaulting parameters to utf8mb4_0900_ai_ci while
-  // older Aiven/MariaDB tables use utf8mb4_unicode_ci.
+
   charset: "utf8mb4_unicode_ci",
 });
 
@@ -38,9 +28,10 @@ function isConfigured() {
 }
 
 async function ensureColumn(db, tableName, columnName, definition) {
-  const [columns] = await db.query(`SHOW COLUMNS FROM \`${tableName}\` LIKE ?`, [
-    columnName,
-  ]);
+  const [columns] = await db.query(
+    `SHOW COLUMNS FROM \`${tableName}\` LIKE ?`,
+    [columnName],
+  );
   if (columns.length === 0) {
     await db.query(
       `ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${definition}`,
@@ -48,7 +39,6 @@ async function ensureColumn(db, tableName, columnName, definition) {
     console.log(`[database] Added ${tableName}.${columnName}`);
   }
 }
-
 
 const APP_COLLATION = "utf8mb4_unicode_ci";
 const FIRST_PARTY_TABLES = Object.freeze([
@@ -82,11 +72,6 @@ async function assertFirstPartyTables(db) {
   }
 }
 
-/**
- * Older deployments already contain a mixture of MySQL 8's 0900 collation and
- * unicode_ci tables. A JOIN between those table columns throws ER_CANT_AGGREGATE_2COLLATIONS.
- * Normalize Alexa-owned tables once, non-destructively, during startup.
- */
 async function ensureTableCollation(db, tableName) {
   const [rows] = await db.query(
     `SELECT TABLE_COLLATION
@@ -98,15 +83,12 @@ async function ensureTableCollation(db, tableName) {
     await db.query(
       `ALTER TABLE \`${tableName}\` CONVERT TO CHARACTER SET utf8mb4 COLLATE ${APP_COLLATION}`,
     );
-    console.log(`[database] Normalized ${tableName} collation to ${APP_COLLATION}.`);
+    console.log(
+      `[database] Normalized ${tableName} collation to ${APP_COLLATION}.`,
+    );
   }
 }
 
-/**
- * Creates all first-party tables and performs additive, non-destructive
- * migrations for installations that already have the legacy groups/tasks
- * tables. Never drops or rewrites user data.
- */
 async function initialize() {
   if (initialized) return true;
   if (initializationPromise) return initializationPromise;
@@ -122,7 +104,6 @@ async function initialize() {
     const db = pool.promise();
     await db.query("SELECT 1");
 
-    // Existing bot configuration and task tables.
     await db.query(`
       CREATE TABLE IF NOT EXISTS \`groups\` (
         group_id VARCHAR(255) NOT NULL PRIMARY KEY,
@@ -154,9 +135,6 @@ async function initialize() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    // Canonical account record. The password has both a one-way scrypt hash
-    // for authentication and an AES-GCM encrypted copy so `.profile` can
-    // display credentials as requested without ever storing plaintext.
     await db.query(`
       CREATE TABLE IF NOT EXISTS bot_users (
         lid_username VARCHAR(255) NOT NULL PRIMARY KEY,
@@ -181,9 +159,6 @@ async function initialize() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    // A server-side group directory. It is refreshed after every successful
-    // WhatsApp connection and participant/admin change, which makes panel
-    // permissions reflect current WhatsApp admin status rather than stale data.
     await db.query(`
       CREATE TABLE IF NOT EXISTS group_directory (
         group_id VARCHAR(255) NOT NULL PRIMARY KEY,
@@ -205,9 +180,6 @@ async function initialize() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    // Game tables are declared here as well as in their game modules. This
-    // means a profile created on first bot interaction is immediately wired to
-    // its RPG/economy/shop records, even before a game command is used.
     await db.query(`
       CREATE TABLE IF NOT EXISTS economy_users (
         user_id VARCHAR(255) NOT NULL PRIMARY KEY,
@@ -279,20 +251,74 @@ async function initialize() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    // Additive migration path for legacy installs made before this service.
-    await ensureColumn(db, "groups", "chatbot", "TINYINT(1) NOT NULL DEFAULT 0");
-    await ensureColumn(db, "groups", "antilink", "TINYINT(1) NOT NULL DEFAULT 0");
-    await ensureColumn(db, "groups", "link_a", "VARCHAR(50) NOT NULL DEFAULT 'delete'");
-    await ensureColumn(db, "groups", "antinsfw", "TINYINT(1) NOT NULL DEFAULT 0");
-    await ensureColumn(db, "groups", "nsfw_a", "VARCHAR(50) NOT NULL DEFAULT 'delete'");
-    await ensureColumn(db, "groups", "is_allow_bots", "TINYINT(1) NOT NULL DEFAULT 0");
-    await ensureColumn(db, "groups", "is_welcome", "TINYINT(1) NOT NULL DEFAULT 0");
+    await ensureColumn(
+      db,
+      "groups",
+      "chatbot",
+      "TINYINT(1) NOT NULL DEFAULT 0",
+    );
+    await ensureColumn(
+      db,
+      "groups",
+      "antilink",
+      "TINYINT(1) NOT NULL DEFAULT 0",
+    );
+    await ensureColumn(
+      db,
+      "groups",
+      "link_a",
+      "VARCHAR(50) NOT NULL DEFAULT 'delete'",
+    );
+    await ensureColumn(
+      db,
+      "groups",
+      "antinsfw",
+      "TINYINT(1) NOT NULL DEFAULT 0",
+    );
+    await ensureColumn(
+      db,
+      "groups",
+      "nsfw_a",
+      "VARCHAR(50) NOT NULL DEFAULT 'delete'",
+    );
+    await ensureColumn(
+      db,
+      "groups",
+      "is_allow_bots",
+      "TINYINT(1) NOT NULL DEFAULT 0",
+    );
+    await ensureColumn(
+      db,
+      "groups",
+      "is_welcome",
+      "TINYINT(1) NOT NULL DEFAULT 0",
+    );
     await ensureColumn(db, "groups", "wc_m", "TEXT DEFAULT NULL");
-    await ensureColumn(db, "groups", "isleft_w", "TINYINT(1) NOT NULL DEFAULT 0");
+    await ensureColumn(
+      db,
+      "groups",
+      "isleft_w",
+      "TINYINT(1) NOT NULL DEFAULT 0",
+    );
     await ensureColumn(db, "groups", "left_m", "TEXT DEFAULT NULL");
-    await ensureColumn(db, "groups", "locale", "VARCHAR(16) NOT NULL DEFAULT 'en'");
-    await ensureColumn(db, "groups", "timezone", "VARCHAR(64) NOT NULL DEFAULT 'Asia/Colombo'");
-    await ensureColumn(db, "user_profiles", "locale", "VARCHAR(16) NOT NULL DEFAULT 'en'");
+    await ensureColumn(
+      db,
+      "groups",
+      "locale",
+      "VARCHAR(16) NOT NULL DEFAULT 'en'",
+    );
+    await ensureColumn(
+      db,
+      "groups",
+      "timezone",
+      "VARCHAR(64) NOT NULL DEFAULT 'Asia/Colombo'",
+    );
+    await ensureColumn(
+      db,
+      "user_profiles",
+      "locale",
+      "VARCHAR(16) NOT NULL DEFAULT 'en'",
+    );
 
     // Migrate tables created by older Alexa releases before this unified
     // collation policy existed. This fixes the dashboard JOIN failure without
