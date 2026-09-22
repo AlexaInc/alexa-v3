@@ -354,16 +354,60 @@
     if (tab === "locale") void loadLocalePreferences();
   }
 
-  function analyticsDates(days) {
+  function zonedParts(instant, timeZone) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      hourCycle: "h23",
+      weekday: "short",
+    }).formatToParts(instant);
+    const value = Object.fromEntries(
+      parts
+        .filter((part) => part.type !== "literal")
+        .map((part) => [part.type, part.value]),
+    );
+    return {
+      day: `${value.year}-${value.month}-${value.day}`,
+      hour: Number(value.hour) % 24,
+      weekday: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(
+        value.weekday,
+      ),
+    };
+  }
+
+  function analyticsDates(days, timeZone) {
     const dates = [];
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    const localToday = zonedParts(new Date(), timeZone).day;
+    const today = new Date(`${localToday}T00:00:00Z`);
     for (let offset = days - 1; offset >= 0; offset -= 1) {
       const date = new Date(today);
       date.setUTCDate(date.getUTCDate() - offset);
       dates.push(date.toISOString().slice(0, 10));
     }
     return dates;
+  }
+
+  function localizeHourlyRows(rows, timeZone) {
+    return rows.map((row) => {
+      const utcDay = String(row.day).slice(0, 10);
+      const hour = String(Number(row.hour) || 0).padStart(2, "0");
+      return {
+        ...zonedParts(new Date(`${utcDay}T${hour}:00:00Z`), timeZone),
+        type: row.type,
+        total: Number(row.total || 0),
+      };
+    });
+  }
+
+  function localizeEventRows(rows, timeZone) {
+    return rows.map((row) => ({
+      ...zonedParts(new Date(row.bucket), timeZone),
+      type: row.type,
+      total: Number(row.total || 0),
+    }));
   }
 
   function dateLabel(date) {
@@ -379,12 +423,10 @@
       ...new Set(rows.map((row) => row.type || "total")),
     ];
     const values = new Map();
-    rows.forEach((row) =>
-      values.set(
-        `${String(row.day).slice(0, 10)}:${row.type || "total"}`,
-        Number(row.total || 0),
-      ),
-    );
+    rows.forEach((row) => {
+      const key = `${String(row.day).slice(0, 10)}:${row.type || "total"}`;
+      values.set(key, (values.get(key) || 0) + Number(row.total || 0));
+    });
     return types.map((type, index) => ({
       label: type.replaceAll("_", " "),
       color:
@@ -418,9 +460,24 @@
       const data = await api(
         `/api/analytics/group?days=${encodeURIComponent(days)}&groupId=${encodeURIComponent(groupId)}`,
       );
-      const dates = analyticsDates(data.days);
+      const timeZone = data.timezone || "Asia/Colombo";
+      const dates = analyticsDates(data.days, timeZone);
+      const dateSet = new Set(dates);
       const labels = dates.map(dateLabel);
+      const localHourly = localizeHourlyRows(
+        data.series.hourly || [],
+        timeZone,
+      ).filter((row) => dateSet.has(row.day));
+      const localMemberEvents = localizeEventRows(
+        data.series.memberEvents || [],
+        timeZone,
+      ).filter((row) => dateSet.has(row.day));
+      const localModeration = localizeEventRows(
+        data.series.moderation || [],
+        timeZone,
+      ).filter((row) => dateSet.has(row.day));
       $("#analyticsRange").textContent = `${labels[0]} — ${labels.at(-1)}`;
+      $("#analyticsTimezone").textContent = timeZone;
       $("#analyticsMembers").textContent = formatNumber(data.overview?.members);
       $("#analyticsTotal").textContent = formatNumber(data.overview?.messages);
       $("#analyticsUsers").textContent = formatNumber(
@@ -430,17 +487,25 @@
         data.overview?.characters,
       );
 
+      // Detailed rows stay UTC in MySQL/API. Aggregate only after each bucket
+      // has been converted to the group's currently configured timezone.
+      const legacyRows = (data.series.messageTypes || [])
+        .filter((row) => row.type === "legacy")
+        .map((row) => ({ ...row, day: String(row.day).slice(0, 10) }));
       const messageSeries = chartSeries(
-        (data.series.messages || []).map((row) => ({
-          ...row,
-          type: "messages",
-        })),
+        [
+          ...localHourly.map((row) => ({ ...row, type: "messages" })),
+          ...legacyRows.map((row) => ({ ...row, type: "messages" })),
+        ],
         dates,
         ["messages"],
       );
       const growthByDate = new Map(
         (data.series.growth || []).map((row) => [
-          String(row.day).slice(0, 10),
+          zonedParts(
+            new Date(`${String(row.day).slice(0, 10)}T00:00:00Z`),
+            timeZone,
+          ).day,
           Number(row.total || 0),
         ]),
       );
@@ -457,13 +522,13 @@
           }),
         },
       ];
-      const memberSeries = chartSeries(data.series.memberEvents || [], dates, [
+      const memberSeries = chartSeries(localMemberEvents, dates, [
         "joined",
         "invited",
         "left",
         "removed",
       ]);
-      const typeSeries = chartSeries(data.series.messageTypes || [], dates, [
+      const typeSeries = chartSeries([...localHourly, ...legacyRows], dates, [
         "text",
         "sticker",
         "photo",
@@ -477,26 +542,23 @@
         "legacy",
         "other",
       ]);
-      const moderationSeries = chartSeries(
-        data.series.moderation || [],
-        dates,
-        [
-          "message_deleted",
-          "message_edited",
-          "warn",
-          "warn_removed",
-          "member_removed",
-          "member_promoted",
-          "member_demoted",
-          "group_muted",
-          "group_unmuted",
-        ],
-      );
-      const hourlyMap = new Map(
-        (data.series.hourly || []).map((row) => [
-          Number(row.hour),
-          Number(row.total),
-        ]),
+      const moderationSeries = chartSeries(localModeration, dates, [
+        "message_deleted",
+        "message_edited",
+        "warn",
+        "warn_removed",
+        "member_removed",
+        "member_promoted",
+        "member_demoted",
+        "group_muted",
+        "group_unmuted",
+      ]);
+      const hourlyMap = new Map();
+      localHourly.forEach((row) =>
+        hourlyMap.set(
+          row.hour,
+          (hourlyMap.get(row.hour) || 0) + Number(row.total || 0),
+        ),
       );
       const hourlyLabels = Array.from(
         { length: 24 },
@@ -510,11 +572,12 @@
         },
       ];
       const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const weekdayMap = new Map(
-        (data.series.weekdays || []).map((row) => [
-          Number(row.weekday) - 1,
-          Number(row.total),
-        ]),
+      const weekdayMap = new Map();
+      localHourly.forEach((row) =>
+        weekdayMap.set(
+          row.weekday,
+          (weekdayMap.get(row.weekday) || 0) + Number(row.total || 0),
+        ),
       );
       const weekdaySeries = [
         {

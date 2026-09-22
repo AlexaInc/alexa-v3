@@ -305,6 +305,14 @@ async function dashboard({ groupId, days = 30 }) {
   days = Math.min(365, Math.max(7, Number(days) || 30));
   const db = database.getPool().promise();
   const params = [groupId, days];
+  // Include boundary padding so the browser can convert UTC buckets for UTC-12
+  // through UTC+14 without losing the first/last local calendar day.
+  const utcBucketParams = [groupId, days + 2];
+  const [groupSettings] = await db.query(
+    "SELECT COALESCE(timezone, 'Asia/Colombo') AS timezone FROM `groups` WHERE group_id = ?",
+    [groupId],
+  );
+  const timezone = groupSettings[0]?.timezone || "Asia/Colombo";
   const [overviewRows] = await db.query(
     `SELECT
        (SELECT member_count FROM group_directory WHERE group_id = ?) AS members,
@@ -329,40 +337,41 @@ async function dashboard({ groupId, days = 30 }) {
      GROUP BY stat_date, message_type ORDER BY stat_date`,
     params,
   );
+  // Return UTC buckets without converting in SQL. The browser converts each
+  // instant with Intl.DateTimeFormat and the group's current IANA timezone.
   const [hourly] = await db.query(
-    `SELECT stat_hour AS hour, SUM(message_count) AS total
+    `SELECT stat_date AS day, stat_hour AS hour, message_type AS type,
+            SUM(message_count) AS total
      FROM group_message_hourly
      WHERE group_id = ? AND stat_date >= DATE_SUB(UTC_DATE(), INTERVAL ? DAY)
-     GROUP BY stat_hour ORDER BY stat_hour`,
-    params,
-  );
-  const [weekdays] = await db.query(
-    `SELECT DAYOFWEEK(stat_date) AS weekday, SUM(message_count) AS total
-     FROM group_message_daily
-     WHERE group_id = ? AND stat_date >= DATE_SUB(UTC_DATE(), INTERVAL ? DAY)
-     GROUP BY DAYOFWEEK(stat_date) ORDER BY weekday`,
-    params,
+     GROUP BY stat_date, stat_hour, message_type
+     ORDER BY stat_date, stat_hour`,
+    utcBucketParams,
   );
   const [memberEvents] = await db.query(
-    `SELECT DATE(created_at) AS day, event_type AS type, COUNT(*) AS total
+    `SELECT DATE_FORMAT(created_at, '%Y-%m-%dT%H:00:00Z') AS bucket,
+            event_type AS type, COUNT(*) AS total
      FROM group_member_events
      WHERE group_id = ? AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
-     GROUP BY DATE(created_at), event_type ORDER BY day`,
-    params,
+     GROUP BY DATE_FORMAT(created_at, '%Y-%m-%dT%H:00:00Z'), event_type
+     ORDER BY bucket`,
+    utcBucketParams,
   );
   const [moderation] = await db.query(
-    `SELECT DATE(created_at) AS day, event_type AS type, COUNT(*) AS total
+    `SELECT DATE_FORMAT(created_at, '%Y-%m-%dT%H:00:00Z') AS bucket,
+            event_type AS type, COUNT(*) AS total
      FROM group_moderation_events
      WHERE group_id = ? AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
-     GROUP BY DATE(created_at), event_type ORDER BY day`,
-    params,
+     GROUP BY DATE_FORMAT(created_at, '%Y-%m-%dT%H:00:00Z'), event_type
+     ORDER BY bucket`,
+    utcBucketParams,
   );
   const [growth] = await db.query(
     `SELECT stat_date AS day, member_count AS total
      FROM group_metric_snapshots
      WHERE group_id = ? AND stat_date >= DATE_SUB(UTC_DATE(), INTERVAL ? DAY)
      ORDER BY stat_date`,
-    params,
+    utcBucketParams,
   );
   const [topMembers] = await db.query(
     `SELECT user_id, display_name, total_messages,
@@ -397,12 +406,12 @@ async function dashboard({ groupId, days = 30 }) {
   );
   return {
     days,
+    timezone,
     overview: overviewRows[0] || {},
     series: {
       messages: messageSeries,
       messageTypes,
       hourly,
-      weekdays,
       memberEvents,
       moderation,
       growth,

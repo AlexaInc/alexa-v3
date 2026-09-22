@@ -16,6 +16,16 @@ const pool = mysql.createPool({
   keepAliveInitialDelay: 10_000,
 
   charset: "utf8mb4_unicode_ci",
+  // All DATETIME/TIMESTAMP reads and writes use UTC. Presentation is converted
+  // in the dashboard with the selected group's IANA timezone.
+  timezone: "Z",
+});
+
+pool.on("connection", (connection) => {
+  connection.query("SET time_zone = '+00:00'", (error) => {
+    if (error)
+      console.error("[database] Could not force UTC session:", error.message);
+  });
 });
 
 let initializationPromise = null;

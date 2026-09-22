@@ -82,7 +82,7 @@
 
     <section id="analyticsDashboard" class="space-y-4 sm:space-y-5" hidden>
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div><p class="eyebrow">GROUP INSIGHTS</p><h2 class="text-2xl font-bold text-white sm:text-3xl">Statistics</h2><p id="analyticsRange" class="mt-1 text-xs text-slate-500">Last 30 days</p></div>
+        <div><p class="eyebrow">GROUP INSIGHTS</p><h2 class="text-2xl font-bold text-white sm:text-3xl">Statistics</h2><p class="mt-1 text-xs text-slate-500"><span id="analyticsRange">Last 30 days</span> · <span id="analyticsTimezone">Asia/Colombo</span></p></div>
         <div class="flex flex-col gap-2 sm:flex-row"><select id="analyticsGroup" class="platform-input min-w-48"></select><div class="flex gap-1 rounded-xl border border-slate-700 bg-slate-950/70 p-1" id="analyticsPeriods"><button class="analytics-period rounded-lg px-3 py-2 text-xs font-bold text-slate-400" data-days="7" type="button">7D</button><button class="analytics-period rounded-lg bg-blue-500 px-3 py-2 text-xs font-bold text-white" data-days="30" type="button">30D</button><button class="analytics-period rounded-lg px-3 py-2 text-xs font-bold text-slate-400" data-days="90" type="button">90D</button></div><input id="analyticsDays" type="hidden" value="30"></div>
       </div>
       <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
