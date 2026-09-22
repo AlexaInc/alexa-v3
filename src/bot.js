@@ -59,6 +59,7 @@ const rpg = require("./modules/rpg.js");
 const tod = require("./modules/truthordare.js");
 
 const database = require("./services/database.js");
+const groupAnalytics = require("./services/groupAnalytics.js");
 const commandRegistry = require("./commands/registry.js");
 const userProfiles = require("./services/userProfiles.js");
 const groupDirectory = require("./services/groupDirectory.js");
@@ -284,83 +285,7 @@ fetchJson = async (url, options) => {
   }
 };
 
-const RANKING_FOLDER = "./database/rankings";
-const TIMEZONE = "Asia/Colombo";
-
-// --- CACHE SYSTEM ---
-// This holds the data in RAM while the bot is running
-const rankingCache = {};
-// This keeps track of which groups have new data to save
-const groupsToSave = new Set();
-
-// --- HELPER FUNCTIONS ---
-const getDayKey = () => moment().tz(TIMEZONE).format("YYYY-MM-DD");
-const getWeekKey = () => moment().tz(TIMEZONE).format("YYYY-WW");
-
-// --- THE SAVER INTERVAL (Runs every 1 minute) ---
-setInterval(() => {
-  if (groupsToSave.size === 0) return; // Nothing to save
-
-  // console.log(`[RANKING] Saving data for ${groupsToSave.size} groups...`);
-
-  groupsToSave.forEach((groupId) => {
-    try {
-      const filePath = `${RANKING_FOLDER}/${groupId}.json`;
-      const data = rankingCache[groupId];
-
-      // Ensure folder exists (just in case)
-      if (!fs.existsSync(RANKING_FOLDER)) {
-        fs.mkdirSync(RANKING_FOLDER, {
-          recursive: true,
-        });
-      }
-
-      // Write from RAM to Disk
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-    } catch (err) {
-      console.error(`Failed to save ranking for ${groupId}:`, err);
-    }
-  });
-
-  // Clear the list after saving
-  groupsToSave.clear();
-}, 60 * 1000); // 60 seconds * 1000 ms
-
-// 2. Define the Save Function
-const saveRankingCacheOnExit = () => {
-  if (typeof groupsToSave === "undefined" || groupsToSave.size === 0) return;
-
-  console.log(
-    `[SYSTEM] Saving ${groupsToSave.size} ranking files before shutdown...`,
-  );
-
-  // We use a simple loop to ensure it runs synchronously
-  groupsToSave.forEach((groupId) => {
-    try {
-      const filePath = `${RANKING_FOLDER}/${groupId}.json`;
-
-      // Check if we have data for this group
-      if (rankingCache[groupId]) {
-        const data = rankingCache[groupId];
-
-        if (!fs.existsSync(RANKING_FOLDER)) {
-          fs.mkdirSync(RANKING_FOLDER, {
-            recursive: true,
-          });
-        }
-
-        // SYNC write is required for process.exit
-        fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-      }
-    } catch (err) {
-      console.error(`Failed to save ranking for ${groupId}:`, err);
-    }
-  });
-  console.log("[SYSTEM] Ranking data saved successfully.");
-};
-
-// 3. IMPORTANT: Attach to Global Object so index.js can see it
-global.saveRankingCacheOnExit = saveRankingCacheOnExit;
+// Group message rankings are persisted by services/groupAnalytics.js.
 
 const isBotAllowed = async (groupId) => {
   try {
@@ -1636,79 +1561,7 @@ async function handleMessage(
 
         ////////chatfight
 
-        if (isGroup && !isBotorFakeWeb) {
-          try {
-            const groupId = msg.key.remoteJid;
-            const senderId = finalLid; // Ensure finalLid is defined in your scope
-            const filePath = `${RANKING_FOLDER}/${groupId}.json`;
-
-            // 1. Load Group into Cache if not present (Lazy Loading)
-            if (!rankingCache[groupId]) {
-              if (fs.existsSync(filePath)) {
-                try {
-                  rankingCache[groupId] = JSON.parse(
-                    fs.readFileSync(filePath, "utf-8"),
-                  );
-                } catch {
-                  rankingCache[groupId] = {}; // Handle corrupt file
-                }
-              } else {
-                rankingCache[groupId] = {};
-              }
-            }
-
-            // 2. Get the database object from RAM
-            const rankDb = rankingCache[groupId];
-
-            // 3. Initialize user if not exists
-            if (!rankDb[senderId]) {
-              rankDb[senderId] = {
-                global: 0,
-                daily: {
-                  count: 0,
-                  dayKey: getDayKey(),
-                },
-                weekly: {
-                  count: 0,
-                  weekKey: getWeekKey(),
-                },
-              };
-            }
-
-            const userStats = rankDb[senderId];
-            const currentDay = getDayKey();
-            const currentWeek = getWeekKey();
-
-            // 4. Update GLOBAL count
-            userStats.global = (userStats.global || 0) + 1;
-
-            // 5. Update DAILY count
-            if (userStats.daily?.dayKey !== currentDay) {
-              userStats.daily = {
-                count: 1,
-                dayKey: currentDay,
-              };
-            } else {
-              userStats.daily.count += 1;
-            }
-
-            // 6. Update WEEKLY count
-            if (userStats.weekly?.weekKey !== currentWeek) {
-              userStats.weekly = {
-                count: 1,
-                weekKey: currentWeek,
-              };
-            } else {
-              userStats.weekly.count += 1;
-            }
-
-            // 7. Mark this group as "Dirty" (Needs saving)
-            // The setInterval at the top will pick this up in the next minute
-            groupsToSave.add(groupId);
-          } catch (e) {
-            console.error("Error in Ranking Listener:", e);
-          }
-        }
+        // Group activity is recorded in MySQL by index.js before command handling.
 
         if (msg.key.remoteJid == "120363423573824395@newsletter") {
           const fownerNumber = process.env["Owner_nb"].split(",")[0].trim();
@@ -2507,7 +2360,6 @@ async function handleMessage(
 ┃ ➥ \`.weather <city>\` - Weather
 ┃ ➥ \`.news\` - Latest news
 ┃ ➥ \`.id\` - Group / Your LID/JID
-┃ ➥ \`.vv\` - Reveal view-once
 ┃ ➥ \`.q\` - Quote → sticker (reply)
 ┃ ➥ \`.config\` - Group settings
 ┃ ➥ \`.rank\` / \`.myrank\` - Your rank
@@ -2770,7 +2622,7 @@ END:VCARD`;
             }
 
             case "vv": {
-              // if (!isOwner) return mess.owner();
+              if (!isOwner) return mess.owner();
               await viewOnce(AlexaInc, msg.key.remoteJid, msg);
 
               break;
@@ -6022,7 +5874,12 @@ Url: ${response[1].url}
                   text: `Please mention someone, reply to a user, or provide a number to ${command}!`,
                 });
               }
-              await removeWarn(AlexaInc, msg.key.remoteJid, users);
+              await removeWarn(
+                AlexaInc,
+                msg.key.remoteJid,
+                users,
+                msg.key.participant,
+              );
               break;
             }
 
@@ -6031,7 +5888,12 @@ Url: ${response[1].url}
               if (!isAdmins && !isOwner) return mess["admin&owner"]();
               if (!isBotAdmins) return mess.botadmin();
               const users = [text];
-              await removeWarn(AlexaInc, msg.key.remoteJid, users);
+              await removeWarn(
+                AlexaInc,
+                msg.key.remoteJid,
+                users,
+                msg.key.participant,
+              );
               break;
             }
 
@@ -6073,74 +5935,39 @@ Url: ${response[1].url}
               if (!isAdmins && !isOwner) return mess["admin&owner"]();
               if (!isBotAdmins) return mess.botadmin();
 
-              await unmuteCommand(AlexaInc, msg.key.remoteJid);
+              await unmuteCommand(
+                AlexaInc,
+                msg.key.remoteJid,
+                msg.key.participant,
+              );
 
               break;
             }
             case "topadder": {
-              const fs = require("fs");
-
-              // 1. Define the file path for this specific group
-              // Assuming 'from' or 'm.chat' is your group ID variable. Adjust as needed.
+              if (!isGroup) return mess.group();
               const chatId = msg.key.remoteJid;
-              const filePath = `./database/add_counts/${chatId}.json`;
-
-              // 2. Check if data exists for this group
-              if (!fs.existsSync(filePath)) {
+              const leaders = await groupAnalytics.topInviters(chatId, 10);
+              if (!leaders.length) {
                 return AlexaInc.sendMessage(
                   chatId,
                   {
-                    text: "⚠️ No member add records found for this group yet.",
+                    text: "⚠️ No member invitation records found for this group yet.",
                   },
-                  {
-                    quoted: msg,
-                  },
+                  { quoted: msg },
                 );
               }
-
-              // 3. Read and Parse the JSON
-              const fileContent = fs.readFileSync(filePath, "utf-8");
-              const jsonDb = JSON.parse(fileContent);
-
-              // 4. Convert Object to Array and Sort by Count (Highest to Lowest)
-              // Object.entries turns { "user1": 10, "user2": 5 } into [ ["user1", 10], ["user2", 5] ]
-              const sortedAdders = Object.entries(jsonDb).sort(
-                (a, b) => b[1] - a[1],
+              const mentions = leaders.map((user) => user.id);
+              const lines = leaders.map(
+                (user, index) =>
+                  `${index + 1}. @${user.id.split("@")[0]} : *${user.count}* invited`,
               );
-
-              // 5. Slice to get Top 10 (optional)
-              const topList = sortedAdders.slice(0, 10);
-
-              // 6. Construct Message and Mentions Array
-              let mentionText = `🏆 *Top Member Adders*\n\n`;
-              const mentions = [];
-
-              topList.forEach((entry, index) => {
-                const userId = entry[0]; // e.g., 194300461756480@lid
-                const count = entry[1]; // e.g., 5
-
-                // Add the raw ID to the mentions array so WhatsApp tags them
-                mentions.push(userId);
-
-                // Format the ID for display: Remove '@lid' or '@s.whatsapp.net'
-                const cleanId = userId.split("@")[0];
-
-                // Add line to message: 1. @194300... : 5
-                mentionText += `${index + 1}. @${cleanId} : *${count}* Added\n`;
-              });
-
-              mentionText += `\n_Total recorded adders: ${sortedAdders.length}_`;
-
-              // 7. Send the Message
               await AlexaInc.sendMessage(
                 chatId,
                 {
-                  text: mentionText,
-                  mentions: mentions, // Crucial: contains the full IDs including @lid
+                  text: `🏆 *Top Member Inviters*\n\n${lines.join("\n")}`,
+                  mentions,
                 },
-                {
-                  quoted: msg,
-                },
+                { quoted: msg },
               );
               break;
             }
@@ -6149,99 +5976,26 @@ Url: ${response[1].url}
             case "global":
             case "daily":
             case "weekly": {
-              const moment = require("moment-timezone");
+              if (!isGroup) return mess.group();
               const chatId = msg.key.remoteJid;
-              const filePath = `${RANKING_FOLDER}/${chatId}.json`; // Ensure RANKING_FOLDER is defined globally or locally
-
-              // ---------------------------------------------------------
-              // 1. FETCH FROM CACHE (OR DISK IF NOT IN CACHE)
-              // ---------------------------------------------------------
-              if (!rankingCache[chatId]) {
-                // Not in RAM? Try to load from disk
-                if (fs.existsSync(filePath)) {
-                  try {
-                    rankingCache[chatId] = JSON.parse(
-                      fs.readFileSync(filePath, "utf-8"),
-                    );
-                  } catch (err) {
-                    console.error(`Corrupt ranking file for ${chatId}`, err);
-                    rankingCache[chatId] = {}; // Fallback
-                  }
-                } else {
-                  // Not in RAM and Not on Disk
-                  return AlexaInc.sendMessage(
-                    chatId,
-                    {
-                      text: "📊 No messaging data recorded for this group yet.",
-                    },
-                    {
-                      quoted: msg,
-                    },
-                  );
-                }
-              }
-
-              // Now we are sure we have data in the variable
-              const rankDb = rankingCache[chatId];
-              // ---------------------------------------------------------
-
-              let mode = "global";
-              const text = (args.join(" ") || "").toLowerCase();
-              const cmd = command.toLowerCase();
-
-              if (cmd.includes("daily") || text.includes("daily"))
-                mode = "daily";
-              else if (cmd.includes("weekly") || text.includes("weekly"))
-                mode = "weekly";
-
-              const currentDay = moment()
-                .tz("Asia/Colombo")
-                .format("YYYY-MM-DD");
-              const currentWeek = moment().tz("Asia/Colombo").format("YYYY-WW");
-
-              const sortedStats = Object.entries(rankDb)
-                .map(([id, data]) => {
-                  let count = 0;
-
-                  if (mode === "global") {
-                    count = data.global || 0;
-                  } else if (mode === "daily") {
-                    if (data.daily && data.daily.dayKey === currentDay) {
-                      count = data.daily.count;
-                    }
-                  } else if (mode === "weekly") {
-                    if (data.weekly && data.weekly.weekKey === currentWeek) {
-                      count = data.weekly.count;
-                    }
-                  }
-                  return {
-                    id,
-                    count,
-                  };
-                })
-                .filter((u) => u.count > 0)
-                .sort((a, b) => b.count - a.count);
-
-              if (sortedStats.length === 0) {
+              const requested = (args.join(" ") || command).toLowerCase();
+              const mode = requested.includes("daily")
+                ? "daily"
+                : requested.includes("weekly")
+                  ? "weekly"
+                  : "global";
+              const leaders = await groupAnalytics.ranking(chatId, mode, 15);
+              if (!leaders.length) {
                 return AlexaInc.sendMessage(
                   chatId,
                   {
                     text: `📉 No active messages found for *${mode}* ranking yet.`,
                   },
-                  {
-                    quoted: msg,
-                  },
+                  { quoted: msg },
                 );
               }
-
-              const topList = sortedStats.slice(0, 15);
-
-              let mentionText = `🏆 *${mode.toUpperCase()} CHAT RANKING*\n`;
-              mentionText += `_Top active members in ${groupMetadata.subject}_\n\n`;
-
-              const mentions = [];
-
-              topList.forEach((user, index) => {
+              const mentions = leaders.map((user) => user.id);
+              const lines = leaders.map((user, index) => {
                 const medal =
                   index === 0
                     ? "🥇"
@@ -6250,156 +6004,52 @@ Url: ${response[1].url}
                       : index === 2
                         ? "🥉"
                         : `${index + 1}.`;
-                mentions.push(user.id);
-                const cleanId = user.id.split("@")[0];
-                mentionText += `${medal} @${cleanId} : *${user.count}* \n`;
+                return `${medal} @${user.id.split("@")[0]} : *${user.count}*`;
               });
-
-              mentionText += `\n_Total active users: ${sortedStats.length}_`;
-
-              // 4. Send Message
               await AlexaInc.sendMessage(
                 chatId,
                 {
-                  text: mentionText,
-                  mentions: mentions,
+                  text: `🏆 *${mode.toUpperCase()} CHAT RANKING*\n_Top active members in ${groupMetadata.subject}_\n\n${lines.join("\n")}`,
+                  mentions,
                 },
-                {
-                  quoted: msg,
-                },
+                { quoted: msg },
               );
               break;
             }
 
             case "rank":
             case "myrank": {
-              const moment = require("moment-timezone");
+              if (!isGroup) return mess.group();
               const chatId = msg.key.remoteJid;
               const senderId = finalLid;
-              const filePath = `${RANKING_FOLDER}/${chatId}.json`;
-
-              // ---------------------------------------------------------
-              // 1. FETCH FROM CACHE
-              // ---------------------------------------------------------
-              if (!rankingCache[chatId]) {
-                if (fs.existsSync(filePath)) {
-                  try {
-                    rankingCache[chatId] = JSON.parse(
-                      fs.readFileSync(filePath, "utf-8"),
-                    );
-                  } catch {
-                    rankingCache[chatId] = {};
-                  }
-                } else {
-                  return AlexaInc.sendMessage(
-                    chatId,
-                    {
-                      text: "📊 No data recorded for this group yet.",
-                    },
-                    {
-                      quoted: m,
-                    },
-                  );
-                }
-              }
-              const rankDb = rankingCache[chatId];
-
-              // 2. Check if user exists
-              const userStats = rankDb[senderId];
-              if (!userStats) {
+              const stats = await groupAnalytics.memberRank(chatId, senderId);
+              if (!stats) {
                 return AlexaInc.sendMessage(
                   chatId,
                   {
                     text: "📉 You haven't sent any messages yet. Start chatting to get ranked!",
                   },
-                  {
-                    quoted: m,
-                  },
+                  { quoted: msg },
                 );
               }
-
-              // 3. Prepare Data & Sort by GLOBAL Count
-              const sortedUsers = Object.entries(rankDb)
-                .map(([id, data]) => ({
-                  id,
-                  global: data.global || 0,
-                }))
-                .sort((a, b) => b.global - a.global);
-
-              const myIndex = sortedUsers.findIndex(
-                (user) => user.id === senderId,
-              );
-              const myRank = myIndex + 1;
-              const myCount = sortedUsers[myIndex].global;
-
-              // 4. Calculate Stats (Daily/Weekly)
-              const currentDay = moment()
-                .tz("Asia/Colombo")
-                .format("YYYY-MM-DD");
-              const currentWeek = moment().tz("Asia/Colombo").format("YYYY-WW");
-
-              const dailyCount =
-                userStats.daily && userStats.daily.dayKey === currentDay
-                  ? userStats.daily.count
-                  : 0;
-              const weeklyCount =
-                userStats.weekly && userStats.weekly.weekKey === currentWeek
-                  ? userStats.weekly.count
-                  : 0;
-
-              // ---------------------------------------------------------
-              // 5. CALCULATE UP/DOWN GAPS
-              // ---------------------------------------------------------
-              let gapText = "";
-
-              // A. Check user ABOVE (Rank Up)
-              if (myIndex > 0) {
-                // If not Rank 1
-                const userAbove = sortedUsers[myIndex - 1];
-                const diff = userAbove.global - myCount + 1; // +1 to overtake
-                gapText += `🔼 *Rank Up:* Need *${diff}* msgs to beat Top ${myRank - 1}\n`;
-              } else {
-                gapText += `👑 *You are the Leader!* Keep it up!\n`;
-              }
-
-              // B. Check user BELOW (Safety Margin)
-              if (myIndex < sortedUsers.length - 1) {
-                // If not last
-                const userBelow = sortedUsers[myIndex + 1];
-                const lead = myCount - userBelow.global;
-                // If lead is 0, they are tied but you are ranked higher due to sort order
-                const leadMsg =
-                  lead === 0 ? "⚠️ Tied!" : `*${lead}* msgs ahead`;
-                gapText += `🔽 *Safety:* ${leadMsg} of Top ${myRank + 1}`;
-              } else {
-                gapText += `🔽 *Bottom:* You are at the last rank.`;
-              }
-
-              // 6. Build Message
-              let text = `👤 *YOUR RANK PROFILE*\n`;
-              text += `_Stats for @${senderId.split("@")[0]}_\n\n`;
-
-              let medal = "";
-              if (myRank === 1) medal = "🥇 ";
-              else if (myRank === 2) medal = "🥈 ";
-              else if (myRank === 3) medal = "🥉 ";
-
-              text += `${medal}🏆 *Rank:* #${myRank} (of ${sortedUsers.length})\n`;
-              text += `🌐 *Global:* ${myCount} msgs\n`;
-              text += `📅 *Daily:* ${dailyCount} msgs\n`;
-              text += `🗓️ *Weekly:* ${weeklyCount} msgs\n\n`;
-
-              text += `📊 *Position Analysis:*\n${gapText}`;
-
+              const medal =
+                stats.position === 1
+                  ? "🥇 "
+                  : stats.position === 2
+                    ? "🥈 "
+                    : stats.position === 3
+                      ? "🥉 "
+                      : "";
+              const text =
+                `👤 *YOUR RANK PROFILE*\n_Stats for @${senderId.split("@")[0]}_\n\n` +
+                `${medal}🏆 *Rank:* #${stats.position} (of ${stats.totalMembers})\n` +
+                `🌐 *Global:* ${stats.total} msgs\n` +
+                `📅 *Daily:* ${stats.daily} msgs\n` +
+                `🗓️ *Weekly:* ${stats.weekly} msgs`;
               await AlexaInc.sendMessage(
                 chatId,
-                {
-                  text: text,
-                  mentions: [senderId],
-                },
-                {
-                  quoted: msg,
-                },
+                { text, mentions: [senderId] },
+                { quoted: msg },
               );
               break;
             }
@@ -7420,7 +7070,6 @@ from : @${visibleNumber}
               step: "",
             };
 
-            // ✅ Stop further processing (AI etc.) for this message
             return;
           }
 
@@ -7428,7 +7077,6 @@ from : @${visibleNumber}
             userWaitingForQuizJSON.delete(msg.key.remoteJid); // Stop waiting
 
             try {
-              // Try to parse the message text as JSON
               const quizData = JSON.parse(messageText.trim());
 
               if (!isValidQuizFormat(quizData)) {
@@ -7498,10 +7146,8 @@ from : @${visibleNumber}
               msg.message?.extendedTextMessage?.contextInfo?.participant,
               botLid,
             );
-          // console.log(msg.message?.extendedTextMessage?.contextInfo?.participant, botJid, jidNormalizedUser(botLid), isReplyToBot);
+
           if (!isGroup) {
-            // The user dashboard controls this exact private-chat AI
-            // preference. Commands still work while automatic AI is off.
             const privateChatbotEnabled = await userProfiles
               .getPrivateChatbot(finalLid)
               .catch((error) => {
@@ -7509,7 +7155,7 @@ from : @${visibleNumber}
                   "[profile] Could not read private chatbot preference:",
                   error.message,
                 );
-                return true; // preserve legacy behaviour during a transient DB outage
+                return true;
               });
             if (privateChatbotEnabled) {
               runAI();
@@ -7519,13 +7165,11 @@ from : @${visibleNumber}
               );
             }
           } else if (isReplyToBot) {
-            // ✅ Group + Reply to Bot → Check if chatbot is enabled in Cache
             try {
               const settings = await getCachedGroupSettings(db, groupId);
               if (settings && settings.chatbot) {
                 const botStatus = loadBotStatus();
 
-                // Check before executing commands
                 if (botStatus.underMaintenance && !isOwner) {
                   return AlexaInc.sendMessage(
                     msg.key.remoteJid,
@@ -7537,11 +7181,10 @@ from : @${visibleNumber}
                     },
                   );
                 }
-                // ✅ Group + chatbot enabled → run AI
+
                 runAI();
               } else {
-                // ❌ Group but chatbot disabled → skip
-                console.log("Chatbot is disabled for this group.");
+                // console.log("Chatbot is disabled for this group.");
               }
             } catch (err) {
               console.error("Error checking chatbot status:", err);
@@ -7762,9 +7405,6 @@ from : @${visibleNumber}
                     };
 
                     try {
-                      // 1. Read your audio file into a buffer
-
-                      // 3. Your follow-up interactive message
                       await AlexaInc.sendMessage(
                         msg.key.remoteJid,
                         interactiveMessage,
@@ -7774,7 +7414,7 @@ from : @${visibleNumber}
                       );
                     } catch (error) {
                       console.error("Error sending PTT audio:", error);
-                      // Optional: Send an error message back to the user
+
                       await AlexaInc.sendMessage(
                         msg.key.remoteJid,
                         interactiveMessage,
@@ -7832,16 +7472,14 @@ Speed test results
                       );
                     }
                     try {
-                      // Await the weather data
                       const fetchmg = await weatherof(btext);
                       const summary = generateWeatherSummary(
                         fetchmg.temperature,
                         fetchmg.windspeed,
                         fetchmg.winddirection,
                       );
-                      // Check if the city is invalid
+
                       if (fetchmg === "invalid city") {
-                        // If the city is invalid, send a message back saying "invalid city"
                         AlexaInc.sendMessage(
                           msg.key.remoteJid,
                           {

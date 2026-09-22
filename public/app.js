@@ -331,7 +331,7 @@
         const select = $(selector);
         if (!select) return;
         const previous = select.value;
-        select.innerHTML = `${currentRole === "owner" && selector === "#analyticsGroup" ? '<option value="">All groups</option>' : ""}${options}`;
+        select.innerHTML = options;
         if ([...select.options].some((option) => option.value === previous))
           select.value = previous;
       },
@@ -354,33 +354,211 @@
     if (tab === "locale") void loadLocalePreferences();
   }
 
+  function analyticsDates(days) {
+    const dates = [];
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    for (let offset = days - 1; offset >= 0; offset -= 1) {
+      const date = new Date(today);
+      date.setUTCDate(date.getUTCDate() - offset);
+      dates.push(date.toISOString().slice(0, 10));
+    }
+    return dates;
+  }
+
+  function dateLabel(date) {
+    return new Date(`${date}T00:00:00Z`).toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    });
+  }
+
+  function chartSeries(rows, dates, requestedTypes = null) {
+    const types = requestedTypes || [
+      ...new Set(rows.map((row) => row.type || "total")),
+    ];
+    const values = new Map();
+    rows.forEach((row) =>
+      values.set(
+        `${String(row.day).slice(0, 10)}:${row.type || "total"}`,
+        Number(row.total || 0),
+      ),
+    );
+    return types.map((type, index) => ({
+      label: type.replaceAll("_", " "),
+      color:
+        window.AlexaCharts.palette[index % window.AlexaCharts.palette.length],
+      values: dates.map((date) => values.get(`${date}:${type}`) || 0),
+    }));
+  }
+
+  function renderLegend(target, series) {
+    $(target).innerHTML = series
+      .filter((item) => item.values.some(Number))
+      .map(
+        (item) =>
+          `<span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white" style="background:${item.color}"><i class="h-2 w-2 rounded-full bg-white/80"></i>${escapeHTML(item.label)}</span>`,
+      )
+      .join("");
+  }
+
+  function analyticsPersonRow(person, detail) {
+    const identity =
+      person.display_name ||
+      String(person.user_id || person.admin_id || "Unknown").split("@")[0];
+    const initial = identity.trim().charAt(0).toUpperCase() || "?";
+    return `<div class="flex items-center gap-3 border-b border-slate-800/80 py-3 last:border-0"><span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-blue-500 to-violet-500 font-bold text-white">${escapeHTML(initial)}</span><div class="min-w-0"><strong class="block truncate text-sm text-white">${escapeHTML(identity)}</strong><span class="text-xs text-slate-500">${escapeHTML(detail)}</span></div></div>`;
+  }
+
   async function loadAnalytics() {
+    const groupId = $("#analyticsGroup").value;
+    if (!groupId) return;
     try {
-      const groupId = $("#analyticsGroup").value;
-      const days = $("#analyticsDays").value;
+      const days = Number($("#analyticsDays").value || 30);
       const data = await api(
-        `/api/analytics/summary?days=${encodeURIComponent(days)}&groupId=${encodeURIComponent(groupId)}`,
+        `/api/analytics/group?days=${encodeURIComponent(days)}&groupId=${encodeURIComponent(groupId)}`,
       );
-      $("#analyticsTotal").textContent = formatNumber(data.totals?.total);
+      const dates = analyticsDates(data.days);
+      const labels = dates.map(dateLabel);
+      $("#analyticsRange").textContent = `${labels[0]} — ${labels.at(-1)}`;
+      $("#analyticsMembers").textContent = formatNumber(data.overview?.members);
+      $("#analyticsTotal").textContent = formatNumber(data.overview?.messages);
       $("#analyticsUsers").textContent = formatNumber(
-        data.totals?.active_users,
+        data.overview?.active_members,
       );
-      $("#analyticsErrors").textContent = formatNumber(data.totals?.errors);
-      $("#analyticsPeriod").textContent = `${data.days}d`;
-      const maximum = Math.max(
-        1,
-        ...(data.commands || []).map((item) => Number(item.uses)),
+      $("#analyticsCharacters").textContent = formatNumber(
+        data.overview?.characters,
       );
-      $("#analyticsCommands").innerHTML = data.commands?.length
-        ? data.commands
-            .map(
-              (item) =>
-                `<div class="grid grid-cols-[7rem_1fr_3rem] items-center gap-3 text-sm"><span class="truncate text-slate-300">${escapeHTML(item.command_name)}</span><span class="h-2 overflow-hidden rounded-full bg-slate-800"><i class="block h-full rounded-full bg-cyan-400" style="width:${Math.max(4, (Number(item.uses) / maximum) * 100)}%"></i></span><strong class="text-right text-white">${formatNumber(item.uses)}</strong></div>`,
+
+      const messageSeries = chartSeries(
+        (data.series.messages || []).map((row) => ({
+          ...row,
+          type: "messages",
+        })),
+        dates,
+        ["messages"],
+      );
+      const growthByDate = new Map(
+        (data.series.growth || []).map((row) => [
+          String(row.day).slice(0, 10),
+          Number(row.total || 0),
+        ]),
+      );
+      let memberCount =
+        growthByDate.get(dates[0]) ||
+        Number(data.series.growth?.[0]?.total || data.overview?.members || 0);
+      const growthSeries = [
+        {
+          label: "members",
+          color: window.AlexaCharts.palette[0],
+          values: dates.map((date) => {
+            if (growthByDate.has(date)) memberCount = growthByDate.get(date);
+            return memberCount;
+          }),
+        },
+      ];
+      const memberSeries = chartSeries(data.series.memberEvents || [], dates, [
+        "joined",
+        "invited",
+        "left",
+        "removed",
+      ]);
+      const typeSeries = chartSeries(data.series.messageTypes || [], dates);
+      const moderationSeries = chartSeries(data.series.moderation || [], dates);
+      const hourlyMap = new Map(
+        (data.series.hourly || []).map((row) => [
+          Number(row.hour),
+          Number(row.total),
+        ]),
+      );
+      const hourlyLabels = Array.from(
+        { length: 24 },
+        (_, hour) => `${String(hour).padStart(2, "0")}:00`,
+      );
+      const hourlySeries = [
+        {
+          label: "messages",
+          color: window.AlexaCharts.palette[5],
+          values: hourlyLabels.map((_, hour) => hourlyMap.get(hour) || 0),
+        },
+      ];
+      const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const weekdayMap = new Map(
+        (data.series.weekdays || []).map((row) => [
+          Number(row.weekday) - 1,
+          Number(row.total),
+        ]),
+      );
+      const weekdaySeries = [
+        {
+          label: "messages",
+          color: window.AlexaCharts.palette[6],
+          values: weekdayLabels.map((_, day) => weekdayMap.get(day) || 0),
+        },
+      ];
+      window.AlexaCharts.render($("#messageChart"), "line", {
+        labels,
+        series: messageSeries,
+      });
+      window.AlexaCharts.render($("#growthChart"), "line", {
+        labels,
+        series: growthSeries,
+      });
+      window.AlexaCharts.render($("#memberEventsChart"), "line", {
+        labels,
+        series: memberSeries,
+      });
+      window.AlexaCharts.render($("#messageTypesChart"), "bars", {
+        labels,
+        series: typeSeries,
+      });
+      window.AlexaCharts.render($("#moderationChart"), "line", {
+        labels,
+        series: moderationSeries,
+      });
+      window.AlexaCharts.render($("#hourlyChart"), "line", {
+        labels: hourlyLabels,
+        series: hourlySeries,
+      });
+      window.AlexaCharts.render($("#weekdayChart"), "bars", {
+        labels: weekdayLabels,
+        series: weekdaySeries,
+      });
+      renderLegend("#memberLegend", memberSeries);
+      renderLegend("#messageTypeLegend", typeSeries);
+      renderLegend("#moderationLegend", moderationSeries);
+
+      $("#topMembers").innerHTML = data.topMembers?.length
+        ? data.topMembers
+            .map((person) =>
+              analyticsPersonRow(
+                person,
+                `${formatNumber(person.total_messages)} messages, ${formatNumber(person.average_characters)} characters per message`,
+              ),
             )
             .join("")
-        : '<p class="text-slate-400">No command data for this period.</p>';
+        : '<p class="text-slate-400">No member data yet.</p>';
+      $("#topAdmins").innerHTML = data.topAdmins?.length
+        ? data.topAdmins
+            .map((person) =>
+              analyticsPersonRow(
+                person,
+                `${formatNumber(person.actions)} actions · ${formatNumber(person.deletions)} deletions · ${formatNumber(person.removals)} removals · ${formatNumber(person.warnings)} warnings`,
+              ),
+            )
+            .join("")
+        : '<p class="text-slate-400">No moderation data yet.</p>';
+      $("#memberSources").innerHTML = data.sources?.length
+        ? data.sources
+            .map(
+              (source) =>
+                `<span class="rounded-full bg-blue-500 px-3 py-2 text-xs font-bold text-white">✓ ${escapeHTML(String(source.source).replaceAll("_", " "))} · ${formatNumber(source.total)}</span>`,
+            )
+            .join("")
+        : '<p class="text-slate-400">No member-source data yet.</p>';
     } catch (error) {
-      $("#analyticsCommands").innerHTML =
+      $("#topMembers").innerHTML =
         `<p class="text-rose-300">${escapeHTML(error.message)}</p>`;
     }
   }
@@ -781,7 +959,17 @@
       ),
     );
     $("#analyticsGroup").addEventListener("change", loadAnalytics);
-    $("#analyticsDays").addEventListener("change", loadAnalytics);
+    $$(".analytics-period").forEach((button) =>
+      button.addEventListener("click", () => {
+        $("#analyticsDays").value = button.dataset.days;
+        $$(".analytics-period").forEach((item) => {
+          item.classList.toggle("bg-blue-500", item === button);
+          item.classList.toggle("text-white", item === button);
+          item.classList.toggle("text-slate-400", item !== button);
+        });
+        void loadAnalytics();
+      }),
+    );
     $("#refreshAutomations").addEventListener("click", loadAutomations);
     $("#automationForm").addEventListener("submit", async (event) => {
       event.preventDefault();

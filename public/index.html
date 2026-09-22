@@ -80,18 +80,27 @@
       <button class="dashboard-tab" data-dashboard-tab="locale" data-i18n="locale" type="button">Language &amp; region</button>
     </nav>
 
-    <section id="analyticsDashboard" class="space-y-5" hidden>
+    <section id="analyticsDashboard" class="space-y-4 sm:space-y-5" hidden>
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div><p class="eyebrow">OPERATIONS</p><h2 class="text-2xl font-bold text-white sm:text-3xl">Command analytics</h2></div>
-        <div class="flex gap-2"><select id="analyticsGroup" class="platform-input min-w-48"></select><select id="analyticsDays" class="platform-input w-28"><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option></select></div>
+        <div><p class="eyebrow">GROUP INSIGHTS</p><h2 class="text-2xl font-bold text-white sm:text-3xl">Statistics</h2><p id="analyticsRange" class="mt-1 text-xs text-slate-500">Last 30 days</p></div>
+        <div class="flex flex-col gap-2 sm:flex-row"><select id="analyticsGroup" class="platform-input min-w-48"></select><div class="flex gap-1 rounded-xl border border-slate-700 bg-slate-950/70 p-1" id="analyticsPeriods"><button class="analytics-period rounded-lg px-3 py-2 text-xs font-bold text-slate-400" data-days="7" type="button">7D</button><button class="analytics-period rounded-lg bg-blue-500 px-3 py-2 text-xs font-bold text-white" data-days="30" type="button">30D</button><button class="analytics-period rounded-lg px-3 py-2 text-xs font-bold text-slate-400" data-days="90" type="button">90D</button></div><input id="analyticsDays" type="hidden" value="30"></div>
       </div>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <article class="metric-card"><span class="platform-label">Commands</span><strong id="analyticsTotal" class="text-3xl text-white">0</strong></article>
-        <article class="metric-card"><span class="platform-label">Active users</span><strong id="analyticsUsers" class="text-3xl text-white">0</strong></article>
-        <article class="metric-card"><span class="platform-label">Errors</span><strong id="analyticsErrors" class="text-3xl text-white">0</strong></article>
-        <article class="metric-card"><span class="platform-label">Period</span><strong id="analyticsPeriod" class="text-3xl text-white">7d</strong></article>
+      <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <article class="metric-card"><span class="platform-label">Members</span><strong id="analyticsMembers" class="text-2xl text-white sm:text-3xl">0</strong></article><article class="metric-card"><span class="platform-label">Messages</span><strong id="analyticsTotal" class="text-2xl text-white sm:text-3xl">0</strong></article><article class="metric-card"><span class="platform-label">Active members</span><strong id="analyticsUsers" class="text-2xl text-white sm:text-3xl">0</strong></article><article class="metric-card"><span class="platform-label">Characters</span><strong id="analyticsCharacters" class="text-2xl text-white sm:text-3xl">0</strong></article>
       </div>
-      <article class="platform-card"><h3 class="mb-5 text-lg font-bold text-white">Most-used commands</h3><div id="analyticsCommands" class="space-y-3"><p class="text-slate-400">No data yet.</p></div></article>
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="platform-card"><div class="mb-3"><h3 class="text-lg font-bold text-sky-300">Growth</h3><p class="text-xs text-slate-500">Total group members</p></div><canvas id="growthChart" class="w-full" data-height="250" aria-label="Member growth chart"></canvas></article>
+        <article class="platform-card"><div class="mb-3"><h3 class="text-lg font-bold text-sky-300">Messages</h3><p class="text-xs text-slate-500">Daily message volume</p></div><canvas id="messageChart" class="w-full" data-height="250" aria-label="Messages chart"></canvas></article>
+        <article class="platform-card"><div class="mb-3"><h3 class="text-lg font-bold text-sky-300">Group members</h3><p class="text-xs text-slate-500">Joined, invited, left and removed</p></div><canvas id="memberEventsChart" class="w-full" data-height="260" aria-label="Member events chart"></canvas><div id="memberLegend" class="mt-4 flex flex-wrap gap-2"></div></article>
+        <article class="platform-card"><div class="mb-3"><h3 class="text-lg font-bold text-sky-300">Messages by type</h3><p class="text-xs text-slate-500">Text, media, files and voice messages</p></div><canvas id="messageTypesChart" class="w-full" data-height="260" aria-label="Message types chart"></canvas><div id="messageTypeLegend" class="mt-4 flex flex-wrap gap-2"></div></article>
+        <article class="platform-card xl:col-span-2"><div class="mb-3"><h3 class="text-lg font-bold text-sky-300">Admin moderation actions</h3><p class="text-xs text-slate-500">Deletes, warnings, removals, restrictions and edits</p></div><canvas id="moderationChart" class="w-full" data-height="270" aria-label="Moderation actions chart"></canvas><div id="moderationLegend" class="mt-4 flex flex-wrap gap-2"></div></article>
+      </div>
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="platform-card"><div class="mb-3"><h3 class="text-lg font-bold text-sky-300">Messages by hour</h3><p class="text-xs text-slate-500">Average activity across the selected period</p></div><canvas id="hourlyChart" class="w-full" data-height="230" aria-label="Hourly activity chart"></canvas></article>
+        <article class="platform-card"><div class="mb-3"><h3 class="text-lg font-bold text-sky-300">Top days of week</h3><p class="text-xs text-slate-500">Message activity from Sunday to Saturday</p></div><canvas id="weekdayChart" class="w-full" data-height="230" aria-label="Weekday activity chart"></canvas></article>
+      </div>
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-2"><article class="platform-card"><h3 class="mb-4 text-lg font-bold text-sky-300">Top members</h3><div id="topMembers" class="space-y-1"><p class="text-slate-400">No member data yet.</p></div></article><article class="platform-card"><h3 class="mb-4 text-lg font-bold text-sky-300">Top admins</h3><div id="topAdmins" class="space-y-1"><p class="text-slate-400">No moderation data yet.</p></div></article></div>
+      <article class="platform-card"><h3 class="mb-4 text-lg font-bold text-sky-300">New members by source</h3><div id="memberSources" class="flex flex-wrap gap-2"><p class="text-slate-400">No member-source data yet.</p></div></article>
     </section>
 
     <section id="automationsDashboard" class="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(320px,0.8fr)_minmax(380px,1.2fr)]" hidden>
@@ -322,6 +331,7 @@
   </div>
 
   <script src="/locales.js" defer></script>
+  <script src="/analytics-charts.js" defer></script>
   <script src="/app.js" defer></script>
 </body>
 </html>

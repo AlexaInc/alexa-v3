@@ -55,6 +55,15 @@ const FIRST_PARTY_TABLES = Object.freeze([
   "shop_profile",
   "command_events",
   "scheduled_jobs",
+  "group_member_stats",
+  "group_message_daily",
+  "group_message_hourly",
+  "group_member_events",
+  "group_moderation_events",
+  "group_metric_snapshots",
+  "group_warning_state",
+  "contact_directory",
+  "analytics_migrations",
 ]);
 
 async function assertFirstPartyTables(db) {
@@ -248,6 +257,113 @@ async function initialize() {
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_scheduled_due (enabled, next_run_at),
         INDEX idx_scheduled_group (group_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Durable group analytics. These replace volatile/local ranking and
+    // moderation JSON for dashboard reporting while preserving old commands.
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS group_member_stats (
+        group_id VARCHAR(255) NOT NULL,
+        user_id VARCHAR(255) NOT NULL,
+        display_name VARCHAR(255) DEFAULT NULL,
+        total_messages BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        total_characters BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        invitations_count INT UNSIGNED NOT NULL DEFAULT 0,
+        last_message_at DATETIME DEFAULT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (group_id, user_id),
+        INDEX idx_member_stats_top (group_id, total_messages)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS group_message_daily (
+        group_id VARCHAR(255) NOT NULL,
+        stat_date DATE NOT NULL,
+        user_id VARCHAR(255) NOT NULL,
+        message_type VARCHAR(32) NOT NULL,
+        message_count INT UNSIGNED NOT NULL DEFAULT 0,
+        character_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        PRIMARY KEY (group_id, stat_date, user_id, message_type),
+        INDEX idx_message_daily_group_date (group_id, stat_date)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS group_message_hourly (
+        group_id VARCHAR(255) NOT NULL,
+        stat_date DATE NOT NULL,
+        stat_hour TINYINT UNSIGNED NOT NULL,
+        user_id VARCHAR(255) NOT NULL,
+        message_type VARCHAR(32) NOT NULL,
+        message_count INT UNSIGNED NOT NULL DEFAULT 0,
+        character_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        PRIMARY KEY (group_id, stat_date, stat_hour, user_id, message_type),
+        INDEX idx_message_hourly_group_date (group_id, stat_date, stat_hour)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS group_member_events (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        group_id VARCHAR(255) NOT NULL,
+        member_id VARCHAR(255) NOT NULL,
+        actor_id VARCHAR(255) DEFAULT NULL,
+        event_type VARCHAR(32) NOT NULL,
+        source VARCHAR(32) DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_member_events_group_date (group_id, created_at),
+        INDEX idx_member_events_actor (group_id, actor_id, created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS group_moderation_events (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        group_id VARCHAR(255) NOT NULL,
+        admin_id VARCHAR(255) DEFAULT NULL,
+        target_id VARCHAR(255) DEFAULT NULL,
+        event_type VARCHAR(48) NOT NULL,
+        reason VARCHAR(500) DEFAULT NULL,
+        metadata JSON DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_moderation_group_date (group_id, created_at),
+        INDEX idx_moderation_admin (group_id, admin_id, created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS group_metric_snapshots (
+        group_id VARCHAR(255) NOT NULL,
+        stat_date DATE NOT NULL,
+        member_count INT UNSIGNED NOT NULL DEFAULT 0,
+        PRIMARY KEY (group_id, stat_date)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS group_warning_state (
+        group_id VARCHAR(255) NOT NULL,
+        user_id VARCHAR(255) NOT NULL,
+        warning_count INT UNSIGNED NOT NULL DEFAULT 0,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (group_id, user_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS contact_directory (
+        identity_id VARCHAR(255) NOT NULL PRIMARY KEY,
+        kind ENUM('user','group') NOT NULL,
+        phone_number VARCHAR(40) DEFAULT NULL,
+        jid VARCHAR(255) DEFAULT NULL,
+        lid VARCHAR(255) DEFAULT NULL,
+        display_name VARCHAR(255) DEFAULT NULL,
+        is_private TINYINT(1) NOT NULL DEFAULT 0,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_contact_phone (phone_number),
+        INDEX idx_contact_lid (lid)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS analytics_migrations (
+        migration_key VARCHAR(100) NOT NULL PRIMARY KEY,
+        details JSON DEFAULT NULL,
+        completed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 

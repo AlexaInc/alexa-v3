@@ -37,6 +37,7 @@ const {
 } = require("./modules/cacheHelper.js");
 const database = require("./services/database.js");
 const groupDirectory = require("./services/groupDirectory.js");
+const groupAnalytics = require("./services/groupAnalytics.js");
 // const Ai = require('./res/js/ollama')
 // Ai.initialize()
 const fownerNumber = process.env["Owner_nb"]?.split(",")[0]?.trim();
@@ -925,6 +926,65 @@ async function startWhatsAppConnection() {
         return;
       }
 
+      // Persist member movement and admin actions before welcome/goodbye checks.
+      // This runs even when those messages are disabled, so analytics stay complete.
+      const actorId =
+        typeof anu.author === "string"
+          ? anu.author
+          : anu.author?.lid ||
+            anu.author?.phoneNumber ||
+            anu.author?.jid ||
+            anu.author?.id ||
+            null;
+      for (const participant of changedParticipants) {
+        const memberId =
+          participant.lid ||
+          participant.phoneNumber ||
+          participant.jid ||
+          participant.id;
+        if (!memberId) continue;
+        const selfAction = !actorId || actorId === memberId;
+        let eventType = anu.action;
+        let source = null;
+        if (anu.action === "add") {
+          eventType = selfAction ? "joined" : "invited";
+          source = selfAction ? "invite_link" : "admin_add";
+        } else if (anu.action === "remove") {
+          eventType = selfAction ? "left" : "removed";
+        }
+        void groupAnalytics
+          .recordMemberEvent({
+            groupId: anu.id,
+            memberId,
+            actorId,
+            eventType,
+            source,
+            memberCount: groupMetadata?.participants?.length,
+          })
+          .catch((error) =>
+            console.error("Could not record member event:", error.message),
+          );
+
+        if (["removed", "promote", "demote"].includes(eventType)) {
+          const moderationType =
+            eventType === "removed"
+              ? "member_removed"
+              : eventType === "promote"
+                ? "member_promoted"
+                : "member_demoted";
+          void groupAnalytics
+            .recordModeration({
+              groupId: anu.id,
+              adminId: actorId,
+              targetId: memberId,
+              eventType: moderationType,
+            })
+            .catch((error) =>
+              console.error("Could not record moderation:", error.message),
+            );
+        }
+      }
+
       // The directory/admin sync above is still required when the bot itself
       // is promoted or demoted. Welcome/goodbye output is not.
       if (
@@ -1046,6 +1106,36 @@ async function startWhatsAppConnection() {
   //     }
   // });
 
+  AlexaInc.ev.on("messages.delete", async (event) => {
+    const keys = event?.keys || [];
+    for (const key of keys) {
+      if (!key.remoteJid?.endsWith("@g.us")) continue;
+      void groupAnalytics.recordModeration({
+        groupId: key.remoteJid,
+        adminId: null,
+        targetId: key.participant || null,
+        eventType: "message_deleted",
+        metadata: { messageId: key.id, source: "whatsapp_event" },
+      });
+    }
+  });
+
+  AlexaInc.ev.on("messages.update", async (updates) => {
+    for (const item of updates || []) {
+      const groupId = item.key?.remoteJid;
+      if (!groupId?.endsWith("@g.us")) continue;
+      const protocol = item.update?.message?.protocolMessage;
+      if (!protocol?.editedMessage) continue;
+      void groupAnalytics.recordModeration({
+        groupId,
+        adminId: item.key?.participant || null,
+        targetId: item.key?.participant || null,
+        eventType: "message_edited",
+        metadata: { messageId: item.key?.id },
+      });
+    }
+  });
+
   AlexaInc.ev.on("messages.upsert", async (m) => {
     const { messages, type } = m;
     if (!messages?.length) return;
@@ -1053,6 +1143,7 @@ async function startWhatsAppConnection() {
     const msg = messages[0];
     const jid = msg.key.remoteJid;
 
+    groupAnalytics.recordMessage(msg);
     const p = await parseMessage(msg, AlexaInc);
 
     await saveMessage(jid, p);

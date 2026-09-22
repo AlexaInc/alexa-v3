@@ -1,3 +1,5 @@
+const groupAnalytics = require("../services/groupAnalytics");
+
 async function muteCommand(
   AlexaInc,
   chatId,
@@ -7,6 +9,12 @@ async function muteCommand(
 ) {
   try {
     await AlexaInc.groupSettingUpdate(chatId, "announcement");
+    await groupAnalytics.recordModeration({
+      groupId: chatId,
+      adminId: senderId,
+      eventType: "group_muted",
+      metadata: { durationMinutes: durationInMinutes || null },
+    });
 
     if (durationInMinutes !== undefined && durationInMinutes > 0) {
       const durationInMilliseconds = durationInMinutes * 60 * 1000;
@@ -19,6 +27,13 @@ async function muteCommand(
       setTimeout(async () => {
         try {
           await AlexaInc.groupSettingUpdate(chatId, "not_announcement");
+          await groupAnalytics.recordModeration({
+            groupId: chatId,
+            adminId: senderId,
+            eventType: "group_unmuted",
+            reason: "Timed mute expired",
+            metadata: { automatic: true },
+          });
           await AlexaInc.sendMessage(chatId, {
             text: "The group has been unmuted.",
           });
@@ -45,8 +60,13 @@ async function muteCommand(
   }
 }
 
-async function unmuteCommand(AlexaInc, chatId) {
-  await AlexaInc.groupSettingUpdate(chatId, "not_announcement"); // Unmute the group
+async function unmuteCommand(AlexaInc, chatId, senderId = null) {
+  await AlexaInc.groupSettingUpdate(chatId, "not_announcement");
+  await groupAnalytics.recordModeration({
+    groupId: chatId,
+    adminId: senderId,
+    eventType: "group_unmuted",
+  });
   await AlexaInc.sendMessage(chatId, { text: "The group has been unmuted." });
 }
 module.exports = { muteCommand, unmuteCommand };

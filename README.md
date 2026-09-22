@@ -206,6 +206,14 @@ legacy bot settings plus `bot_users`, `user_profiles`, `group_directory`, and
 
 -----
 
+## 📊 Advanced group analytics
+
+The authenticated dashboard stores group activity in MySQL and provides responsive, Telegram-style charts for message volume and types, member growth, join/leave sources, moderation actions, top members, and top admins. Group admins only see groups they currently manage.
+
+On the first startup after upgrading, Alexa imports existing local ranking, invitation, warning, and contact JSON into MySQL exactly once. New ranking and warning data uses MySQL as the primary store. Keep the old files until the startup log confirms `Local JSON imported`; they may then be archived.
+
+Analytics tables are created automatically by `src/services/database.js`. No manual SQL import is required.
+
 ## 📥 Installation
 
 Run the following commands in your terminal to clone the repository and install dependencies.

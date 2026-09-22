@@ -23,6 +23,8 @@ const memoryStats = require("./modules/memoryStats");
 const database = require("./services/database");
 const profiles = require("./services/userProfiles");
 const analytics = require("./services/analytics");
+const groupAnalytics = require("./services/groupAnalytics");
+const { migrateLegacyAnalytics } = require("./services/analyticsMigration");
 const scheduler = require("./services/scheduler");
 const i18n = require("./i18n");
 const moment = require("moment-timezone");
@@ -881,6 +883,30 @@ app.get("/api/analytics/summary", requireAnyLogin, async (req, res) => {
   }
 });
 
+app.get("/api/analytics/group", requireAnyLogin, async (req, res) => {
+  try {
+    const groupId = String(req.query.groupId || "");
+    if (!groupId || !(await dashboardGroupIds(req)).includes(groupId)) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Group access denied." });
+    }
+    const result = await groupAnalytics.dashboard({
+      groupId,
+      days: req.query.days,
+    });
+    return res.json({ success: true, ...result });
+  } catch (error) {
+    console.error(
+      "[analytics] Could not build group dashboard:",
+      error.message,
+    );
+    return res
+      .status(503)
+      .json({ success: false, message: "Group analytics are unavailable." });
+  }
+});
+
 app.get("/api/automations", requireAnyLogin, async (req, res) => {
   try {
     return res.json({
@@ -1135,8 +1161,16 @@ server.listen(PORT, "0.0.0.0", () => {
 
   // Do not start the first scheduler tick until every first-party table and
   // additive migration has completed. This fixes ER_NO_SUCH_TABLE on a fresh DB.
-  void databaseReady.then((ready) => {
+  void databaseReady.then(async (ready) => {
     if (!ready) return;
+    try {
+      await migrateLegacyAnalytics();
+    } catch (error) {
+      console.error(
+        "[analytics-migration] Startup import failed:",
+        error.message,
+      );
+    }
     scheduler.start(async (job) => {
       if (typeof process.send !== "function")
         throw new Error("Bot IPC is unavailable.");

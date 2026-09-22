@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const groupAnalytics = require("../services/groupAnalytics");
 
 const filePath = path.join(__dirname, "..", "..", "data", "userscontact.json");
 
@@ -129,6 +130,35 @@ async function updateUser(msg, participants, groupSubject = null) {
 
   if (dbChanged) {
     saveUsersjsonnn(database);
+  }
+
+  // MySQL is now the durable analytics/contact store. Keep the JSON write
+  // temporarily for legacy commands while every contact is mirrored here.
+  if (!isDirectMessage && groupSubject) {
+    void groupAnalytics
+      .upsertContact({
+        type: "group",
+        id: remoteJid,
+        name: groupSubject,
+      })
+      .catch((error) =>
+        console.error("Could not mirror group contact:", error.message),
+      );
+  }
+  if (finalJid || finalLid) {
+    void groupAnalytics
+      .upsertContact({
+        type: "user",
+        id: finalLid || finalJid,
+        number: finalJid?.replace(/@.*/, "") || null,
+        jid: finalJid,
+        lid: finalLid,
+        name: msg.pushName || "Unknown",
+        isPrivate: isDirectMessage,
+      })
+      .catch((error) =>
+        console.error("Could not mirror user contact:", error.message),
+      );
   }
 }
 

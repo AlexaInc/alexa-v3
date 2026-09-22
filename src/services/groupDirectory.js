@@ -155,6 +155,12 @@ async function syncGroupMetadata(socket, metadata) {
         ],
       );
     }
+    await connection.query(
+      `INSERT INTO group_metric_snapshots (group_id, stat_date, member_count)
+       VALUES (?, UTC_DATE(), ?)
+       ON DUPLICATE KEY UPDATE member_count = VALUES(member_count)`,
+      [groupId, metadata.participants.length],
+    );
     await connection.commit();
     return true;
   } catch (error) {
