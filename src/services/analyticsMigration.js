@@ -145,4 +145,100 @@ async function migrateLegacyAnalytics() {
   }
 }
 
-module.exports = { MIGRATION_KEY, migrateLegacyAnalytics };
+const STUB_CLEANUP_KEY = "participant-stub-cleanup-v1";
+
+async function cleanupParticipantStubMessages() {
+  if (!(await database.initialize())) return { skipped: true };
+  const pool = database.getPool().promise();
+  const [done] = await pool.query(
+    "SELECT migration_key FROM analytics_migrations WHERE migration_key = ?",
+    [STUB_CLEANUP_KEY],
+  );
+  if (done.length) return { skipped: true };
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [corrections] = await connection.query(
+      `SELECT d.group_id, d.user_id,
+              SUM(LEAST(d.message_count, events.event_count)) AS correction
+       FROM group_message_daily d
+       INNER JOIN (
+         SELECT group_id, member_id, DATE(created_at) AS event_date, COUNT(*) AS event_count
+         FROM group_member_events
+         GROUP BY group_id, member_id, DATE(created_at)
+       ) events
+         ON events.group_id = d.group_id
+        AND events.member_id = d.user_id
+        AND events.event_date = d.stat_date
+       WHERE d.message_type = 'other'
+       GROUP BY d.group_id, d.user_id`,
+    );
+    for (const row of corrections) {
+      await connection.query(
+        `UPDATE group_member_stats
+         SET total_messages = GREATEST(0, total_messages - ?)
+         WHERE group_id = ? AND user_id = ?`,
+        [Number(row.correction || 0), row.group_id, row.user_id],
+      );
+    }
+    await connection.query(
+      `UPDATE group_message_daily d
+       INNER JOIN (
+         SELECT group_id, member_id, DATE(created_at) AS event_date, COUNT(*) AS event_count
+         FROM group_member_events
+         GROUP BY group_id, member_id, DATE(created_at)
+       ) events
+         ON events.group_id = d.group_id
+        AND events.member_id = d.user_id
+        AND events.event_date = d.stat_date
+       SET d.message_count = GREATEST(0, d.message_count - events.event_count)
+       WHERE d.message_type = 'other'`,
+    );
+    await connection.query(
+      `UPDATE group_message_hourly h
+       INNER JOIN (
+         SELECT group_id, member_id, DATE(created_at) AS event_date,
+                HOUR(created_at) AS event_hour, COUNT(*) AS event_count
+         FROM group_member_events
+         GROUP BY group_id, member_id, DATE(created_at), HOUR(created_at)
+       ) events
+         ON events.group_id = h.group_id
+        AND events.member_id = h.user_id
+        AND events.event_date = h.stat_date
+        AND events.event_hour = h.stat_hour
+       SET h.message_count = GREATEST(0, h.message_count - events.event_count)
+       WHERE h.message_type = 'other'`,
+    );
+    await connection.query(
+      "DELETE FROM group_message_daily WHERE message_count = 0",
+    );
+    await connection.query(
+      "DELETE FROM group_message_hourly WHERE message_count = 0",
+    );
+    await connection.query(
+      "INSERT INTO analytics_migrations (migration_key, details) VALUES (?, ?)",
+      [
+        STUB_CLEANUP_KEY,
+        JSON.stringify({ correctedMembers: corrections.length }),
+      ],
+    );
+    await connection.commit();
+    console.log(
+      `[analytics-migration] Removed participant-event message pollution for ${corrections.length} member(s).`,
+    );
+    return { correctedMembers: corrections.length };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+module.exports = {
+  MIGRATION_KEY,
+  STUB_CLEANUP_KEY,
+  cleanupParticipantStubMessages,
+  migrateLegacyAnalytics,
+};

@@ -29,6 +29,16 @@
     return { context, width, height };
   }
 
+  function axisValue(value, maximum) {
+    if (maximum <= 4) {
+      return value
+        .toFixed(2)
+        .replace(/\.00$/, "")
+        .replace(/(\.\d)0$/, "$1");
+    }
+    return Math.round(value).toLocaleString();
+  }
+
   function frame(context, width, height, maximum) {
     const area = { left: 42, top: 14, right: width - 12, bottom: height - 28 };
     context.clearRect(0, 0, width, height);
@@ -42,8 +52,8 @@
       context.moveTo(area.left, y);
       context.lineTo(area.right, y);
       context.stroke();
-      const value = Math.round(maximum * (1 - index / 4));
-      context.fillText(value.toLocaleString(), 4, y + 4);
+      const value = maximum * (1 - index / 4);
+      context.fillText(axisValue(value, maximum), 4, y + 4);
     }
     return area;
   }
@@ -52,7 +62,6 @@
     if (!labelsList.length) return;
     const steps = Math.min(5, labelsList.length);
     context.fillStyle = "#7f93a7";
-    context.textAlign = "center";
     for (let index = 0; index < steps; index += 1) {
       const sourceIndex = Math.round(
         (labelsList.length - 1) * (index / Math.max(1, steps - 1)),
@@ -61,6 +70,8 @@
         area.left +
         (area.right - area.left) *
           (sourceIndex / Math.max(1, labelsList.length - 1));
+      context.textAlign =
+        index === 0 ? "left" : index === steps - 1 ? "right" : "center";
       context.fillText(labelsList[sourceIndex] || "", x, area.bottom + 20);
     }
     context.textAlign = "start";

@@ -24,7 +24,10 @@ const database = require("./services/database");
 const profiles = require("./services/userProfiles");
 const analytics = require("./services/analytics");
 const groupAnalytics = require("./services/groupAnalytics");
-const { migrateLegacyAnalytics } = require("./services/analyticsMigration");
+const {
+  cleanupParticipantStubMessages,
+  migrateLegacyAnalytics,
+} = require("./services/analyticsMigration");
 const scheduler = require("./services/scheduler");
 const i18n = require("./i18n");
 const moment = require("moment-timezone");
@@ -1165,6 +1168,7 @@ server.listen(PORT, "0.0.0.0", () => {
     if (!ready) return;
     try {
       await migrateLegacyAnalytics();
+      await cleanupParticipantStubMessages();
     } catch (error) {
       console.error(
         "[analytics-migration] Startup import failed:",

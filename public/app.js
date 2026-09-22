@@ -395,7 +395,6 @@
 
   function renderLegend(target, series) {
     $(target).innerHTML = series
-      .filter((item) => item.values.some(Number))
       .map(
         (item) =>
           `<span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white" style="background:${item.color}"><i class="h-2 w-2 rounded-full bg-white/80"></i>${escapeHTML(item.label)}</span>`,
@@ -464,8 +463,35 @@
         "left",
         "removed",
       ]);
-      const typeSeries = chartSeries(data.series.messageTypes || [], dates);
-      const moderationSeries = chartSeries(data.series.moderation || [], dates);
+      const typeSeries = chartSeries(data.series.messageTypes || [], dates, [
+        "text",
+        "sticker",
+        "photo",
+        "video",
+        "voice",
+        "audio",
+        "file",
+        "contact",
+        "location",
+        "poll",
+        "legacy",
+        "other",
+      ]);
+      const moderationSeries = chartSeries(
+        data.series.moderation || [],
+        dates,
+        [
+          "message_deleted",
+          "message_edited",
+          "warn",
+          "warn_removed",
+          "member_removed",
+          "member_promoted",
+          "member_demoted",
+          "group_muted",
+          "group_unmuted",
+        ],
+      );
       const hourlyMap = new Map(
         (data.series.hourly || []).map((row) => [
           Number(row.hour),

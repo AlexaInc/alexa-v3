@@ -66,15 +66,31 @@ function scheduleFlush() {
   flushTimer.unref?.();
 }
 
-function recordMessage(msg) {
-  if (msg?.key?.fromMe) return;
-  const content = unwrapMessage(msg?.message || {});
+function isTrackableMessage(msg) {
+  if (!msg || msg.key?.fromMe) return false;
+  if (msg.messageStubType !== undefined && msg.messageStubType !== null) {
+    return false;
+  }
   if (
+    Array.isArray(msg.messageStubParameters) &&
+    msg.messageStubParameters.length
+  ) {
+    return false;
+  }
+  if (!msg.message || !Object.keys(msg.message).length) return false;
+  const content = unwrapMessage(msg.message);
+  if (!content || !Object.keys(content).length) return false;
+  return !(
     content.protocolMessage ||
     content.reactionMessage ||
-    content.senderKeyDistributionMessage
-  )
-    return;
+    content.senderKeyDistributionMessage ||
+    content.keepInChatMessage ||
+    content.pollUpdateMessage
+  );
+}
+
+function recordMessage(msg) {
+  if (!isTrackableMessage(msg)) return;
   const identity = messageIdentity(msg);
   if (!identity) return;
   const details = messageDetails(msg);
@@ -352,7 +368,7 @@ async function dashboard({ groupId, days = 30 }) {
     `SELECT user_id, display_name, total_messages,
             ROUND(total_characters / GREATEST(total_messages, 1)) AS average_characters,
             invitations_count
-     FROM group_member_stats WHERE group_id = ?
+     FROM group_member_stats WHERE group_id = ? AND total_messages > 0
      ORDER BY total_messages DESC LIMIT 20`,
     [groupId],
   );
@@ -498,6 +514,7 @@ module.exports = {
   dashboard,
   flush,
   incrementWarning,
+  isTrackableMessage,
   memberRank,
   messageDetails,
   ranking,
