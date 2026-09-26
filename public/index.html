@@ -73,17 +73,22 @@
       <button class="btn btn-outline" id="logoutButton" type="button">Logout</button>
     </header>
 
-    <nav class="mb-6 flex gap-2 overflow-x-auto pb-2 sm:mb-8" id="dashboardTabs" aria-label="Dashboard sections">
+    <nav class="mb-6 flex gap-2 overflow-x-auto pb-2 sm:mb-8" id="dashboardTabs" aria-label="Group management sections" hidden>
+      <button class="dashboard-tab" id="groupNavBack" type="button" aria-label="Return to all groups">← All groups</button>
       <button class="dashboard-tab is-active" data-dashboard-tab="overview" data-i18n="overview" type="button">Overview</button>
       <button class="dashboard-tab" data-dashboard-tab="analytics" data-i18n="analytics" type="button">Analytics</button>
       <button class="dashboard-tab" data-dashboard-tab="automations" data-i18n="automations" type="button">Automations</button>
       <button class="dashboard-tab" data-dashboard-tab="locale" data-i18n="locale" type="button">Language &amp; region</button>
     </nav>
 
+    <section id="accountPreferencesOverview" class="mb-6" hidden>
+      <form id="accountLocaleForm" class="platform-card space-y-4"><div><p class="eyebrow">YOUR ACCOUNT</p><h2 class="text-2xl font-bold text-white">Dashboard language &amp; region</h2><p class="mt-1 text-sm text-slate-400">These preferences apply to your dashboard account, not to a managed group.</p></div><label><span class="platform-label">Dashboard language</span><select id="accountLocale" class="platform-input"></select></label><label><span class="platform-label">Timezone</span><input id="accountTimezone" class="platform-input" value="Asia/Colombo"></label><button class="platform-button" type="submit">Save preferences</button><p id="accountLocaleFeedback" class="text-sm text-slate-300"></p></form>
+    </section>
+
     <section id="analyticsDashboard" class="space-y-4 sm:space-y-5" hidden>
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div><p class="eyebrow">GROUP INSIGHTS</p><h2 class="text-2xl font-bold text-white sm:text-3xl">Statistics</h2><p class="mt-1 text-xs text-slate-500"><span id="analyticsRange">Last 30 days</span> · <span id="analyticsTimezone">Asia/Colombo</span></p></div>
-        <div class="flex flex-col gap-2 sm:flex-row"><select id="analyticsGroup" class="platform-input min-w-48"></select><div class="flex gap-1 rounded-xl border border-slate-700 bg-slate-950/70 p-1" id="analyticsPeriods"><button class="analytics-period rounded-lg px-3 py-2 text-xs font-bold text-slate-400" data-days="7" type="button">7D</button><button class="analytics-period rounded-lg bg-blue-500 px-3 py-2 text-xs font-bold text-white" data-days="30" type="button">30D</button><button class="analytics-period rounded-lg px-3 py-2 text-xs font-bold text-slate-400" data-days="90" type="button">90D</button></div><input id="analyticsDays" type="hidden" value="30"></div>
+        <div class="flex flex-col gap-2 sm:flex-row"><select id="analyticsGroup" hidden></select><span id="analyticsGroupName" class="inline-flex items-center rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm font-bold text-sky-300">Managed group</span><div class="flex gap-1 rounded-xl border border-slate-700 bg-slate-950/70 p-1" id="analyticsPeriods"><button class="analytics-period rounded-lg px-3 py-2 text-xs font-bold text-slate-400" data-days="7" type="button">7D</button><button class="analytics-period rounded-lg bg-blue-500 px-3 py-2 text-xs font-bold text-white" data-days="30" type="button">30D</button><button class="analytics-period rounded-lg px-3 py-2 text-xs font-bold text-slate-400" data-days="90" type="button">90D</button></div><input id="analyticsDays" type="hidden" value="30"></div>
       </div>
       <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <article class="metric-card"><span class="platform-label">Members</span><strong id="analyticsMembers" class="text-2xl text-white sm:text-3xl">0</strong></article><article class="metric-card"><span class="platform-label">Messages</span><strong id="analyticsTotal" class="text-2xl text-white sm:text-3xl">0</strong></article><article class="metric-card"><span class="platform-label">Active members</span><strong id="analyticsUsers" class="text-2xl text-white sm:text-3xl">0</strong></article><article class="metric-card"><span class="platform-label">Characters</span><strong id="analyticsCharacters" class="text-2xl text-white sm:text-3xl">0</strong></article>
@@ -105,8 +110,8 @@
 
     <section id="automationsDashboard" class="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(320px,0.8fr)_minmax(380px,1.2fr)]" hidden>
       <form id="automationForm" class="platform-card space-y-4">
-        <div><p class="eyebrow">SCHEDULER</p><h2 class="text-2xl font-bold text-white">New automation</h2></div>
-        <label><span class="platform-label">Group</span><select id="automationGroup" class="platform-input" required></select></label>
+        <div><p class="eyebrow">SCHEDULER</p><h2 class="text-2xl font-bold text-white">New automation</h2><p id="automationGroupName" class="mt-1 text-sm font-bold text-sky-300">Managed group</p></div>
+        <select id="automationGroup" hidden required></select>
         <label><span class="platform-label">Name</span><input id="automationName" class="platform-input" maxlength="120" required placeholder="Morning announcement"></label>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2"><label><span class="platform-label">Repeats</span><select id="automationType" class="platform-input"><option value="once">Once</option><option value="daily">Daily</option><option value="weekly">Weekly</option></select></label><label><span class="platform-label">Timezone</span><input id="automationTimezone" class="platform-input" value="Asia/Colombo" required></label></div>
         <label><span class="platform-label">Run date &amp; time</span><input id="automationRunAt" class="platform-input" type="datetime-local" required></label>
@@ -116,9 +121,8 @@
       <article class="platform-card"><div class="mb-5 flex items-center justify-between"><div><p class="eyebrow">UPCOMING</p><h2 class="text-2xl font-bold text-white">Scheduled messages</h2></div><button id="refreshAutomations" class="dashboard-tab" type="button">Refresh</button></div><div id="automationList" class="space-y-3"><p class="text-slate-400">No automations yet.</p></div></article>
     </section>
 
-    <section id="localeDashboard" class="grid grid-cols-1 gap-5 lg:grid-cols-2" hidden>
-      <form id="accountLocaleForm" class="platform-card space-y-4"><div><p class="eyebrow">YOUR ACCOUNT</p><h2 class="text-2xl font-bold text-white">Language &amp; region</h2></div><label><span class="platform-label">Dashboard language</span><select id="accountLocale" class="platform-input"></select></label><label><span class="platform-label">Timezone</span><input id="accountTimezone" class="platform-input" value="Asia/Colombo"></label><button class="platform-button" type="submit">Save preferences</button><p id="accountLocaleFeedback" class="text-sm text-slate-300"></p></form>
-      <form id="groupLocaleForm" class="platform-card space-y-4"><div><p class="eyebrow">MANAGED GROUP</p><h2 class="text-2xl font-bold text-white">Group language</h2></div><label><span class="platform-label">Group</span><select id="localeGroup" class="platform-input"></select></label><label><span class="platform-label">Bot reply language</span><select id="groupLocale" class="platform-input"></select></label><label><span class="platform-label">Group timezone</span><input id="groupTimezone" class="platform-input" value="Asia/Colombo"></label><button class="platform-button" type="submit">Save group locale</button><p id="groupLocaleFeedback" class="text-sm text-slate-300"></p></form>
+    <section id="localeDashboard" class="grid grid-cols-1 gap-5" hidden>
+      <form id="groupLocaleForm" class="platform-card space-y-4"><div><p class="eyebrow">MANAGED GROUP</p><h2 class="text-2xl font-bold text-white">Group language &amp; region</h2><p id="localeGroupName" class="mt-1 text-sm font-bold text-sky-300">Managed group</p></div><select id="localeGroup" hidden></select><label><span class="platform-label">Bot reply language</span><select id="groupLocale" class="platform-input"></select></label><label><span class="platform-label">Group timezone</span><input id="groupTimezone" class="platform-input" value="Asia/Colombo"></label><button class="platform-button" type="submit">Save group locale</button><p id="groupLocaleFeedback" class="text-sm text-slate-300"></p></form>
     </section>
 
     <section id="userDashboard" hidden>

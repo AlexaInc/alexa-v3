@@ -912,9 +912,18 @@ app.get("/api/analytics/group", requireAnyLogin, async (req, res) => {
 
 app.get("/api/automations", requireAnyLogin, async (req, res) => {
   try {
+    const allowedGroupIds = await dashboardGroupIds(req);
+    const requestedGroupId = String(req.query.groupId || "");
+    if (requestedGroupId && !allowedGroupIds.includes(requestedGroupId)) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Group access denied." });
+    }
     return res.json({
       success: true,
-      jobs: await scheduler.list(await dashboardGroupIds(req)),
+      jobs: await scheduler.list(
+        requestedGroupId ? [requestedGroupId] : allowedGroupIds,
+      ),
     });
   } catch (error) {
     return res

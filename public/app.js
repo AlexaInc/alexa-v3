@@ -179,6 +179,7 @@
     if (role === "user") {
       stopOwnerStreams();
       await loadUserDashboard();
+      await loadLocalePreferences();
       return;
     }
 
@@ -189,6 +190,7 @@
     // Sysstats and bot state arrive through the authenticated /logs WebSocket.
     // No owner REST polling is started here.
     await Promise.all([loadOwnerAccount(), loadOwnerGroups()]);
+    await loadLocalePreferences();
     connectLogStream();
   }
 
@@ -332,20 +334,27 @@
         if (!select) return;
         const previous = select.value;
         select.innerHTML = options;
-        if ([...select.options].some((option) => option.value === previous))
-          select.value = previous;
+        const preferred = activeGroup?.id || previous;
+        if ([...select.options].some((option) => option.value === preferred))
+          select.value = preferred;
       },
     );
   }
 
-  function selectDashboardTab(tab) {
+  function selectDashboardTab(requestedTab) {
+    const managingGroup = Boolean(activeGroup);
+    const tab = managingGroup ? requestedTab : "overview";
     const overview = tab === "overview";
-    $("#userDashboard").hidden = !overview || currentRole !== "user";
-    $("#ownerDashboard").hidden = !overview || currentRole !== "owner";
-    $("#groupDetailView").hidden = true;
-    $("#analyticsDashboard").hidden = tab !== "analytics";
-    $("#automationsDashboard").hidden = tab !== "automations";
-    $("#localeDashboard").hidden = tab !== "locale";
+    $("#dashboardTabs").hidden = !managingGroup;
+    $("#accountPreferencesOverview").hidden = managingGroup || !overview;
+    $("#userDashboard").hidden =
+      managingGroup || !overview || currentRole !== "user";
+    $("#ownerDashboard").hidden =
+      managingGroup || !overview || currentRole !== "owner";
+    $("#groupDetailView").hidden = !managingGroup || !overview;
+    $("#analyticsDashboard").hidden = !managingGroup || tab !== "analytics";
+    $("#automationsDashboard").hidden = !managingGroup || tab !== "automations";
+    $("#localeDashboard").hidden = !managingGroup || tab !== "locale";
     $$("[data-dashboard-tab]").forEach((button) =>
       button.classList.toggle("is-active", button.dataset.dashboardTab === tab),
     );
@@ -453,7 +462,7 @@
   }
 
   async function loadAnalytics() {
-    const groupId = $("#analyticsGroup").value;
+    const groupId = activeGroup?.id;
     if (!groupId) return;
     try {
       const days = Number($("#analyticsDays").value || 30);
@@ -653,8 +662,11 @@
   }
 
   async function loadAutomations() {
+    if (!activeGroup?.id) return;
     try {
-      const data = await api("/api/automations");
+      const data = await api(
+        `/api/automations?groupId=${encodeURIComponent(activeGroup.id)}`,
+      );
       $("#automationList").innerHTML = data.jobs.length
         ? data.jobs
             .map(
@@ -684,11 +696,11 @@
       $("#accountLocale").value = data.locale;
       $("#accountTimezone").value = data.timezone;
       applyDashboardLocale(data.locale);
-      const group =
-        managedGroups.find(
-          (item) => item.group_id === $("#localeGroup").value,
-        ) || managedGroups[0];
+      const group = activeGroup
+        ? managedGroups.find((item) => item.group_id === activeGroup.id)
+        : null;
       if (group) {
+        $("#localeGroup").value = group.group_id;
         $("#groupLocale").value = group.locale || "en";
         $("#groupTimezone").value = group.timezone || "Asia/Colombo";
       }
@@ -729,11 +741,27 @@
       const data = await api(
         `/api/${scope}/groups/${encodeURIComponent(groupId)}`,
       );
-      activeGroup = { id: data.group.group_id, scope };
+      activeGroup = {
+        id: data.group.group_id,
+        scope,
+        subject: data.group.subject || "Unnamed group",
+      };
       populateGroupDetail(data.group);
-      $("#userDashboard").hidden = true;
-      $("#ownerDashboard").hidden = true;
-      $("#groupDetailView").hidden = false;
+      refreshPlatformGroupOptions();
+      $("#analyticsGroup").value = activeGroup.id;
+      $("#automationGroup").value = activeGroup.id;
+      $("#localeGroup").value = activeGroup.id;
+      $("#analyticsGroupName").textContent = activeGroup.subject;
+      $("#automationGroupName").textContent = activeGroup.subject;
+      $("#localeGroupName").textContent = activeGroup.subject;
+      $("#automationTimezone").value = data.group.timezone || "Asia/Colombo";
+      $("#groupLocale").value = data.group.locale || "en";
+      $("#groupTimezone").value = data.group.timezone || "Asia/Colombo";
+      $("#dashboardEyebrow").textContent = "GROUP MANAGEMENT";
+      $("#dashboardTitle").textContent = activeGroup.subject;
+      $("#dashboardSubtitle").textContent =
+        "Settings, analytics, automations and language for this group.";
+      selectDashboardTab("overview");
       if (updateHistory) {
         history.pushState(
           {},
@@ -1077,7 +1105,11 @@
           }),
         });
         event.currentTarget.reset();
-        $("#automationTimezone").value = "Asia/Colombo";
+        $("#automationGroup").value = activeGroup?.id || "";
+        const group = managedGroups.find(
+          (item) => item.group_id === activeGroup?.id,
+        );
+        $("#automationTimezone").value = group?.timezone || "Asia/Colombo";
         feedback.textContent = "Automation created ✓";
         await loadAutomations();
       } catch (error) {
@@ -1166,6 +1198,7 @@
         openGroupSettings(decodeURIComponent(button.dataset.group), "owner");
     });
     $("#backToGroupListButton").addEventListener("click", returnToGroupList);
+    $("#groupNavBack").addEventListener("click", returnToGroupList);
     $("#groupSettingsForm").addEventListener("submit", saveGroupDetail);
     $$("[data-log-tab]").forEach((button) =>
       button.addEventListener("click", () =>

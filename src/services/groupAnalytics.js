@@ -382,19 +382,46 @@ async function dashboard({ groupId, days = 30 }) {
     [groupId],
   );
   const [topAdmins] = await db.query(
-    `SELECT admin_id,
-            COALESCE((SELECT display_name FROM contact_directory
-                      WHERE identity_id = admin_id OR lid = admin_id OR jid = admin_id
-                      LIMIT 1), admin_id) AS display_name,
-            COUNT(*) AS actions,
-            SUM(event_type='message_deleted') AS deletions,
-            SUM(event_type IN ('member_removed','member_banned')) AS removals,
-            SUM(event_type='warn') AS warnings,
-            SUM(event_type IN ('group_muted','group_unmuted')) AS mute_actions
-     FROM group_moderation_events
-     WHERE group_id = ? AND admin_id IS NOT NULL
-     GROUP BY admin_id ORDER BY actions DESC LIMIT 20`,
-    [groupId],
+    `SELECT admin_stats.admin_id,
+            COALESCE(
+              (SELECT NULLIF(NULLIF(TRIM(membership.display_name), ''), 'Unknown')
+               FROM group_admin_memberships membership
+               WHERE membership.group_id = ?
+                 AND membership.user_lid = admin_stats.admin_id
+               LIMIT 1),
+              (SELECT NULLIF(NULLIF(TRIM(contact.display_name), ''), 'Unknown')
+               FROM contact_directory contact
+               WHERE contact.identity_id = admin_stats.admin_id
+                  OR contact.lid = admin_stats.admin_id
+                  OR contact.jid = admin_stats.admin_id
+               ORDER BY contact.display_name IS NULL, contact.updated_at DESC
+               LIMIT 1),
+              (SELECT NULLIF(NULLIF(TRIM(member.display_name), ''), 'Unknown')
+               FROM group_member_stats member
+               WHERE member.group_id = ? AND member.user_id = admin_stats.admin_id
+               LIMIT 1),
+              (SELECT NULLIF(NULLIF(TRIM(account.display_name), ''), 'Unknown')
+               FROM bot_users account
+               WHERE account.lid_username = admin_stats.admin_id
+                  OR account.whatsapp_jid = admin_stats.admin_id
+               LIMIT 1),
+              NULLIF(SUBSTRING_INDEX(admin_stats.admin_id, '@', 1), 'Unknown'),
+              'Unidentified admin'
+            ) AS display_name,
+            admin_stats.actions, admin_stats.deletions, admin_stats.removals,
+            admin_stats.warnings, admin_stats.mute_actions
+     FROM (
+       SELECT admin_id, COUNT(*) AS actions,
+              SUM(event_type='message_deleted') AS deletions,
+              SUM(event_type IN ('member_removed','member_banned')) AS removals,
+              SUM(event_type='warn') AS warnings,
+              SUM(event_type IN ('group_muted','group_unmuted')) AS mute_actions
+       FROM group_moderation_events
+       WHERE group_id = ? AND admin_id IS NOT NULL AND TRIM(admin_id) <> ''
+       GROUP BY admin_id
+     ) admin_stats
+     ORDER BY admin_stats.actions DESC LIMIT 20`,
+    [groupId, groupId, groupId],
   );
   const [sources] = await db.query(
     `SELECT COALESCE(source, event_type) AS source, COUNT(*) AS total
@@ -504,8 +531,14 @@ async function upsertContact(contact) {
       `INSERT INTO contact_directory
        (identity_id, kind, phone_number, jid, lid, display_name, is_private)
      VALUES (?, ?, ?, ?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE phone_number=VALUES(phone_number), jid=VALUES(jid),
-       lid=VALUES(lid), display_name=VALUES(display_name), is_private=GREATEST(is_private, VALUES(is_private))`,
+     ON DUPLICATE KEY UPDATE
+       phone_number=COALESCE(VALUES(phone_number), phone_number),
+       jid=COALESCE(VALUES(jid), jid), lid=COALESCE(VALUES(lid), lid),
+       display_name=COALESCE(
+         NULLIF(NULLIF(TRIM(VALUES(display_name)), ''), 'Unknown'),
+         display_name
+       ),
+       is_private=GREATEST(is_private, VALUES(is_private))`,
       [
         identity,
         contact.type === "group" ? "group" : "user",

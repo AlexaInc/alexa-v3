@@ -92,25 +92,42 @@ async function syncGroupMetadata(socket, metadata) {
   // would silently disappear from the dashboard even though both they and the
   // bot are admins in WhatsApp.
   const [knownAccounts] = await db.query(
-    `SELECT lid_username, whatsapp_jid
+    `SELECT lid_username, whatsapp_jid, display_name
      FROM bot_users
      WHERE whatsapp_jid IS NOT NULL AND whatsapp_jid <> ''`,
   );
+  const contactsById = new Map();
+  Object.entries(socket?.store?.contacts || {}).forEach(([key, contact]) => {
+    [key, contact?.id, contact?.jid, contact?.lid, contact?.phoneNumber]
+      .map(normalizeIdentity)
+      .filter(Boolean)
+      .forEach((id) => contactsById.set(id, contact));
+  });
   const members = metadata.participants
     .map((participant) => {
+      const ids = participantIds(participant);
       const directLid = lidForParticipant(participant);
-      const mappedAccount = directLid
-        ? null
-        : knownAccounts.find((account) =>
-            sameIdentity(participantIds(participant), account.whatsapp_jid),
-          );
+      const directJid = ids.find((id) => id.endsWith("@s.whatsapp.net"));
+      const mappedAccount = knownAccounts.find((account) =>
+        sameIdentity(ids, [account.lid_username, account.whatsapp_jid]),
+      );
+      const storedContact = ids.map((id) => contactsById.get(id)).find(Boolean);
+      const userLid =
+        directLid || normalizeIdentity(mappedAccount?.lid_username);
+      const jid = directJid || normalizeIdentity(mappedAccount?.whatsapp_jid);
       return {
-        userLid: directLid || normalizeIdentity(mappedAccount?.lid_username),
+        userLid,
+        jid: jid || null,
         displayName:
           String(
             participant.notify ||
               participant.name ||
               participant.pushName ||
+              storedContact?.notify ||
+              storedContact?.name ||
+              storedContact?.verifiedName ||
+              storedContact?.pushName ||
+              mappedAccount?.display_name ||
               "",
           ).slice(0, 255) || null,
         isAdmin: isAdmin(participant),
@@ -151,6 +168,31 @@ async function syncGroupMetadata(socket, metadata) {
             member.userLid,
             member.displayName,
             member.isAdmin,
+          ]),
+        ],
+      );
+      // Keep the identity aliases and best metadata name together. Moderation
+      // events may identify an admin by either LID or phone JID.
+      await connection.query(
+        `INSERT INTO contact_directory
+          (identity_id, kind, phone_number, jid, lid, display_name, is_private)
+         VALUES ?
+         ON DUPLICATE KEY UPDATE
+           phone_number=COALESCE(VALUES(phone_number), phone_number),
+           jid=COALESCE(VALUES(jid), jid), lid=COALESCE(VALUES(lid), lid),
+           display_name=COALESCE(
+             NULLIF(NULLIF(TRIM(VALUES(display_name)), ''), 'Unknown'),
+             display_name
+           )`,
+        [
+          members.map((member) => [
+            member.userLid,
+            "user",
+            member.jid?.replace(/@.*/, "") || null,
+            member.jid,
+            member.userLid,
+            member.displayName,
+            false,
           ]),
         ],
       );
