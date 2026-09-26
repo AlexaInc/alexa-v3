@@ -928,22 +928,22 @@ async function startWhatsAppConnection() {
 
       // Persist member movement and admin actions before welcome/goodbye checks.
       // This runs even when those messages are disabled, so analytics stay complete.
-      const actorId =
+      const actorIds =
         typeof anu.author === "string"
-          ? anu.author
-          : anu.author?.lid ||
-            anu.author?.phoneNumber ||
-            anu.author?.jid ||
-            anu.author?.id ||
-            null;
+          ? [groupDirectory.normalizeIdentity(anu.author)].filter(Boolean)
+          : groupDirectory.participantIds(anu.author);
+      const actorId =
+        actorIds.find((id) => id.endsWith("@lid")) || actorIds[0] || null;
       for (const participant of changedParticipants) {
+        const memberIds = groupDirectory.participantIds(participant);
         const memberId =
-          participant.lid ||
-          participant.phoneNumber ||
-          participant.jid ||
-          participant.id;
+          memberIds.find((id) => id.endsWith("@lid")) || memberIds[0] || null;
         if (!memberId) continue;
-        const selfAction = !actorId || actorId === memberId;
+        // Baileys may expose the same person as a LID in one field and a phone
+        // JID in another. Compare every alias instead of only the preferred IDs;
+        // otherwise a voluntary leave is incorrectly recorded as an admin removal.
+        const selfAction =
+          !actorIds.length || groupDirectory.sameIdentity(actorIds, memberIds);
         let eventType = anu.action;
         let source = null;
         if (anu.action === "add") {

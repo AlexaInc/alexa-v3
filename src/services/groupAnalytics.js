@@ -349,20 +349,54 @@ async function dashboard({ groupId, days = 30 }) {
     utcBucketParams,
   );
   const [memberEvents] = await db.query(
-    `SELECT DATE_FORMAT(created_at, '%Y-%m-%dT%H:00:00Z') AS bucket,
-            event_type AS type, COUNT(*) AS total
-     FROM group_member_events
-     WHERE group_id = ? AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
-     GROUP BY DATE_FORMAT(created_at, '%Y-%m-%dT%H:00:00Z'), event_type
+    `SELECT bucket, type, COUNT(*) AS total
+     FROM (
+       SELECT DATE_FORMAT(event.created_at, '%Y-%m-%dT%H:00:00Z') AS bucket,
+              CASE
+                WHEN event.event_type = 'removed' AND (
+                  event.actor_id = event.member_id OR EXISTS (
+                    SELECT 1 FROM contact_directory contact
+                    WHERE (contact.identity_id = event.actor_id
+                           OR contact.lid = event.actor_id
+                           OR contact.jid = event.actor_id)
+                      AND (contact.identity_id = event.member_id
+                           OR contact.lid = event.member_id
+                           OR contact.jid = event.member_id)
+                  )
+                ) THEN 'left'
+                ELSE event.event_type
+              END AS type
+       FROM group_member_events event
+       WHERE event.group_id = ?
+         AND event.created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
+     ) classified_events
+     GROUP BY bucket, type
      ORDER BY bucket`,
     utcBucketParams,
   );
   const [moderation] = await db.query(
-    `SELECT DATE_FORMAT(created_at, '%Y-%m-%dT%H:00:00Z') AS bucket,
-            event_type AS type, COUNT(*) AS total
-     FROM group_moderation_events
-     WHERE group_id = ? AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
-     GROUP BY DATE_FORMAT(created_at, '%Y-%m-%dT%H:00:00Z'), event_type
+    `SELECT DATE_FORMAT(event.created_at, '%Y-%m-%dT%H:00:00Z') AS bucket,
+            event.event_type AS type, COUNT(*) AS total
+     FROM group_moderation_events event
+     WHERE event.group_id = ?
+       AND event.created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
+       AND NOT (
+         event.event_type = 'member_removed'
+         AND event.admin_id IS NOT NULL
+         AND event.target_id IS NOT NULL
+         AND (
+           event.admin_id = event.target_id OR EXISTS (
+             SELECT 1 FROM contact_directory contact
+             WHERE (contact.identity_id = event.admin_id
+                    OR contact.lid = event.admin_id
+                    OR contact.jid = event.admin_id)
+               AND (contact.identity_id = event.target_id
+                    OR contact.lid = event.target_id
+                    OR contact.jid = event.target_id)
+           )
+         )
+       )
+     GROUP BY DATE_FORMAT(event.created_at, '%Y-%m-%dT%H:00:00Z'), event.event_type
      ORDER BY bucket`,
     utcBucketParams,
   );
@@ -416,9 +450,26 @@ async function dashboard({ groupId, days = 30 }) {
               SUM(event_type IN ('member_removed','member_banned')) AS removals,
               SUM(event_type='warn') AS warnings,
               SUM(event_type IN ('group_muted','group_unmuted')) AS mute_actions
-       FROM group_moderation_events
-       WHERE group_id = ? AND admin_id IS NOT NULL AND TRIM(admin_id) <> ''
-       GROUP BY admin_id
+       FROM group_moderation_events event
+       WHERE event.group_id = ?
+         AND event.admin_id IS NOT NULL
+         AND TRIM(event.admin_id) <> ''
+         AND NOT (
+           event.event_type = 'member_removed'
+           AND event.target_id IS NOT NULL
+           AND (
+             event.admin_id = event.target_id OR EXISTS (
+               SELECT 1 FROM contact_directory contact
+               WHERE (contact.identity_id = event.admin_id
+                      OR contact.lid = event.admin_id
+                      OR contact.jid = event.admin_id)
+                 AND (contact.identity_id = event.target_id
+                      OR contact.lid = event.target_id
+                      OR contact.jid = event.target_id)
+             )
+           )
+         )
+       GROUP BY event.admin_id
      ) admin_stats
      ORDER BY admin_stats.actions DESC LIMIT 20`,
     [groupId, groupId, groupId],
