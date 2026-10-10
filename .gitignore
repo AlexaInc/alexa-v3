@@ -8,7 +8,7 @@ auth5a/
 # (Optional) Ignore logs, system files, etc.
 *.log
 .DS_Store
-
+package-lock.json
 # --- Runtime state / caches (recreated on start) ---
 
 # Baileys session files (NEVER COMMIT THIS)

@@ -22,6 +22,7 @@ const {
   WAMessageContent,
   WAMessageKey,
 } = require("@hansaka02/baileys");
+const { Pool } = require("pg");
 const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const path = require("path");
@@ -673,10 +674,30 @@ database.initialize().catch((error) => {
   console.error("[index] Database bootstrap failed:", error.message);
 });
 
-setInterval(() => {
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
+
+setInterval(async () => {
   db.query("SELECT 1", (err) => {
     if (err) console.error("Keep-alive ping failed:", err.message);
   });
+  try {
+    const client = await pool.connect();
+    const result = await client.query("SELECT 1 AS connected");
+    client.release();
+
+    console.log("postgres Database ping successful:", result.rows[0]);
+    return true;
+  } catch (err) {
+    console.error("postgres Database ping failed:", err.message);
+    return false;
+  } finally {
+    await pool.end();
+  }
 }, 300000);
 
 async function startWhatsAppConnection() {
