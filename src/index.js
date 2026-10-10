@@ -686,17 +686,12 @@ setInterval(async () => {
     if (err) console.error("Keep-alive ping failed:", err.message);
   });
   try {
-    const client = await pool.connect();
-    const result = await client.query("SELECT 1 AS connected");
-    client.release();
-
+    const result = await pool.query("SELECT 1 AS connected");
     console.log("postgres Database ping successful:", result.rows[0]);
     return true;
   } catch (err) {
     console.error("postgres Database ping failed:", err.message);
     return false;
-  } finally {
-    await pool.end();
   }
 }, 300000);
 
